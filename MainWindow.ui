@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <widget class="QWidget" name="verticalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>801</width>
+      <height>601</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="mainLayout">
+     <property name="leftMargin">
+      <number>10</number>
+     </property>
+     <property name="topMargin">
+      <number>5</number>
+     </property>
+     <property name="rightMargin">
+      <number>10</number>
+     </property>
+     <property name="bottomMargin">
+      <number>10</number>
+     </property>
+     <item>
+      <widget class="QSplitter" name="horizontalSplitter">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="childrenCollapsible">
+        <bool>false</bool>
+       </property>
+       <widget class="QWidget" name="layoutWidget">
+        <layout class="QVBoxLayout" name="syncProfilesLayout">
+         <item>
+          <widget class="QLabel" name="SyncLabel">
+           <property name="text">
+            <string>Synchronization profiles:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="RemovableListView" name="syncProfilesView">
+           <property name="minimumSize">
+            <size>
+             <width>200</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="contextMenuPolicy">
+            <enum>Qt::CustomContextMenu</enum>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="layoutWidget">
+        <layout class="QVBoxLayout" name="folderLayout">
+         <item>
+          <widget class="QLabel" name="foldersLabel">
+           <property name="text">
+            <string>Folders to synchronize:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="RemovableListView" name="folderListView">
+           <property name="minimumSize">
+            <size>
+             <width>300</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="contextMenuPolicy">
+            <enum>Qt::CustomContextMenu</enum>
+           </property>
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>RemovableListView</class>
+   <extends>QListView</extends>
+   <header>RemovableListView.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

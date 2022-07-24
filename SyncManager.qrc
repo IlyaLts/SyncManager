@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Icon.ico</file>
+        <file>Images/TrayIconDone.png</file>
+        <file>Images/TrayIconIssue.png</file>
+        <file>Images/TrayIconSync.png</file>
+        <file>Images/TrayIconPause.png</file>
+        <file>Images/TrayIconWarning.png</file>
+        <file>Images/IconDone.png</file>
+        <file>Images/IconRemove.png</file>
+        <file>Images/IconPause.png</file>
+        <file>Images/IconSync.png</file>
+        <file>Images/IconWarning.png</file>
+        <file>Images/IconAdd.png</file>
+        <file>Images/IconResume.png</file>
+    </qresource>
+</RCC>

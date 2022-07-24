@@ -1,0 +1,44 @@
+QT       += core gui
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+CONFIG += c++11
+
+# You can make your code fail to compile if it uses deprecated APIs.
+# In order to do so, uncomment the following line.
+#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+
+SOURCES += \
+    DecoratedStringListModel.cpp \
+    Main.cpp \
+    MainWindow.cpp \
+    RemovableListView.cpp
+
+HEADERS += \
+    DecoratedStringListModel.h \
+    MainWindow.h \
+    RemovableListView.h
+
+FORMS += \
+    MainWindow.ui
+
+# Default rules for deployment.
+qnx: target.path = /tmp/$${TARGET}/bin
+else: unix:!android: target.path = /opt/$${TARGET}/bin
+!isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    Icon.ico \
+    Resources.rc \
+    LICENSE.txt \
+    README.md
+
+RESOURCES += \
+    SyncManager.qrc
+
+RC_FILE = Resources.rc
+
+LIBS += --std=c++17
+
+# qml_debug flag for debug and profile build configurations
+CONFIG(qml_debug): DEFINES += DEBUG_TIMESTAMP
