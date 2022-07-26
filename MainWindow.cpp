@@ -127,12 +127,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     // Loads saved pause states for profiles/folers
     for (int i = 0; i < profiles.size(); i++)
     {
-        profiles[i].paused = settings.value(profileNames[i] + QLatin1String("_profile/") + profileNames[i] + QLatin1String("_paused"), false).toBool();
+        profiles[i].paused = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), false).toBool();
         if (!profiles[i].paused) paused = false;
 
         for (auto &folder : profiles[i].folders)
         {
-            folder.paused = settings.value(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_paused"), false).toBool();
+            folder.paused = settings.value(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), false).toBool();
             if (!folder.paused) paused = false;
             folder.exists = QFileInfo::exists(folder.path);
 
@@ -169,10 +169,10 @@ MainWindow::~MainWindow()
     // Saves profiles/folders pause states
     for (int i = 0; i < profiles.size(); i++)
     {
-        for (auto &folder : profiles[i].folders)
-                settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_paused"), folder.paused);
+        if (!profiles[i].toBeRemoved) settings.setValue(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), profiles[i].paused);
 
-        settings.setValue(profileNames[i] + QLatin1String("_profile/") + profileNames[i] + QLatin1String("_paused"), profiles[i].paused);
+        for (auto &folder : profiles[i].folders)
+                if (!folder.toBeRemoved) settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
     }
 
     delete ui;
@@ -221,6 +221,9 @@ void MainWindow::removeProfile()
     for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
     {
         ui->syncProfilesView->model()->removeRow(index.row());
+
+        QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+        settings.remove(profileNames[index.row()] + QLatin1String("_profile"));
 
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
         profilesData.remove(profileNames[index.row()]);
@@ -277,16 +280,15 @@ void MainWindow::profileNameChanged(const QModelIndex &index)
     }
 
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    for (auto &folder : profiles[row].folders)
-    {
-        settings.remove(profileNames[row] + QLatin1String("_") + folder.path);
-        settings.setValue(newName + QLatin1String("_") + folder.path, !folder.paused);
-    }
+    settings.remove(profileNames[row] + QLatin1String("_profile"));
+    settings.setValue(newName + QLatin1String("_profile/") + QLatin1String("Paused"), profiles[row].paused);
+    for (auto &folder : profiles[row].folders) settings.setValue(newName + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
 
     QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
     profilesData.remove(profileNames[row]);
+    profilesData.setValue(newName, foldersPath[row]);
+
     profileNames[row] = newName;
-    profilesData.setValue(profileNames[row], foldersPath[row]);
 }
 
 /*
@@ -333,6 +335,9 @@ void MainWindow::removeFolder()
         profiles[profileRow].folders[index.row()].toBeRemoved = true;
         foldersPath[profileRow].removeAt(index.row());
         ui->folderListView->model()->removeRow(index.row());
+
+        QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+        settings.remove(profileNames[profileRow] + QLatin1String("_profile/") + profiles[profileRow].folders[index.row()].path + QLatin1String("_Paused"));
 
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
         profilesData.setValue(profileNames[profileRow], foldersPath[profileRow]);
