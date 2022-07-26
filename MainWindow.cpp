@@ -707,20 +707,26 @@ void MainWindow::updateStatus()
         QModelIndex index = profileModel->index(j, 0);
 
         if (profiles[i].paused)
+        {
             profileModel->setData(index, iconPause, Qt::DecorationRole);
+        }
         else if (profiles[i].syncing || syncNowTriggered)
+        {
             profileModel->setData(index, iconSync, Qt::DecorationRole);
+        }
         else
+        {
             profileModel->setData(index, iconDone, Qt::DecorationRole);
 
-        // Shows a warning icon if at least one folder doesn't exist
-        for (auto &folder : profiles[i].folders)
-        {
-            if (!folder.exists)
+            // Shows a warning icon if at least one folder doesn't exist
+            for (auto &folder : profiles[i].folders)
             {
-                isThereIssue = true;
-                profileModel->setData(index, iconWarning, Qt::DecorationRole);
-                break;
+                if (!folder.exists)
+                {
+                    isThereIssue = true;
+                    profileModel->setData(index, iconWarning, Qt::DecorationRole);
+                    break;
+                }
             }
         }
 
