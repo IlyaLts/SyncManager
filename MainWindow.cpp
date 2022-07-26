@@ -127,12 +127,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     // Loads saved pause states for profiles/folers
     for (int i = 0; i < profiles.size(); i++)
     {
-        profiles[i].paused = !settings.value(profileNames[i], true).toBool();
+        profiles[i].paused = settings.value(profileNames[i] + QLatin1String("_profile/") + profileNames[i] + QLatin1String("_paused"), false).toBool();
         if (!profiles[i].paused) paused = false;
 
         for (auto &folder : profiles[i].folders)
         {
-            folder.paused = !settings.value(profileNames[i] + QLatin1String("_") + folder.path, true).toBool();
+            folder.paused = settings.value(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_paused"), false).toBool();
             if (!folder.paused) paused = false;
             folder.exists = QFileInfo::exists(folder.path);
 
@@ -170,9 +170,9 @@ MainWindow::~MainWindow()
     for (int i = 0; i < profiles.size(); i++)
     {
         for (auto &folder : profiles[i].folders)
-                settings.setValue(profileNames[i] + QLatin1String("_") + folder.path, !folder.paused);
+                settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_paused"), folder.paused);
 
-        settings.setValue(profileNames[i], !profiles[i].paused);
+        settings.setValue(profileNames[i] + QLatin1String("_profile/") + profileNames[i] + QLatin1String("_paused"), profiles[i].paused);
     }
 
     delete ui;
