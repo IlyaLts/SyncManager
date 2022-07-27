@@ -461,7 +461,7 @@ void MainWindow::update()
 
     busy = true;
     syncing = false;
-    int numOfFiles = 0;
+    int numOfActiveFiles = 0;
 
     syncNowAction->setEnabled(false);
 
@@ -477,11 +477,18 @@ void MainWindow::update()
         // Checks for changes
         for (auto &profile : profiles)
         {
-            if (profile.paused || profile.folders.size() < 2) continue;
+            int activeFolders = 0;
 
             for (auto &folder : profile.folders)
-                if (!folder.paused)
-                    GetListOfFiles(folder);
+            {
+                folder.exists = QFileInfo::exists(folder.path);
+                if (!folder.paused && folder.exists) activeFolders++;
+            }
+
+            if (profile.paused || activeFolders < 2) continue;
+
+            for (auto &folder : profile.folders)
+                GetListOfFiles(folder);
 
             checkForChanges(profile);
 
@@ -653,21 +660,34 @@ void MainWindow::update()
         profileIt++;
     }
 
-    // Number of files
+    // Counts the current number of active files in not paused and existing folders
     for (auto &profile : profiles)
+    {
+        if (profile.paused) continue;
+
+        int activeFolders = 0;
+
         for (auto &folder : profile.folders)
-            if (!profile.paused && !folder.paused)
-                    numOfFiles += folder.files.size();
+            if (!folder.paused && folder.exists)
+                activeFolders++;
+
+        if (activeFolders >= 2)
+        {
+            for (auto &folder : profile.folders)
+                if (!folder.paused)
+                    numOfActiveFiles += folder.files.size();
+        }
+    }
 
     busy = false;
     updateStatus();
     syncNowAction->setEnabled(true);
-    updateTimer.start(numOfFiles < 1000 ? 1000 : numOfFiles);
+    updateTimer.start(numOfActiveFiles < 1000 ? 1000 : numOfActiveFiles);
 
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%lld ms - Sync complete time. (%d files total)", ml.count(), numOfFiles);
+    qDebug("%lld ms - Sync complete time.", ml.count());
 #endif
 }
 
@@ -904,85 +924,81 @@ MainWindow::GetListOfFiles
 */
 void MainWindow::GetListOfFiles(Folder &folder)
 {
-    if (folder.paused) return;
+    if (folder.paused || !folder.exists) return;
 
-    folder.exists = QFileInfo::exists(folder.path);
-
-    if (folder.exists)
+    for (auto &file : folder.files)
     {
-        for (auto &file : folder.files)
-        {
-            file.exists = false;
-            file.updated = false;
-        }
+        file.exists = false;
+        file.updated = false;
+    }
 
 #ifdef DEBUG_TIMESTAMP
-        auto startTime = std::chrono::high_resolution_clock::now();
-        int totalNumOfFiles = 0;
+    auto startTime = std::chrono::high_resolution_clock::now();
+    int totalNumOfFiles = 0;
 #endif
 
 #ifndef USE_STD_FILESYSTEM
-        QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+    QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
-        while (dir.hasNext())
+    while (dir.hasNext())
+    {
+        if (folder.paused) return;
+
+        dir.next();
+
+        QString fileName(dir.fileInfo().filePath());
+        fileName.remove(0, folder.path.size());
+        File::Type type = dir.fileInfo().isDir() ? File::dir : File::file;
+        size_t fileHash = qHash(fileName);
+
+        if (folder.files.contains(fileHash))
         {
-            if (folder.paused) return;
+            bool updated = false;
+            QString parentPath(dir.fileInfo().path());
+            File &file = folder.files[fileHash];
 
-            dir.next();
+            QDateTime fileDate(dir.fileInfo().lastModified());
 
-            QString fileName(dir.fileInfo().filePath());
-            fileName.remove(0, folder.path.size());
-            File::Type type = dir.fileInfo().isDir() ? File::dir : File::file;
-            size_t fileHash = qHash(fileName);
-
-            if (folder.files.contains(fileHash))
+            if (type == File::dir)
             {
-                bool updated = false;
-                QString parentPath(dir.fileInfo().path());
-                File &file = folder.files[fileHash];
+                updated = (file.date < fileDate);
 
-                QDateTime fileDate(dir.fileInfo().lastModified());
-
-                if (type == File::dir)
+                // Marks all parent folders as updated in case if our folder was updated
+                if (updated)
                 {
-                    updated = (file.date < fileDate);
+                    QString folderPath(dir.fileInfo().filePath());
 
-                    // Marks all parent folders as updated in case if our folder was updated
-                    if (updated)
+                    while (folderPath.remove(folderPath.lastIndexOf("/"), 999999).length() > folder.path.length())
                     {
-                        QString folderPath(dir.fileInfo().filePath());
+                        size_t hash = qHash(QString(folderPath).remove(0, folder.path.size()));
 
-                        while (folderPath.remove(folderPath.lastIndexOf("/"), 999999).length() > folder.path.length())
-                        {
-                            size_t hash = qHash(QString(folderPath).remove(0, folder.path.size()));
-
-                            if (!folder.files.value(hash).updated)
-                                folder.files[hash].updated = true;
-                            else
-                                break;
-                        }
+                        if (!folder.files.value(hash).updated)
+                            folder.files[hash].updated = true;
+                        else
+                            break;
                     }
                 }
-
-                // Marks a file/folder as updated if its parent folder was updated
-                if (parentPath.length() > folder.path.length() && folder.files.value(qHash(parentPath.remove(0, folder.path.size()))).updated)
-                    updated = true;
-
-                file.date = fileDate;
-                file.updated = updated;
-                file.exists = true;
             }
-            else
-            {
-                folder.files.insert(fileHash, File(fileName, type, dir.fileInfo().lastModified()));
-            }
+
+            // Marks a file/folder as updated if its parent folder was updated
+            if (parentPath.length() > folder.path.length() && folder.files.value(qHash(parentPath.remove(0, folder.path.size()))).updated)
+                updated = true;
+
+            file.date = fileDate;
+            file.updated = updated;
+            file.exists = true;
+        }
+        else
+        {
+            folder.files.insert(fileHash, File(fileName, type, dir.fileInfo().lastModified()));
+        }
 
 #ifdef DEBUG_TIMESTAMP
-                totalNumOfFiles++;
+            totalNumOfFiles++;
 #endif
 
-            if (updateAppIfNeeded()) return;
-        }
+        if (updateAppIfNeeded()) return;
+    }
 #elif defined(USE_STD_FILESYSTEM)
     for (auto const &dir : std::filesystem::recursive_directory_iterator{std::filesystem::path{folder.path.toStdString()}})
     {
@@ -998,7 +1014,7 @@ void MainWindow::GetListOfFiles(Folder &folder)
         folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)); // FIX: date and updated flag
 
 #ifdef DEBUG_TIMESTAMP
-                totalNumOfFiles++;
+        totalNumOfFiles++;
 #endif
 
         if (updateAppIfNeeded()) return;
@@ -1010,7 +1026,6 @@ void MainWindow::GetListOfFiles(Folder &folder)
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
     qDebug("%lld ms - Found %d files at %s)", ml.count(), totalNumOfFiles, qUtf8Printable(folder.path));
 #endif
-    }
 }
 
 /*
