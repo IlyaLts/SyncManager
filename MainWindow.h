@@ -114,6 +114,7 @@ private Q_SLOTS:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void update();
     void updateStatus();
+    void updateNextSyncingTime();
     bool updateAppIfNeeded();
     void showProfileContextMenu(const QPoint &pos) const;
     void showFolderContextMenu(const QPoint &pos) const;

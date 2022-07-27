@@ -142,6 +142,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
 
     updateStatus();
+    updateTimer.setSingleShot(true);
     updateTimer.start(0);
 }
 
@@ -238,6 +239,7 @@ void MainWindow::removeProfile()
 
     ui->syncProfilesView->selectionModel()->reset();
     updateStatus();
+    updateNextSyncingTime();
 }
 
 /*
@@ -345,6 +347,7 @@ void MainWindow::removeFolder()
 
     ui->folderListView->selectionModel()->reset();
     updateStatus();
+    updateNextSyncingTime();
 }
 
 /*
@@ -377,6 +380,7 @@ void MainWindow::pauseSyncing()
     }
 
     updateStatus();
+    updateNextSyncingTime();
 }
 
 /*
@@ -415,6 +419,7 @@ void MainWindow::pauseSelected()
         }
 
         updateStatus();
+        updateNextSyncingTime();
     }
 }
 
@@ -461,7 +466,6 @@ void MainWindow::update()
 
     busy = true;
     syncing = false;
-    int numOfActiveFiles = 0;
 
     syncNowAction->setEnabled(false);
 
@@ -660,29 +664,10 @@ void MainWindow::update()
         profileIt++;
     }
 
-    // Counts the current number of active files in not paused and existing folders
-    for (auto &profile : profiles)
-    {
-        if (profile.paused) continue;
-
-        int activeFolders = 0;
-
-        for (auto &folder : profile.folders)
-            if (!folder.paused && folder.exists)
-                activeFolders++;
-
-        if (activeFolders >= 2)
-        {
-            for (auto &folder : profile.folders)
-                if (!folder.paused)
-                    numOfActiveFiles += folder.files.size();
-        }
-    }
-
     busy = false;
-    updateStatus();
     syncNowAction->setEnabled(true);
-    updateTimer.start(numOfActiveFiles < 1000 ? 1000 : numOfActiveFiles);
+    updateStatus();
+    updateNextSyncingTime();
 
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
@@ -846,6 +831,40 @@ void MainWindow::updateStatus()
 
     if (!busy && numOfFiles < updateTimer.remainingTime())
         updateTimer.start(numOfFiles < 1000 ? 1000 : numOfFiles);
+}
+
+/*
+===================
+MainWindow::updateNextSyncingTime
+===================
+*/
+void MainWindow::updateNextSyncingTime()
+{
+    if (busy) return;
+
+    int numOfActiveFiles = 0;
+
+    // Counts the current number of active files in not paused and existingx folders
+    for (auto &profile : profiles)
+    {
+        if (profile.paused) continue;
+
+        int activeFolders = 0;
+
+        for (auto &folder : profile.folders)
+            if (!folder.paused && folder.exists)
+                activeFolders++;
+
+        if (activeFolders >= 2)
+        {
+            for (auto &folder : profile.folders)
+                if (!folder.paused)
+                    numOfActiveFiles += folder.files.size();
+        }
+    }
+
+    if (!updateTimer.isActive() || numOfActiveFiles < updateTimer.remainingTime())
+        updateTimer.start(numOfActiveFiles < 1000 ? 1000 : numOfActiveFiles);
 }
 
 /*
