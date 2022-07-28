@@ -79,12 +79,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     syncNowAction = new QAction(iconSync, "&Sync Now", this);
     pauseSyncingAction = new QAction(iconPause, "&Pause Syncing", this);
+    automaticAction = new QAction("&Automatic", this);
+    manualAction = new QAction("&Manual", this);
     quitAction = new QAction("&Quit", this);
+
+    automaticAction->setCheckable(true);
+    manualAction->setCheckable(true);
+
+    syncingMode = settings.value("SyncingMode", 0).toInt();
+
+    if (!syncingMode)
+        automaticAction->setChecked(true);
+    else
+        manualAction->setChecked(true);
+
+    syncingModeMenu = new QMenu("&Syncing Mode", this);
+    syncingModeMenu->addAction(automaticAction);
+    syncingModeMenu->addAction(manualAction);
 
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(syncNowAction);
     trayIconMenu->addAction(pauseSyncingAction);
     trayIconMenu->addSeparator();
+    trayIconMenu->addMenu(syncingModeMenu);
     trayIconMenu->addAction(quitAction);
 
     trayIcon = new QSystemTrayIcon(this);
@@ -115,6 +132,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(deletePressed()), SLOT(removeProfile()));
     connect(syncNowAction, SIGNAL(triggered()), this, SLOT(syncNow()));
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
+    connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, 0));
+    connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, 1));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
     connect(&updateTimer, SIGNAL(timeout()), this, SLOT(update()));
@@ -166,6 +185,8 @@ MainWindow::~MainWindow()
         settings.setValue("Width", size().width());
         settings.setValue("Height", size().height());
     }
+
+    settings.setValue("SyncingMode", syncingMode);
 
     // Saves profiles/folders pause states
     for (int i = 0; i < profiles.size(); i++)
@@ -452,6 +473,35 @@ void MainWindow::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
         break;
     default:
         break;
+    }
+}
+
+/*
+===================
+MainWindow::switchSyncingMode
+===================
+*/
+void MainWindow::switchSyncingMode(int mode)
+{
+    syncingMode = mode;
+
+    automaticAction->setChecked(false);
+    manualAction->setChecked(false);
+
+    switch (mode)
+    {
+    case 0:
+    {
+        automaticAction->setChecked(true);
+        updateNextSyncingTime();
+        break;
+    }
+    case 1:
+    {
+        manualAction->setChecked(true);
+        updateTimer.stop();
+        break;
+    }
     }
 }
 
@@ -840,7 +890,7 @@ MainWindow::updateNextSyncingTime
 */
 void MainWindow::updateNextSyncingTime()
 {
-    if (busy) return;
+    if (busy || syncingMode) return;
 
     int numOfActiveFiles = 0;
 

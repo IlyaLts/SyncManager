@@ -112,6 +112,7 @@ private Q_SLOTS:
     void pauseSelected();
     void quit();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
+    void switchSyncingMode(int mode);
     void update();
     void updateStatus();
     void updateNextSyncingTime();
@@ -133,10 +134,6 @@ private:
     QStringList profileNames;
     QList<QStringList> foldersPath;
 
-    QAction *syncNowAction;
-    QAction *pauseSyncingAction;
-    QAction *quitAction;
-
     QIcon iconAdd;
     QIcon iconDone;
     QIcon iconPause;
@@ -150,14 +147,22 @@ private:
     QIcon trayIconSync;
     QIcon trayIconWarning;
 
+    QAction *syncNowAction;
+    QAction *pauseSyncingAction;
+    QAction *automaticAction;
+    QAction *manualAction;
+    QAction *quitAction;
+
     QSystemTrayIcon *trayIcon;
     QMenu *trayIconMenu;
+    QMenu *syncingModeMenu;
 
     bool busy = false;
     bool paused = false;
     bool syncing = false;
     bool syncNowTriggered = false;
     bool shouldQuit = false;
+    int syncingMode;
     int numOfFilesToSync = 0;
 
     QTimer updateTimer;
