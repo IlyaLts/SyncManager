@@ -96,6 +96,12 @@ class MainWindow : public QMainWindow
 
 public:
 
+    enum SyncingMode
+    {
+        Automatic,
+        Manual
+    } syncingMode;
+
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
@@ -112,7 +118,7 @@ private Q_SLOTS:
     void pauseSelected();
     void quit();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
-    void switchSyncingMode(int mode);
+    void switchSyncingMode(SyncingMode mode);
     void update();
     void updateStatus();
     void updateNextSyncingTime();
@@ -162,7 +168,6 @@ private:
     bool syncing = false;
     bool syncNowTriggered = false;
     bool shouldQuit = false;
-    int syncingMode;
     int numOfFilesToSync = 0;
 
     QTimer updateTimer;
