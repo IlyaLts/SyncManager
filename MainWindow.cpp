@@ -953,10 +953,13 @@ void MainWindow::showProfileContextMenu(const QPoint &pos) const
 
     if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
     {
-        if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].paused)
-            menu.addAction(iconResume, "&Resume syncing profile", this, SLOT(pauseSelected()));
-        else
-            menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
+        if (syncingMode == Automatic)
+        {
+            if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].paused)
+                menu.addAction(iconResume, "&Resume syncing profile", this, SLOT(pauseSelected()));
+            else
+                menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
+        }
 
         menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));
     }
@@ -979,10 +982,13 @@ void MainWindow::showFolderContextMenu(const QPoint &pos) const
 
     if (!ui->folderListView->selectionModel()->selectedIndexes().isEmpty())
     {
-        if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].folders[ui->folderListView->selectionModel()->selectedIndexes()[0].row()].paused)
-            menu.addAction(iconResume, "&Resume syncing folder", this, SLOT(pauseSelected()));
-        else
-            menu.addAction(iconPause, "&Pause syncing folder", this, SLOT(pauseSelected()));
+        if (syncingMode == Automatic)
+        {
+            if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].folders[ui->folderListView->selectionModel()->selectedIndexes()[0].row()].paused)
+                menu.addAction(iconResume, "&Resume syncing folder", this, SLOT(pauseSelected()));
+            else
+                menu.addAction(iconPause, "&Pause syncing folder", this, SLOT(pauseSelected()));
+        }
 
         menu.addAction(iconRemove, "&Remove folder", this, SLOT(removeFolder()));
     }
