@@ -129,7 +129,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
-    connect(&updateTimer, SIGNAL(timeout()), this, SLOT(update()));
+    connect(&syncTimer, SIGNAL(timeout()), this, SLOT(sync()));
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showProfileContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showFolderContextMenu(QPoint)));
 
@@ -155,8 +155,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     switchSyncingMode(static_cast<SyncingMode>(settings.value("SyncingMode", Automatic).toInt()));
     updateStatus();
-    updateTimer.setSingleShot(true);
-    updateTimer.start(0);
+    syncTimer.setSingleShot(true);
+    syncTimer.start(0);
 }
 
 /*
@@ -378,7 +378,7 @@ void MainWindow::syncNow()
 
     syncNowTriggered = true;
     updateStatus();
-    updateTimer.start(0);
+    syncTimer.start(0);
 }
 
 /*
@@ -488,18 +488,18 @@ void MainWindow::switchSyncingMode(SyncingMode mode)
 
     switch (mode)
     {
-    case 0:
+    case Automatic:
     {
         pauseSyncingAction->setVisible(true);
         automaticAction->setChecked(true);
         updateNextSyncingTime();
         break;
     }
-    case 1:
+    case Manual:
     {
         pauseSyncingAction->setVisible(false);
         manualAction->setChecked(true);
-        updateTimer.stop();
+        syncTimer.stop();
         break;
     }
     }
@@ -509,10 +509,10 @@ void MainWindow::switchSyncingMode(SyncingMode mode)
 
 /*
 ===================
-MainWindow::update
+MainWindow::sync
 ===================
 */
-void MainWindow::update()
+void MainWindow::sync()
 {
     if (busy) return;
 
@@ -883,8 +883,8 @@ void MainWindow::updateStatus()
         for (auto &folder : profile.folders)
             numOfFiles += folder.files.size();
 
-    if (!busy && numOfFiles < updateTimer.remainingTime())
-        updateTimer.start(numOfFiles < 1000 ? 1000 : numOfFiles);
+    if (!busy && numOfFiles < syncTimer.remainingTime())
+        syncTimer.start(numOfFiles < 1000 ? 1000 : numOfFiles);
 }
 
 /*
@@ -917,8 +917,8 @@ void MainWindow::updateNextSyncingTime()
         }
     }
 
-    if (!updateTimer.isActive() || numOfActiveFiles < updateTimer.remainingTime())
-        updateTimer.start(numOfActiveFiles < 1000 ? 1000 : numOfActiveFiles);
+    if (!syncTimer.isActive() || numOfActiveFiles < syncTimer.remainingTime())
+        syncTimer.start(numOfActiveFiles < 1000 ? 1000 : numOfActiveFiles);
 }
 
 /*
@@ -930,11 +930,11 @@ Makes the app responsible if it takes too much time to process
 */
 bool MainWindow::updateAppIfNeeded()
 {
-    if (respondTimer.remainingTime() <= 0)
+    if (updateTimer.remainingTime() <= 0)
     {
         updateStatus();
         QApplication::processEvents();
-        respondTimer.start(RESPOND_TIME);
+        updateTimer.start(UPDATE_TIME);
     }
 
     return shouldQuit;

@@ -30,7 +30,7 @@
 #define SETTINGS_FILENAME "Settings.ini"
 #define PROFILES_FILENAME "Profiles.ini"
 
-#define RESPOND_TIME 50
+#define UPDATE_TIME 50
 
 // In a couple times slower than QDirIterator
 //#define USE_STD_FILESYSTEM
@@ -52,12 +52,12 @@ struct File
     } type = none;
 
     File(){}
-    File(QString path, Type type, QDateTime time, bool updated = false) : type(type), path(path), date(time), exists(true), updated(updated){}
+    File(QString path, Type type, QDateTime time, bool updated = false) : type(type), path(path), date(time), updated(updated), exists(true){}
 
     QString path;
     QDateTime date;
-    bool exists = false;
     bool updated = false;
+    bool exists = false;
 };
 
 struct Folder
@@ -119,7 +119,7 @@ private Q_SLOTS:
     void quit();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void switchSyncingMode(SyncingMode mode);
-    void update();
+    void sync();
     void updateStatus();
     void updateNextSyncingTime();
     bool updateAppIfNeeded();
@@ -170,8 +170,8 @@ private:
     bool shouldQuit = false;
     int numOfFilesToSync = 0;
 
+    QTimer syncTimer;
     QTimer updateTimer;
-    QTimer respondTimer;
 };
 
 #endif // MAINWINDOW_H
