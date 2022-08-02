@@ -132,6 +132,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(&syncTimer, SIGNAL(timeout()), this, SLOT(sync()));
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showProfileContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showFolderContextMenu(QPoint)));
+    connect(qApp, &QGuiApplication::screenRemoved, this, &MainWindow::moveToPrimaryScreen);
 
     bool notifications = settings.value("Notifications", true).toBool();
     paused = true;
@@ -193,6 +194,18 @@ MainWindow::~MainWindow()
     }
 
     delete ui;
+}
+
+/*
+===================
+MainWindow::closeEvent
+===================
+*/
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    // Prevents the window from closing as moveToPrimaryScreen slot is not called if the window is closed.
+    hide();
+    event->ignore();
 }
 
 /*
@@ -994,6 +1007,22 @@ void MainWindow::showFolderContextMenu(const QPoint &pos) const
     }
 
     menu.exec(ui->folderListView->mapToGlobal(pos));
+}
+
+/*
+===================
+MainWindow::moveToPrimaryScreen
+===================
+*/
+void MainWindow::moveToPrimaryScreen()
+{
+    // Checks whether the app is out of screen or not
+    if (!QGuiApplication::primaryScreen()->virtualSiblingAt(pos()))
+    {
+        int x = QGuiApplication::primaryScreen()->size().width() / 2 - size().width() / 2;
+        int y = QGuiApplication::primaryScreen()->size().height() / 2 - size().height() / 2;
+        move(x, y);
+    }
 }
 
 /*

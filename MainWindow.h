@@ -105,6 +105,10 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+protected:
+
+    void closeEvent(QCloseEvent *event) override;
+
 private Q_SLOTS:
 
     void addProfile();
@@ -125,6 +129,7 @@ private Q_SLOTS:
     bool updateAppIfNeeded();
     void showProfileContextMenu(const QPoint &pos) const;
     void showFolderContextMenu(const QPoint &pos) const;
+    void moveToPrimaryScreen();
 
 private:
 
