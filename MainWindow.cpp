@@ -829,10 +829,10 @@ void MainWindow::updateStatus()
     }
 
     // Pause status
-    paused = true;
+    paused = profiles.isEmpty() ? false : true;
 
     for (auto &profile : profiles)
-        if (!profile.paused)
+        if (!profile.paused || profile.toBeRemoved)
             paused = false;
 
     // Tray & Icon
