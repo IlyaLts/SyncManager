@@ -130,8 +130,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
     connect(&syncTimer, SIGNAL(timeout()), this, SLOT(sync()));
-    connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showProfileContextMenu(QPoint)));
-    connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showFolderContextMenu(QPoint)));
+    connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
+    connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(qApp, &QGuiApplication::screenRemoved, this, &MainWindow::moveToPrimaryScreen);
 
     bool notifications = settings.value("Notifications", true).toBool();
@@ -386,9 +386,6 @@ MainWindow::syncNow
 */
 void MainWindow::syncNow()
 {
-    // Unpause
-    if (paused && syncingMode == Automatic) pauseSyncing();
-
     syncNowTriggered = true;
     updateStatus();
     syncTimer.start(0);
@@ -911,7 +908,7 @@ void MainWindow::updateNextSyncingTime()
 
     int numOfActiveFiles = 0;
 
-    // Counts the current number of active files in not paused and existingx folders
+    // Counts the current number of active files in not paused and existing folders
     for (auto &profile : profiles)
     {
         if (profile.paused) continue;
@@ -955,58 +952,55 @@ bool MainWindow::updateAppIfNeeded()
 
 /*
 ===================
-MainWindow::showProfileContextMenu
+MainWindow::showContextMenu
 ===================
 */
-void MainWindow::showProfileContextMenu(const QPoint &pos) const
+void MainWindow::showContextMenu(const QPoint &pos) const
 {
     QMenu menu;
 
-    menu.addAction(iconAdd, "&Add a new profile", this, SLOT(addProfile()));
-
-    if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
+    // Profiles
+    if (ui->syncProfilesView->hasFocus())
     {
-        if (syncingMode == Automatic)
+        menu.addAction(iconAdd, "&Add a new profile", this, SLOT(addProfile()));
+
+        if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
         {
-            if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].paused)
-                menu.addAction(iconResume, "&Resume syncing profile", this, SLOT(pauseSelected()));
-            else
-                menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
+            if (syncingMode == Automatic)
+            {
+                if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].paused)
+                    menu.addAction(iconResume, "&Resume syncing profile", this, SLOT(pauseSelected()));
+                else
+                    menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
+            }
+
+            menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));
         }
 
-        menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));
+        menu.exec(ui->syncProfilesView->mapToGlobal(pos));
     }
-
-    menu.exec(ui->syncProfilesView->mapToGlobal(pos));
-}
-
-/*
-===================
-MainWindow::showFolderContextMenu
-===================
-*/
-void MainWindow::showFolderContextMenu(const QPoint &pos) const
-{
-    if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty()) return;
-
-    QMenu menu;
-
-    menu.addAction(iconAdd, "&Add a new folder", this, SLOT(addFolder()));
-
-    if (!ui->folderListView->selectionModel()->selectedIndexes().isEmpty())
+    // Folders
+    else if (ui->folderListView->hasFocus())
     {
-        if (syncingMode == Automatic)
+        if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty()) return;
+
+        menu.addAction(iconAdd, "&Add a new folder", this, SLOT(addFolder()));
+
+        if (!ui->folderListView->selectionModel()->selectedIndexes().isEmpty())
         {
-            if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].folders[ui->folderListView->selectionModel()->selectedIndexes()[0].row()].paused)
-                menu.addAction(iconResume, "&Resume syncing folder", this, SLOT(pauseSelected()));
-            else
-                menu.addAction(iconPause, "&Pause syncing folder", this, SLOT(pauseSelected()));
+            if (syncingMode == Automatic)
+            {
+                if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].folders[ui->folderListView->selectionModel()->selectedIndexes()[0].row()].paused)
+                    menu.addAction(iconResume, "&Resume syncing folder", this, SLOT(pauseSelected()));
+                else
+                    menu.addAction(iconPause, "&Pause syncing folder", this, SLOT(pauseSelected()));
+            }
+
+            menu.addAction(iconRemove, "&Remove folder", this, SLOT(removeFolder()));
         }
 
-        menu.addAction(iconRemove, "&Remove folder", this, SLOT(removeFolder()));
+        menu.exec(ui->folderListView->mapToGlobal(pos));
     }
-
-    menu.exec(ui->folderListView->mapToGlobal(pos));
 }
 
 /*
@@ -1019,8 +1013,8 @@ void MainWindow::moveToPrimaryScreen()
     // Checks whether the app is out of screen or not
     if (!QGuiApplication::primaryScreen()->virtualSiblingAt(pos()))
     {
-        int x = QGuiApplication::primaryScreen()->size().width() / 2 - size().width() / 2;
-        int y = QGuiApplication::primaryScreen()->size().height() / 2 - size().height() / 2;
+        int x = (QGuiApplication::primaryScreen()->size().width() - size().width()) / 2;
+        int y = (QGuiApplication::primaryScreen()->size().height() - size().height()) / 2;
         move(x, y);
     }
 }
@@ -1084,6 +1078,8 @@ void MainWindow::GetListOfFiles(Folder &folder)
                             folder.files[hash].updated = true;
                         else
                             break;
+
+                        if (updateAppIfNeeded()) return;
                     }
                 }
             }
