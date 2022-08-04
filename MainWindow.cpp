@@ -528,9 +528,8 @@ void MainWindow::sync()
 
     busy = true;
     syncing = false;
-
     syncNowAction->setEnabled(false);
-    syncingModeMenu->setEnabled(false);
+    for (auto &action : syncingModeMenu->actions()) action->setEnabled(false);
 
 #ifdef DEBUG_TIMESTAMP
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -729,7 +728,7 @@ void MainWindow::sync()
 
     busy = false;
     syncNowAction->setEnabled(true);
-    syncingModeMenu->setEnabled(true);
+    for (auto &action : syncingModeMenu->actions()) action->setEnabled(true);
     updateStatus();
     updateNextSyncingTime();
 
@@ -1174,7 +1173,6 @@ void MainWindow::checkForChanges(Profile &profile)
                 if (file.exists && file.type != File::dir && file.date < otherFileIt.value().date)
 #endif
                 {
-                    qDebug("1");
                     QString from(otherFolderIt->path);
                     from.append(otherFileIt.value().path);
 
@@ -1192,7 +1190,6 @@ void MainWindow::checkForChanges(Profile &profile)
                           (file.type == File::dir && !file.exists && otherFileIt.value().updated)) &&
                          !otherFolderIt->filesToRemove.contains(QString(otherFolderIt->path).append(otherFileIt.value().path)))
                 {
-                    qDebug("2");
                     if (otherFileIt.value().type == File::dir)
                     {
                         folderIt->foldersToAdd.insert(otherFileIt.value().path);
