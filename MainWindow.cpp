@@ -736,7 +736,7 @@ void MainWindow::sync()
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%lld ms - Sync complete time.", ml.count());
+    qDebug("%ld ms - Sync complete time.", ml.count());
 #endif
 }
 
@@ -1083,6 +1083,12 @@ void MainWindow::GetListOfFiles(Folder &folder)
                     }
                 }
             }
+#ifdef Q_OS_LINUX
+            else if (type == File::file && file.date < fileDate)
+            {
+                updated = true;
+            }
+#endif
 
             // Marks a file/folder as updated if its parent folder was updated
             if (parentPath.length() > folder.path.length() && folder.files.value(qHash(parentPath.remove(0, folder.path.size()))).updated)
@@ -1128,7 +1134,7 @@ void MainWindow::GetListOfFiles(Folder &folder)
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%lld ms - Found %d files at %s)", ml.count(), totalNumOfFiles, qUtf8Printable(folder.path));
+    qDebug("%ld ms - Found %d files at %s)", ml.count(), totalNumOfFiles, qUtf8Printable(folder.path));
 #endif
 }
 
@@ -1162,8 +1168,13 @@ void MainWindow::checkForChanges(Profile &profile)
                 const File &file = folderIt->files.value(otherFileIt.key());
 
                 // Adds a newer version of a file from other backup folders if exists
+#ifdef Q_OS_LINUX
+                if (file.exists && file.type != File::dir && file.date < otherFileIt.value().date && otherFileIt.value().updated)
+#else
                 if (file.exists && file.type != File::dir && file.date < otherFileIt.value().date)
+#endif
                 {
+                    qDebug("1");
                     QString from(otherFolderIt->path);
                     from.append(otherFileIt.value().path);
 
@@ -1173,10 +1184,15 @@ void MainWindow::checkForChanges(Profile &profile)
                 // Files use their last modification date for figuring out which one is newer, and folders use the updated flag instead as
                 // folders can contain different last modification date based on changes of its directories.
                 else if ((!file.type ||
+#ifdef Q_OS_LINUX
+                          (file.type == File::file && !file.exists && (file.date < otherFileIt.value().date && otherFileIt.value().updated)) ||
+#else
                           (file.type == File::file && !file.exists && (file.date < otherFileIt.value().date || otherFileIt.value().updated)) ||
+#endif
                           (file.type == File::dir && !file.exists && otherFileIt.value().updated)) &&
                          !otherFolderIt->filesToRemove.contains(QString(otherFolderIt->path).append(otherFileIt.value().path)))
                 {
+                    qDebug("2");
                     if (otherFileIt.value().type == File::dir)
                     {
                         folderIt->foldersToAdd.insert(otherFileIt.value().path);
@@ -1198,7 +1214,7 @@ void MainWindow::checkForChanges(Profile &profile)
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%lld ms - Checked for added/modified files and folders", ml.count());
+    qDebug("%ld ms - Checked for added/modified files and folders", ml.count());
     startTime = std::chrono::high_resolution_clock::now();
 #endif
 
@@ -1233,6 +1249,6 @@ void MainWindow::checkForChanges(Profile &profile)
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime2(std::chrono::high_resolution_clock::now() - startTime);
     ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime2.time_since_epoch());
-    qDebug("%lld ms - Checked for removed files", ml.count());
+    qDebug("%ld ms - Checked for removed files", ml.count());
 #endif
 }
