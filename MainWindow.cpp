@@ -474,10 +474,17 @@ void MainWindow::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
     {
     case QSystemTrayIcon::Trigger:
     case QSystemTrayIcon::DoubleClick:
+
+        // Fixes wrong window position after hiding the window on Linux
+#ifdef Q_OS_LINUX
+        if (isHidden()) move(pos().x() + (frameSize().width() - size().width()), pos().y() + (frameSize().height() - size().height()));
+#endif
+
         setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
         show();
         raise();
         activateWindow();
+
         break;
     default:
         break;
