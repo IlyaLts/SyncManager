@@ -2,7 +2,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+CONFIG += c++20
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -37,8 +37,6 @@ RESOURCES += \
     SyncManager.qrc
 
 RC_FILE = Resources.rc
-
-LIBS += --std=c++17
 
 # qml_debug flag for debug and profile build configurations
 CONFIG(qml_debug): DEFINES += DEBUG_TIMESTAMP

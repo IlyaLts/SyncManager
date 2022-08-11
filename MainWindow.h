@@ -24,6 +24,7 @@
 #include <QSet>
 #include <QMap>
 #include <QHash>
+#include <QQueue>
 #include <QTimer>
 #include <QDateTime>
 
@@ -125,7 +126,7 @@ private Q_SLOTS:
     void quit();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void switchSyncingMode(SyncingMode mode);
-    void sync();
+    void sync(int profileNumber = -1);
     void updateStatus();
     void updateNextSyncingTime();
     bool updateAppIfNeeded();
@@ -145,6 +146,7 @@ private:
     DecoratedStringListModel *folderModel;
     QStringList profileNames;
     QList<QStringList> foldersPath;
+    QQueue<int> queue;
 
     QIcon iconAdd;
     QIcon iconDone;

@@ -475,7 +475,7 @@ void MainWindow::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
     case QSystemTrayIcon::Trigger:
     case QSystemTrayIcon::DoubleClick:
 
-        // Fixes wrong window position after hiding the window on Linux
+        // Fixes wrong window position after hiding the window
 #ifdef Q_OS_LINUX
         if (isHidden()) move(pos().x() + (frameSize().width() - size().width()), pos().y() + (frameSize().height() - size().height()));
 #endif
@@ -529,8 +529,11 @@ void MainWindow::switchSyncingMode(SyncingMode mode)
 MainWindow::sync
 ===================
 */
-void MainWindow::sync()
+void MainWindow::sync(int profileNumber)
 {
+    if (profileNumber >= 0 && !queue.contains(profileNumber))
+        queue.enqueue(profileNumber);
+
     if (busy) return;
 
     busy = true;
@@ -548,8 +551,11 @@ void MainWindow::sync()
     if (!paused || syncNowTriggered)
     {
         // Checks for changes
-        for (auto &profile : profiles)
+        for (int i = -1; auto &profile : profiles)
         {
+            i++;
+            if (profileNumber >= 0 && profileNumber != i) continue;
+
             int activeFolders = 0;
 
             for (auto &folder : profile.folders)
@@ -733,16 +739,19 @@ void MainWindow::sync()
         profileIt++;
     }
 
+    if (!queue.empty()) queue.dequeue();
     busy = false;
     syncNowAction->setEnabled(true);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(true);
     updateStatus();
     updateNextSyncingTime();
 
+    if (!queue.empty()) sync(queue.head());
+
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%ld ms - Sync complete time.", ml.count());
+    qDebug("%lld ms - Sync complete time.", ml.count());
 #endif
 }
 
@@ -785,7 +794,7 @@ void MainWindow::updateStatus()
         {
             profileModel->setData(index, iconPause, Qt::DecorationRole);
         }
-        else if (profiles[i].syncing || syncNowTriggered)
+        else if (profiles[i].syncing || syncNowTriggered || queue.contains(i))
         {
             profileModel->setData(index, iconSync, Qt::DecorationRole);
         }
@@ -822,7 +831,7 @@ void MainWindow::updateStatus()
 
             if (profiles[row].folders[i].paused && syncingMode == Automatic)
                 folderModel->setData(index, iconPause, Qt::DecorationRole);
-            else if (profiles[row].folders[i].syncing || syncNowTriggered)
+            else if (profiles[row].folders[i].syncing || syncNowTriggered || queue.contains(row))
                 folderModel->setData(index, iconSync, Qt::DecorationRole);
             else if (!profiles[row].folders[i].exists)
                 folderModel->setData(index, iconRemove, Qt::DecorationRole);
@@ -851,7 +860,7 @@ void MainWindow::updateStatus()
     }
     else
     {
-        if (syncing || syncNowTriggered)
+        if (syncing || syncNowTriggered || !queue.empty())
         {
             trayIcon->setIcon(trayIconSync);
             setWindowIcon(trayIconSync);
@@ -972,12 +981,18 @@ void MainWindow::showContextMenu(const QPoint &pos) const
 
         if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
         {
+            int row = ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row();
+
             if (syncingMode == Automatic)
             {
-                if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].paused)
+                if (profiles[row].paused)
                     menu.addAction(iconResume, "&Resume syncing profile", this, SLOT(pauseSelected()));
                 else
                     menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
+            }
+            else if (syncingMode == Manual)
+            {
+                menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(queue.contains(row));
             }
 
             menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));
@@ -1140,7 +1155,7 @@ void MainWindow::GetListOfFiles(Folder &folder)
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%ld ms - Found %d files at %s)", ml.count(), totalNumOfFiles, qUtf8Printable(folder.path));
+    qDebug("%lld ms - Found %d files at %s)", ml.count(), totalNumOfFiles, qUtf8Printable(folder.path));
 #endif
 }
 
@@ -1218,7 +1233,7 @@ void MainWindow::checkForChanges(Profile &profile)
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%ld ms - Checked for added/modified files and folders", ml.count());
+    qDebug("%lld ms - Checked for added/modified files and folders", ml.count());
     startTime = std::chrono::high_resolution_clock::now();
 #endif
 
@@ -1253,6 +1268,6 @@ void MainWindow::checkForChanges(Profile &profile)
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime2(std::chrono::high_resolution_clock::now() - startTime);
     ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime2.time_since_epoch());
-    qDebug("%ld ms - Checked for removed files", ml.count());
+    qDebug("%lld ms - Checked for removed files", ml.count());
 #endif
 }
