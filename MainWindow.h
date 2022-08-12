@@ -131,7 +131,6 @@ private Q_SLOTS:
     void updateNextSyncingTime();
     bool updateAppIfNeeded();
     void showContextMenu(const QPoint &pos) const;
-    void moveToPrimaryScreen();
 
 private:
 
