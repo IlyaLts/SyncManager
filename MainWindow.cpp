@@ -21,6 +21,7 @@
 #include <QSettings>
 #include <QCloseEvent>
 #include <QFileDialog>
+#include <QMessageBox>
 #include <QStandardPaths>
 #include <QSystemTrayIcon>
 #include <QMenu>
@@ -458,8 +459,11 @@ MainWindow::quit
 */
 void MainWindow::quit()
 {
-    shouldQuit = true;
-    qApp->quit();
+    if (QMessageBox::question(nullptr, QString("Quit"), QString("Are you sure you want to quit?"), QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No), QMessageBox::No) == QMessageBox::Yes)
+    {
+        shouldQuit = true;
+        qApp->quit();
+    }
 }
 
 /*
