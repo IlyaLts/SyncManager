@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->centralWidget->setLayout(ui->mainLayout);
     setWindowTitle(QString("Sync Manager"));
     setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
-    resize(QSize(settings.value("Width", 800).toInt(), settings.value("Height", 400).toInt()));
+    resize(QSize(settings.value("Width", 500).toInt(), settings.value("Height", 300).toInt()));
     setWindowState(settings.value("Fullscreen", false).toBool() ? Qt::WindowMaximized : Qt::WindowActive);
 
     QList<int> hSizes;
@@ -133,7 +133,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
-    bool notifications = settings.value("Notifications", true).toBool();
+    bool notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     paused = true;
 
     // Loads saved pause states for profiles/folers
@@ -202,7 +202,7 @@ MainWindow::closeEvent
 */
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    // Hides the window instead of closing as it can appear out of the screen after disconnecting a screen.
+    // Hides the window instead of closing as it can appear out of the screen after disconnecting a display.
     hide();
     event->ignore();
 }
@@ -566,7 +566,7 @@ void MainWindow::sync(int profileNumber)
             if ((profile.paused && syncingMode == Automatic) || activeFolders < 2) continue;
 
             for (auto &folder : profile.folders)
-                GetListOfFiles(folder);
+                getListOfFiles(folder);
 
             checkForChanges(profile);
 
@@ -738,7 +738,7 @@ void MainWindow::sync(int profileNumber)
         profileIt++;
     }
 
-    if (!queue.empty()) queue.dequeue();
+    if (!queue.empty() && profileNumber >= 0) queue.dequeue();
     busy = false;
     syncNowAction->setEnabled(true);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(true);
@@ -1025,10 +1025,10 @@ void MainWindow::showContextMenu(const QPoint &pos) const
 
 /*
 ===================
-MainWindow::GetListOfFiles
+MainWindow::getListOfFiles
 ===================
 */
-void MainWindow::GetListOfFiles(Folder &folder)
+void MainWindow::getListOfFiles(Folder &folder)
 {
     if ((folder.paused && syncingMode == Automatic) || !folder.exists) return;
 

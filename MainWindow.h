@@ -134,18 +134,18 @@ private Q_SLOTS:
 
 private:
 
-    void GetListOfFiles(Folder &folder);
+    void getListOfFiles(Folder &folder);
     void checkForChanges(Profile &profile);
 
     Ui::MainWindow *ui;
 
     QList<Profile> profiles;
+    QQueue<int> queue;
 
     DecoratedStringListModel *profileModel;
     DecoratedStringListModel *folderModel;
     QStringList profileNames;
     QList<QStringList> foldersPath;
-    QQueue<int> queue;
 
     QIcon iconAdd;
     QIcon iconDone;

@@ -32,6 +32,7 @@ int main(int argc, char *argv[])
     Q_INIT_RESOURCE(SyncManager);
 
     QApplication app(argc, argv);
+    MainWindow window;
     QSharedMemory sharedMemory("SyncManagerLaunched");
 
     // Prevention of multiple instances
@@ -48,10 +49,15 @@ int main(int argc, char *argv[])
         QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
     }
 
-    MainWindow window;
-
-    if (!QCoreApplication::arguments().contains("minimize", Qt::CaseInsensitive)) window.show();
-    if (QSystemTrayIcon::isSystemTrayAvailable()) QApplication::setQuitOnLastWindowClosed(false);
+    if (QSystemTrayIcon::isSystemTrayAvailable())
+    {
+        if (!QCoreApplication::arguments().contains("minimize", Qt::CaseInsensitive)) window.show();
+        QApplication::setQuitOnLastWindowClosed(false);
+    }
+    else
+    {
+        window.show();
+    }
 
     return app.exec();
 }
