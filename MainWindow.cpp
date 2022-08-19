@@ -136,7 +136,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(&syncTimer, SIGNAL(timeout()), this, SLOT(sync()));
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
-    connect(&animSync, &QMovie::frameChanged, this, [&, this](){ iconSync.addPixmap(animSync.currentPixmap()); });
 
     bool notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     paused = true;
@@ -803,7 +802,7 @@ void MainWindow::updateStatus()
         }
         else if (profiles[i].syncing || syncNowTriggered || queue.contains(i))
         {
-            profileModel->setData(index, iconSync, Qt::DecorationRole);
+            profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
         }
         else
         {
@@ -839,7 +838,7 @@ void MainWindow::updateStatus()
             if (profiles[row].folders[i].paused && syncingMode == Automatic)
                 folderModel->setData(index, iconPause, Qt::DecorationRole);
             else if (profiles[row].folders[i].syncing || syncNowTriggered || queue.contains(row))
-                folderModel->setData(index, iconSync, Qt::DecorationRole);
+                folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
             else if (!profiles[row].folders[i].exists)
                 folderModel->setData(index, iconRemove, Qt::DecorationRole);
             else
