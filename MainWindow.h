@@ -27,6 +27,7 @@
 #include <QQueue>
 #include <QTimer>
 #include <QDateTime>
+#include <QMovie>
 
 #define SETTINGS_FILENAME "Settings.ini"
 #define PROFILES_FILENAME "Profiles.ini"
@@ -159,6 +160,8 @@ private:
     QIcon trayIconPause;
     QIcon trayIconSync;
     QIcon trayIconWarning;
+
+    QMovie animSync;
 
     QAction *syncNowAction;
     QAction *pauseSyncingAction;

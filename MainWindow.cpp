@@ -78,6 +78,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     trayIconSync.addFile(":/Images/TrayIconSync.png");
     trayIconWarning.addFile(":/Images/TrayIconWarning.png");
 
+    animSync.setFileName(":/Images/AnimSync.gif");
+    animSync.start();
+
     syncNowAction = new QAction(iconSync, "&Sync Now", this);
     pauseSyncingAction = new QAction(iconPause, "&Pause Syncing", this);
     automaticAction = new QAction("&Automatic", this);
@@ -133,6 +136,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(&syncTimer, SIGNAL(timeout()), this, SLOT(sync()));
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
+    connect(&animSync, &QMovie::frameChanged, this, [&, this](){ iconSync.addPixmap(animSync.currentPixmap()); });
 
     bool notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     paused = true;

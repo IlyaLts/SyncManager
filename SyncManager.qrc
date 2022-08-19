@@ -13,5 +13,6 @@
         <file>Images/IconWarning.png</file>
         <file>Images/IconAdd.png</file>
         <file>Images/IconResume.png</file>
+        <file>Images/AnimSync.gif</file>
     </qresource>
 </RCC>
