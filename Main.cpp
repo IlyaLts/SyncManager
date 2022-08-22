@@ -32,7 +32,6 @@ int main(int argc, char *argv[])
     Q_INIT_RESOURCE(SyncManager);
 
     QApplication app(argc, argv);
-    MainWindow window;
     QSharedMemory sharedMemory("SyncManagerLaunched");
 
     // Prevention of multiple instances
@@ -42,6 +41,8 @@ int main(int argc, char *argv[])
         app.exit(-1);
         return -1;
     }
+
+    MainWindow window;
 
     if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
     {
