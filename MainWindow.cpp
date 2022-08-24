@@ -28,6 +28,7 @@
 #include <QDirIterator>
 #include <QTimer>
 #include <QStack>
+#include <QtConcurrent/QtConcurrent>
 
 #ifdef DEBUG_TIMESTAMP
 #include <chrono>
@@ -672,7 +673,10 @@ void MainWindow::sync(int profileNumber)
                         if (folder.files.value(fileHash).exists)
                             QFile::remove(filePath);
 
-                        if (QFile::copy(it.value(), filePath))
+                        QFuture<bool> future = QtConcurrent::run([&](){ return QFile::copy(it.value(), filePath); });
+                        while (!future.isFinished()) updateAppIfNeeded();
+
+                        if (future.result())
                         {
                             folder.files.insert(fileHash, File(it.key(), File::file, QFileInfo(filePath).lastModified()));
                             it = folder.filesToAdd.erase(static_cast<QMap<QString, QString>::const_iterator>(it));
