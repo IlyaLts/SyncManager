@@ -40,6 +40,20 @@
 
 /*
 ===================
+hash64
+===================
+*/
+quint64 hash64(const QString &str)
+{
+    QByteArray hash = QCryptographicHash::hash(str.toUtf8(), QCryptographicHash::Md5);
+    QDataStream stream(hash);
+    quint64 a, b;
+    stream >> a >> b;
+    return a ^ b;
+}
+
+/*
+===================
 MainWindow::MainWindow
 ===================
 */
@@ -621,7 +635,7 @@ void MainWindow::sync(int profileNumber)
                             QDir().mkdir(createFolders.top());
                             QString shortPath(createFolders.top());
                             shortPath.remove(0, folder.path.size());
-                            folder.files.insert(qHash(shortPath), File(shortPath, File::dir, QFileInfo(createFolders.top()).lastModified()));
+                            folder.files.insert(hash64(shortPath), File(shortPath, File::dir, QFileInfo(createFolders.top()).lastModified()));
                             folder.foldersToAdd.remove(createFolders.top());
                             foldersToUpdate.insert(createFolders.top());
                             createFolders.pop();
@@ -633,7 +647,7 @@ void MainWindow::sync(int profileNumber)
                     {
                         QString folderPath(folder.path);
                         folderPath.append(*it);
-                        size_t fileHash = qHash(*it);
+                        quint64 fileHash = hash64(*it);
 
                         createParentFolders(QDir::cleanPath(folderPath));
 
@@ -665,7 +679,7 @@ void MainWindow::sync(int profileNumber)
 
                         QString filePath(folder.path);
                         filePath.append(it.key());
-                        size_t fileHash = qHash(it.key());
+                        quint64 fileHash = hash64(it.key());
 
                         createParentFolders(QDir::cleanPath(filePath));
 
@@ -697,7 +711,7 @@ void MainWindow::sync(int profileNumber)
                     {
                         QString filename(folder.path);
                         filename.append(*it);
-                        size_t fileHash = qHash(*it);
+                        quint64 fileHash = hash64(*it);
 
                         QString path = QFileInfo(filename).path();
 
@@ -719,7 +733,7 @@ void MainWindow::sync(int profileNumber)
                     // Updates parent folders modified date as adding/removing files and folders change their modified date
                     for (auto &folderPath : foldersToUpdate)
                     {
-                        size_t folderHash = qHash(QString(folderPath).remove(0, folder.path.size()));
+                        quint64 folderHash = hash64(QString(folderPath).remove(0, folder.path.size()));
                         if (folder.files.contains(folderHash)) folder.files[folderHash].date = QFileInfo(folderPath).lastModified();
                     }
                 }
@@ -1066,7 +1080,7 @@ void MainWindow::getListOfFiles(Folder &folder)
         QString fileName(dir.fileInfo().filePath());
         fileName.remove(0, folder.path.size());
         File::Type type = dir.fileInfo().isDir() ? File::dir : File::file;
-        size_t fileHash = qHash(fileName);
+        quint64 fileHash = hash64(fileName);
 
         if (folder.files.contains(fileHash))
         {
@@ -1087,7 +1101,7 @@ void MainWindow::getListOfFiles(Folder &folder)
 
                     while (folderPath.remove(folderPath.lastIndexOf("/"), 999999).length() > folder.path.length())
                     {
-                        size_t hash = qHash(QString(folderPath).remove(0, folder.path.size()));
+                        quint64 hash = hash64(QString(folderPath).remove(0, folder.path.size()));
 
                         if (!folder.files.value(hash).updated)
                             folder.files[hash].updated = true;
@@ -1106,7 +1120,7 @@ void MainWindow::getListOfFiles(Folder &folder)
 #endif
 
             // Marks a file/folder as updated if its parent folder was updated
-            if (parentPath.length() > folder.path.length() && folder.files.value(qHash(parentPath.remove(0, folder.path.size()))).updated)
+            if (parentPath.length() > folder.path.length() && folder.files.value(hash64(parentPath.remove(0, folder.path.size()))).updated)
                 updated = true;
 
             file.date = fileDate;
@@ -1134,7 +1148,7 @@ void MainWindow::getListOfFiles(Folder &folder)
         filePath.replace("\\", "/");
 
         File::Type type = std::filesystem::is_directory(dir.path()) ? File::dir : File::file;
-        size_t fileHash = qHash(filePath);
+        quint64 fileHash = myhash(filePath);
 
         folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)); // FIX: date and updated flag
 
@@ -1176,7 +1190,7 @@ void MainWindow::checkForChanges(Profile &profile)
             if (folderIt == otherFolderIt || !otherFolderIt->exists) continue;
             if (folderIt->paused && syncingMode == Automatic) break;
 
-            for (QHash<uint, File>::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
+            for (QHash<quint64, File>::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
             {
                 if (otherFolderIt->paused && syncingMode == Automatic) break;
 
@@ -1234,7 +1248,7 @@ void MainWindow::checkForChanges(Profile &profile)
     // Checks for removed files and folders
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        for (QHash<uint, File>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
+        for (QHash<quint64, File>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
         {
             if (folderIt->paused && syncingMode == Automatic) break;
 
@@ -1248,7 +1262,7 @@ void MainWindow::checkForChanges(Profile &profile)
                     removeIt->filesToRemove.insert(fileIt.value().path);
                 }
 
-                fileIt = folderIt->files.erase(static_cast<QHash<uint, File>::const_iterator>(fileIt));
+                fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
             }
             else
             {

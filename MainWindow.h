@@ -67,7 +67,7 @@ struct File
 struct Folder
 {
     QString path;
-    QHash<uint, File> files;
+    QHash<quint64, File> files;
     QSet<QString> foldersToAdd;
     QMap<QString, QString> filesToAdd;
     QSet<QString> filesToRemove;
