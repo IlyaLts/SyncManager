@@ -21,6 +21,7 @@
 #include <QStandardPaths>
 #include <QSharedMemory>
 #include <QMessageBox>
+#include <QFile>
 
 /*
 ===================
@@ -44,6 +45,12 @@ int main(int argc, char *argv[])
 
     MainWindow window;
 
+    if (QCoreApplication::arguments().contains("launchOnStartup", Qt::CaseInsensitive))
+    {
+#ifdef Q_OS_WIN
+        QFile::link(QCoreApplication::applicationFilePath(), QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk");
+#endif
+    }
     if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
     {
         QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat).clear();
