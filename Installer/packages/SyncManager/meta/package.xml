@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>Sync Manager</DisplayName>
+    <Description>Files/Folders Synchronization Manager</Description>
+    <Version>1.0</Version>
+    <ReleaseDate>2023-01-01</ReleaseDate>
+	<Checkable>false</Checkable>
+	<ForcedInstallation>true</ForcedInstallation>
+	<ForcedUpdate>true</ForcedUpdate>
+	<Licenses>
+        <License name="GNU GENERAL PUBLIC LICENSE Version 3" file="LICENSE.txt"/>
+    </Licenses>
+    <Script>InstallScript.qs</Script>
+	<UserInterfaces>
+        <UserInterface>TargetDirectory.ui</UserInterface>
+    </UserInterfaces>
+	<Operations>
+        <Operation name="CreateShortcut">
+            <Argument>@TargetDir@/SyncManager.exe</Argument>
+            <Argument>@UserStartMenuProgramsPath@/@StartMenuDir@/Sync Manager.lnk</Argument>
+        </Operation>
+        <Operation name="CreateShortcut">
+            <Argument>@TargetDir@/maintenancetool.exe</Argument>
+            <Argument>@UserStartMenuProgramsPath@/@StartMenuDir@/Maintenance Tool.lnk</Argument>
+        </Operation>
+    </Operations>
+</Package>
