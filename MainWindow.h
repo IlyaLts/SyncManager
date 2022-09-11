@@ -167,6 +167,7 @@ private:
     QAction *pauseSyncingAction;
     QAction *automaticAction;
     QAction *manualAction;
+    QAction *showAction;
     QAction *quitAction;
 
     QSystemTrayIcon *trayIcon;

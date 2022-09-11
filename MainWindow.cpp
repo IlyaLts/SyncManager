@@ -100,6 +100,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     pauseSyncingAction = new QAction(iconPause, "&Pause Syncing", this);
     automaticAction = new QAction("&Automatic", this);
     manualAction = new QAction("&Manual", this);
+    showAction = new QAction("&Show", this);
     quitAction = new QAction("&Quit", this);
 
     automaticAction->setCheckable(true);
@@ -114,6 +115,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     trayIconMenu->addAction(pauseSyncingAction);
     trayIconMenu->addSeparator();
     trayIconMenu->addMenu(syncingModeMenu);
+
+#ifdef Q_OS_LINUX
+    trayIconMenu->addAction(showAction);
+#endif
+
     trayIconMenu->addAction(quitAction);
 
     trayIcon = new QSystemTrayIcon(this);
@@ -146,6 +152,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
+    connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
     connect(&syncTimer, SIGNAL(timeout()), this, SLOT(sync()));
@@ -496,8 +503,11 @@ void MainWindow::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
     case QSystemTrayIcon::Trigger:
     case QSystemTrayIcon::DoubleClick:
 
-        // Fixes wrong window position after hiding the window
 #ifdef Q_OS_LINUX
+    // Double click doesn't work on GNOME
+    case QSystemTrayIcon::MiddleClick:
+
+        // Fixes wrong window position after hiding the window.
         if (isHidden()) move(pos().x() + (frameSize().width() - size().width()), pos().y() + (frameSize().height() - size().height()));
 #endif
 
