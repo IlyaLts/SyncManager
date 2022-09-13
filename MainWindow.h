@@ -66,6 +66,8 @@ struct File
 
 struct Folder
 {
+    Folder(bool paused) : paused(paused){}
+
     QString path;
     QHash<quint64, File> files;
     QSet<QString> foldersToAdd;
@@ -80,6 +82,8 @@ struct Folder
 
 struct Profile
 {
+    Profile(bool paused) : paused(paused){}
+
     QList<Folder> folders;
 
     bool syncing = false;

@@ -135,12 +135,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (auto &name : profileNames)
     {
-        profiles.append(Profile());
+        profiles.append(Profile(paused));
         foldersPath.append(profilesData.value(name).toStringList());
 
         for (auto &path : foldersPath.last())
         {
-            profiles.last().folders.append(Folder());
+            profiles.last().folders.append(Folder(paused));
             profiles.last().folders.last().path = path;
         }
     }
@@ -160,7 +160,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
     bool notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
-    paused = true;
+    paused = settings.value(QLatin1String("Paused"), false).toBool();;
 
     // Loads saved pause states for profiles/folers
     for (int i = 0; i < profiles.size(); i++)
@@ -209,6 +209,8 @@ MainWindow::~MainWindow()
     settings.setValue("Notifications", true);
     settings.setValue("SyncingMode", syncingMode);
 
+    settings.setValue("Paused", paused);
+
     // Saves profiles/folders pause states
     for (int i = 0; i < profiles.size(); i++)
     {
@@ -245,7 +247,7 @@ void MainWindow::addProfile()
     for (int i = 2; profileNames.contains(newName); i++)
         newName = QString("New profile (%1)").arg(i);
 
-    profiles.append(Profile());
+    profiles.append(Profile(paused));
     profileNames.append(newName);
     foldersPath.append(QStringList());
     profileModel->setStringList(profileNames);
@@ -362,7 +364,7 @@ void MainWindow::addFolder()
     if (!filename.isEmpty() && !foldersPath[row].contains(filename))
     {
         foldersPath[row].append(filename);
-        profiles[row].folders.append(Folder());
+        profiles[row].folders.append(Folder(paused));
         profiles[row].folders.last().path = filename;
 
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
@@ -878,11 +880,11 @@ void MainWindow::updateStatus()
     }
 
     // Pause status
-    paused = profiles.isEmpty() ? false : true;
-
     for (auto &profile : profiles)
-        if (!profile.paused || profile.toBeRemoved)
-            paused = false;
+    {
+        paused = profile.paused;
+        if (!paused) break;
+    }
 
     // Tray & Icon
     if (paused && syncingMode == Automatic)
