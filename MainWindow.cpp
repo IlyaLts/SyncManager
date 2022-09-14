@@ -159,7 +159,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
-    bool notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
+    notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     paused = settings.value(QLatin1String("Paused"), false).toBool();;
 
     // Loads saved pause states for profiles/folers
@@ -174,7 +174,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             if (!folder.paused) paused = false;
             folder.exists = QFileInfo::exists(folder.path);
 
-            if (notifications && !folder.exists)
+            if (notificationsEnabled && !folder.exists)
                 trayIcon->showMessage("Broken profile folder", QString("Couldn't find %1 folder").arg(folder.path), QSystemTrayIcon::Warning, 1000);
         }
     }
@@ -206,9 +206,8 @@ MainWindow::~MainWindow()
         settings.setValue("Height", size().height());
     }
 
-    settings.setValue("Notifications", true);
+    settings.setValue("Notifications", notificationsEnabled);
     settings.setValue("SyncingMode", syncingMode);
-
     settings.setValue("Paused", paused);
 
     // Saves profiles/folders pause states

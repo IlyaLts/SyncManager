@@ -183,6 +183,7 @@ private:
     bool syncing = false;
     bool syncNowTriggered = false;
     bool shouldQuit = false;
+    bool notificationsEnabled = true;
     int numOfFilesToSync = 0;
 
     QTimer syncTimer;
