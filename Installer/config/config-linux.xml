@@ -5,7 +5,7 @@
     <Title>Sync Manager Installer</Title>
 	<ProductUrl>https://github.com/IlyaLts/SyncManager</ProductUrl>
 	<WizardShowPageList>false</WizardShowPageList>
-	<RunProgram>@TargetDir@/SyncManager.exe</RunProgram>
+        <RunProgram>@TargetDir@/SyncManager</RunProgram>
 	<RunProgramArguments>minimize launchOnStartup</RunProgramArguments>
     <StartMenuDir>Sync Manager</StartMenuDir>
     <TargetDir>@ApplicationsDir@/SyncManager</TargetDir>

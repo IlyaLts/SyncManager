@@ -11,17 +11,7 @@
         <License name="GNU GENERAL PUBLIC LICENSE Version 3" file="LICENSE.txt"/>
     </Licenses>
     <Script>InstallScript.qs</Script>
-	<UserInterfaces>
+    <UserInterfaces>
         <UserInterface>TargetDirectory.ui</UserInterface>
     </UserInterfaces>
-	<Operations>
-        <Operation name="CreateShortcut">
-            <Argument>@TargetDir@/SyncManager.exe</Argument>
-            <Argument>@UserStartMenuProgramsPath@/@StartMenuDir@/Sync Manager.lnk</Argument>
-        </Operation>
-        <Operation name="CreateShortcut">
-            <Argument>@TargetDir@/maintenancetool.exe</Argument>
-            <Argument>@UserStartMenuProgramsPath@/@StartMenuDir@/Maintenance Tool.lnk</Argument>
-        </Operation>
-    </Operations>
 </Package>
