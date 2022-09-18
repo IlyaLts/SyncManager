@@ -49,6 +49,26 @@ int main(int argc, char *argv[])
     {
 #ifdef Q_OS_WIN
         QFile::link(QCoreApplication::applicationFilePath(), QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk");
+#elif defined(Q_OS_LINUX)
+        QString path(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop");
+
+        QFile::remove(path);
+        QFile shortcut(path);
+        if (shortcut.open(QIODevice::WriteOnly))
+        {
+            QTextStream stream(&shortcut);
+            stream << "[Desktop Entry]\n";
+            stream << "Type=Application\n";
+            stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager minimize\n";
+            stream << "Hidden=false\n";
+            stream << "NoDisplay=false\n";
+            stream << "Terminal=false\n";
+            stream << "Name=Sync Manager\n";
+            stream << "Icon=" + QCoreApplication::applicationDirPath() + "/SyncManager.png\n";
+        }
+
+        // Somehow doesn't work on Linux
+        //QFile::link(QCoreApplication::applicationFilePath(), path);
 #endif
     }
     if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
