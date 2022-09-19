@@ -6,7 +6,7 @@
 	<ProductUrl>https://github.com/IlyaLts/SyncManager</ProductUrl>
 	<WizardShowPageList>false</WizardShowPageList>
         <RunProgram>@TargetDir@/SyncManager</RunProgram>
-	<RunProgramArguments>minimize launchOnStartup</RunProgramArguments>
+	<RunProgramArguments>launchOnStartup</RunProgramArguments>
     <StartMenuDir>Sync Manager</StartMenuDir>
     <TargetDir>@ApplicationsDir@/SyncManager</TargetDir>
 	<ControlScript>ControlScript.qs</ControlScript>

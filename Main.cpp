@@ -43,6 +43,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
+    {
+        QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat).clear();
+        QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
+    }
+
     MainWindow window;
 
     if (QCoreApplication::arguments().contains("launchOnStartup", Qt::CaseInsensitive))
@@ -59,7 +65,7 @@ int main(int argc, char *argv[])
             QTextStream stream(&shortcut);
             stream << "[Desktop Entry]\n";
             stream << "Type=Application\n";
-            stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager minimize\n";
+            stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager\n";
             stream << "Hidden=false\n";
             stream << "NoDisplay=false\n";
             stream << "Terminal=false\n";
@@ -71,15 +77,11 @@ int main(int argc, char *argv[])
         //QFile::link(QCoreApplication::applicationFilePath(), path);
 #endif
     }
-    if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
-    {
-        QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat).clear();
-        QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
-    }
 
     if (QSystemTrayIcon::isSystemTrayAvailable())
     {
-        if (!QCoreApplication::arguments().contains("minimize", Qt::CaseInsensitive)) window.show();
+        QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+        if (!settings.value(QLatin1String("LaunchMinimized"), true).toBool()) window.show();
         QApplication::setQuitOnLastWindowClosed(false);
     }
     else

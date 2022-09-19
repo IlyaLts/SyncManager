@@ -42,7 +42,7 @@ Component.prototype.createOperations = function()
         else if (installer.value("os") == "x11")
         {
             component.addElevatedOperation("CreateDesktopEntry", "/usr/share/applications/SyncManager.desktop",
-                "Version=1.0\nType=Application\nName=Sync Manager\nTerminal=false\nExec=@TargetDir@/SyncManager minimize\nIcon=@TargetDir@/SyncManager.png\nCategories=Utilities");
+                "Version=1.0\nType=Application\nName=Sync Manager\nTerminal=false\nExec=@TargetDir@/SyncManager\nIcon=@TargetDir@/SyncManager.png\nCategories=Utilities");
 
             //component.addElevatedOperation("Copy", "/usr/share/applications/SyncManager.desktop", "@HomeDir@/Desktop/SyncManager.desktop");
         }
