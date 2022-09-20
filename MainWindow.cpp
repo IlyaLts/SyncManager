@@ -160,7 +160,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
     notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
-    paused = settings.value(QLatin1String("Paused"), false).toBool();;
+    paused = settings.value(QLatin1String("Paused"), false).toBool();
 
     // Loads saved pause states for profiles/folers
     for (int i = 0; i < profiles.size(); i++)
@@ -1123,12 +1123,10 @@ void MainWindow::getListOfFiles(Folder &folder)
                     }
                 }
             }
-#ifdef Q_OS_LINUX
-            else if (type == File::file && file.date < fileDate)
+            else if (type == File::file && file.date != fileDate)
             {
                 updated = true;
             }
-#endif
 
             // Marks a file/folder as updated if its parent folder was updated
             if (parentPath.length() > folder.path.length() && folder.files.value(hash64(parentPath.remove(0, folder.path.size()))).updated)
@@ -1158,8 +1156,8 @@ void MainWindow::getListOfFiles(Folder &folder)
         filePath.remove(0, folder.path.size());
         filePath.replace("\\", "/");
 
-        File::Type type = std::filesystem::is_directory(dir.path()) ? File::dir : File::file;
-        quint64 fileHash = myhash(filePath);
+        File::Type type = dir.is_directory() ? File::dir : File::file;
+        quint64 fileHash = hash64(filePath);
 
         folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)); // FIX: date and updated flag
 
@@ -1209,9 +1207,11 @@ void MainWindow::checkForChanges(Profile &profile)
 
                 // Adds a newer version of a file from other backup folders if exists
 #ifdef Q_OS_LINUX
-                if (file.exists && file.type != File::dir && file.date < otherFileIt.value().date && otherFileIt.value().updated)
+                if (file.exists && file.type != File::dir && file.date < otherFileIt.value().date && otherFileIt.value().updated))
 #else
-                if (file.exists && file.type != File::dir && file.date < otherFileIt.value().date)
+                if (file.exists && file.type == File::file && ((file.date < otherFileIt.value().date && ((!file.updated && !otherFileIt.value().updated) ||
+                                                                                                          (file.updated && otherFileIt.value().updated))) ||
+                                                               (file.date != otherFileIt.value().date && !file.updated && otherFileIt.value().updated)))
 #endif
                 {
                     QString from(otherFolderIt->path);
@@ -1224,12 +1224,12 @@ void MainWindow::checkForChanges(Profile &profile)
                 // folders can contain different last modification date based on changes of its directories.
                 else if ((!file.type ||
 #ifdef Q_OS_LINUX
-                          (file.type == File::file && !file.exists && (file.date < otherFileIt.value().date && otherFileIt.value().updated)) ||
+                        (file.type == File::file && !file.exists && (file.date < otherFileIt.value().date && otherFileIt.value().updated)) ||
 #else
-                          (file.type == File::file && !file.exists && (file.date < otherFileIt.value().date || otherFileIt.value().updated)) ||
+                        (file.type == File::file && !file.exists && (file.date < otherFileIt.value().date || otherFileIt.value().updated)) ||
 #endif
-                          (file.type == File::dir && !file.exists && otherFileIt.value().updated)) &&
-                         !otherFolderIt->filesToRemove.contains(QString(otherFolderIt->path).append(otherFileIt.value().path)))
+                        (file.type == File::dir && !file.exists && otherFileIt.value().updated)) &&
+                        !otherFolderIt->filesToRemove.contains(QString(otherFolderIt->path).append(otherFileIt.value().path)))
                 {
                     if (otherFileIt.value().type == File::dir)
                     {
