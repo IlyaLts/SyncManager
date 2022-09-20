@@ -1207,7 +1207,7 @@ void MainWindow::checkForChanges(Profile &profile)
 
                 // Adds a newer version of a file from other backup folders if exists
 #ifdef Q_OS_LINUX
-                if (file.exists && file.type != File::dir && file.date < otherFileIt.value().date && otherFileIt.value().updated))
+                if (file.exists && file.type != File::dir && file.date != otherFileIt.value().date && otherFileIt.value().updated)
 #else
                 if (file.exists && file.type == File::file && ((file.date < otherFileIt.value().date && ((!file.updated && !otherFileIt.value().updated) ||
                                                                                                           (file.updated && otherFileIt.value().updated))) ||
@@ -1224,7 +1224,7 @@ void MainWindow::checkForChanges(Profile &profile)
                 // folders can contain different last modification date based on changes of its directories.
                 else if ((!file.type ||
 #ifdef Q_OS_LINUX
-                        (file.type == File::file && !file.exists && (file.date < otherFileIt.value().date && otherFileIt.value().updated)) ||
+                        (file.type == File::file && !file.exists && (file.date != otherFileIt.value().date && otherFileIt.value().updated)) ||
 #else
                         (file.type == File::file && !file.exists && (file.date < otherFileIt.value().date || otherFileIt.value().updated)) ||
 #endif
