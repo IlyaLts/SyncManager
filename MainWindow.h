@@ -139,7 +139,7 @@ private Q_SLOTS:
 
 private:
 
-    void getListOfFiles(Folder &folder);
+    int getListOfFiles(Folder &folder);
     void checkForChanges(Profile &profile);
 
     Ui::MainWindow *ui;

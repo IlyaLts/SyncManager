@@ -598,8 +598,25 @@ void MainWindow::sync(int profileNumber)
 
             if ((profile.paused && syncingMode == Automatic) || activeFolders < 2) continue;
 
+#ifdef DEBUG_TIMESTAMP
+            qDebug("===== Started syncing %s =====", qUtf8Printable(ui->syncProfilesView->model()->index(i, 0).data().toString()));
+#endif
+
             for (auto &folder : profile.folders)
-                getListOfFiles(folder);
+            {
+#ifdef DEBUG_TIMESTAMP
+                auto startTime = std::chrono::high_resolution_clock::now();
+#endif
+
+                QFuture<int> future = QtConcurrent::run([&](){ return getListOfFiles(folder); });
+                while (!future.isFinished()) updateAppIfNeeded();
+
+#ifdef DEBUG_TIMESTAMP
+                std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
+                auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
+                qDebug("%lld ms - Found %d files in %s)", ml.count(), future.result(), qUtf8Printable(folder.path));
+#endif
+            }
 
             checkForChanges(profile);
 
@@ -616,6 +633,7 @@ void MainWindow::sync(int profileNumber)
         syncNowTriggered = false;
 
 #ifdef DEBUG_TIMESTAMP
+        qDebug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
         qDebug("Folders to add: %d, Files to add: %d, Files/Folders to remove: %d", numOfFoldersToAdd, numOfFilesToAdd, numOfFilesToRemove);
 #endif
 
@@ -786,7 +804,7 @@ void MainWindow::sync(int profileNumber)
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%lld ms - Sync complete time.", ml.count());
+    qDebug("%lld ms - Syncing is complete.", ml.count());
 #endif
 }
 
@@ -1064,9 +1082,11 @@ void MainWindow::showContextMenu(const QPoint &pos) const
 MainWindow::getListOfFiles
 ===================
 */
-void MainWindow::getListOfFiles(Folder &folder)
+int MainWindow::getListOfFiles(Folder &folder)
 {
-    if ((folder.paused && syncingMode == Automatic) || !folder.exists) return;
+    if ((folder.paused && syncingMode == Automatic) || !folder.exists) return -1;
+
+    int totalNumOfFiles = 0;
 
     for (auto &file : folder.files)
     {
@@ -1074,17 +1094,12 @@ void MainWindow::getListOfFiles(Folder &folder)
         file.updated = false;
     }
 
-#ifdef DEBUG_TIMESTAMP
-    auto startTime = std::chrono::high_resolution_clock::now();
-    int totalNumOfFiles = 0;
-#endif
-
 #ifndef USE_STD_FILESYSTEM
     QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
     while (dir.hasNext())
     {
-        if (folder.paused && syncingMode == Automatic) return;
+        if (folder.paused && syncingMode == Automatic) return -1;
 
         dir.next();
 
@@ -1118,8 +1133,6 @@ void MainWindow::getListOfFiles(Folder &folder)
                             folder.files[hash].updated = true;
                         else
                             break;
-
-                        if (updateAppIfNeeded()) return;
                     }
                 }
             }
@@ -1141,11 +1154,7 @@ void MainWindow::getListOfFiles(Folder &folder)
             folder.files.insert(fileHash, File(fileName, type, dir.fileInfo().lastModified()));
         }
 
-#ifdef DEBUG_TIMESTAMP
-            totalNumOfFiles++;
-#endif
-
-        if (updateAppIfNeeded()) return;
+        totalNumOfFiles++;
     }
 #elif defined(USE_STD_FILESYSTEM)
     for (auto const &dir : std::filesystem::recursive_directory_iterator{std::filesystem::path{folder.path.toStdString()}})
@@ -1160,20 +1169,11 @@ void MainWindow::getListOfFiles(Folder &folder)
         quint64 fileHash = hash64(filePath);
 
         folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)); // FIX: date and updated flag
-
-#ifdef DEBUG_TIMESTAMP
         totalNumOfFiles++;
-#endif
-
-        if (updateAppIfNeeded()) return;
     }
 #endif
 
-#ifdef DEBUG_TIMESTAMP
-    std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
-    auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%lld ms - Found %d files at %s)", ml.count(), totalNumOfFiles, qUtf8Printable(folder.path));
-#endif
+    return totalNumOfFiles;
 }
 
 /*
@@ -1243,8 +1243,6 @@ void MainWindow::checkForChanges(Profile &profile)
                         folderIt->filesToAdd.insert(otherFileIt.value().path, from);
                     }
                 }
-
-                if (updateAppIfNeeded()) return;
             }
         }
     }
@@ -1279,8 +1277,6 @@ void MainWindow::checkForChanges(Profile &profile)
             {
                 ++fileIt;
             }
-
-            if (updateAppIfNeeded()) return;
         }
     }
 
