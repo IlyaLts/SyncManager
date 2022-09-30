@@ -1087,6 +1087,7 @@ int MainWindow::getListOfFiles(Folder &folder)
     if ((folder.paused && syncingMode == Automatic) || !folder.exists) return -1;
 
     int totalNumOfFiles = 0;
+    bool checkForCollisions = folder.files.isEmpty();
 
     for (auto &file : folder.files)
     {
@@ -1110,6 +1111,8 @@ int MainWindow::getListOfFiles(Folder &folder)
 
         if (folder.files.contains(fileHash))
         {
+            if (checkForCollisions) qCritical("Hash collision detected: %s vs %s", qUtf8Printable(fileName), qUtf8Printable(folder.files[fileHash].path));
+
             bool updated = false;
             QString parentPath(dir.fileInfo().path());
             File &file = folder.files[fileHash];
