@@ -131,6 +131,7 @@ private Q_SLOTS:
     void quit();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void switchSyncingMode(SyncingMode mode);
+    void launchOnStartup(bool enable);
     void sync(int profileNumber = -1);
     void updateStatus();
     void updateNextSyncingTime();
@@ -157,6 +158,7 @@ private:
     QIcon iconPause;
     QIcon iconRemove;
     QIcon iconResume;
+    QIcon iconSettings;
     QIcon iconSync;
     QIcon iconWarning;
     QIcon trayIconDone;
@@ -171,11 +173,14 @@ private:
     QAction *pauseSyncingAction;
     QAction *automaticAction;
     QAction *manualAction;
+    QAction *launchOnStartupAction;
+    QAction *disableNotificationAction;
     QAction *showAction;
     QAction *quitAction;
 
     QSystemTrayIcon *trayIcon;
     QMenu *trayIconMenu;
+    QMenu *settingsMenu;
     QMenu *syncingModeMenu;
 
     bool busy = false;

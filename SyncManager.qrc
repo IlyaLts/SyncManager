@@ -14,5 +14,6 @@
         <file>Images/IconAdd.png</file>
         <file>Images/IconResume.png</file>
         <file>Images/AnimSync.gif</file>
+        <file>Images/IconSettings.png</file>
     </qresource>
 </RCC>

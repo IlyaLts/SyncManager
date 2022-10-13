@@ -85,6 +85,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     iconPause.addFile(":/Images/IconPause.png");
     iconRemove.addFile(":/Images/IconRemove.png");
     iconResume.addFile(":/Images/IconResume.png");
+    iconSettings.addFile(":/Images/IconSettings.png");
     iconSync.addFile(":/Images/IconSync.png");
     iconWarning.addFile(":/Images/IconWarning.png");
     trayIconDone.addFile(":/Images/TrayIconDone.png");
@@ -100,21 +101,37 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     pauseSyncingAction = new QAction(iconPause, "&Pause Syncing", this);
     automaticAction = new QAction("&Automatic", this);
     manualAction = new QAction("&Manual", this);
+    launchOnStartupAction = new QAction("&Launch on Startup", this);
+    disableNotificationAction = new QAction("&Disable Notifications", this);
     showAction = new QAction("&Show", this);
     quitAction = new QAction("&Quit", this);
 
     automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
+    launchOnStartupAction->setCheckable(true);
+    disableNotificationAction->setCheckable(true);
+
+#ifdef Q_OS_WIN
+    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
+#else
+    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop"));
+#endif
 
     syncingModeMenu = new QMenu("&Syncing Mode", this);
     syncingModeMenu->addAction(automaticAction);
     syncingModeMenu->addAction(manualAction);
 
+    settingsMenu = new QMenu("&Settings", this);
+    settingsMenu->setIcon(iconSettings);
+    settingsMenu->addMenu(syncingModeMenu);
+    settingsMenu->addAction(launchOnStartupAction);
+    settingsMenu->addAction(disableNotificationAction);
+
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(syncNowAction);
     trayIconMenu->addAction(pauseSyncingAction);
     trayIconMenu->addSeparator();
-    trayIconMenu->addMenu(syncingModeMenu);
+    trayIconMenu->addMenu(settingsMenu);
 
 #ifdef Q_OS_LINUX
     trayIconMenu->addAction(showAction);
@@ -152,6 +169,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
+    connect(launchOnStartupAction, &QAction::triggered, this, [this](){ launchOnStartup(launchOnStartupAction->isChecked()); });
+    connect(disableNotificationAction, &QAction::triggered, this, [this](){ notificationsEnabled = !notificationsEnabled; });
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
@@ -161,6 +180,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     paused = settings.value(QLatin1String("Paused"), false).toBool();
+    disableNotificationAction->setChecked(!notificationsEnabled);
 
     // Loads saved pause states for profiles/folers
     for (int i = 0; i < profiles.size(); i++)
@@ -175,7 +195,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             folder.exists = QFileInfo::exists(folder.path);
 
             if (notificationsEnabled && !folder.exists)
-                trayIcon->showMessage("Broken profile folder", QString("Couldn't find %1 folder").arg(folder.path), QSystemTrayIcon::Warning, 1000);
+                trayIcon->showMessage("Couldn't find folder", folder.path, QSystemTrayIcon::Warning, 1000);
         }
     }
 
@@ -554,6 +574,51 @@ void MainWindow::switchSyncingMode(SyncingMode mode)
     }
 
     updateStatus();
+}
+
+/*
+===================
+MainWindow::launchOnStartup
+===================
+*/
+void MainWindow::launchOnStartup(bool enable)
+{
+    QString path;
+
+#ifdef Q_OS_WIN
+    path = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk";
+#elif defined(Q_OS_LINUX)
+    path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop";
+#endif
+
+    if (enable)
+    {
+#ifdef Q_OS_WIN
+        QFile::link(QCoreApplication::applicationFilePath(), path);
+#elif defined(Q_OS_LINUX)
+        QFile::remove(path);
+        QFile shortcut(path);
+        if (shortcut.open(QIODevice::WriteOnly))
+        {
+            QTextStream stream(&shortcut);
+            stream << "[Desktop Entry]\n";
+            stream << "Type=Application\n";
+            stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager\n";
+            stream << "Hidden=false\n";
+            stream << "NoDisplay=false\n";
+            stream << "Terminal=false\n";
+            stream << "Name=Sync Manager\n";
+            stream << "Icon=" + QCoreApplication::applicationDirPath() + "/SyncManager.png\n";
+        }
+
+        // Somehow doesn't work on Linux
+        //QFile::link(QCoreApplication::applicationFilePath(), path);
+#endif
+    }
+    else
+    {
+        QFile::remove(path);
+    }
 }
 
 /*
