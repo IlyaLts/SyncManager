@@ -21,7 +21,6 @@
 #include <QStandardPaths>
 #include <QSharedMemory>
 #include <QMessageBox>
-#include <QFile>
 
 /*
 ===================
@@ -31,15 +30,12 @@ main
 int main(int argc, char *argv[])
 {
     Q_INIT_RESOURCE(SyncManager);
-
     QApplication app(argc, argv);
-    QSharedMemory sharedMemory("SyncManagerLaunched");
 
     // Prevention of multiple instances
-    if (!sharedMemory.create(1))
+    if (!QSharedMemory("SyncManagerLaunched").create(1))
     {
         QMessageBox::warning(NULL, "Couldn't launch!", "The app is already launched and cannot be launched as a second instance.");
-        app.exit(-1);
         return -1;
     }
 
@@ -50,6 +46,7 @@ int main(int argc, char *argv[])
     }
 
     MainWindow window;
+    if (QCoreApplication::arguments().contains("launchOnStartup", Qt::CaseInsensitive)) window.setLaunchOnStartup(true);
 
     if (QSystemTrayIcon::isSystemTrayAvailable())
     {

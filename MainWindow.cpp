@@ -169,7 +169,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
-    connect(launchOnStartupAction, &QAction::triggered, this, [this](){ launchOnStartup(launchOnStartupAction->isChecked()); });
+    connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
     connect(disableNotificationAction, &QAction::triggered, this, [this](){ notificationsEnabled = !notificationsEnabled; });
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
@@ -217,15 +217,14 @@ MainWindow::~MainWindow()
 
     for (auto &size : ui->horizontalSplitter->sizes()) hSizes.append(size);
 
-    settings.setValue("HorizontalSplitter", hSizes);
-    settings.setValue("Fullscreen", isMaximized());
-
     if (!isMaximized())
     {
         settings.setValue("Width", size().width());
         settings.setValue("Height", size().height());
     }
 
+    settings.setValue("HorizontalSplitter", hSizes);
+    settings.setValue("Fullscreen", isMaximized());
     settings.setValue("Notifications", notificationsEnabled);
     settings.setValue("SyncingMode", syncingMode);
     settings.setValue("Paused", paused);
@@ -244,14 +243,68 @@ MainWindow::~MainWindow()
 
 /*
 ===================
+MainWindow::setLaunchOnStartup
+===================
+*/
+void MainWindow::setLaunchOnStartup(bool enable)
+{
+    QString path;
+
+    launchOnStartupAction->setChecked(enable);
+
+#ifdef Q_OS_WIN
+    path = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk";
+#elif defined(Q_OS_LINUX)
+    path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop";
+#endif
+
+    if (enable)
+    {
+#ifdef Q_OS_WIN
+        QFile::link(QCoreApplication::applicationFilePath(), path);
+#elif defined(Q_OS_LINUX)
+        QFile::remove(path);
+        QFile shortcut(path);
+        if (shortcut.open(QIODevice::WriteOnly))
+        {
+            QTextStream stream(&shortcut);
+            stream << "[Desktop Entry]\n";
+            stream << "Type=Application\n";
+            stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager\n";
+            stream << "Hidden=false\n";
+            stream << "NoDisplay=false\n";
+            stream << "Terminal=false\n";
+            stream << "Name=Sync Manager\n";
+            stream << "Icon=" + QCoreApplication::applicationDirPath() + "/SyncManager.png\n";
+        }
+
+        // Somehow doesn't work on Linux
+        //QFile::link(QCoreApplication::applicationFilePath(), path);
+#endif
+    }
+    else
+    {
+        QFile::remove(path);
+    }
+}
+
+/*
+===================
 MainWindow::closeEvent
 ===================
 */
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    // Hides the window instead of closing as it can appear out of the screen after disconnecting a display.
-    hide();
-    event->ignore();
+    if (QSystemTrayIcon::isSystemTrayAvailable())
+    {
+        // Hides the window instead of closing as it can appear out of the screen after disconnecting a display.
+        hide();
+        event->ignore();
+    }
+    else
+    {
+        event->accept();
+    }
 }
 
 /*
@@ -574,51 +627,6 @@ void MainWindow::switchSyncingMode(SyncingMode mode)
     }
 
     updateStatus();
-}
-
-/*
-===================
-MainWindow::launchOnStartup
-===================
-*/
-void MainWindow::launchOnStartup(bool enable)
-{
-    QString path;
-
-#ifdef Q_OS_WIN
-    path = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk";
-#elif defined(Q_OS_LINUX)
-    path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop";
-#endif
-
-    if (enable)
-    {
-#ifdef Q_OS_WIN
-        QFile::link(QCoreApplication::applicationFilePath(), path);
-#elif defined(Q_OS_LINUX)
-        QFile::remove(path);
-        QFile shortcut(path);
-        if (shortcut.open(QIODevice::WriteOnly))
-        {
-            QTextStream stream(&shortcut);
-            stream << "[Desktop Entry]\n";
-            stream << "Type=Application\n";
-            stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager\n";
-            stream << "Hidden=false\n";
-            stream << "NoDisplay=false\n";
-            stream << "Terminal=false\n";
-            stream << "Name=Sync Manager\n";
-            stream << "Icon=" + QCoreApplication::applicationDirPath() + "/SyncManager.png\n";
-        }
-
-        // Somehow doesn't work on Linux
-        //QFile::link(QCoreApplication::applicationFilePath(), path);
-#endif
-    }
-    else
-    {
-        QFile::remove(path);
-    }
 }
 
 /*

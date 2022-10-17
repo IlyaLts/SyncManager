@@ -113,6 +113,10 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+public Q_SLOTS:
+
+    void setLaunchOnStartup(bool enable);
+
 protected:
 
     void closeEvent(QCloseEvent *event) override;
@@ -131,7 +135,6 @@ private Q_SLOTS:
     void quit();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void switchSyncingMode(SyncingMode mode);
-    void launchOnStartup(bool enable);
     void sync(int profileNumber = -1);
     void updateStatus();
     void updateNextSyncingTime();
