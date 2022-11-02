@@ -66,7 +66,7 @@ struct File
 
 struct Folder
 {
-    Folder(bool paused) : paused(paused){}
+    explicit Folder(bool paused) : paused(paused){}
 
     QString path;
     QHash<quint64, File> files;
@@ -82,7 +82,7 @@ struct Folder
 
 struct Profile
 {
-    Profile(bool paused) : paused(paused){}
+    explicit Profile(bool paused) : paused(paused){}
 
     QList<Folder> folders;
 

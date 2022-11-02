@@ -217,17 +217,17 @@ MainWindow::~MainWindow()
 
     for (auto &size : ui->horizontalSplitter->sizes()) hSizes.append(size);
 
-    if (!isMaximized())
-    {
-        settings.setValue("Width", size().width());
-        settings.setValue("Height", size().height());
-    }
-
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("Notifications", notificationsEnabled);
     settings.setValue("SyncingMode", syncingMode);
     settings.setValue("Paused", paused);
+
+    if (!isMaximized())
+    {
+        settings.setValue("Width", size().width());
+        settings.setValue("Height", size().height());
+    }
 
     // Saves profiles/folders pause states
     for (int i = 0; i < profiles.size(); i++)
@@ -235,7 +235,8 @@ MainWindow::~MainWindow()
         if (!profiles[i].toBeRemoved) settings.setValue(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), profiles[i].paused);
 
         for (auto &folder : profiles[i].folders)
-                if (!folder.toBeRemoved) settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
+                if (!folder.toBeRemoved)
+					settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
     }
 
     delete ui;
@@ -678,7 +679,7 @@ void MainWindow::sync(int profileNumber)
             for (auto &folder : profile.folders)
             {
 #ifdef DEBUG_TIMESTAMP
-                auto startTime = std::chrono::high_resolution_clock::now();
+                startTime = std::chrono::high_resolution_clock::now();
 #endif
 
                 QFuture<int> future = QtConcurrent::run([&](){ return getListOfFiles(folder); });
@@ -1204,11 +1205,9 @@ int MainWindow::getListOfFiles(Folder &folder)
                     while (folderPath.remove(folderPath.lastIndexOf("/"), 999999).length() > folder.path.length())
                     {
                         quint64 hash = hash64(QString(folderPath).remove(0, folder.path.size()));
+                        if (folder.files.value(hash).updated) break;
 
-                        if (!folder.files.value(hash).updated)
-                            folder.files[hash].updated = true;
-                        else
-                            break;
+                        folder.files[hash].updated = true;
                     }
                 }
             }
