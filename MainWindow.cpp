@@ -30,13 +30,48 @@
 #include <QStack>
 #include <QtConcurrent/QtConcurrent>
 
-#ifdef DEBUG_TIMESTAMP
-#include <chrono>
-#endif
-
 #ifdef USE_STD_FILESYSTEM
 #include <filesystem>
 #endif
+
+#ifdef DEBUG_TIMESTAMP
+#include <chrono>
+
+std::chrono::high_resolution_clock::time_point startTime;
+#endif
+
+/*
+===================
+debugSetTime
+===================
+*/
+void debugSetTime(std::chrono::high_resolution_clock::time_point &startTime)
+{
+#ifdef DEBUG_TIMESTAMP
+    startTime = std::chrono::high_resolution_clock::now();
+#endif
+}
+
+/*
+===================
+debugTimestamp
+===================
+*/
+void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startTime, const char *message, ...)
+{
+#ifdef DEBUG_TIMESTAMP
+    char buffer[256];
+
+    va_list ap;
+    va_start(ap, message);
+    vsnprintf(buffer, sizeof(buffer), message, ap);
+    va_end(ap);
+
+    std::chrono::high_resolution_clock::time_point time(std::chrono::high_resolution_clock::now() - startTime);
+    auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
+    qDebug("%lld ms - %s", ml.count(), buffer);
+#endif
+}
 
 /*
 ===================
@@ -648,10 +683,11 @@ void MainWindow::sync(int profileNumber)
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(false);
 
 #ifdef DEBUG_TIMESTAMP
-    auto startTime = std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::time_point syncTime;
     int numOfFoldersToAdd = 0;
     int numOfFilesToAdd = 0;
     int numOfFilesToRemove = 0;
+    debugSetTime(syncTime);
 #endif
 
     if (!paused || syncNowTriggered)
@@ -678,18 +714,12 @@ void MainWindow::sync(int profileNumber)
 
             for (auto &folder : profile.folders)
             {
-#ifdef DEBUG_TIMESTAMP
-                startTime = std::chrono::high_resolution_clock::now();
-#endif
+                debugSetTime(startTime);
 
                 QFuture<int> future = QtConcurrent::run([&](){ return getListOfFiles(folder); });
                 while (!future.isFinished()) updateAppIfNeeded();
 
-#ifdef DEBUG_TIMESTAMP
-                std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
-                auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-                qDebug("%lld ms - Found %d files in %s)", ml.count(), future.result(), qUtf8Printable(folder.path));
-#endif
+                debugTimestamp(startTime, "Found %d files in %s.", future.result(), qUtf8Printable(folder.path));
             }
 
             checkForChanges(profile);
@@ -875,11 +905,7 @@ void MainWindow::sync(int profileNumber)
 
     if (!queue.empty()) sync(queue.head());
 
-#ifdef DEBUG_TIMESTAMP
-    std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
-    auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%lld ms - Syncing is complete.", ml.count());
-#endif
+    debugTimestamp(syncTime, "Syncing is complete.");
 }
 
 /*
@@ -1260,9 +1286,7 @@ void MainWindow::checkForChanges(Profile &profile)
 {
     if ((profile.paused && syncingMode == Automatic) || profile.folders.size() < 2) return;
 
-#ifdef DEBUG_TIMESTAMP
-    auto startTime = std::chrono::high_resolution_clock::now();
-#endif
+    debugSetTime(startTime);
 
     // Checks for added/modified files and folders
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
@@ -1279,71 +1303,67 @@ void MainWindow::checkForChanges(Profile &profile)
                 if (otherFolderIt->paused && syncingMode == Automatic) break;
 
                 const File &file = folderIt->files.value(otherFileIt.key());
+                const File &otherFile = otherFileIt.value();
+                bool newFile = file.type == File::none;
 
-                // Adds a newer version of a file from other backup folders if exists
+                // Adds a newer version of a file from other folders if exists
 #ifdef Q_OS_LINUX
-                if (file.exists && file.type != File::dir && file.date != otherFileIt.value().date && otherFileIt.value().updated)
+                if (file.exists && file.type == File::file && ((file.updated && otherFile.updated && file.date < otherFile.date) ||
+                                                               (!file.updated && otherFile.updated)))
 #else
-                if (file.exists && file.type == File::file && ((file.date < otherFileIt.value().date && ((!file.updated && !otherFileIt.value().updated) ||
-                                                                                                          (file.updated && otherFileIt.value().updated))) ||
-                                                               (file.date != otherFileIt.value().date && !file.updated && otherFileIt.value().updated)))
+                if (file.exists && file.type == File::file && ((file.updated == otherFile.updated && file.date < otherFile.date) ||
+                                                               (!file.updated && otherFile.updated)))
 #endif
                 {
                     QString from(otherFolderIt->path);
-                    from.append(otherFileIt.value().path);
+                    from.append(otherFile.path);
 
-                    folderIt->filesToAdd.insert(otherFileIt.value().path, from);
+                    folderIt->filesToAdd.insert(otherFile.path, from);
                 }
-                // Adds a new file/folder from other backup folders or if it has a new version of a file/folder and our copy file/folder with the same name was removed.
-                // Files use their last modification date for figuring out which one is newer, and folders use the updated flag instead as
-                // folders can contain different last modification date based on changes of its directories.
-                else if ((!file.type ||
-#ifdef Q_OS_LINUX
-                        (file.type == File::file && !file.exists && (file.date != otherFileIt.value().date && otherFileIt.value().updated)) ||
-#else
-                        (file.type == File::file && !file.exists && (file.date < otherFileIt.value().date || otherFileIt.value().updated)) ||
-#endif
-                        (file.type == File::dir && !file.exists && otherFileIt.value().updated)) &&
-                        !otherFolderIt->filesToRemove.contains(QString(otherFolderIt->path).append(otherFileIt.value().path)))
+                // Adds a new file/folder from other folders or if other folders has a new version of a file/folder and our file/folder was removed.
+                else if ((newFile ||
+                        (file.type != File::none && !file.exists && otherFile.updated)) &&
+                        !otherFolderIt->filesToRemove.contains(QString(otherFolderIt->path).append(otherFile.path)))
                 {
-                    if (otherFileIt.value().type == File::dir)
+                    if (otherFile.type == File::dir)
                     {
-                        folderIt->foldersToAdd.insert(otherFileIt.value().path);
+                        folderIt->foldersToAdd.insert(otherFile.path);
                     }
                     else
                     {
                         QString from(otherFolderIt->path);
-                        from.append(otherFileIt.value().path);
+                        from.append(otherFile.path);
 
-                        folderIt->filesToAdd.insert(otherFileIt.value().path, from);
+                        folderIt->filesToAdd.insert(otherFile.path, from);
                     }
                 }
             }
         }
     }
 
-#ifdef DEBUG_TIMESTAMP
-    std::chrono::high_resolution_clock::time_point launchTime(std::chrono::high_resolution_clock::now() - startTime);
-    auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime.time_since_epoch());
-    qDebug("%lld ms - Checked for added/modified files and folders", ml.count());
-    startTime = std::chrono::high_resolution_clock::now();
-#endif
+    debugTimestamp(startTime, "Checked for added/modified files and folders.");
+    debugSetTime(startTime);
 
     // Checks for removed files and folders
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
+        if (!folderIt->exists) continue;
+
         for (QHash<quint64, File>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
         {
             if (folderIt->paused && syncingMode == Automatic) break;
 
-            // Removes files/folders if it doesn't exist on disk and in adding lists
             if (!fileIt.value().exists && !folderIt->foldersToAdd.contains(fileIt.value().path) && !folderIt->filesToAdd.contains(fileIt.value().path))
             {
+                // Adds files from other folders for removal
                 for (auto removeIt = profile.folders.begin(); removeIt != profile.folders.end(); ++removeIt)
                 {
-                    if (folderIt == removeIt || (removeIt->paused && syncingMode == Automatic)) continue;
+                    if (folderIt == removeIt || !removeIt->exists || (removeIt->paused && syncingMode == Automatic)) continue;
 
-                    removeIt->filesToRemove.insert(fileIt.value().path);
+                    if (removeIt->files.value(fileIt.key()).exists)
+                        removeIt->filesToRemove.insert(fileIt.value().path);
+                    else
+                        removeIt->files.remove(fileIt.key());
                 }
 
                 fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
@@ -1355,9 +1375,5 @@ void MainWindow::checkForChanges(Profile &profile)
         }
     }
 
-#ifdef DEBUG_TIMESTAMP
-    std::chrono::high_resolution_clock::time_point launchTime2(std::chrono::high_resolution_clock::now() - startTime);
-    ml = std::chrono::duration_cast<std::chrono::milliseconds>(launchTime2.time_since_epoch());
-    qDebug("%lld ms - Checked for removed files", ml.count());
-#endif
+    debugTimestamp(startTime, "Checked for removed files.");
 }
