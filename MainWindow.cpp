@@ -37,7 +37,15 @@
 #ifdef DEBUG_TIMESTAMP
 #include <chrono>
 
+#define SET_TIME(t) debugSetTime(t);
+#define TIMESTAMP(t, ...) debugTimestamp(t, __VA_ARGS__);
+
 std::chrono::high_resolution_clock::time_point startTime;
+#else
+
+#define SET_TIME(t)
+#define TIMESTAMP(t, m, ...)
+
 #endif
 
 /*
@@ -47,9 +55,7 @@ debugSetTime
 */
 void debugSetTime(std::chrono::high_resolution_clock::time_point &startTime)
 {
-#ifdef DEBUG_TIMESTAMP
     startTime = std::chrono::high_resolution_clock::now();
-#endif
 }
 
 /*
@@ -59,7 +65,6 @@ debugTimestamp
 */
 void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startTime, const char *message, ...)
 {
-#ifdef DEBUG_TIMESTAMP
     char buffer[256];
 
     va_list ap;
@@ -70,7 +75,6 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
     std::chrono::high_resolution_clock::time_point time(std::chrono::high_resolution_clock::now() - startTime);
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
     qDebug("%lld ms - %s", ml.count(), buffer);
-#endif
 }
 
 /*
@@ -684,9 +688,6 @@ void MainWindow::sync(int profileNumber)
 
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point syncTime;
-    int numOfFoldersToAdd = 0;
-    int numOfFilesToAdd = 0;
-    int numOfFilesToRemove = 0;
     debugSetTime(syncTime);
 #endif
 
@@ -714,29 +715,34 @@ void MainWindow::sync(int profileNumber)
 
             for (auto &folder : profile.folders)
             {
-                debugSetTime(startTime);
+                SET_TIME(startTime);
 
                 QFuture<int> future = QtConcurrent::run([&](){ return getListOfFiles(folder); });
                 while (!future.isFinished()) updateAppIfNeeded();
 
-                debugTimestamp(startTime, "Found %d files in %s.", future.result(), qUtf8Printable(folder.path));
+                TIMESTAMP(startTime, "Found %d files in %s.", future.result(), qUtf8Printable(folder.path));
             }
 
             checkForChanges(profile);
+        }
+
+        syncNowTriggered = false;
 
 #ifdef DEBUG_TIMESTAMP
+        int numOfFoldersToAdd = 0;
+        int numOfFilesToAdd = 0;
+        int numOfFilesToRemove = 0;
+
+        for (auto &profile : profiles)
+        {
             for (auto &folder : profile.folders)
             {
                 numOfFoldersToAdd += folder.foldersToAdd.size();
                 numOfFilesToAdd += folder.filesToAdd.size();
                 numOfFilesToRemove += folder.filesToRemove.size();
             }
-#endif
         }
 
-        syncNowTriggered = false;
-
-#ifdef DEBUG_TIMESTAMP
         qDebug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
         qDebug("Folders to add: %d, Files to add: %d, Files/Folders to remove: %d", numOfFoldersToAdd, numOfFilesToAdd, numOfFilesToRemove);
 #endif
@@ -905,7 +911,7 @@ void MainWindow::sync(int profileNumber)
 
     if (!queue.empty()) sync(queue.head());
 
-    debugTimestamp(syncTime, "Syncing is complete.");
+    TIMESTAMP(syncTime, "Syncing is complete.");
 }
 
 /*
@@ -1286,7 +1292,7 @@ void MainWindow::checkForChanges(Profile &profile)
 {
     if ((profile.paused && syncingMode == Automatic) || profile.folders.size() < 2) return;
 
-    debugSetTime(startTime);
+    SET_TIME(startTime);
 
     // Checks for added/modified files and folders
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
@@ -1308,21 +1314,18 @@ void MainWindow::checkForChanges(Profile &profile)
 
                 // Adds a newer version of a file from other folders if exists
 #ifdef Q_OS_LINUX
-                if (file.exists && file.type == File::file && ((file.updated && otherFile.updated && file.date < otherFile.date) ||
+                if (file.type == File::file && file.exists && ((file.updated && otherFile.updated && file.date < otherFile.date) ||
                                                                (!file.updated && otherFile.updated)))
 #else
-                if (file.exists && file.type == File::file && ((file.updated == otherFile.updated && file.date < otherFile.date) ||
+                if (file.type == File::file && file.exists && ((file.updated == otherFile.updated && file.date < otherFile.date) ||
                                                                (!file.updated && otherFile.updated)))
 #endif
                 {
                     QString from(otherFolderIt->path);
-                    from.append(otherFile.path);
-
-                    folderIt->filesToAdd.insert(otherFile.path, from);
+                    folderIt->filesToAdd.insert(otherFile.path, from.append(otherFile.path));
                 }
                 // Adds a new file/folder from other folders or if other folders has a new version of a file/folder and our file/folder was removed.
-                else if ((newFile ||
-                        (file.type != File::none && !file.exists && otherFile.updated)) &&
+                else if ((newFile || (file.type != File::none && !file.exists && otherFile.updated)) &&
                         !otherFolderIt->filesToRemove.contains(QString(otherFolderIt->path).append(otherFile.path)))
                 {
                     if (otherFile.type == File::dir)
@@ -1332,17 +1335,15 @@ void MainWindow::checkForChanges(Profile &profile)
                     else
                     {
                         QString from(otherFolderIt->path);
-                        from.append(otherFile.path);
-
-                        folderIt->filesToAdd.insert(otherFile.path, from);
+                        folderIt->filesToAdd.insert(otherFile.path, from.append(otherFile.path));
                     }
                 }
             }
         }
     }
 
-    debugTimestamp(startTime, "Checked for added/modified files and folders.");
-    debugSetTime(startTime);
+    TIMESTAMP(startTime, "Checked for added/modified files and folders.");
+    SET_TIME(startTime);
 
     // Checks for removed files and folders
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
@@ -1375,5 +1376,5 @@ void MainWindow::checkForChanges(Profile &profile)
         }
     }
 
-    debugTimestamp(startTime, "Checked for removed files.");
+    TIMESTAMP(startTime, "Checked for removed files.");
 }
