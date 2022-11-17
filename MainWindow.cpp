@@ -686,6 +686,16 @@ void MainWindow::sync(int profileNumber)
     syncNowAction->setEnabled(false);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(false);
 
+    for (auto &profile : profiles)
+    {
+        for (auto &folder : profile.folders)
+        {
+            folder.foldersToAdd.clear();
+            folder.filesToAdd.clear();
+            folder.filesToRemove.clear();
+        }
+    }
+
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point syncTime;
     debugSetTime(syncTime);
