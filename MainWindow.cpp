@@ -737,6 +737,8 @@ void MainWindow::sync(int profileNumber)
         {
             for (auto &folder : profile.folders)
             {
+                if (folder.paused) continue;
+
                 numOfFoldersToAdd += folder.foldersToAdd.size();
                 numOfFilesToAdd += folder.filesToAdd.size();
                 numOfFilesToRemove += folder.filesToRemove.size();
@@ -756,7 +758,9 @@ void MainWindow::sync(int profileNumber)
             for (auto &profile : profiles)
             {
                 for (auto &folder : profile.folders)
-                {                    
+                {
+                    QString rootPath = QStorageInfo(folder.path).rootPath();
+                    bool shouldNotify = notificationList.contains(rootPath) ? !notificationList.value(rootPath)->isActive() : true;
                     QSet<QString> foldersToUpdate;
 
                     auto createParentFolders = [&](QString path)
@@ -839,6 +843,21 @@ void MainWindow::sync(int profileNumber)
                         }
                         else
                         {
+                            // Not enough disk space notification
+                            if (notificationsEnabled && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value()).size())
+                            {
+                                shouldNotify = false;
+
+                                if (!notificationList.contains(rootPath))
+                                {
+                                    notificationList.insert(rootPath, new QTimer());
+                                    notificationList.value(rootPath)->setSingleShot(true);
+                                }
+
+                                notificationList.value(rootPath)->start(NOTIFICATION_DELAY);
+                                trayIcon->showMessage(QString("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "", QSystemTrayIcon::Critical, 1000);
+                            }
+
                             ++it;
                         }
 

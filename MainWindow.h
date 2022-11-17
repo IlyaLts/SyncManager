@@ -33,6 +33,7 @@
 #define PROFILES_FILENAME "Profiles.ini"
 
 #define UPDATE_TIME 50
+#define NOTIFICATION_DELAY 300000
 
 // In a couple times slower than QDirIterator
 //#define USE_STD_FILESYSTEM
@@ -150,6 +151,7 @@ private:
 
     QList<Profile> profiles;
     QQueue<int> queue;
+    QMap<QString, QTimer *> notificationList;
 
     DecoratedStringListModel *profileModel;
     DecoratedStringListModel *folderModel;
