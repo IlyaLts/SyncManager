@@ -785,6 +785,30 @@ void MainWindow::sync(int profileNumber)
                         }
                     };
 
+                    // Files/folders to remove
+                    for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && !paused && (!folder.paused || syncingMode != Automatic);)
+                    {
+                        QString filename(folder.path);
+                        filename.append(*it);
+                        quint64 fileHash = hash64(*it);
+
+                        QString path = QFileInfo(filename).path();
+
+                        if ((QFileInfo(filename).isDir() ? QDir(filename).removeRecursively() : QFile::remove(filename)) || !QFileInfo::exists(filename))
+                        {
+                            folder.files.remove(fileHash);
+                            it = folder.filesToRemove.erase(static_cast<QSet<QString>::const_iterator>(it));
+
+                            if (QFileInfo::exists(path)) foldersToUpdate.insert(path);
+                        }
+                        else
+                        {
+                            ++it;
+                        }
+
+                        if (updateAppIfNeeded()) return;
+                    }
+
                     // Folders to add
                     for (auto it = folder.foldersToAdd.begin(); it != folder.foldersToAdd.end() && !paused && (!folder.paused || syncingMode != Automatic);)
                     {
@@ -858,30 +882,6 @@ void MainWindow::sync(int profileNumber)
                                 trayIcon->showMessage(QString("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "", QSystemTrayIcon::Critical, 1000);
                             }
 
-                            ++it;
-                        }
-
-                        if (updateAppIfNeeded()) return;
-                    }
-
-                    // Files/folders to remove
-                    for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && !paused && (!folder.paused || syncingMode != Automatic);)
-                    {
-                        QString filename(folder.path);
-                        filename.append(*it);
-                        quint64 fileHash = hash64(*it);
-
-                        QString path = QFileInfo(filename).path();
-
-                        if ((QFileInfo(filename).isDir() ? QDir(filename).removeRecursively() : QFile::remove(filename)) || !QFileInfo::exists(filename))
-                        {
-                            folder.files.remove(fileHash);
-                            it = folder.filesToRemove.erase(static_cast<QSet<QString>::const_iterator>(it));
-
-                            if (QFileInfo::exists(path)) foldersToUpdate.insert(path);
-                        }
-                        else
-                        {
                             ++it;
                         }
 
