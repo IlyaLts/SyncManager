@@ -149,8 +149,8 @@ private:
 
     Ui::MainWindow *ui;
 
-    QList<Profile> profiles;
     QQueue<int> queue;
+    QList<Profile> profiles;
     QMap<QString, QTimer *> notificationList;
 
     DecoratedStringListModel *profileModel;

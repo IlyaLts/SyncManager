@@ -686,16 +686,6 @@ void MainWindow::sync(int profileNumber)
     syncNowAction->setEnabled(false);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(false);
 
-    for (auto &profile : profiles)
-    {
-        for (auto &folder : profile.folders)
-        {
-            folder.foldersToAdd.clear();
-            folder.filesToAdd.clear();
-            folder.filesToRemove.clear();
-        }
-    }
-
 #ifdef DEBUG_TIMESTAMP
     std::chrono::high_resolution_clock::time_point syncTime;
     debugSetTime(syncTime);
@@ -880,14 +870,10 @@ void MainWindow::sync(int profileNumber)
                             // Not enough disk space notification
                             if (notificationsEnabled && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value()).size())
                             {
-                                shouldNotify = false;
-
                                 if (!notificationList.contains(rootPath))
-                                {
-                                    notificationList.insert(rootPath, new QTimer());
-                                    notificationList.value(rootPath)->setSingleShot(true);
-                                }
+                                    notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);
 
+                                shouldNotify = false;
                                 notificationList.value(rootPath)->start(NOTIFICATION_DELAY);
                                 trayIcon->showMessage(QString("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "", QSystemTrayIcon::Critical, 1000);
                             }
@@ -1321,6 +1307,13 @@ void MainWindow::checkForChanges(Profile &profile)
 {
     if ((profile.paused && syncingMode == Automatic) || profile.folders.size() < 2) return;
 
+    for (auto &folder : profile.folders)
+    {
+        folder.foldersToAdd.clear();
+        folder.filesToAdd.clear();
+        folder.filesToRemove.clear();
+    }
+
     SET_TIME(startTime);
 
     // Checks for added/modified files and folders
@@ -1341,21 +1334,15 @@ void MainWindow::checkForChanges(Profile &profile)
                 const File &otherFile = otherFileIt.value();
                 bool newFile = file.type == File::none;
 
-                // Adds a newer version of a file from other folders if exists
+                if ((newFile ||
+                // Or if we have a newer version of a file from other folders if exists
 #ifdef Q_OS_LINUX
-                if (file.type == File::file && file.exists && ((file.updated && otherFile.updated && file.date < otherFile.date) ||
-                                                               (!file.updated && otherFile.updated)))
+                (file.type == File::file && file.exists && ((file.updated && otherFile.updated && file.date < otherFile.date) || (!file.updated && otherFile.updated))) ||
 #else
-                if (file.type == File::file && file.exists && ((file.updated == otherFile.updated && file.date < otherFile.date) ||
-                                                               (!file.updated && otherFile.updated)))
+                (file.type == File::file && file.exists && ((file.updated == otherFile.updated && file.date < otherFile.date) || (!file.updated && otherFile.updated))) ||
 #endif
-                {
-                    QString from(otherFolderIt->path);
-                    folderIt->filesToAdd.insert(otherFile.path, from.append(otherFile.path));
-                }
-                // Adds a new file/folder from other folders or if other folders has a new version of a file/folder and our file/folder was removed.
-                else if ((newFile || (file.type != File::none && !file.exists && otherFile.updated)) &&
-                        !otherFolderIt->filesToRemove.contains(QString(otherFolderIt->path).append(otherFile.path)))
+                // Or if other folders has a new version of a file/folder and our file/folder was removed.
+                (file.type != File::none && !file.exists && otherFile.updated)) && !otherFolderIt->filesToRemove.contains(QString(otherFolderIt->path).append(otherFile.path)))
                 {
                     if (otherFile.type == File::dir)
                     {
