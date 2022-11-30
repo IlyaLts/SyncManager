@@ -142,6 +142,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     manualAction = new QAction("&Manual", this);
     launchOnStartupAction = new QAction("&Launch on Startup", this);
     disableNotificationAction = new QAction("&Disable Notifications", this);
+    enableRememberFilesAction = new QAction("&Remember Files (Requires disk space)", this);
     showAction = new QAction("&Show", this);
     quitAction = new QAction("&Quit", this);
 
@@ -149,6 +150,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     manualAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
+    enableRememberFilesAction->setCheckable(true);
 
 #ifdef Q_OS_WIN
     launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
@@ -165,6 +167,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     settingsMenu->addMenu(syncingModeMenu);
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(disableNotificationAction);
+    settingsMenu->addAction(enableRememberFilesAction);
 
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(syncNowAction);
@@ -210,6 +213,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
     connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
     connect(disableNotificationAction, &QAction::triggered, this, [this](){ notificationsEnabled = !notificationsEnabled; });
+    connect(enableRememberFilesAction, &QAction::triggered, this, [this](){ rememberFilesEnabled = !rememberFilesEnabled; });
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
@@ -217,9 +221,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
-    notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     paused = settings.value(QLatin1String("Paused"), false).toBool();
+    notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
+    rememberFilesEnabled = settings.value("RememberFiles", false).toBool();
+
     disableNotificationAction->setChecked(!notificationsEnabled);
+    enableRememberFilesAction->setChecked(rememberFilesEnabled);
 
     // Loads saved pause states for profiles/folers
     for (int i = 0; i < profiles.size(); i++)
@@ -237,6 +244,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 trayIcon->showMessage("Couldn't find folder", folder.path, QSystemTrayIcon::Warning, 1000);
         }
     }
+
+    if (rememberFilesEnabled) restoreData();
+    QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
 
     switchSyncingMode(static_cast<SyncingMode>(settings.value("SyncingMode", Automatic).toInt()));
     updateStatus();
@@ -259,6 +269,7 @@ MainWindow::~MainWindow()
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("Notifications", notificationsEnabled);
+    settings.setValue("RememberFiles", rememberFilesEnabled);
     settings.setValue("SyncingMode", syncingMode);
     settings.setValue("Paused", paused);
 
@@ -277,6 +288,8 @@ MainWindow::~MainWindow()
                 if (!folder.toBeRemoved)
 					settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
     }
+
+    if (rememberFilesEnabled) saveData();
 
     delete ui;
 }
@@ -1195,6 +1208,108 @@ void MainWindow::showContextMenu(const QPoint &pos) const
         }
 
         menu.exec(ui->folderListView->mapToGlobal(pos));
+    }
+}
+
+/*
+===================
+saveData
+===================
+*/
+void MainWindow::saveData() const
+{
+    QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
+    if (!data.open(QIODevice::WriteOnly)) return;
+
+    QDataStream stream(&data);
+    stream << profiles.size();
+
+    for (int i = 0; auto &profile : profiles)
+    {
+        stream << profileNames[i];
+        stream << profile.folders.size();
+
+        for (auto &folder : profile.folders)
+        {
+            stream << folder.path;
+            stream << folder.files.size();
+
+            for (auto &file : folder.files)
+            {
+                stream << file.path;
+                stream << file.date;
+                stream << file.updated;
+                stream << file.exists;
+                stream << file.type;
+            }
+        }
+
+        i++;
+    }
+}
+
+/*
+===================
+loadData
+===================
+*/
+void MainWindow::restoreData()
+{
+    QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
+    if (!data.open(QIODevice::ReadOnly)) return;
+
+    QDataStream stream(&data);
+
+    qsizetype profilesSize;
+    stream >> profilesSize;
+
+    for (qsizetype i = 0; i < profilesSize; i++)
+    {
+        QString profileName;
+        qsizetype foldersSize;
+
+        stream >> profileName;
+        stream >> foldersSize;
+
+        int profileIndex = profileNames.indexOf(profileName);
+
+        for (qsizetype j = 0; j < foldersSize; j++)
+        {
+            qsizetype filesSize;
+            QString folderPath;
+
+            stream >> folderPath;
+            stream >> filesSize;
+
+            int folderIndex = foldersPath[profileIndex].indexOf(folderPath);
+
+            if (profileIndex >= 0 && folderIndex >= 0)
+            {
+                profiles[profileIndex].folders[folderIndex].files.clear();
+            }
+
+            for (qsizetype k = 0; k < filesSize; k++)
+            {
+                QString path;
+                QDateTime date;
+                bool updated;
+                bool exists;
+                File::Type type;
+
+                stream >> path;
+                stream >> date;
+                stream >> updated;
+                stream >> exists;
+                stream >> type;
+
+                if (profileIndex >= 0 && folderIndex >= 0)
+                {
+                    quint64 hash = hash64(path);
+                    profiles[profileIndex].folders[folderIndex].files.insert(hash, File(path, type, date, updated));
+                    profiles[profileIndex].folders[folderIndex].files[hash].exists = exists;
+                }
+            }
+        }
     }
 }
 

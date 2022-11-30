@@ -31,6 +31,7 @@
 
 #define SETTINGS_FILENAME "Settings.ini"
 #define PROFILES_FILENAME "Profiles.ini"
+#define DATA_FILENAME "data.dat"
 
 #define UPDATE_TIME 50
 #define NOTIFICATION_DELAY 300000
@@ -144,6 +145,8 @@ private Q_SLOTS:
 
 private:
 
+    void saveData() const;
+    void restoreData();
     int getListOfFiles(Folder &folder);
     void checkForChanges(Profile &profile);
 
@@ -180,6 +183,7 @@ private:
     QAction *manualAction;
     QAction *launchOnStartupAction;
     QAction *disableNotificationAction;
+    QAction *enableRememberFilesAction;
     QAction *showAction;
     QAction *quitAction;
 
@@ -194,6 +198,7 @@ private:
     bool syncNowTriggered = false;
     bool shouldQuit = false;
     bool notificationsEnabled = true;
+    bool rememberFilesEnabled = false;
     int numOfFilesToSync = 0;
 
     QTimer syncTimer;
