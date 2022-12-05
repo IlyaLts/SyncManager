@@ -1457,6 +1457,9 @@ void MainWindow::checkForChanges(Profile &profile)
                 if (file.updated || (otherFile.exists && folderIt->filesToRemove.contains(otherFile.path) && !otherFolderIt->filesToRemove.contains(otherFile.path)))
                     folderIt->filesToRemove.remove(otherFile.path);
 
+                bool alreadyAdded = folderIt->filesToAdd.contains(otherFile.path);
+                bool hasNewer = alreadyAdded && QFileInfo(folderIt->filesToAdd[otherFile.path]).lastModified() < otherFile.date;
+
                 if ((newFile ||
                 // Or if we have a newer version of a file from other folders if exists
 #ifdef Q_OS_LINUX
@@ -1465,7 +1468,7 @@ void MainWindow::checkForChanges(Profile &profile)
                 (file.type == File::file && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
 #endif
                 // Or if other folders has a new version of a file/folder and our file/folder was removed.
-                (file.type != File::none && !file.exists && otherFile.updated)) && !otherFolderIt->filesToRemove.contains(QString(otherFolderIt->path).append(otherFile.path)))
+                (!file.exists && otherFile.updated)) && (!alreadyAdded || hasNewer) && !otherFolderIt->filesToRemove.contains(otherFile.path))
                 {
                     if (otherFile.type == File::dir)
                     {
@@ -1495,7 +1498,7 @@ void MainWindow::checkForChanges(Profile &profile)
         {
             if (folderIt->paused && syncingMode == Automatic) break;
 
-            if (!fileIt.value().exists && !folderIt->foldersToAdd.contains(fileIt.value().path) && !folderIt->filesToAdd.contains(fileIt.value().path))
+            if (!fileIt.value().exists && !folderIt->foldersToAdd.contains(fileIt.value().path) && !folderIt->filesToAdd.contains(fileIt.value().path) && !folderIt->filesToRemove.contains(fileIt.value().path))
             {
                 // Adds files from other folders for removal
                 for (auto removeIt = profile.folders.begin(); removeIt != profile.folders.end(); ++removeIt)
