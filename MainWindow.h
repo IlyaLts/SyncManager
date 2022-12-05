@@ -31,7 +31,7 @@
 
 #define SETTINGS_FILENAME "Settings.ini"
 #define PROFILES_FILENAME "Profiles.ini"
-#define DATA_FILENAME "data.dat"
+#define DATA_FILENAME "Data.dat"
 
 #define UPDATE_TIME 50
 #define NOTIFICATION_DELAY 300000
