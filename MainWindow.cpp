@@ -412,7 +412,14 @@ void MainWindow::removeProfile()
 
         profiles[index.row()].paused = true;
         profiles[index.row()].toBeRemoved = true;
-        for (auto &folder : profiles[index.row()].folders) folder.paused = true;
+
+        for (auto &folder : profiles[index.row()].folders)
+        {
+            folder.paused = true;
+            folder.toBeRemoved = true;
+        }
+
+        if (!busy) profiles.remove(index.row());
         profileNames.removeAt(index.row());
         foldersPath.removeAt(index.row());
         folderModel->setStringList(QStringList());
@@ -516,6 +523,7 @@ void MainWindow::removeFolder()
 
         profiles[profileRow].folders[index.row()].paused = true;
         profiles[profileRow].folders[index.row()].toBeRemoved = true;
+        if (!busy) profiles[profileRow].folders.remove(index.row());
         foldersPath[profileRow].removeAt(index.row());
         ui->folderListView->model()->removeRow(index.row());
 
@@ -710,14 +718,14 @@ void MainWindow::sync(int profileNumber)
         for (int i = -1; auto &profile : profiles)
         {
             i++;
-            if (profileNumber >= 0 && profileNumber != i) continue;
+            if ((profileNumber >= 0 && profileNumber != i) || profile.toBeRemoved) continue;
 
             int activeFolders = 0;
 
             for (auto &folder : profile.folders)
             {
                 folder.exists = QFileInfo::exists(folder.path);
-                if ((!folder.paused || syncingMode != Automatic) && folder.exists) activeFolders++;
+                if ((!folder.paused || syncingMode != Automatic) && folder.exists && !folder.toBeRemoved) activeFolders++;
             }
 
             if ((profile.paused && syncingMode == Automatic) || activeFolders < 2) continue;
@@ -728,6 +736,8 @@ void MainWindow::sync(int profileNumber)
 
             for (auto &folder : profile.folders)
             {
+                if (folder.toBeRemoved) continue;
+
                 SET_TIME(startTime);
 
                 QFuture<int> future = QtConcurrent::run([&](){ return getListOfFiles(folder); });
@@ -1396,6 +1406,7 @@ int MainWindow::getListOfFiles(Folder &folder)
         }
 
         totalNumOfFiles++;
+        if (shouldQuit || folder.toBeRemoved) return -1;
     }
 #elif defined(USE_STD_FILESYSTEM)
     for (auto const &dir : std::filesystem::recursive_directory_iterator{std::filesystem::path{folder.path.toStdString()}})
@@ -1411,6 +1422,7 @@ int MainWindow::getListOfFiles(Folder &folder)
 
         folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)); // FIX: date and updated flag
         totalNumOfFiles++;
+        if (shouldQuit || folder.toBeRemoved) return -1;
     }
 #endif
 
