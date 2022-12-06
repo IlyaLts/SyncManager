@@ -741,7 +741,10 @@ void MainWindow::sync(int profileNumber)
                 SET_TIME(startTime);
 
                 QFuture<int> future = QtConcurrent::run([&](){ return getListOfFiles(folder); });
-                while (!future.isFinished()) updateAppIfNeeded();
+                while (!future.isFinished())
+                {
+                    if (updateAppIfNeeded()) return;
+                }
 
                 TIMESTAMP(startTime, "Found %d files in %s.", future.result(), qUtf8Printable(folder.path));
             }
@@ -773,7 +776,7 @@ void MainWindow::sync(int profileNumber)
 #endif
 
         updateStatus();
-        QApplication::processEvents();
+        if (updateAppIfNeeded()) return;
 
         if (syncing)
         {
@@ -829,7 +832,7 @@ void MainWindow::sync(int profileNumber)
                             ++it;
                         }
 
-                        if (updateAppIfNeeded()) return;
+                        if (updateAppIfNeeded() && rememberFilesEnabled) return;
                     }
 
                     // Folders to add
@@ -854,7 +857,7 @@ void MainWindow::sync(int profileNumber)
                             ++it;
                         }
 
-                        if (updateAppIfNeeded()) return;
+                        if (updateAppIfNeeded() && rememberFilesEnabled) return;
                     }
 
                     // Files to copy
@@ -904,7 +907,7 @@ void MainWindow::sync(int profileNumber)
                             ++it;
                         }
 
-                        if (updateAppIfNeeded()) return;
+                        if (updateAppIfNeeded() && rememberFilesEnabled) return;
                     }
 
                     // Updates parent folders modified date as adding/removing files and folders change their modified date
