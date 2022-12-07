@@ -25,6 +25,7 @@
 #include <QStandardPaths>
 #include <QSystemTrayIcon>
 #include <QMenu>
+#include <QMenuBar>
 #include <QDirIterator>
 #include <QTimer>
 #include <QStack>
@@ -186,6 +187,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     trayIcon->setToolTip("Sync Manager");
     trayIcon->setIcon(trayIconDone);
     trayIcon->show();
+
+    this->menuBar()->addAction(syncNowAction);
+    this->menuBar()->addAction(pauseSyncingAction);
+    this->menuBar()->addMenu(settingsMenu);
 
     // Loads synchronization list
     QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
