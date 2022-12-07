@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     if (QSystemTrayIcon::isSystemTrayAvailable())
     {
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-        if (!settings.value(QLatin1String("minimized"), true).toBool()) window.show();
+        if (!settings.value(QLatin1String("MinimizedOnStartup"), true).toBool()) window.show();
         QApplication::setQuitOnLastWindowClosed(false);
     }
     else

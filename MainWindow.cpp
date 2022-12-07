@@ -142,6 +142,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     automaticAction = new QAction("&Automatic", this);
     manualAction = new QAction("&Manual", this);
     launchOnStartupAction = new QAction("&Launch on Startup", this);
+    minimizedOnStartupAction = new QAction("&Minimized on Startup");
     disableNotificationAction = new QAction("&Disable Notifications", this);
     enableRememberFilesAction = new QAction("&Remember Files (Requires disk space)", this);
     showAction = new QAction("&Show", this);
@@ -150,6 +151,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
+    minimizedOnStartupAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
     enableRememberFilesAction->setCheckable(true);
 
@@ -167,6 +169,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(syncingModeMenu);
     settingsMenu->addAction(launchOnStartupAction);
+    settingsMenu->addAction(minimizedOnStartupAction);
     settingsMenu->addAction(disableNotificationAction);
     settingsMenu->addAction(enableRememberFilesAction);
 
@@ -217,6 +220,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
     connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
+    connect(minimizedOnStartupAction, &QAction::triggered, this, [this](){ minimizedOnStartup = !minimizedOnStartup; });
     connect(disableNotificationAction, &QAction::triggered, this, [this](){ notificationsEnabled = !notificationsEnabled; });
     connect(enableRememberFilesAction, &QAction::triggered, this, [this](){ rememberFilesEnabled = !rememberFilesEnabled; });
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
@@ -227,9 +231,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
     paused = settings.value(QLatin1String("Paused"), false).toBool();
+    minimizedOnStartup = settings.value("MinimizedOnStartup", true).toBool();
     notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     rememberFilesEnabled = settings.value("RememberFiles", false).toBool();
 
+    minimizedOnStartupAction->setChecked(minimizedOnStartup);
     disableNotificationAction->setChecked(!notificationsEnabled);
     enableRememberFilesAction->setChecked(rememberFilesEnabled);
 
@@ -256,7 +262,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     switchSyncingMode(static_cast<SyncingMode>(settings.value("SyncingMode", Automatic).toInt()));
     updateStatus();
     syncTimer.setSingleShot(true);
-    syncTimer.start(0);
+    syncNow();
 }
 
 /*
@@ -273,6 +279,7 @@ MainWindow::~MainWindow()
 
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("Fullscreen", isMaximized());
+    settings.setValue("MinimizedOnStartup", minimizedOnStartup);
     settings.setValue("Notifications", notificationsEnabled);
     settings.setValue("RememberFiles", rememberFilesEnabled);
     settings.setValue("SyncingMode", syncingMode);

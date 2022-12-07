@@ -182,6 +182,7 @@ private:
     QAction *automaticAction;
     QAction *manualAction;
     QAction *launchOnStartupAction;
+    QAction *minimizedOnStartupAction;
     QAction *disableNotificationAction;
     QAction *enableRememberFilesAction;
     QAction *showAction;
@@ -197,6 +198,7 @@ private:
     bool syncing = false;
     bool syncNowTriggered = false;
     bool shouldQuit = false;
+    bool minimizedOnStartup = true;
     bool notificationsEnabled = true;
     bool rememberFilesEnabled = false;
     int numOfFilesToSync = 0;
