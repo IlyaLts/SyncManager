@@ -33,7 +33,7 @@
 #define PROFILES_FILENAME "Profiles.ini"
 #define DATA_FILENAME "Data.dat"
 
-#define UPDATE_TIME 50
+#define UPDATE_DELAY 10
 #define NOTIFICATION_DELAY 300000
 
 // In a couple times slower than QDirIterator

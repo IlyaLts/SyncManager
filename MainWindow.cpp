@@ -155,12 +155,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     disableNotificationAction->setCheckable(true);
     enableRememberFilesAction->setCheckable(true);
 
-#ifdef Q_OS_WIN
-    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
-#else
-    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop"));
-#endif
-
     syncingModeMenu = new QMenu("&Syncing Mode", this);
     syncingModeMenu->addAction(automaticAction);
     syncingModeMenu->addAction(manualAction);
@@ -239,6 +233,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     disableNotificationAction->setChecked(!notificationsEnabled);
     enableRememberFilesAction->setChecked(rememberFilesEnabled);
 
+#ifdef Q_OS_WIN
+    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
+#else
+    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop"));
+#endif
+
     // Loads saved pause states for profiles/folers
     for (int i = 0; i < profiles.size(); i++)
     {
@@ -259,9 +259,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     if (rememberFilesEnabled) restoreData();
     QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
 
+    syncTimer.setSingleShot(true);
+    updateTimer.setSingleShot(true);
+
     switchSyncingMode(static_cast<SyncingMode>(settings.value("SyncingMode", Automatic).toInt()));
     updateStatus();
-    syncTimer.setSingleShot(true);
     syncNow();
 }
 
@@ -297,8 +299,8 @@ MainWindow::~MainWindow()
         if (!profiles[i].toBeRemoved) settings.setValue(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), profiles[i].paused);
 
         for (auto &folder : profiles[i].folders)
-                if (!folder.toBeRemoved)
-					settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
+            if (!folder.toBeRemoved)
+                settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
     }
 
     if (rememberFilesEnabled) saveData();
@@ -1102,7 +1104,7 @@ void MainWindow::updateStatus()
         pauseSyncingAction->setText("&Pause Syncing");
     }
 
-    // Number of files to sync left
+    // Number of files left to sync
     numOfFilesToSync = 0;
 
     if (busy)
@@ -1145,23 +1147,24 @@ void MainWindow::updateNextSyncingTime()
 
     int numOfActiveFiles = 0;
 
-    // Counts the current number of active files in not paused and existing folders
+    // Counts the current number of active files in not paused folders
     for (auto &profile : profiles)
     {
         if (profile.paused) continue;
 
+        int files = 0;
         int activeFolders = 0;
 
         for (auto &folder : profile.folders)
-            if (!folder.paused && folder.exists)
-                activeFolders++;
-
-        if (activeFolders >= 2)
         {
-            for (auto &folder : profile.folders)
-                if (!folder.paused)
-                    numOfActiveFiles += folder.files.size();
+            if (!folder.paused && folder.exists)
+            {
+                files += folder.files.size();
+                activeFolders++;
+            }
         }
+
+        if (activeFolders >= 2) numOfActiveFiles += files;
     }
 
     if (!syncTimer.isActive() || numOfActiveFiles < syncTimer.remainingTime())
@@ -1181,7 +1184,7 @@ bool MainWindow::updateAppIfNeeded()
     {
         updateStatus();
         QApplication::processEvents();
-        updateTimer.start(UPDATE_TIME);
+        updateTimer.start(UPDATE_DELAY);
     }
 
     return shouldQuit;
@@ -1289,7 +1292,7 @@ void MainWindow::saveData() const
 
 /*
 ===================
-loadData
+restoreData
 ===================
 */
 void MainWindow::restoreData()

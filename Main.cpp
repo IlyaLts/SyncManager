@@ -21,6 +21,7 @@
 #include <QStandardPaths>
 #include <QSharedMemory>
 #include <QMessageBox>
+#include <QFile>
 
 /*
 ===================
@@ -43,10 +44,13 @@ int main(int argc, char *argv[])
     {
         QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat).clear();
         QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
+        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
     }
 
     MainWindow window;
-    if (QCoreApplication::arguments().contains("launchOnStartup", Qt::CaseInsensitive)) window.setLaunchOnStartup(true);
+
+    if (QCoreApplication::arguments().contains("launchOnStartup", Qt::CaseInsensitive))
+        window.setLaunchOnStartup(true);
 
     if (QSystemTrayIcon::isSystemTrayAvailable())
     {
