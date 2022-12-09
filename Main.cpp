@@ -33,8 +33,10 @@ int main(int argc, char *argv[])
     Q_INIT_RESOURCE(SyncManager);
     QApplication app(argc, argv);
 
+    QSharedMemory sharedMemory("SyncManagerLaunched");
+
     // Prevention of multiple instances
-    if (!QSharedMemory("SyncManagerLaunched").create(1))
+    if (!sharedMemory.create(1))
     {
         QMessageBox::warning(NULL, "Couldn't launch!", "The app is already launched and cannot be launched as a second instance.");
         return -1;
