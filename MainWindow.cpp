@@ -368,6 +368,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     else
     {
+        if (busy && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No), QMessageBox::No) == QMessageBox::No)
+        {
+            event->ignore();
+            return;
+        }
+
+        shouldQuit = true;
         event->accept();
     }
 }
@@ -631,7 +638,10 @@ MainWindow::quit
 */
 void MainWindow::quit()
 {
-    if (QMessageBox::question(nullptr, QString("Quit"), QString("Are you sure you want to quit?"), QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No), QMessageBox::No) == QMessageBox::Yes)
+    auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
+
+    if ((!busy && QMessageBox::question(nullptr, QString("Quit"), QString("Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes) ||
+        (busy && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes))
     {
         shouldQuit = true;
         qApp->quit();
