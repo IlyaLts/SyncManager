@@ -1079,7 +1079,10 @@ void MainWindow::updateStatus()
     {
         trayIcon->setIcon(trayIconPause);
         setWindowIcon(trayIconPause);
-        pauseSyncingAction->setIcon(iconResume);
+
+        if (pauseSyncingAction->icon().cacheKey() != iconResume.cacheKey())
+            pauseSyncingAction->setIcon(iconResume);
+
         pauseSyncingAction->setText("&Resume Syncing");
     }
     else
@@ -1100,7 +1103,9 @@ void MainWindow::updateStatus()
             setWindowIcon(trayIconDone);
         }
 
-        pauseSyncingAction->setIcon(iconPause);
+        if (pauseSyncingAction->icon().cacheKey() != iconPause.cacheKey())
+            pauseSyncingAction->setIcon(iconPause);
+
         pauseSyncingAction->setText("&Pause Syncing");
     }
 
