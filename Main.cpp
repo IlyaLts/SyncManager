@@ -16,6 +16,7 @@
 
 #include "MainWindow.h"
 #include <QApplication>
+#include <QStyleFactory>
 #include <QSystemTrayIcon>
 #include <QSettings>
 #include <QStandardPaths>
@@ -32,6 +33,11 @@ int main(int argc, char *argv[])
 {
     Q_INIT_RESOURCE(SyncManager);
     QApplication app(argc, argv);
+
+    // Default style (Fusion) is too buggy
+#ifdef Q_OS_LINUX
+    QApplication::setStyle(QStyleFactory::create("Windows"));
+#endif
 
     QSharedMemory sharedMemory("SyncManagerLaunched");
 
