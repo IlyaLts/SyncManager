@@ -370,7 +370,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     else
     {
-        if (busy && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No), QMessageBox::No) == QMessageBox::No)
+        if (syncing && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No), QMessageBox::No) == QMessageBox::No)
         {
             event->ignore();
             return;
@@ -379,6 +379,17 @@ void MainWindow::closeEvent(QCloseEvent *event)
         shouldQuit = true;
         event->accept();
     }
+}
+
+/*
+===================
+MainWindow::showEvent
+===================
+*/
+void MainWindow::showEvent(QShowEvent *event)
+{
+    updateStatus();
+    QMainWindow::showEvent(event);
 }
 
 /*
@@ -642,8 +653,8 @@ void MainWindow::quit()
 {
     auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
 
-    if ((!busy && QMessageBox::question(nullptr, QString("Quit"), QString("Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes) ||
-        (busy && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes))
+    if ((!syncing && QMessageBox::question(nullptr, QString("Quit"), QString("Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes) ||
+        (syncing && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes))
     {
         shouldQuit = true;
         qApp->quit();
@@ -767,7 +778,7 @@ void MainWindow::sync(int profileNumber)
                 QFuture<int> future = QtConcurrent::run([&](){ return getListOfFiles(folder); });
                 while (!future.isFinished())
                 {
-                    if (updateAppIfNeeded()) return;
+                    if (updateApp()) return;
                 }
 
                 TIMESTAMP(startTime, "Found %d files in %s.", future.result(), qUtf8Printable(folder.path));
@@ -800,7 +811,7 @@ void MainWindow::sync(int profileNumber)
 #endif
 
         updateStatus();
-        if (updateAppIfNeeded()) return;
+        if (updateApp()) return;
 
         if (syncing)
         {
@@ -856,7 +867,7 @@ void MainWindow::sync(int profileNumber)
                             ++it;
                         }
 
-                        if (updateAppIfNeeded() && rememberFilesEnabled) return;
+                        if (updateApp() && rememberFilesEnabled) return;
                     }
 
                     // Folders to add
@@ -881,7 +892,7 @@ void MainWindow::sync(int profileNumber)
                             ++it;
                         }
 
-                        if (updateAppIfNeeded() && rememberFilesEnabled) return;
+                        if (updateApp() && rememberFilesEnabled) return;
                     }
 
                     // Files to copy
@@ -905,7 +916,7 @@ void MainWindow::sync(int profileNumber)
                             QFile::remove(filePath);
 
                         QFuture<bool> future = QtConcurrent::run([&](){ return QFile::copy(it.value(), filePath); });
-                        while (!future.isFinished()) updateAppIfNeeded();
+                        while (!future.isFinished()) updateApp();
 
                         if (future.result())
                         {
@@ -931,7 +942,7 @@ void MainWindow::sync(int profileNumber)
                             ++it;
                         }
 
-                        if (updateAppIfNeeded() && rememberFilesEnabled) return;
+                        if (updateApp() && rememberFilesEnabled) return;
                     }
 
                     // Updates parent folders modified date as adding/removing files and folders change their modified date
@@ -988,6 +999,7 @@ void MainWindow::updateStatus()
 {
     bool isThereIssue = false;
     syncing = false;
+    numOfFilesToSync = 0;
 
     // Syncing statuses
     for (auto &profile : profiles)
@@ -1007,63 +1019,67 @@ void MainWindow::updateStatus()
         }
     }
 
-    // Profile list
-    for (int i = 0, j = 0; i < profiles.size(); i++)
+    if (isVisible())
     {
-        if (profiles[i].toBeRemoved) continue;
 
-        QModelIndex index = profileModel->index(j, 0);
+        // Profile list
+        for (int i = 0, j = 0; i < profiles.size(); i++)
+        {
+            if (profiles[i].toBeRemoved) continue;
 
-        if (profiles[i].paused && syncingMode == Automatic)
-        {
-            profileModel->setData(index, iconPause, Qt::DecorationRole);
-        }
-        else if (profiles[i].syncing || syncNowTriggered || queue.contains(i))
-        {
-            profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-        }
-        else
-        {
-            profileModel->setData(index, iconDone, Qt::DecorationRole);
+            QModelIndex index = profileModel->index(j, 0);
 
-            // Shows a warning icon if at least one folder doesn't exist
-            for (auto &folder : profiles[i].folders)
+            if (profiles[i].paused && syncingMode == Automatic)
             {
-                if (!folder.exists)
+                profileModel->setData(index, iconPause, Qt::DecorationRole);
+            }
+            else if (profiles[i].syncing || syncNowTriggered || queue.contains(i))
+            {
+                profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
+            }
+            else
+            {
+                profileModel->setData(index, iconDone, Qt::DecorationRole);
+
+                // Shows a warning icon if at least one folder doesn't exist
+                for (auto &folder : profiles[i].folders)
                 {
-                    isThereIssue = true;
-                    profileModel->setData(index, iconWarning, Qt::DecorationRole);
-                    break;
+                    if (!folder.exists)
+                    {
+                        isThereIssue = true;
+                        profileModel->setData(index, iconWarning, Qt::DecorationRole);
+                        break;
+                    }
                 }
             }
+
+            ui->syncProfilesView->update(index);
+            j++;
         }
 
-        ui->syncProfilesView->update(index);
-        j++;
-    }
-
-    // Folders
-    if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
-    {
-        int row = ui->syncProfilesView->selectionModel()->selectedRows()[0].row();
-
-        for (int i = 0, j = 0; i < profiles[row].folders.size(); i++)
+        // Folders
+        if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
         {
-            if (profiles[row].folders[j].toBeRemoved) continue;
+            int row = ui->syncProfilesView->selectionModel()->selectedRows()[0].row();
 
-            QModelIndex index = folderModel->index(i, 0);
+            for (int i = 0, j = 0; i < profiles[row].folders.size(); i++)
+            {
+                if (profiles[row].folders[j].toBeRemoved) continue;
 
-            if (profiles[row].folders[i].paused && syncingMode == Automatic)
-                folderModel->setData(index, iconPause, Qt::DecorationRole);
-            else if (profiles[row].folders[i].syncing || syncNowTriggered || queue.contains(row))
-                folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-            else if (!profiles[row].folders[i].exists)
-                folderModel->setData(index, iconRemove, Qt::DecorationRole);
-            else
-                folderModel->setData(index, iconDone, Qt::DecorationRole);
+                QModelIndex index = folderModel->index(i, 0);
 
-            ui->folderListView->update(index);
-            j++;
+                if (profiles[row].folders[i].paused && syncingMode == Automatic)
+                    folderModel->setData(index, iconPause, Qt::DecorationRole);
+                else if (profiles[row].folders[i].syncing || syncNowTriggered || queue.contains(row))
+                    folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
+                else if (!profiles[row].folders[i].exists)
+                    folderModel->setData(index, iconRemove, Qt::DecorationRole);
+                else
+                    folderModel->setData(index, iconDone, Qt::DecorationRole);
+
+                ui->folderListView->update(index);
+                j++;
+            }
         }
     }
 
@@ -1080,6 +1096,7 @@ void MainWindow::updateStatus()
         trayIcon->setIcon(trayIconPause);
         setWindowIcon(trayIconPause);
 
+        // Fixes flickering menu bar
         if (pauseSyncingAction->icon().cacheKey() != iconResume.cacheKey())
             pauseSyncingAction->setIcon(iconResume);
 
@@ -1089,8 +1106,11 @@ void MainWindow::updateStatus()
     {
         if (syncing || syncNowTriggered || !queue.empty())
         {
-            trayIcon->setIcon(trayIconSync);
-            setWindowIcon(trayIconSync);
+            if (trayIcon->icon().cacheKey() != trayIconSync.cacheKey())
+                trayIcon->setIcon(trayIconSync);
+
+            if (windowIcon().cacheKey() != trayIconSync.cacheKey())
+                setWindowIcon(trayIconSync);
         }
         else if (isThereIssue)
         {
@@ -1103,6 +1123,7 @@ void MainWindow::updateStatus()
             setWindowIcon(trayIconDone);
         }
 
+        // Fixes flickering menu bar
         if (pauseSyncingAction->icon().cacheKey() != iconPause.cacheKey())
             pauseSyncingAction->setIcon(iconPause);
 
@@ -1110,8 +1131,6 @@ void MainWindow::updateStatus()
     }
 
     // Number of files left to sync
-    numOfFilesToSync = 0;
-
     if (busy)
     {
         for (auto &profile : profiles)
@@ -1130,15 +1149,6 @@ void MainWindow::updateStatus()
         trayIcon->setToolTip(QString("Sync Manager - %1 files to synchronize").arg(numOfFilesToSync));
         setWindowTitle(QString("Sync Manager - %1 files to synchronize").arg(numOfFilesToSync));
     }
-
-    int numOfFiles = 0;
-
-    for (auto &profile : profiles)
-        for (auto &folder : profile.folders)
-            numOfFiles += folder.files.size();
-
-    if (!busy && numOfFiles < syncTimer.remainingTime())
-        syncTimer.start(numOfFiles < 1000 ? 1000 : numOfFiles);
 }
 
 /*
@@ -1178,20 +1188,18 @@ void MainWindow::updateNextSyncingTime()
 
 /*
 ===================
-MainWindow::updateAppIfNeeded
-
-Makes the app responsible if it takes too much time to process
+MainWindow::updateApp
 ===================
 */
-bool MainWindow::updateAppIfNeeded()
+bool MainWindow::updateApp()
 {
     if (updateTimer.remainingTime() <= 0)
     {
         updateStatus();
-        QApplication::processEvents();
         updateTimer.start(UPDATE_DELAY);
     }
 
+    QApplication::processEvents();
     return shouldQuit;
 }
 
@@ -1222,7 +1230,7 @@ void MainWindow::showContextMenu(const QPoint &pos) const
             }
             else if (syncingMode == Manual)
             {
-                menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(queue.contains(row));
+                menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(queue.contains(row) || syncNowTriggered);
             }
 
             menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));

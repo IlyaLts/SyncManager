@@ -33,7 +33,7 @@
 #define PROFILES_FILENAME "Profiles.ini"
 #define DATA_FILENAME "Data.dat"
 
-#define UPDATE_DELAY 10
+#define UPDATE_DELAY 40
 #define NOTIFICATION_DELAY 300000
 
 // In a couple times slower than QDirIterator
@@ -122,6 +122,7 @@ public Q_SLOTS:
 protected:
 
     void closeEvent(QCloseEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
 private Q_SLOTS:
 
@@ -140,7 +141,7 @@ private Q_SLOTS:
     void sync(int profileNumber = -1);
     void updateStatus();
     void updateNextSyncingTime();
-    bool updateAppIfNeeded();
+    bool updateApp();
     void showContextMenu(const QPoint &pos) const;
 
 private:
