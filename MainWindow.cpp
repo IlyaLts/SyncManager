@@ -1210,7 +1210,8 @@ MainWindow::showContextMenu
 */
 void MainWindow::showContextMenu(const QPoint &pos) const
 {
-    QMenu menu;
+    static QMenu menu;
+    menu.clear();
 
     // Profiles
     if (ui->syncProfilesView->hasFocus())
@@ -1236,7 +1237,7 @@ void MainWindow::showContextMenu(const QPoint &pos) const
             menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));
         }
 
-        menu.exec(ui->syncProfilesView->mapToGlobal(pos));
+        menu.popup(ui->syncProfilesView->mapToGlobal(pos));
     }
     // Folders
     else if (ui->folderListView->hasFocus())
@@ -1258,7 +1259,7 @@ void MainWindow::showContextMenu(const QPoint &pos) const
             menu.addAction(iconRemove, "&Remove folder", this, SLOT(removeFolder()));
         }
 
-        menu.exec(ui->folderListView->mapToGlobal(pos));
+        menu.popup(ui->folderListView->mapToGlobal(pos));
     }
 }
 
