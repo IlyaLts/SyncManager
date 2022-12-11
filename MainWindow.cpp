@@ -1406,7 +1406,6 @@ int MainWindow::getListOfFiles(Folder &folder)
             if (checkForCollisions) qCritical("Hash collision detected: %s vs %s", qUtf8Printable(fileName), qUtf8Printable(folder.files[fileHash].path));
 
             bool updated = false;
-            QString parentPath(dir.fileInfo().path());
             File &file = folder.files[fileHash];
 
             QDateTime fileDate(dir.fileInfo().lastModified());
@@ -1433,10 +1432,6 @@ int MainWindow::getListOfFiles(Folder &folder)
             {
                 updated = true;
             }
-
-            // Marks a file/folder as updated if its parent folder was updated
-            if (parentPath.length() > folder.path.length() && folder.files.value(hash64(parentPath.remove(0, folder.path.size()))).updated)
-                updated = true;
 
             file.date = fileDate;
             file.updated = updated;
@@ -1522,7 +1517,9 @@ void MainWindow::checkForChanges(Profile &profile)
                 (file.type == File::file && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
 #endif
                 // Or if other folders has a new version of a file/folder and our file/folder was removed.
-                (!file.exists && otherFile.updated)) && (!alreadyAdded || hasNewer) && !otherFolderIt->filesToRemove.contains(otherFile.path))
+                (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QString(otherFile.path).remove(otherFile.path.indexOf('/', 1), 999999))).updated))) &&
+                // Checks for the newest version of a file in case if we have three folders or more.
+                (!alreadyAdded || hasNewer) && !otherFolderIt->filesToRemove.contains(otherFile.path))
                 {
                     if (otherFile.type == File::dir)
                     {
