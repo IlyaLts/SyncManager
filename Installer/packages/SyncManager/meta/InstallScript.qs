@@ -46,23 +46,23 @@ Component.prototype.createOperations = function()
             {
 				component.addElevatedOperation("CreateDesktopEntry",
 											   "@HomeDir@/Desktop/SyncManager.desktop",
-											   "Version=1.0\n"
-											   "Type=Application\n"
-											   "Name=Sync Manager\n"
-											   "Terminal=false\n"
-											   "Exec=@TargetDir@/SyncManager\n"
-											   "Icon=@TargetDir@/SyncManager.png\n"
+                                               "Version=1.0\n",
+                                               "Type=Application\n",
+                                               "Name=Sync Manager\n",
+                                               "Terminal=false\n",
+                                               "Exec=@TargetDir@/SyncManager\n",
+                                               "Icon=@TargetDir@/SyncManager.png\n",
 											   "Categories=Utilities");
 			}
 
             component.addElevatedOperation("CreateDesktopEntry",
 										   "/usr/share/applications/SyncManager.desktop",
-										   "Version=1.0\n"
-										   "Type=Application\n"
-										   "Name=Sync Manager\n"
-										   "Terminal=false\n"
-										   "Exec=@TargetDir@/SyncManager\n"
-										   "Icon=@TargetDir@/SyncManager.png\n"
+                                           "Version=1.0\n",
+                                           "Type=Application\n",
+                                           "Name=Sync Manager\n",
+                                           "Terminal=false\n",
+                                           "Exec=@TargetDir@/SyncManager\n",
+                                           "Icon=@TargetDir@/SyncManager.png\n",
 										   "Categories=Utilities");
         }
     }
