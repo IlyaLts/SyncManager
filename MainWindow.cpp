@@ -1010,6 +1010,9 @@ void MainWindow::updateStatus()
         {
             folder.syncing = false;
 
+            if (!folder.toBeRemoved && !folder.exists)
+                isThereIssue = true;
+
             if (busy && folder.exists && !folder.paused && (!folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.filesToRemove.isEmpty()))
             {
                 syncing = true;
@@ -1046,7 +1049,6 @@ void MainWindow::updateStatus()
                 {
                     if (!folder.exists)
                     {
-                        isThereIssue = true;
                         profileModel->setData(index, iconWarning, Qt::DecorationRole);
                         break;
                     }
