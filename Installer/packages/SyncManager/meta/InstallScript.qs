@@ -45,25 +45,13 @@ Component.prototype.createOperations = function()
             if (targetDirectory && targetDirectory.createShortcutOnDesktopCheckBox.checked)
             {
 				component.addElevatedOperation("CreateDesktopEntry",
-											   "@HomeDir@/Desktop/SyncManager.desktop",
-                                               "Version=1.0\n",
-                                               "Type=Application\n",
-                                               "Name=Sync Manager\n",
-                                               "Terminal=false\n",
-                                               "Exec=@TargetDir@/SyncManager\n",
-                                               "Icon=@TargetDir@/SyncManager.png\n",
-											   "Categories=Utilities");
+                                               "@HomeDir@/Desktop/SyncManager.desktop",
+                                               "Version=1.0\nType=Application\nName=Sync Manager\nTerminal=false\nExec=@TargetDir@/SyncManager\nIcon=@TargetDir@/Icon.png\nCategories=Utilities");
 			}
 
             component.addElevatedOperation("CreateDesktopEntry",
-										   "/usr/share/applications/SyncManager.desktop",
-                                           "Version=1.0\n",
-                                           "Type=Application\n",
-                                           "Name=Sync Manager\n",
-                                           "Terminal=false\n",
-                                           "Exec=@TargetDir@/SyncManager\n",
-                                           "Icon=@TargetDir@/SyncManager.png\n",
-										   "Categories=Utilities");
+                                           "/usr/share/applications/SyncManager.desktop",
+                                           "Version=1.0\nType=Application\nName=Sync Manager\nTerminal=false\nExec=@TargetDir@/SyncManager\nIcon=@TargetDir@/Icon.png\nCategories=Utilities");
         }
     }
 }
