@@ -798,7 +798,7 @@ void MainWindow::sync(int profileNumber)
         {
             for (auto &folder : profile.folders)
             {
-                if (folder.paused) continue;
+                if (folder.paused && syncingMode == Automatic) continue;
 
                 numOfFoldersToAdd += folder.foldersToAdd.size();
                 numOfFilesToAdd += folder.filesToAdd.size();
@@ -847,7 +847,7 @@ void MainWindow::sync(int profileNumber)
                     };
 
                     // Files/folders to remove
-                    for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && !paused && (!folder.paused || syncingMode != Automatic);)
+                    for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && ((!paused && !folder.paused) || syncingMode != Automatic);)
                     {
                         QString filename(folder.path);
                         filename.append(*it);
@@ -871,7 +871,7 @@ void MainWindow::sync(int profileNumber)
                     }
 
                     // Folders to add
-                    for (auto it = folder.foldersToAdd.begin(); it != folder.foldersToAdd.end() && !paused && (!folder.paused || syncingMode != Automatic);)
+                    for (auto it = folder.foldersToAdd.begin(); it != folder.foldersToAdd.end() && ((!paused && !folder.paused) || syncingMode != Automatic);)
                     {
                         QString folderPath(folder.path);
                         folderPath.append(*it);
@@ -896,7 +896,7 @@ void MainWindow::sync(int profileNumber)
                     }
 
                     // Files to copy
-                    for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && !paused && (!folder.paused || syncingMode != Automatic);)
+                    for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && ((!paused && !folder.paused) || syncingMode != Automatic);)
                     {
                         // Removes from the list if the source file doesn't exist
                         if (!QFileInfo::exists(it.value()))
@@ -1013,7 +1013,7 @@ void MainWindow::updateStatus()
             if (!folder.toBeRemoved && !folder.exists)
                 isThereIssue = true;
 
-            if (busy && folder.exists && !folder.paused && (!folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.filesToRemove.isEmpty()))
+            if (busy && folder.exists && (!folder.paused || syncingMode != Automatic) && (!folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.filesToRemove.isEmpty()))
             {
                 syncing = true;
                 profile.syncing = true;
