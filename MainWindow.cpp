@@ -863,7 +863,7 @@ void MainWindow::sync(int profileNumber)
 
                         QString path = QFileInfo(filename).path();
 
-                        if (moveToTrash ? QFile::moveToTrash(filename) : (QFileInfo(filename).isDir() ? QDir(filename).removeRecursively() : QFile::remove(filename)) || !QFileInfo::exists(filename))
+                        if ((moveToTrash ? QFile::moveToTrash(filename) : (QFileInfo(filename).isDir() ? QDir(filename).removeRecursively() : QFile::remove(filename))) || !QFileInfo::exists(filename))
                         {
                             folder.files.remove(fileHash);
                             it = folder.filesToRemove.erase(static_cast<QSet<QString>::const_iterator>(it));
