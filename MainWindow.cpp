@@ -141,6 +141,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     pauseSyncingAction = new QAction(iconPause, "&Pause Syncing", this);
     automaticAction = new QAction("&Automatic", this);
     manualAction = new QAction("&Manual", this);
+    moveToTrashAction = new QAction("&Move Files to Trash", this);
     launchOnStartupAction = new QAction("&Launch on Startup", this);
     minimizedOnStartupAction = new QAction("&Minimized on Startup");
     disableNotificationAction = new QAction("&Disable Notifications", this);
@@ -150,6 +151,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
+    moveToTrashAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
     minimizedOnStartupAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
@@ -162,6 +164,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     settingsMenu = new QMenu("&Settings", this);
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(syncingModeMenu);
+    settingsMenu->addAction(moveToTrashAction);
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(minimizedOnStartupAction);
     settingsMenu->addAction(disableNotificationAction);
@@ -213,6 +216,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
+    connect(moveToTrashAction, &QAction::triggered, this, [this](){ moveToTrash = !moveToTrash; });
     connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
     connect(minimizedOnStartupAction, &QAction::triggered, this, [this](){ minimizedOnStartup = !minimizedOnStartup; });
     connect(disableNotificationAction, &QAction::triggered, this, [this](){ notificationsEnabled = !notificationsEnabled; });
@@ -225,10 +229,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
     paused = settings.value(QLatin1String("Paused"), false).toBool();
+    moveToTrash = settings.value("MoveToTrash", false).toBool();
     minimizedOnStartup = settings.value("MinimizedOnStartup", true).toBool();
     notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     rememberFilesEnabled = settings.value("RememberFiles", false).toBool();
 
+    moveToTrashAction->setChecked(moveToTrash);
     minimizedOnStartupAction->setChecked(minimizedOnStartup);
     disableNotificationAction->setChecked(!notificationsEnabled);
     enableRememberFilesAction->setChecked(rememberFilesEnabled);
@@ -281,6 +287,7 @@ MainWindow::~MainWindow()
 
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("Fullscreen", isMaximized());
+    settings.setValue("MoveToTrash", moveToTrash);
     settings.setValue("MinimizedOnStartup", minimizedOnStartup);
     settings.setValue("Notifications", notificationsEnabled);
     settings.setValue("RememberFiles", rememberFilesEnabled);
@@ -740,6 +747,7 @@ void MainWindow::sync(int profileNumber)
     busy = true;
     syncing = false;
     syncNowAction->setEnabled(false);
+    moveToTrashAction->setEnabled(false);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(false);
 
 #ifdef DEBUG_TIMESTAMP
@@ -855,7 +863,7 @@ void MainWindow::sync(int profileNumber)
 
                         QString path = QFileInfo(filename).path();
 
-                        if ((QFileInfo(filename).isDir() ? QDir(filename).removeRecursively() : QFile::remove(filename)) || !QFileInfo::exists(filename))
+                        if (moveToTrash ? QFile::moveToTrash(filename) : (QFileInfo(filename).isDir() ? QDir(filename).removeRecursively() : QFile::remove(filename)) || !QFileInfo::exists(filename))
                         {
                             folder.files.remove(fileHash);
                             it = folder.filesToRemove.erase(static_cast<QSet<QString>::const_iterator>(it));
@@ -913,7 +921,12 @@ void MainWindow::sync(int profileNumber)
 
                         // Removes a file with the same filename first before copying if it exists
                         if (folder.files.value(fileHash).exists)
-                            QFile::remove(filePath);
+                        {
+                            if (moveToTrash)
+                                QFile::moveToTrash(filePath);
+                            else
+                                QFile::remove(filePath);
+                        }
 
                         QFuture<bool> future = QtConcurrent::run([&](){ return QFile::copy(it.value(), filePath); });
                         while (!future.isFinished()) updateApp();
@@ -981,7 +994,9 @@ void MainWindow::sync(int profileNumber)
     if (!queue.empty() && profileNumber >= 0) queue.dequeue();
     busy = false;
     syncNowAction->setEnabled(true);
+    moveToTrashAction->setEnabled(true);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(true);
+
     updateStatus();
     updateNextSyncingTime();
 
