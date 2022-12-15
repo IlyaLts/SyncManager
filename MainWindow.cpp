@@ -141,20 +141,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     pauseSyncingAction = new QAction(iconPause, "&Pause Syncing", this);
     automaticAction = new QAction("&Automatic", this);
     manualAction = new QAction("&Manual", this);
-    moveToTrashAction = new QAction("&Move Files to Trash", this);
     launchOnStartupAction = new QAction("&Launch on Startup", this);
     minimizedOnStartupAction = new QAction("&Minimized on Startup");
     disableNotificationAction = new QAction("&Disable Notifications", this);
+    moveToTrashAction = new QAction("&Move Files and Folders to Trash", this);
     enableRememberFilesAction = new QAction("&Remember Files (Requires disk space)", this);
     showAction = new QAction("&Show", this);
     quitAction = new QAction("&Quit", this);
 
     automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
-    moveToTrashAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
     minimizedOnStartupAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
+    moveToTrashAction->setCheckable(true);
     enableRememberFilesAction->setCheckable(true);
 
     syncingModeMenu = new QMenu("&Syncing Mode", this);
@@ -164,10 +164,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     settingsMenu = new QMenu("&Settings", this);
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(syncingModeMenu);
-    settingsMenu->addAction(moveToTrashAction);
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(minimizedOnStartupAction);
     settingsMenu->addAction(disableNotificationAction);
+    settingsMenu->addAction(moveToTrashAction);
     settingsMenu->addAction(enableRememberFilesAction);
 
     trayIconMenu = new QMenu(this);
@@ -216,10 +216,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
-    connect(moveToTrashAction, &QAction::triggered, this, [this](){ moveToTrash = !moveToTrash; });
     connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
     connect(minimizedOnStartupAction, &QAction::triggered, this, [this](){ minimizedOnStartup = !minimizedOnStartup; });
     connect(disableNotificationAction, &QAction::triggered, this, [this](){ notificationsEnabled = !notificationsEnabled; });
+    connect(moveToTrashAction, &QAction::triggered, this, [this](){ moveToTrash = !moveToTrash; });
     connect(enableRememberFilesAction, &QAction::triggered, this, [this](){ rememberFilesEnabled = !rememberFilesEnabled; });
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
@@ -229,14 +229,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
     paused = settings.value(QLatin1String("Paused"), false).toBool();
-    moveToTrash = settings.value("MoveToTrash", false).toBool();
     minimizedOnStartup = settings.value("MinimizedOnStartup", true).toBool();
     notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
+    moveToTrash = settings.value("MoveToTrash", false).toBool();
     rememberFilesEnabled = settings.value("RememberFiles", false).toBool();
 
-    moveToTrashAction->setChecked(moveToTrash);
     minimizedOnStartupAction->setChecked(minimizedOnStartup);
     disableNotificationAction->setChecked(!notificationsEnabled);
+    moveToTrashAction->setChecked(moveToTrash);
     enableRememberFilesAction->setChecked(rememberFilesEnabled);
 
 #ifdef Q_OS_WIN
@@ -287,9 +287,9 @@ MainWindow::~MainWindow()
 
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("Fullscreen", isMaximized());
-    settings.setValue("MoveToTrash", moveToTrash);
     settings.setValue("MinimizedOnStartup", minimizedOnStartup);
     settings.setValue("Notifications", notificationsEnabled);
+    settings.setValue("MoveToTrash", moveToTrash);
     settings.setValue("RememberFiles", rememberFilesEnabled);
     settings.setValue("SyncingMode", syncingMode);
     settings.setValue("Paused", paused);
@@ -856,6 +856,40 @@ void MainWindow::sync(int profileNumber)
                         }
                     };
 
+                    // Sorted folders from top level to bottom level as we need to have the exact same file structure in trash
+                    QVector<QString> sortedFoldersToRemove;
+                    sortedFoldersToRemove.reserve(folder.foldersToRemove.size());
+                    for (const auto &str : qAsConst(folder.foldersToRemove)) sortedFoldersToRemove.append(str);
+                    std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const QString &a, const QString &b) -> bool { return a.size() < b.size(); });
+
+                    // Folders to remove
+                    for (auto it = sortedFoldersToRemove.begin(); it != sortedFoldersToRemove.end() && ((!paused && !folder.paused) || syncingMode != Automatic);)
+                    {
+                        QString filename(folder.path);
+                        filename.append(*it);
+                        quint64 fileHash = hash64(*it);
+
+                        QString path = QFileInfo(filename).path();
+
+                        QFuture<bool> future = QtConcurrent::run([&](){ return moveToTrash ? QFile::moveToTrash(filename) : QDir(filename).removeRecursively(); });
+                        while (!future.isFinished()) updateApp();
+
+                        if (future.result() || !QDir().exists(filename))
+                        {
+                            folder.files.remove(fileHash);
+                            folder.foldersToRemove.remove(*it);
+                            it = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(it));
+
+                            if (QFileInfo::exists(path)) foldersToUpdate.insert(path);
+                        }
+                        else
+                        {
+                            ++it;
+                        }
+
+                        if (updateApp() && rememberFilesEnabled) return;
+                    }
+
                     // Files to remove
                     for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && ((!paused && !folder.paused) || syncingMode != Automatic);)
                     {
@@ -869,30 +903,6 @@ void MainWindow::sync(int profileNumber)
                         {
                             folder.files.remove(fileHash);
                             it = folder.filesToRemove.erase(static_cast<QSet<QString>::const_iterator>(it));
-
-                            if (QFileInfo::exists(path)) foldersToUpdate.insert(path);
-                        }
-                        else
-                        {
-                            ++it;
-                        }
-
-                        if (updateApp() && rememberFilesEnabled) return;
-                    }
-
-                    // Folders to remove
-                    for (auto it = folder.foldersToRemove.begin(); it != folder.foldersToRemove.end() && ((!paused && !folder.paused) || syncingMode != Automatic);)
-                    {
-                        QString filename(folder.path);
-                        filename.append(*it);
-                        quint64 fileHash = hash64(*it);
-
-                        QString path = QFileInfo(filename).path();
-
-                        if (QDir(filename).removeRecursively() || !QFileInfo::exists(filename))
-                        {
-                            folder.files.remove(fileHash);
-                            it = folder.foldersToRemove.erase(static_cast<QSet<QString>::const_iterator>(it));
 
                             if (QFileInfo::exists(path)) foldersToUpdate.insert(path);
                         }
@@ -1065,7 +1075,6 @@ void MainWindow::updateStatus()
 
     if (isVisible())
     {
-
         // Profile list
         for (int i = 0, j = 0; i < profiles.size(); i++)
         {

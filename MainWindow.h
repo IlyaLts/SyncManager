@@ -138,7 +138,7 @@ private Q_SLOTS:
     void pauseSelected();
     void quit();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
-    void switchSyncingMode(SyncingMode mode);
+    void switchSyncingMode(MainWindow::SyncingMode mode);
     void sync(int profileNumber = -1);
     void updateStatus();
     void updateNextSyncingTime();
@@ -201,9 +201,9 @@ private:
     bool syncing = false;
     bool syncNowTriggered = false;
     bool shouldQuit = false;
-    bool moveToTrash = false;
     bool minimizedOnStartup = true;
     bool notificationsEnabled = true;
+    bool moveToTrash = false;
     bool rememberFilesEnabled = false;
     int numOfFilesToSync = 0;
 
