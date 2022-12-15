@@ -74,6 +74,7 @@ struct Folder
     QHash<quint64, File> files;
     QSet<QString> foldersToAdd;
     QMap<QString, QString> filesToAdd;
+    QSet<QString> foldersToRemove;
     QSet<QString> filesToRemove;
 
     bool exists = true;

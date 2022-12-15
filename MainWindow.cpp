@@ -800,6 +800,7 @@ void MainWindow::sync(int profileNumber)
 #ifdef DEBUG_TIMESTAMP
         int numOfFoldersToAdd = 0;
         int numOfFilesToAdd = 0;
+        int numOfFoldersToRemove = 0;
         int numOfFilesToRemove = 0;
 
         for (auto &profile : profiles)
@@ -810,12 +811,13 @@ void MainWindow::sync(int profileNumber)
 
                 numOfFoldersToAdd += folder.foldersToAdd.size();
                 numOfFilesToAdd += folder.filesToAdd.size();
+                numOfFoldersToRemove += folder.foldersToRemove.size();
                 numOfFilesToRemove += folder.filesToRemove.size();
             }
         }
 
         qDebug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-        qDebug("Folders to add: %d, Files to add: %d, Files/Folders to remove: %d", numOfFoldersToAdd, numOfFilesToAdd, numOfFilesToRemove);
+        qDebug("Folders to add: %d, Files to add: %d, Folders to remove: %d, Files to remove: %d", numOfFoldersToAdd, numOfFilesToAdd, numOfFoldersToRemove, numOfFilesToRemove);
 #endif
 
         updateStatus();
@@ -854,7 +856,7 @@ void MainWindow::sync(int profileNumber)
                         }
                     };
 
-                    // Files/folders to remove
+                    // Files to remove
                     for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && ((!paused && !folder.paused) || syncingMode != Automatic);)
                     {
                         QString filename(folder.path);
@@ -863,10 +865,34 @@ void MainWindow::sync(int profileNumber)
 
                         QString path = QFileInfo(filename).path();
 
-                        if ((moveToTrash ? QFile::moveToTrash(filename) : (QFileInfo(filename).isDir() ? QDir(filename).removeRecursively() : QFile::remove(filename))) || !QFileInfo::exists(filename))
+                        if ((moveToTrash ? QFile::moveToTrash(filename) : QFile::remove(filename)) || !QFileInfo::exists(filename))
                         {
                             folder.files.remove(fileHash);
                             it = folder.filesToRemove.erase(static_cast<QSet<QString>::const_iterator>(it));
+
+                            if (QFileInfo::exists(path)) foldersToUpdate.insert(path);
+                        }
+                        else
+                        {
+                            ++it;
+                        }
+
+                        if (updateApp() && rememberFilesEnabled) return;
+                    }
+
+                    // Folders to remove
+                    for (auto it = folder.foldersToRemove.begin(); it != folder.foldersToRemove.end() && ((!paused && !folder.paused) || syncingMode != Automatic);)
+                    {
+                        QString filename(folder.path);
+                        filename.append(*it);
+                        quint64 fileHash = hash64(*it);
+
+                        QString path = QFileInfo(filename).path();
+
+                        if (QDir(filename).removeRecursively() || !QFileInfo::exists(filename))
+                        {
+                            folder.files.remove(fileHash);
+                            it = folder.foldersToRemove.erase(static_cast<QSet<QString>::const_iterator>(it));
 
                             if (QFileInfo::exists(path)) foldersToUpdate.insert(path);
                         }
@@ -1028,7 +1054,7 @@ void MainWindow::updateStatus()
             if (!folder.toBeRemoved && !folder.exists)
                 isThereIssue = true;
 
-            if (busy && folder.exists && (!folder.paused || syncingMode != Automatic) && (!folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.filesToRemove.isEmpty()))
+            if (busy && folder.exists && (!folder.paused || syncingMode != Automatic) && (!folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.foldersToRemove.isEmpty() || !folder.filesToRemove.isEmpty()))
             {
                 syncing = true;
                 profile.syncing = true;
@@ -1153,7 +1179,7 @@ void MainWindow::updateStatus()
         for (auto &profile : profiles)
             for (auto &folder : profile.folders)
                 if (folder.exists && (!folder.paused || syncingMode == Manual))
-                    numOfFilesToSync += folder.filesToAdd.size() + folder.filesToRemove.size() + folder.foldersToAdd.size();
+                    numOfFilesToSync += folder.foldersToAdd.size() + folder.filesToAdd.size() + folder.foldersToRemove.size() + folder.filesToRemove.size();
     }
 
     if (!numOfFilesToSync)
@@ -1311,6 +1337,11 @@ void MainWindow::saveData() const
                 stream << file.type;
             }
 
+            stream << folder.foldersToRemove.size();
+
+            for (auto &path : folder.foldersToRemove)
+                stream << path;
+
             stream << folder.filesToRemove.size();
 
             for (auto &path : folder.filesToRemove)
@@ -1349,6 +1380,7 @@ void MainWindow::restoreData()
         for (qsizetype j = 0; j < foldersSize; j++)
         {
             qsizetype filesSize;
+            qsizetype folderToRemoveSize;
             qsizetype filesToRemoveSize;
             QString folderPath;
 
@@ -1371,6 +1403,16 @@ void MainWindow::restoreData()
                 stream >> type;
 
                 if (exists) profiles[profileIndex].folders[folderIndex].files.insert(hash64(path), File(path, type, date, updated));
+            }
+
+            stream >> folderToRemoveSize;
+
+            for (qsizetype k = 0; k < folderToRemoveSize; k++)
+            {
+                QString path;
+                stream >> path;
+
+                if (exists) profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(path);
             }
 
             stream >> filesToRemoveSize;
@@ -1518,10 +1560,22 @@ void MainWindow::checkForChanges(Profile &profile)
                 const File &otherFile = otherFileIt.value();
                 bool newFile = file.type == File::none;
 
-                if (otherFile.updated) otherFolderIt->filesToRemove.remove(otherFile.path);
+                if (otherFile.type == File::dir)
+                {
+                    if (otherFile.updated)
+                        otherFolderIt->foldersToRemove.remove(otherFile.path);
 
-                if (file.updated || (otherFile.exists && folderIt->filesToRemove.contains(otherFile.path) && !otherFolderIt->filesToRemove.contains(otherFile.path)))
-                    folderIt->filesToRemove.remove(otherFile.path);
+                    if (file.updated || (otherFile.exists && folderIt->foldersToRemove.contains(otherFile.path) && !otherFolderIt->foldersToRemove.contains(otherFile.path)))
+                        folderIt->foldersToRemove.remove(otherFile.path);
+                }
+                else
+                {
+                    if (otherFile.updated)
+                        otherFolderIt->filesToRemove.remove(otherFile.path);
+
+                    if (file.updated || (otherFile.exists && folderIt->filesToRemove.contains(otherFile.path) && !otherFolderIt->filesToRemove.contains(otherFile.path)))
+                        folderIt->filesToRemove.remove(otherFile.path);
+                }
 
                 bool alreadyAdded = folderIt->filesToAdd.contains(otherFile.path);
                 bool hasNewer = alreadyAdded && QFileInfo(folderIt->filesToAdd[otherFile.path]).lastModified() < otherFile.date;
@@ -1536,19 +1590,21 @@ void MainWindow::checkForChanges(Profile &profile)
                 // Or if other folders has a new version of a file/folder and our file/folder was removed.
                 (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QString(otherFile.path).remove(otherFile.path.indexOf('/', 1), 999999))).updated))) &&
                 // Checks for the newest version of a file in case if we have three folders or more.
-                (!alreadyAdded || hasNewer) && !otherFolderIt->filesToRemove.contains(otherFile.path))
+                (!alreadyAdded || hasNewer) &&
+                ((otherFile.type == File::dir && !otherFolderIt->foldersToRemove.contains(otherFile.path)) ||
+                 (otherFile.type == File::file && !otherFolderIt->filesToRemove.contains(otherFile.path))))
                 {
                     if (otherFile.type == File::dir)
                     {
                         folderIt->foldersToAdd.insert(otherFile.path);
+                        folderIt->foldersToRemove.remove(otherFile.path);
                     }
                     else
                     {
                         QString from(otherFolderIt->path);
                         folderIt->filesToAdd.insert(otherFile.path, from.append(otherFile.path));
+                        folderIt->filesToRemove.remove(otherFile.path);
                     }
-
-                    folderIt->filesToRemove.remove(otherFile.path);
                 }
             }
         }
@@ -1566,7 +1622,9 @@ void MainWindow::checkForChanges(Profile &profile)
         {
             if (folderIt->paused && syncingMode == Automatic) break;
 
-            if (!fileIt.value().exists && !folderIt->foldersToAdd.contains(fileIt.value().path) && !folderIt->filesToAdd.contains(fileIt.value().path) && !folderIt->filesToRemove.contains(fileIt.value().path))
+            if (!fileIt.value().exists && !folderIt->foldersToAdd.contains(fileIt.value().path) && !folderIt->filesToAdd.contains(fileIt.value().path) &&
+               ((fileIt.value().type == File::dir && !folderIt->foldersToRemove.contains(fileIt.value().path)) ||
+               (fileIt.value().type == File::file && !folderIt->filesToRemove.contains(fileIt.value().path))))
             {
                 // Adds files from other folders for removal
                 for (auto removeIt = profile.folders.begin(); removeIt != profile.folders.end(); ++removeIt)
@@ -1574,9 +1632,16 @@ void MainWindow::checkForChanges(Profile &profile)
                     if (folderIt == removeIt || !removeIt->exists || (removeIt->paused && syncingMode == Automatic)) continue;
 
                     if (removeIt->files.value(fileIt.key()).exists)
-                        removeIt->filesToRemove.insert(fileIt.value().path);
+                    {
+                        if (fileIt.value().type == File::dir)
+                            removeIt->foldersToRemove.insert(fileIt.value().path);
+                        else
+                            removeIt->filesToRemove.insert(fileIt.value().path);
+                    }
                     else
+                    {
                         removeIt->files.remove(fileIt.key());
+                    }
                 }
 
                 fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
