@@ -25,11 +25,14 @@
    </property>
    <item>
     <widget class="QCheckBox" name="createShortcutOnDesktopCheckBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="text">
       <string>Create a shortcut on the Desktop</string>
      </property>
      <property name="checked">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <property name="tristate">
       <bool>false</bool>
