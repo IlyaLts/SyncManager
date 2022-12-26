@@ -764,6 +764,8 @@ void MainWindow::sync(int profileNumber)
             if ((profileNumber >= 0 && profileNumber != i) || profile.toBeRemoved) continue;
 
             int activeFolders = 0;
+            QElapsedTimer timer;
+            timer.start();
 
             for (auto &folder : profile.folders)
             {
@@ -793,6 +795,8 @@ void MainWindow::sync(int profileNumber)
             }
 
             checkForChanges(profile);
+
+            profile.time = profile.time ? (profile.time + timer.elapsed()) / 2 : timer.elapsed();
         }
 
         syncNowTriggered = false;
@@ -1212,30 +1216,24 @@ void MainWindow::updateNextSyncingTime()
 {
     if (busy || syncingMode == Manual) return;
 
-    int numOfActiveFiles = 0;
+    quint64 time = 0;
 
     // Counts the current number of active files in not paused folders
     for (auto &profile : profiles)
     {
         if (profile.paused) continue;
 
-        int files = 0;
         int activeFolders = 0;
 
         for (auto &folder : profile.folders)
-        {
             if (!folder.paused && folder.exists)
-            {
-                files += folder.files.size();
                 activeFolders++;
-            }
-        }
 
-        if (activeFolders >= 2) numOfActiveFiles += files;
+        if (activeFolders >= 2) time += profile.time;
     }
 
-    if (!syncTimer.isActive() || numOfActiveFiles < syncTimer.remainingTime())
-        syncTimer.start(numOfActiveFiles < 1000 ? 1000 : numOfActiveFiles);
+    if (!syncTimer.isActive() || static_cast<int>(time) < syncTimer.remainingTime())
+        syncTimer.start(time < SYNC_MIN_DELAY ? SYNC_MIN_DELAY : time);
 }
 
 /*
