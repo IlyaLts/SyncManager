@@ -42,12 +42,6 @@
 #define TIMESTAMP(t, ...) debugTimestamp(t, __VA_ARGS__);
 
 std::chrono::high_resolution_clock::time_point startTime;
-#else
-
-#define SET_TIME(t)
-#define TIMESTAMP(t, m, ...)
-
-#endif
 
 /*
 ===================
@@ -77,6 +71,12 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
     qDebug("%lld ms - %s", ml.count(), buffer);
 }
+#else
+
+#define SET_TIME(t)
+#define TIMESTAMP(t, m, ...)
+
+#endif // DEBUG_TIMESTAMP
 
 /*
 ===================
@@ -114,6 +114,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->horizontalSplitter->setSizes(hSizes);
     ui->horizontalSplitter->setStretchFactor(0, 0);
     ui->horizontalSplitter->setStretchFactor(1, 1);
+
+    paused = settings.value(QLatin1String("Paused"), false).toBool();
+    minimizedOnStartup = settings.value("MinimizedOnStartup", true).toBool();
+    notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
+    moveToTrash = settings.value("MoveToTrash", false).toBool();
+    rememberFilesEnabled = settings.value("RememberFiles", false).toBool();
 
     profileModel = new DecoratedStringListModel;
     folderModel = new DecoratedStringListModel;
@@ -157,6 +163,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     moveToTrashAction->setCheckable(true);
     enableRememberFilesAction->setCheckable(true);
 
+    minimizedOnStartupAction->setChecked(minimizedOnStartup);
+    disableNotificationAction->setChecked(!notificationsEnabled);
+    moveToTrashAction->setChecked(moveToTrash);
+    enableRememberFilesAction->setChecked(rememberFilesEnabled);
+
+#ifdef Q_OS_WIN
+    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
+#else
+    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop"));
+#endif
+
     syncingModeMenu = new QMenu("&Syncing Mode", this);
     syncingModeMenu->addAction(automaticAction);
     syncingModeMenu->addAction(manualAction);
@@ -192,23 +209,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->menuBar()->addAction(pauseSyncingAction);
     this->menuBar()->addMenu(settingsMenu);
 
-    // Loads synchronization list
-    QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-    profileNames = profilesData.allKeys();
-    profileModel->setStringList(profileNames);
-
-    for (auto &name : profileNames)
-    {
-        profiles.append(Profile(paused));
-        foldersPath.append(profilesData.value(name).toStringList());
-
-        for (auto &path : foldersPath.last())
-        {
-            profiles.last().folders.append(Folder(paused));
-            profiles.last().folders.last().path = path;
-        }
-    }
-
     connect(ui->syncProfilesView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(profileClicked(QItemSelection,QItemSelection)));
     connect(ui->syncProfilesView->model(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)), SLOT(profileNameChanged(QModelIndex)));
     connect(ui->syncProfilesView, SIGNAL(deletePressed()), SLOT(removeProfile()));
@@ -228,22 +228,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
-    paused = settings.value(QLatin1String("Paused"), false).toBool();
-    minimizedOnStartup = settings.value("MinimizedOnStartup", true).toBool();
-    notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
-    moveToTrash = settings.value("MoveToTrash", false).toBool();
-    rememberFilesEnabled = settings.value("RememberFiles", false).toBool();
+    // Loads synchronization list
+    QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
+    profileNames = profilesData.allKeys();
+    profileModel->setStringList(profileNames);
 
-    minimizedOnStartupAction->setChecked(minimizedOnStartup);
-    disableNotificationAction->setChecked(!notificationsEnabled);
-    moveToTrashAction->setChecked(moveToTrash);
-    enableRememberFilesAction->setChecked(rememberFilesEnabled);
+    for (auto &name : profileNames)
+    {
+        profiles.append(Profile(paused));
+        foldersPath.append(profilesData.value(name).toStringList());
 
-#ifdef Q_OS_WIN
-    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
-#else
-    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop"));
-#endif
+        for (auto &path : foldersPath.last())
+        {
+            profiles.last().folders.append(Folder(paused));
+            profiles.last().folders.last().path = path;
+        }
+    }
 
     // Loads saved pause states for profiles/folers
     for (int i = 0; i < profiles.size(); i++)
@@ -1330,11 +1330,15 @@ void MainWindow::saveData() const
 
     for (int i = 0; auto &profile : profiles)
     {
+		if (profile.toBeRemoved) continue;
+		
         stream << profileNames[i];
         stream << profile.folders.size();
 
         for (auto &folder : profile.folders)
         {
+			if (folder.toBeRemoved) continue;
+			
             stream << folder.path;
             stream << folder.files.size();
 
