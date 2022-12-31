@@ -141,6 +141,8 @@ private Q_SLOTS:
     void quit();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void switchSyncingMode(MainWindow::SyncingMode mode);
+    void increaseSyncTime();
+    void decreaseSyncTime();
     void sync(int profileNumber = -1);
     void updateStatus();
     void updateNextSyncingTime();
@@ -185,6 +187,9 @@ private:
     QAction *pauseSyncingAction;
     QAction *automaticAction;
     QAction *manualAction;
+    QAction *increaseSyncTimeAction;
+    QAction *syncingTimeAction;
+    QAction *decreaseSyncTimeAction;
     QAction *moveToTrashAction;
     QAction *launchOnStartupAction;
     QAction *minimizedOnStartupAction;
@@ -197,6 +202,7 @@ private:
     QMenu *trayIconMenu;
     QMenu *settingsMenu;
     QMenu *syncingModeMenu;
+    QMenu *syncingTimeMenu;
 
     bool busy = false;
     bool paused = false;
@@ -208,6 +214,7 @@ private:
     bool moveToTrash = false;
     bool rememberFilesEnabled = false;
     int numOfFilesToSync = 0;
+    int syncTimeMultiplier = 1;
 
     QTimer syncTimer;
     QTimer updateTimer;

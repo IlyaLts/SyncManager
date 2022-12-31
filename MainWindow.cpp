@@ -120,6 +120,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     moveToTrash = settings.value("MoveToTrash", false).toBool();
     rememberFilesEnabled = settings.value("RememberFiles", false).toBool();
+    syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
+    if (syncTimeMultiplier <= 0) syncTimeMultiplier = 1;
 
     profileModel = new DecoratedStringListModel;
     folderModel = new DecoratedStringListModel;
@@ -147,6 +149,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     pauseSyncingAction = new QAction(iconPause, "&Pause Syncing", this);
     automaticAction = new QAction("&Automatic", this);
     manualAction = new QAction("&Manual", this);
+    increaseSyncTimeAction = new QAction("&Increase", this);
+    syncingTimeAction = new QAction(this);
+    decreaseSyncTimeAction = new QAction("&Decrease", this);
     launchOnStartupAction = new QAction("&Launch on Startup", this);
     minimizedOnStartupAction = new QAction("&Minimized on Startup");
     disableNotificationAction = new QAction("&Disable Notifications", this);
@@ -154,6 +159,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     enableRememberFilesAction = new QAction("&Remember Files (Requires disk space)", this);
     showAction = new QAction("&Show", this);
     quitAction = new QAction("&Quit", this);
+
+    syncingTimeAction->setDisabled(true);
+    decreaseSyncTimeAction->setDisabled(syncTimeMultiplier <= 1);
 
     automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
@@ -178,9 +186,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     syncingModeMenu->addAction(automaticAction);
     syncingModeMenu->addAction(manualAction);
 
+    syncingTimeMenu = new QMenu("&Syncing Time", this);
+    syncingTimeMenu->addAction(increaseSyncTimeAction);
+    syncingTimeMenu->addAction(syncingTimeAction);
+    syncingTimeMenu->addAction(decreaseSyncTimeAction);
+
     settingsMenu = new QMenu("&Settings", this);
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(syncingModeMenu);
+    settingsMenu->addMenu(syncingTimeMenu);
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(minimizedOnStartupAction);
     settingsMenu->addAction(disableNotificationAction);
@@ -216,6 +230,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
+    connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
+    connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
     connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
     connect(minimizedOnStartupAction, &QAction::triggered, this, [this](){ minimizedOnStartup = !minimizedOnStartup; });
     connect(disableNotificationAction, &QAction::triggered, this, [this](){ notificationsEnabled = !notificationsEnabled; });
@@ -285,15 +301,6 @@ MainWindow::~MainWindow()
 
     for (auto &size : ui->horizontalSplitter->sizes()) hSizes.append(size);
 
-    settings.setValue("HorizontalSplitter", hSizes);
-    settings.setValue("Fullscreen", isMaximized());
-    settings.setValue("MinimizedOnStartup", minimizedOnStartup);
-    settings.setValue("Notifications", notificationsEnabled);
-    settings.setValue("MoveToTrash", moveToTrash);
-    settings.setValue("RememberFiles", rememberFilesEnabled);
-    settings.setValue("SyncingMode", syncingMode);
-    settings.setValue("Paused", paused);
-
     if (!isMaximized())
     {
         settings.setValue("Width", size().width());
@@ -309,6 +316,16 @@ MainWindow::~MainWindow()
             if (!folder.toBeRemoved)
                 settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
     }
+
+    settings.setValue("Paused", paused);
+    settings.setValue("Fullscreen", isMaximized());
+    settings.setValue("HorizontalSplitter", hSizes);
+    settings.setValue("SyncingMode", syncingMode);
+    settings.setValue("MinimizedOnStartup", minimizedOnStartup);
+    settings.setValue("Notifications", notificationsEnabled);
+    settings.setValue("MoveToTrash", moveToTrash);
+    settings.setValue("RememberFiles", rememberFilesEnabled);
+    settings.setValue("NextSyncTimeMultiplier", syncTimeMultiplier);
 
     if (rememberFilesEnabled) saveData();
 
@@ -717,6 +734,7 @@ void MainWindow::switchSyncingMode(SyncingMode mode)
     {
         pauseSyncingAction->setVisible(true);
         automaticAction->setChecked(true);
+        syncingTimeMenu->menuAction()->setVisible(true);
         updateNextSyncingTime();
         break;
     }
@@ -724,12 +742,43 @@ void MainWindow::switchSyncingMode(SyncingMode mode)
     {
         pauseSyncingAction->setVisible(false);
         manualAction->setChecked(true);
+        syncingTimeMenu->menuAction()->setVisible(false);
         syncTimer.stop();
         break;
     }
     }
 
     updateStatus();
+}
+
+/*
+===================
+MainWindow::increaseSyncTime
+===================
+*/
+void MainWindow::increaseSyncTime()
+{
+    syncTimeMultiplier++;
+    decreaseSyncTimeAction->setDisabled(false);
+    updateNextSyncingTime();
+}
+
+/*
+===================
+MainWindow::decreaseSyncTime
+===================
+*/
+void MainWindow::decreaseSyncTime()
+{
+    syncTimeMultiplier--;
+
+    if (syncTimeMultiplier <= 1)
+    {
+        syncTimeMultiplier = 1;
+        decreaseSyncTimeAction->setDisabled(true);
+    }
+
+    updateNextSyncingTime();
 }
 
 /*
@@ -1214,7 +1263,7 @@ MainWindow::updateNextSyncingTime
 */
 void MainWindow::updateNextSyncingTime()
 {
-    if (busy || syncingMode == Manual) return;
+    if (syncingMode == Manual) return;
 
     quint64 time = 0;
 
@@ -1232,8 +1281,18 @@ void MainWindow::updateNextSyncingTime()
         if (activeFolders >= 2) time += profile.time;
     }
 
-    if (!syncTimer.isActive() || static_cast<int>(time) < syncTimer.remainingTime())
-        syncTimer.start(time < SYNC_MIN_DELAY ? SYNC_MIN_DELAY : time);
+    // Multiplies sync time by 2
+    time <<= (syncTimeMultiplier - 1);
+    if (time < SYNC_MIN_DELAY) time = SYNC_MIN_DELAY;
+
+    if ((!busy && syncTimer.isActive()) || (!syncTimer.isActive() || static_cast<int>(time) < syncTimer.remainingTime()))
+        syncTimer.start(time);
+
+    int seconds = (time / 1000) % 60;
+    int minutes = (time / 1000 / 60) % 60;
+    int hours = (time / 1000 / 60 / 60);
+
+    syncingTimeAction->setText(QString("Synchronize Every: %1:%2:%3").arg(hours, 2, 10, QChar('0')).arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0')));
 }
 
 /*
