@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Installer>
     <Name>Sync Manager</Name>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <Title>Sync Manager Installer</Title>
 	<ProductUrl>https://github.com/IlyaLts/SyncManager</ProductUrl>
 	<WizardShowPageList>false</WizardShowPageList>
