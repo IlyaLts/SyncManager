@@ -115,7 +115,7 @@ public:
         Manual
     } syncingMode;
 
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 public Q_SLOTS:

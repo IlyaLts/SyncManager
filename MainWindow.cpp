@@ -254,7 +254,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         profiles.append(Profile(paused));
         foldersPath.append(profilesData.value(name).toStringList());
 
-        for (auto &path : foldersPath.last())
+        for (const auto &path : foldersPath.last())
         {
             profiles.last().folders.append(Folder(paused));
             profiles.last().folders.last().path = path;
@@ -647,7 +647,7 @@ void MainWindow::pauseSelected()
 
             profiles[profileRow].paused = true;
 
-            for (auto &folder : profiles[profileRow].folders)
+            for (const auto &folder : profiles[profileRow].folders)
                 if (!folder.paused)
                     profiles[profileRow].paused = false;
         }
@@ -1148,7 +1148,7 @@ void MainWindow::updateStatus()
                 profileModel->setData(index, iconDone, Qt::DecorationRole);
 
                 // Shows a warning icon if at least one folder doesn't exist
-                for (auto &folder : profiles[i].folders)
+                for (const auto &folder : profiles[i].folders)
                 {
                     if (!folder.exists)
                     {
@@ -1189,7 +1189,7 @@ void MainWindow::updateStatus()
     }
 
     // Pause status
-    for (auto &profile : profiles)
+    for (const auto &profile : profiles)
     {
         paused = profile.paused;
         if (!paused) break;
@@ -1268,13 +1268,13 @@ void MainWindow::updateNextSyncingTime()
     quint64 time = 0;
 
     // Counts the current number of active files in not paused folders
-    for (auto &profile : profiles)
+    for (const auto &profile : profiles)
     {
         if (profile.paused) continue;
 
         int activeFolders = 0;
 
-        for (auto &folder : profile.folders)
+        for (const auto &folder : profile.folders)
             if (!folder.paused && folder.exists)
                 activeFolders++;
 
@@ -1399,7 +1399,7 @@ void MainWindow::saveData() const
             stream << folder.path;
             stream << folder.files.size();
 
-            for (auto &file : folder.files)
+            for (const auto &file : folder.files)
             {
                 stream << file.path;
                 stream << file.date;
@@ -1409,12 +1409,12 @@ void MainWindow::saveData() const
 
             stream << folder.foldersToRemove.size();
 
-            for (auto &path : folder.foldersToRemove)
+            for (const auto &path : folder.foldersToRemove)
                 stream << path;
 
             stream << folder.filesToRemove.size();
 
-            for (auto &path : folder.filesToRemove)
+            for (const auto &path : folder.filesToRemove)
                 stream << path;
         }
 

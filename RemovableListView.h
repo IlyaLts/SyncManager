@@ -35,7 +35,7 @@ class RemovableListView : public QListView
 
 public:
 
-    RemovableListView(QWidget *parent = nullptr) : QListView(parent){}
+    explicit RemovableListView(QWidget *parent = nullptr) : QListView(parent){}
 
 Q_SIGNALS:
 

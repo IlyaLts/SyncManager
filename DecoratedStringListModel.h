@@ -30,7 +30,7 @@ class DecoratedStringListModel : public QStringListModel
 {
 public:
 
-    DecoratedStringListModel(QObject* parent = nullptr) : QStringListModel(parent){}
+    explicit DecoratedStringListModel(QObject* parent = nullptr) : QStringListModel(parent){}
 
     QVariant data(const QModelIndex &index, int role) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
