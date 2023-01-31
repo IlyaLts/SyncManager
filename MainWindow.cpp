@@ -325,7 +325,7 @@ MainWindow::~MainWindow()
     settings.setValue("Notifications", notificationsEnabled);
     settings.setValue("MoveToTrash", moveToTrash);
     settings.setValue("RememberFiles", rememberFilesEnabled);
-    settings.setValue("NextSyncTimeMultiplier", syncTimeMultiplier);
+    settings.setValue("SyncTimeMultiplier", syncTimeMultiplier);
 
     if (rememberFilesEnabled) saveData();
 
@@ -1374,7 +1374,7 @@ void MainWindow::showContextMenu(const QPoint &pos) const
 
 /*
 ===================
-saveData
+MainWindow::saveData
 ===================
 */
 void MainWindow::saveData() const
@@ -1424,7 +1424,7 @@ void MainWindow::saveData() const
 
 /*
 ===================
-restoreData
+MainWindow::restoreData
 ===================
 */
 void MainWindow::restoreData()
