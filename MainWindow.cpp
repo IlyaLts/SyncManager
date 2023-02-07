@@ -924,7 +924,10 @@ void MainWindow::sync(int profileNumber)
 
                         QString path = QFileInfo(filename).path();
 
-                        QFuture<bool> future = QtConcurrent::run([&](){ return moveToTrash ? QFile::moveToTrash(filename) : QDir(filename).removeRecursively(); });
+                        // We need to make sure that moveToTrash really moved a folder to trash as it can return true even though it failed to do so
+                        QString pathInTrash;
+
+                        QFuture<bool> future = QtConcurrent::run([&](){ return moveToTrash ? QFile::moveToTrash(filename) && !pathInTrash.isEmpty() : QDir(filename).removeRecursively(); });
                         while (!future.isFinished()) updateApp();
 
                         if (future.result() || !QDir().exists(filename))
@@ -940,6 +943,7 @@ void MainWindow::sync(int profileNumber)
                             ++it;
                         }
 
+                        // Returns only if remembering files is enabled, as we can lose all made changes
                         if (updateApp() && rememberFilesEnabled) return;
                     }
 
@@ -952,7 +956,10 @@ void MainWindow::sync(int profileNumber)
 
                         QString path = QFileInfo(filename).path();
 
-                        if ((moveToTrash ? QFile::moveToTrash(filename) : QFile::remove(filename)) || !QFileInfo::exists(filename))
+                        // We need to make sure that moveToTrash really moved a file to trash as it can return true even though it failed to do so
+                        QString pathInTrash;
+
+                        if ((moveToTrash ? QFile::moveToTrash(filename, &pathInTrash) && !pathInTrash.isEmpty() : QFile::remove(filename)) || !QFileInfo::exists(filename))
                         {
                             folder.files.remove(fileHash);
                             it = folder.filesToRemove.erase(static_cast<QSet<QString>::const_iterator>(it));
@@ -964,6 +971,7 @@ void MainWindow::sync(int profileNumber)
                             ++it;
                         }
 
+                        // Returns only if remembering files is enabled, as we can lose all made changes
                         if (updateApp() && rememberFilesEnabled) return;
                     }
 
@@ -989,6 +997,7 @@ void MainWindow::sync(int profileNumber)
                             ++it;
                         }
 
+                        // Returns only if remembering files is enabled, as we can lose all made changes
                         if (updateApp() && rememberFilesEnabled) return;
                     }
 
@@ -1044,6 +1053,7 @@ void MainWindow::sync(int profileNumber)
                             ++it;
                         }
 
+                        // Returns only if remembering files is enabled, as we can lose all made changes
                         if (updateApp() && rememberFilesEnabled) return;
                     }
 
