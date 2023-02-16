@@ -1587,8 +1587,7 @@ int MainWindow::getListOfFiles(Folder &folder)
         }
         else
         {
-            folder.files.insert(fileHash, File(fileName, type, dir.fileInfo().lastModified()));
-            folder.files[fileHash].path.squeeze();
+            const_cast<File *>(folder.files.insert(fileHash, File(fileName, type, dir.fileInfo().lastModified())).operator->())->path.squeeze();
         }
 
         totalNumOfFiles++;
@@ -1606,8 +1605,8 @@ int MainWindow::getListOfFiles(Folder &folder)
         File::Type type = dir.is_directory() ? File::dir : File::file;
         quint64 fileHash = hash64(filePath);
 
-        folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)); // FIX: date and updated flag
-        folder.files[fileHash].path.squeeze();
+        // FIX: date and updated flag
+        const_cast<File *>(folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)).operator->())->path.squeeze();
         totalNumOfFiles++;
         if (shouldQuit || folder.toBeRemoved) return -1;
     }
