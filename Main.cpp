@@ -33,13 +33,12 @@ int main(int argc, char *argv[])
 {
     Q_INIT_RESOURCE(SyncManager);
     QApplication app(argc, argv);
+    QSharedMemory sharedMemory("SyncManagerLaunched");
 
     // Default style (Fusion) is too buggy
 #ifdef Q_OS_LINUX
     QApplication::setStyle(QStyleFactory::create("Windows"));
 #endif
-
-    QSharedMemory sharedMemory("SyncManagerLaunched");
 
     // Prevention of multiple instances
     if (!sharedMemory.create(1))

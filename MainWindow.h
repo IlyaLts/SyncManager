@@ -49,7 +49,7 @@ class QItemSelection;
 
 struct File
 {
-    enum Type : int;
+    enum Type : char;
 
     File(){}
     File(QString path, Type type, QDateTime time, bool updated = false) : path(path), date(time), updated(updated), exists(true), type(type){}
@@ -59,12 +59,12 @@ struct File
     bool updated = false;
     bool exists = false;
 
-    enum Type : int
+    enum Type : char
     {
-        none,
+        unknown,
         file,
-        dir
-    } type = none;
+        directory
+    } type = unknown;
 };
 
 struct Folder
