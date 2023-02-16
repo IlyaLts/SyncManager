@@ -39,4 +39,4 @@ RESOURCES += \
 RC_FILE = Resources.rc
 
 # qml_debug flag for debug and profile build configurations
-CONFIG(qml_debug): DEFINES += DEBUG_TIMESTAMP
+CONFIG(qml_debug): DEFINES += DEBUG

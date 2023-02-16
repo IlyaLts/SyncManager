@@ -35,7 +35,7 @@
 #include <filesystem>
 #endif
 
-#ifdef DEBUG_TIMESTAMP
+#ifdef DEBUG
 #include <chrono>
 
 #define SET_TIME(t) debugSetTime(t);
@@ -76,7 +76,7 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 #define SET_TIME(t)
 #define TIMESTAMP(t, m, ...)
 
-#endif // DEBUG_TIMESTAMP
+#endif // DEBUG
 
 /*
 ===================
@@ -799,7 +799,7 @@ void MainWindow::sync(int profileNumber)
     moveToTrashAction->setEnabled(false);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(false);
 
-#ifdef DEBUG_TIMESTAMP
+#ifdef DEBUG
     std::chrono::high_resolution_clock::time_point syncTime;
     debugSetTime(syncTime);
 #endif
@@ -824,7 +824,7 @@ void MainWindow::sync(int profileNumber)
 
             if ((profile.paused && syncingMode == Automatic) || activeFolders < 2) continue;
 
-#ifdef DEBUG_TIMESTAMP
+#ifdef DEBUG
             qDebug("===== Started syncing %s =====", qUtf8Printable(ui->syncProfilesView->model()->index(i, 0).data().toString()));
 #endif
 
@@ -850,7 +850,7 @@ void MainWindow::sync(int profileNumber)
 
         syncNowTriggered = false;
 
-#ifdef DEBUG_TIMESTAMP
+#ifdef DEBUG
         int numOfFoldersToAdd = 0;
         int numOfFilesToAdd = 0;
         int numOfFoldersToRemove = 0;
