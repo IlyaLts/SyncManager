@@ -258,6 +258,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         {
             profiles.last().folders.append(Folder(paused));
             profiles.last().folders.last().path = path;
+            profiles.last().folders.last().path.append("/");
         }
     }
 
@@ -552,6 +553,7 @@ void MainWindow::addFolder()
     if (!folderPath.isEmpty() && !folderPaths[row].contains(folderPath))
     {
         folderPaths[row].append(folderPath);
+        folderPath.append("/");
         profiles[row].folders.append(Folder(paused));
         profiles[row].folders.last().path = folderPath;
 
