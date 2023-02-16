@@ -165,7 +165,7 @@ private:
     DecoratedStringListModel *profileModel;
     DecoratedStringListModel *folderModel;
     QStringList profileNames;
-    QList<QStringList> foldersPath;
+    QList<QStringList> folderPaths;
 
     QIcon iconAdd;
     QIcon iconDone;
