@@ -1482,7 +1482,10 @@ void MainWindow::restoreData()
                 stream >> updated;
                 stream >> type;
 
-                if (exists) profiles[profileIndex].folders[folderIndex].files.insert(hash64(path), File(path, type, date, updated));
+                if (exists)
+                {
+                    const_cast<File *>(profiles[profileIndex].folders[folderIndex].files.insert(hash64(path), File(path, type, date, updated)).operator->())->path.squeeze();
+                }
             }
 
             stream >> folderToRemoveSize;
@@ -1492,7 +1495,10 @@ void MainWindow::restoreData()
                 QString path;
                 stream >> path;
 
-                if (exists) profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(path);
+                if (exists)
+                {
+                    const_cast<QString *>(profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(path).operator->())->squeeze();
+                }
             }
 
             stream >> filesToRemoveSize;
@@ -1502,7 +1508,10 @@ void MainWindow::restoreData()
                 QString path;
                 stream >> path;
 
-                if (exists) profiles[profileIndex].folders[folderIndex].filesToRemove.insert(path);
+                if (exists)
+                {
+                    const_cast<QString *>(profiles[profileIndex].folders[folderIndex].filesToRemove.insert(path).operator->())->squeeze();
+                }
             }
         }
     }
@@ -1579,6 +1588,7 @@ int MainWindow::getListOfFiles(Folder &folder)
         else
         {
             folder.files.insert(fileHash, File(fileName, type, dir.fileInfo().lastModified()));
+            folder.files[fileHash].path.squeeze();
         }
 
         totalNumOfFiles++;
@@ -1597,6 +1607,7 @@ int MainWindow::getListOfFiles(Folder &folder)
         quint64 fileHash = hash64(filePath);
 
         folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)); // FIX: date and updated flag
+        folder.files[fileHash].path.squeeze();
         totalNumOfFiles++;
         if (shouldQuit || folder.toBeRemoved) return -1;
     }
@@ -1676,13 +1687,13 @@ void MainWindow::checkForChanges(Profile &profile)
                 {
                     if (otherFile.type == File::directory)
                     {
-                        folderIt->foldersToAdd.insert(otherFile.path);
+                        const_cast<QString *>(folderIt->foldersToAdd.insert(otherFile.path).operator->())->squeeze();
                         folderIt->foldersToRemove.remove(otherFile.path);
                     }
                     else
                     {
                         QString from(otherFolderIt->path);
-                        folderIt->filesToAdd.insert(otherFile.path, from.append(otherFile.path));
+                        const_cast<QString *>(folderIt->filesToAdd.insert(otherFile.path, from.append(otherFile.path)).operator->())->squeeze();
                         folderIt->filesToRemove.remove(otherFile.path);
                     }
                 }
@@ -1714,9 +1725,9 @@ void MainWindow::checkForChanges(Profile &profile)
                     if (removeIt->files.value(fileIt.key()).exists)
                     {
                         if (fileIt.value().type == File::directory)
-                            removeIt->foldersToRemove.insert(fileIt.value().path);
+                            const_cast<QString *>(removeIt->foldersToRemove.insert(fileIt.value().path).operator->())->squeeze();
                         else
-                            removeIt->filesToRemove.insert(fileIt.value().path);
+                            const_cast<QString *>(removeIt->filesToRemove.insert(fileIt.value().path).operator->())->squeeze();
                     }
                     else
                     {
