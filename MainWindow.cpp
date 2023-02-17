@@ -83,9 +83,9 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 hash64
 ===================
 */
-quint64 hash64(const QString &str)
+quint64 hash64(const QByteArray &str)
 {
-    QByteArray hash = QCryptographicHash::hash(str.toUtf8(), QCryptographicHash::Md5);
+    QByteArray hash = QCryptographicHash::hash(str, QCryptographicHash::Md5);
     QDataStream stream(hash);
     quint64 a, b;
     stream >> a >> b;
@@ -257,7 +257,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         for (const auto &path : folderPaths.last())
         {
             profiles.last().folders.append(Folder(paused));
-            profiles.last().folders.last().path = path;
+            profiles.last().folders.last().path = path.toUtf8();
             profiles.last().folders.last().path.append("/");
         }
     }
@@ -553,9 +553,8 @@ void MainWindow::addFolder()
     if (!folderPath.isEmpty() && !folderPaths[row].contains(folderPath))
     {
         folderPaths[row].append(folderPath);
-        folderPath.append("/");
         profiles[row].folders.append(Folder(paused));
-        profiles[row].folders.last().path = folderPath;
+        profiles[row].folders.last().path = folderPath.append("/").toUtf8();
 
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
         profilesData.setValue(profileNames[row], folderPaths[row]);
@@ -904,8 +903,8 @@ void MainWindow::sync(int profileNumber)
                             QDir().mkdir(createFolders.top());
                             QString shortPath(createFolders.top());
                             shortPath.remove(0, folder.path.size());
-                            folder.files.insert(hash64(shortPath), File(shortPath, File::directory, QFileInfo(createFolders.top()).lastModified()));
-                            folder.foldersToAdd.remove(createFolders.top());
+                            folder.files.insert(hash64(shortPath.toUtf8()), File(shortPath.toUtf8(), File::directory, QFileInfo(createFolders.top()).lastModified()));
+                            folder.foldersToAdd.remove(createFolders.top().toUtf8());
                             foldersToUpdate.insert(createFolders.top());
                             createFolders.pop();
                         }
@@ -922,7 +921,7 @@ void MainWindow::sync(int profileNumber)
                     {
                         QString folderPath(folder.path);
                         folderPath.append(*it);
-                        quint64 fileHash = hash64(*it);
+                        quint64 fileHash = hash64(it->toUtf8());
                         QString parentPath = QFileInfo(folderPath).path();
 
                         // We need to make sure that moveToTrash really moved a folder to trash as it can return true even though it failed to do so
@@ -934,7 +933,7 @@ void MainWindow::sync(int profileNumber)
                         if (future.result() || !QDir().exists(folderPath))
                         {
                             folder.files.remove(fileHash);
-                            folder.foldersToRemove.remove(*it);
+                            folder.foldersToRemove.remove(it->toUtf8());
                             it = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(it));
 
                             if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
@@ -962,7 +961,7 @@ void MainWindow::sync(int profileNumber)
                         if ((moveToTrash ? QFile::moveToTrash(filePath, &pathInTrash) && !pathInTrash.isEmpty() : QFile::remove(filePath)) || !QFileInfo::exists(filePath))
                         {
                             folder.files.remove(fileHash);
-                            it = folder.filesToRemove.erase(static_cast<QSet<QString>::const_iterator>(it));
+                            it = folder.filesToRemove.erase(static_cast<QSet<QByteArray>::const_iterator>(it));
 
                             if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
                         }
@@ -987,7 +986,7 @@ void MainWindow::sync(int profileNumber)
                         if (QDir().mkdir(folderPath) || QFileInfo::exists(folderPath))
                         {
                             folder.files.insert(fileHash, File(*it, File::directory, QFileInfo(folderPath).lastModified()));
-                            it = folder.foldersToAdd.erase(static_cast<QSet<QString>::const_iterator>(it));
+                            it = folder.foldersToAdd.erase(static_cast<QSet<QByteArray>::const_iterator>(it));
 
                             QString parentPath = QFileInfo(folderPath).path();
                             if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
@@ -1007,7 +1006,7 @@ void MainWindow::sync(int profileNumber)
                         // Removes from the list if the source file doesn't exist
                         if (!QFileInfo::exists(it.value()))
                         {
-                            it = folder.filesToAdd.erase(static_cast<QMap<QString, QString>::const_iterator>(it));
+                            it = folder.filesToAdd.erase(static_cast<QMap<QByteArray, QByteArray>::const_iterator>(it));
                             continue;
                         }
 
@@ -1032,7 +1031,7 @@ void MainWindow::sync(int profileNumber)
                         if (future.result())
                         {
                             folder.files.insert(fileHash, File(it.key(), File::file, QFileInfo(filePath).lastModified()));
-                            it = folder.filesToAdd.erase(static_cast<QMap<QString, QString>::const_iterator>(it));
+                            it = folder.filesToAdd.erase(static_cast<QMap<QByteArray, QByteArray>::const_iterator>(it));
 
                             QString parentPath = QFileInfo(filePath).path();
                             if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
@@ -1060,7 +1059,7 @@ void MainWindow::sync(int profileNumber)
                     // Updates parent folders modified date as adding/removing files and folders change their modified date
                     for (auto &folderPath : foldersToUpdate)
                     {
-                        quint64 folderHash = hash64(QString(folderPath).remove(0, folder.path.size()));
+                        quint64 folderHash = hash64(QByteArray(folderPath.toUtf8()).remove(0, folder.path.size()));
                         if (folder.files.contains(folderHash)) folder.files[folderHash].date = QFileInfo(folderPath).lastModified();
                     }
                 }
@@ -1462,17 +1461,18 @@ void MainWindow::restoreData()
             qsizetype filesSize;
             qsizetype folderToRemoveSize;
             qsizetype filesToRemoveSize;
-            QString folderPath;
+            QByteArray folderPath;
 
             stream >> folderPath;
             stream >> filesSize;
 
+            folderPath.chop(1); // Removes a forward slash in the end of the path
             int folderIndex = folderPaths[profileIndex].indexOf(folderPath);
             bool exists = profileIndex >= 0 && folderIndex >= 0;
 
             for (qsizetype k = 0; k < filesSize; k++)
             {
-                QString path;
+                QByteArray path;
                 QDateTime date;
                 bool updated;
                 File::Type type;
@@ -1484,7 +1484,7 @@ void MainWindow::restoreData()
 
                 if (exists)
                 {
-                    const_cast<File *>(profiles[profileIndex].folders[folderIndex].files.insert(hash64(path), File(path, type, date, updated)).operator->())->path.squeeze();
+                    const_cast<File *>(profiles[profileIndex].folders[folderIndex].files.insert(hash64(path), File(path, type, date, updated)).operator->())->path.shrink_to_fit();
                 }
             }
 
@@ -1497,7 +1497,7 @@ void MainWindow::restoreData()
 
                 if (exists)
                 {
-                    const_cast<QString *>(profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(path).operator->())->squeeze();
+                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(path.toUtf8()).operator->())->squeeze();
                 }
             }
 
@@ -1510,7 +1510,7 @@ void MainWindow::restoreData()
 
                 if (exists)
                 {
-                    const_cast<QString *>(profiles[profileIndex].folders[folderIndex].filesToRemove.insert(path).operator->())->squeeze();
+                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].filesToRemove.insert(path.toUtf8()).operator->())->squeeze();
                 }
             }
         }
@@ -1544,7 +1544,7 @@ int MainWindow::getListOfFiles(Folder &folder)
 
         dir.next();
 
-        QString filePath(dir.fileInfo().filePath());
+        QByteArray filePath(dir.fileInfo().filePath().toUtf8());
         filePath.remove(0, folder.path.size());
         File::Type type = dir.fileInfo().isDir() ? File::directory : File::file;
         quint64 fileHash = hash64(filePath);
@@ -1569,7 +1569,7 @@ int MainWindow::getListOfFiles(Folder &folder)
 
                     while (folderPath.remove(folderPath.lastIndexOf("/"), 999999).length() > folder.path.length())
                     {
-                        quint64 hash = hash64(QString(folderPath).remove(0, folder.path.size()));
+                        quint64 hash = hash64(QByteArray(folderPath.toUtf8()).remove(0, folder.path.size()));
                         if (folder.files.value(hash).updated) break;
 
                         folder.files[hash].updated = true;
@@ -1678,7 +1678,7 @@ void MainWindow::checkForChanges(Profile &profile)
                 (file.type == File::file && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
 #endif
                 // Or if other folders has a new version of a file/folder and our file/folder was removed.
-                (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QString(otherFile.path).remove(otherFile.path.indexOf('/', 1), 999999))).updated))) &&
+                (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(QString(otherFile.path).indexOf('/', 0), 999999))).updated))) &&
                 // Checks for the newest version of a file in case if we have three folders or more.
                 (!alreadyAdded || hasNewer) &&
                 ((otherFile.type == File::directory && !otherFolderIt->foldersToRemove.contains(otherFile.path)) ||
@@ -1686,13 +1686,13 @@ void MainWindow::checkForChanges(Profile &profile)
                 {
                     if (otherFile.type == File::directory)
                     {
-                        const_cast<QString *>(folderIt->foldersToAdd.insert(otherFile.path).operator->())->squeeze();
+                        const_cast<QByteArray *>(folderIt->foldersToAdd.insert(otherFile.path).operator->())->squeeze();
                         folderIt->foldersToRemove.remove(otherFile.path);
                     }
                     else
                     {
                         QString from(otherFolderIt->path);
-                        const_cast<QString *>(folderIt->filesToAdd.insert(otherFile.path, from.append(otherFile.path)).operator->())->squeeze();
+                        const_cast<QByteArray *>(folderIt->filesToAdd.insert(otherFile.path, from.append(otherFile.path).toUtf8()).operator->())->squeeze();
                         folderIt->filesToRemove.remove(otherFile.path);
                     }
                 }
@@ -1724,9 +1724,9 @@ void MainWindow::checkForChanges(Profile &profile)
                     if (removeIt->files.value(fileIt.key()).exists)
                     {
                         if (fileIt.value().type == File::directory)
-                            const_cast<QString *>(removeIt->foldersToRemove.insert(fileIt.value().path).operator->())->squeeze();
+                            const_cast<QByteArray *>(removeIt->foldersToRemove.insert(fileIt.value().path).operator->())->squeeze();
                         else
-                            const_cast<QString *>(removeIt->filesToRemove.insert(fileIt.value().path).operator->())->squeeze();
+                            const_cast<QByteArray *>(removeIt->filesToRemove.insert(fileIt.value().path).operator->())->squeeze();
                     }
                     else
                     {

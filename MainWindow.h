@@ -52,9 +52,9 @@ struct File
     enum Type : char;
 
     File(){}
-    File(QString path, Type type, QDateTime time, bool updated = false) : path(path), date(time), updated(updated), exists(true), type(type){}
+    File(QByteArray path, Type type, QDateTime time, bool updated = false) : path(path), date(time), updated(updated), exists(true), type(type){}
 
-    QString path;
+    QByteArray path;
     QDateTime date;
     bool updated = false;
     bool exists = false;
@@ -71,12 +71,12 @@ struct Folder
 {
     explicit Folder(bool paused) : paused(paused){}
 
-    QString path;
+    QByteArray path;
     QHash<quint64, File> files;
-    QSet<QString> foldersToAdd;
-    QMap<QString, QString> filesToAdd;
-    QSet<QString> foldersToRemove;
-    QSet<QString> filesToRemove;
+    QSet<QByteArray> foldersToAdd;
+    QMap<QByteArray, QByteArray> filesToAdd;
+    QSet<QByteArray> foldersToRemove;
+    QSet<QByteArray> filesToRemove;
 
     bool exists = true;
     bool syncing = false;
