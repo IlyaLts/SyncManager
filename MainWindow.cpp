@@ -980,8 +980,25 @@ void MainWindow::sync(int profileNumber)
                         QString folderPath(folder.path);
                         folderPath.append(*it);
                         quint64 fileHash = hash64(*it);
+                        const File &file = folder.files.value(fileHash);
 
                         createParentFolders(QDir::cleanPath(folderPath));
+
+                        // Removes a file/folder with the same filename first before copying if it exists
+                        if (file.exists)
+                        {
+                            if (moveToTrash)
+                            {
+                                QFile::moveToTrash(folderPath);
+                            }
+                            else
+                            {
+                                if (file.type == File::directory)
+                                    QDir(folderPath).removeRecursively();
+                                else
+                                    QFile::remove(folderPath);
+                            }
+                        }
 
                         if (QDir().mkdir(folderPath) || QFileInfo::exists(folderPath))
                         {
@@ -1013,16 +1030,24 @@ void MainWindow::sync(int profileNumber)
                         QString filePath(folder.path);
                         filePath.append(it.key());
                         quint64 fileHash = hash64(it.key());
+                        const File &file = folder.files.value(fileHash);
 
                         createParentFolders(QDir::cleanPath(filePath));
 
-                        // Removes a file with the same filename first before copying if it exists
-                        if (folder.files.value(fileHash).exists)
+                        // Removes a file/folder with the same filename first before copying if it exists
+                        if (file.exists)
                         {
                             if (moveToTrash)
+                            {
                                 QFile::moveToTrash(filePath);
+                            }
                             else
-                                QFile::remove(filePath);
+                            {
+                                if (file.type == File::directory)
+                                    QDir(filePath).removeRecursively();
+                                else
+                                    QFile::remove(filePath);
+                            }
                         }
 
                         QFuture<bool> future = QtConcurrent::run([&](){ return QFile::copy(it.value(), filePath); });
@@ -1584,6 +1609,7 @@ int MainWindow::getListOfFiles(Folder &folder)
             file.date = fileDate;
             file.updated = updated;
             file.exists = true;
+            file.type = type;
         }
         else
         {
@@ -1673,9 +1699,9 @@ void MainWindow::checkForChanges(Profile &profile)
                 if ((newFile ||
                 // Or if we have a newer version of a file from other folders if exists
 #ifdef Q_OS_LINUX
-                (file.type == File::file && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
+                ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
 #else
-                (file.type == File::file && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
+                ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
 #endif
                 // Or if other folders has a new version of a file/folder and our file/folder was removed.
                 (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(QString(otherFile.path).indexOf('/', 0), 999999))).updated))) &&
