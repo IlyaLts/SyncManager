@@ -119,7 +119,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->horizontalSplitter->setStretchFactor(1, 1);
 
     paused = settings.value(QLatin1String("Paused"), false).toBool();
-    minimizedOnStartup = settings.value("MinimizedOnStartup", true).toBool();
+    showInTray = settings.value("ShowInTray", true).toBool();
     notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     moveToTrash = settings.value("MoveToTrash", false).toBool();
     rememberFilesEnabled = settings.value("RememberFiles", false).toBool();
@@ -156,7 +156,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     syncingTimeAction = new QAction(this);
     decreaseSyncTimeAction = new QAction("&Decrease", this);
     launchOnStartupAction = new QAction("&Launch on Startup", this);
-    minimizedOnStartupAction = new QAction("&Minimized on Startup");
+    showInTrayAction = new QAction("&Show in Tray");
     disableNotificationAction = new QAction("&Disable Notifications", this);
     moveToTrashAction = new QAction("&Move Files and Folders to Trash", this);
     enableRememberFilesAction = new QAction("&Remember Files (Requires disk space)", this);
@@ -169,12 +169,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
-    minimizedOnStartupAction->setCheckable(true);
+    showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
     moveToTrashAction->setCheckable(true);
     enableRememberFilesAction->setCheckable(true);
 
-    minimizedOnStartupAction->setChecked(minimizedOnStartup);
+    showInTrayAction->setChecked(showInTray);
     disableNotificationAction->setChecked(!notificationsEnabled);
     moveToTrashAction->setChecked(moveToTrash);
     enableRememberFilesAction->setChecked(rememberFilesEnabled);
@@ -199,7 +199,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     settingsMenu->addMenu(syncingModeMenu);
     settingsMenu->addMenu(syncingTimeMenu);
     settingsMenu->addAction(launchOnStartupAction);
-    settingsMenu->addAction(minimizedOnStartupAction);
+    settingsMenu->addAction(showInTrayAction);
     settingsMenu->addAction(disableNotificationAction);
     settingsMenu->addAction(moveToTrashAction);
     settingsMenu->addAction(enableRememberFilesAction);
@@ -220,7 +220,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     trayIcon->setContextMenu(trayIconMenu);
     trayIcon->setToolTip("Sync Manager");
     trayIcon->setIcon(trayIconDone);
-    trayIcon->show();
 
     this->menuBar()->addAction(syncNowAction);
     this->menuBar()->addAction(pauseSyncingAction);
@@ -236,7 +235,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
     connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
-    connect(minimizedOnStartupAction, &QAction::triggered, this, [this](){ minimizedOnStartup = !minimizedOnStartup; });
+    connect(showInTrayAction, &QAction::triggered, this, [this](){ setTrayVisible(!showInTray); });
     connect(disableNotificationAction, &QAction::triggered, this, [this](){ notificationsEnabled = !notificationsEnabled; });
     connect(moveToTrashAction, &QAction::triggered, this, [this](){ moveToTrash = !moveToTrash; });
     connect(enableRememberFilesAction, &QAction::triggered, this, [this](){ rememberFilesEnabled = !rememberFilesEnabled; });
@@ -325,7 +324,7 @@ MainWindow::~MainWindow()
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("SyncingMode", syncingMode);
-    settings.setValue("MinimizedOnStartup", minimizedOnStartup);
+    settings.setValue("ShowInTray", showInTray);
     settings.setValue("Notifications", notificationsEnabled);
     settings.setValue("MoveToTrash", moveToTrash);
     settings.setValue("RememberFiles", rememberFilesEnabled);
@@ -334,6 +333,35 @@ MainWindow::~MainWindow()
     if (rememberFilesEnabled) saveData();
 
     delete ui;
+}
+
+/*
+===================
+MainWindow::show
+===================
+*/
+void MainWindow::show()
+{
+    if (QSystemTrayIcon::isSystemTrayAvailable() && showInTray)
+    {
+        trayIcon->show();
+    }
+    else
+    {
+        QMainWindow::show();
+        trayIcon->hide();
+    }
+}
+
+/*
+===================
+MainWindow::setTrayVisible
+===================
+*/
+void MainWindow::setTrayVisible(bool visible)
+{
+    showInTray = visible;
+    show();
 }
 
 /*
@@ -390,7 +418,7 @@ MainWindow::closeEvent
 */
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if (QSystemTrayIcon::isSystemTrayAvailable())
+    if (QSystemTrayIcon::isSystemTrayAvailable() && showInTray)
     {
         // Hides the window instead of closing as it can appear out of the screen after disconnecting a display.
         hide();
@@ -398,7 +426,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     else
     {
-        if (syncing && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No), QMessageBox::No) == QMessageBox::No)
+        if (busy && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No), QMessageBox::No) == QMessageBox::No)
         {
             event->ignore();
             return;
@@ -681,8 +709,8 @@ void MainWindow::quit()
 {
     auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
 
-    if ((!syncing && QMessageBox::question(nullptr, QString("Quit"), QString("Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes) ||
-        (syncing && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes))
+    if ((!busy && QMessageBox::question(nullptr, QString("Quit"), QString("Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes) ||
+        (busy && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes))
     {
         shouldQuit = true;
         qApp->quit();
@@ -710,7 +738,7 @@ void MainWindow::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 #endif
 
         setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-        show();
+        QMainWindow::show();
         raise();
         activateWindow();
 
@@ -1118,10 +1146,10 @@ void MainWindow::sync(int profileNumber)
     }
 
     if (!queue.empty() && profileNumber >= 0) queue.dequeue();
-    busy = false;
     syncNowAction->setEnabled(true);
     moveToTrashAction->setEnabled(true);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(true);
+    busy = false;
 
     updateStatus();
     updateNextSyncingTime();

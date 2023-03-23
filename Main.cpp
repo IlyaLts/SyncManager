@@ -62,16 +62,7 @@ int main(int argc, char *argv[])
     if (QCoreApplication::arguments().contains("launchOnStartup", Qt::CaseInsensitive))
         window.setLaunchOnStartup(true);
 
-    if (QSystemTrayIcon::isSystemTrayAvailable())
-    {
-        QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-        if (!settings.value(QLatin1String("MinimizedOnStartup"), true).toBool()) window.show();
-        QApplication::setQuitOnLastWindowClosed(false);
-    }
-    else
-    {
-        window.show();
-    }
+    window.show();
 
     return app.exec();
 }

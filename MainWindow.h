@@ -123,6 +123,8 @@ public:
 
 public Q_SLOTS:
 
+    void show();
+    void setTrayVisible(bool visible);
     void setLaunchOnStartup(bool enable);
 
 protected:
@@ -195,7 +197,7 @@ private:
     QAction *decreaseSyncTimeAction;
     QAction *moveToTrashAction;
     QAction *launchOnStartupAction;
-    QAction *minimizedOnStartupAction;
+    QAction *showInTrayAction;
     QAction *disableNotificationAction;
     QAction *enableRememberFilesAction;
     QAction *showAction;
@@ -212,7 +214,7 @@ private:
     bool syncing = false;
     bool syncNowTriggered = false;
     bool shouldQuit = false;
-    bool minimizedOnStartup = true;
+    bool showInTray = true;
     bool notificationsEnabled = true;
     bool moveToTrash = false;
     bool rememberFilesEnabled = false;
