@@ -76,10 +76,10 @@ struct Folder
 
     QByteArray path;
     QHash<quint64, File> files;
-    QSet<QByteArray> foldersToAdd;
-    QMap<QByteArray, QByteArray> filesToAdd;
-    QSet<QByteArray> foldersToRemove;
-    QSet<QByteArray> filesToRemove;
+    QHash<quint64, QByteArray> foldersToAdd;
+    QHash<quint64, QPair<QByteArray, QByteArray>> filesToAdd;
+    QHash<quint64, QByteArray> foldersToRemove;
+    QHash<quint64, QByteArray> filesToRemove;
 
     bool exists = true;
     bool syncing = false;
