@@ -122,7 +122,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     showInTray = settings.value("ShowInTray", true).toBool();
     notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     moveToTrash = settings.value("MoveToTrash", false).toBool();
-    rememberFilesEnabled = settings.value("RememberFiles", false).toBool();
+    rememberFilesEnabled = settings.value("RememberFiles", true).toBool();
     syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
     if (syncTimeMultiplier <= 0) syncTimeMultiplier = 1;
 
