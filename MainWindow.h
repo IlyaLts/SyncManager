@@ -66,13 +66,13 @@ struct File
     {
         unknown,
         file,
-        directory
+        folder
     } type = unknown;
 };
 
-struct Folder
+struct SyncFolder
 {
-    explicit Folder(bool paused) : paused(paused){}
+    explicit SyncFolder(bool paused) : paused(paused){}
 
     QByteArray path;
     QHash<quint64, File> files;
@@ -91,7 +91,7 @@ struct Profile
 {
     explicit Profile(bool paused) : paused(paused){}
 
-    QList<Folder> folders;
+    QList<SyncFolder> folders;
 
     bool syncing = false;
     bool paused = false;
@@ -158,7 +158,7 @@ private:
 
     void saveData() const;
     void restoreData();
-    int getListOfFiles(Folder &folder);
+    int getListOfFiles(SyncFolder &folder);
     void checkForChanges(Profile &profile);
 
     Ui::MainWindow *ui;
