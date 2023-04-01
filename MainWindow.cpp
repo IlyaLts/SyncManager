@@ -289,7 +289,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     switchSyncingMode(static_cast<SyncingMode>(settings.value("SyncingMode", Automatic).toInt()));
     updateStatus();
-    syncNow();
+    updateNextSyncingTime();
 }
 
 /*
