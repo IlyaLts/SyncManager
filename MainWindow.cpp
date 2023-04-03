@@ -1469,13 +1469,32 @@ void MainWindow::saveData() const
                 stream << hash64(file.path);
                 stream << file.date;
                 stream << file.type;
+                stream << file.updated;
+                stream << file.exists;
             }
 
+            // Folders to add
+            stream << folder.foldersToAdd.size();
+
+            for (const auto &path : folder.foldersToAdd)
+                stream << path;
+
+            // Files to add
+            stream << folder.filesToAdd.size();
+
+            for (const auto &it : folder.filesToAdd)
+            {
+                stream << it.first;
+                stream << it.second;
+            }
+
+            // Folders to remove
             stream << folder.foldersToRemove.size();
 
             for (const auto &path : folder.foldersToRemove)
                 stream << path;
 
+            // Files to remove
             stream << folder.filesToRemove.size();
 
             for (const auto &path : folder.filesToRemove)
@@ -1514,6 +1533,8 @@ void MainWindow::restoreData()
         for (qsizetype j = 0; j < foldersSize; j++)
         {
             qsizetype filesSize;
+            qsizetype foldersToAddSize;
+            qsizetype filesToAddSize;
             qsizetype folderToRemoveSize;
             qsizetype filesToRemoveSize;
             QByteArray folderPath;
@@ -1530,40 +1551,79 @@ void MainWindow::restoreData()
                 quint64 hash;
                 QDateTime date;
                 File::Type type;
+                bool updated;
+                bool exists;
 
                 stream >> hash;
                 stream >> date;
                 stream >> type;
+                stream >> updated;
+                stream >> exists;
 
                 if (exists)
                 {
-                    const_cast<File *>(profiles[profileIndex].folders[folderIndex].files.insert(hash, File(QByteArray(), type, date, true)).operator->())->path.shrink_to_fit();
+                    const_cast<File *>(profiles[profileIndex].folders[folderIndex].files.insert(hash, File(QByteArray(), type, date, updated, exists, true)).operator->())->path.shrink_to_fit();
                 }
             }
 
+            // Folders to add
+            stream >> foldersToAddSize;
+
+            for (qsizetype k = 0; k < foldersToAddSize; k++)
+            {
+                QByteArray path;
+                stream >> path;
+
+                if (exists)
+                {
+                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].foldersToAdd.insert(hash64(path), path).operator->())->squeeze();
+                }
+            }
+
+            // Files to add
+            stream >> filesToAddSize;
+
+            for (qsizetype k = 0; k < filesToAddSize; k++)
+            {
+                QByteArray to;
+                QByteArray from;
+                stream >> to;
+                stream >> from;
+
+                if (exists)
+                {
+                    const auto &it = profiles[profileIndex].folders[folderIndex].filesToAdd.insert(hash64(to), QPair<QByteArray, QByteArray>(to, from));
+                    const_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
+                    const_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
+
+                }
+            }
+
+            // Folders to remove
             stream >> folderToRemoveSize;
 
             for (qsizetype k = 0; k < folderToRemoveSize; k++)
             {
-                QString path;
+                QByteArray path;
                 stream >> path;
 
                 if (exists)
                 {
-                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(hash64(path.toUtf8()), path.toUtf8()).operator->())->squeeze();
+                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(hash64(path), path).operator->())->squeeze();
                 }
             }
 
+            // Files to remove
             stream >> filesToRemoveSize;
 
             for (qsizetype k = 0; k < filesToRemoveSize; k++)
             {
-                QString path;
+                QByteArray path;
                 stream >> path;
 
                 if (exists)
                 {
-                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].filesToRemove.insert(hash64(path.toUtf8()), path.toUtf8()).operator->())->squeeze();
+                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].filesToRemove.insert(hash64(path), path).operator->())->squeeze();
                 }
             }
         }
@@ -1584,7 +1644,8 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
     for (auto &file : folder.files)
     {
         file.exists = false;
-        file.updated = false;
+        file.updated = (file.onRestore) ? file.updated : false;
+        file.onRestore = false;
     }
 
 #ifndef USE_STD_FILESYSTEM
@@ -1608,52 +1669,50 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
             // Restores filepath if it was loaded from saved file data
             if (file.path.isEmpty()) file.path = filePath;
 
-            if (!file.path.isEmpty())
+            // Hash collision
+            if (file.path != filePath)
             {
-                // Hash collision
-                if (file.path != filePath)
-                {
 #ifndef DEBUG
-                    QMessageBox::critical(nullptr, QString("Hash collision detected!"), QString("%s vs %s").arg(qUtf8Printable(filePath), qUtf8Printable(file.path)));
+                QMessageBox::critical(nullptr, QString("Hash collision detected!"), QString("%s vs %s").arg(qUtf8Printable(filePath), qUtf8Printable(file.path)));
 #else
-                    qCritical("Hash collision detected: %s vs %s", qUtf8Printable(filePath), qUtf8Printable(file.path));
+                qCritical("Hash collision detected: %s vs %s", qUtf8Printable(filePath), qUtf8Printable(file.path));
 #endif
 
-                    shouldQuit = true;
-                    break;
-                }
+                shouldQuit = true;
+                qApp->quit();
+                return -1;
+            }
 
-                bool updated = false;
-                QDateTime fileDate(dir.fileInfo().lastModified());
+            bool updated = file.updated;
+            QDateTime fileDate(dir.fileInfo().lastModified());
 
-                if (type == File::folder)
+            if (type == File::folder)
+            {
+                updated = (file.date < fileDate);
+
+                // Marks all parent folders as updated in case if the current folder was updated
+                if (updated)
                 {
-                    updated = (file.date < fileDate);
+                    QString folderPath(dir.fileInfo().filePath());
 
-                    // Marks all parent folders as updated in case if the current folder was updated
-                    if (updated)
+                    while (folderPath.remove(folderPath.lastIndexOf("/"), folderPath.length()).length() > folder.path.length())
                     {
-                        QString folderPath(dir.fileInfo().filePath());
+                        quint64 hash = hash64(QByteArray(folderPath.toUtf8()).remove(0, folder.path.size()));
+                        if (folder.files.value(hash).updated) break;
 
-                        while (folderPath.remove(folderPath.lastIndexOf("/"), folderPath.length()).length() > folder.path.length())
-                        {
-                            quint64 hash = hash64(QByteArray(folderPath.toUtf8()).remove(0, folder.path.size()));
-                            if (folder.files.value(hash).updated) break;
-
-                            folder.files[hash].updated = true;
-                        }
+                        folder.files[hash].updated = true;
                     }
                 }
-                else if (type == File::file && file.date != fileDate)
-                {
-                    updated = true;
-                }
-
-                file.date = fileDate;
-                file.updated = updated;
-                file.exists = true;
-                file.type = type;
             }
+            else if (type == File::file && file.date != fileDate)
+            {
+                updated = true;
+            }
+
+            file.date = fileDate;
+            file.type = type;
+            file.exists = true;
+            file.updated = updated;
         }
         else
         {
@@ -1693,12 +1752,6 @@ MainWindow::checkForChanges
 void MainWindow::checkForChanges(Profile &profile)
 {
     if ((syncingMode == Automatic && profile.paused) || profile.folders.size() < 2) return;
-
-    for (auto &folder : profile.folders)
-    {
-        folder.foldersToAdd.clear();
-        folder.filesToAdd.clear();
-    }
 
     SET_TIME(startTime);
 

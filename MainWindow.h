@@ -52,22 +52,22 @@ class QItemSelection;
 
 struct File
 {
-    enum Type : char;
-
-    File(){}
-    File(QByteArray path, Type type, QDateTime time, bool updated = false) : path(path), date(time), updated(updated), exists(true), type(type){}
-
-    QByteArray path;
-    QDateTime date;
-    bool updated = false;
-    bool exists = false;
-
-    enum Type : char
+    enum Type : qint8
     {
         unknown,
         file,
         folder
-    } type = unknown;
+    };
+
+    File(){}
+    File(QByteArray path, Type type, QDateTime time, bool updated = false, bool exists = true, bool onRestore = false) : path(path), date(time), type(type), updated(updated), exists(exists), onRestore(onRestore){}
+
+    QByteArray path;
+    QDateTime date;
+    Type type = unknown;
+    bool updated = false;
+    bool exists = false;
+    bool onRestore = false;
 };
 
 struct SyncFolder
