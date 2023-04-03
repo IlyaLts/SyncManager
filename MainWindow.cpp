@@ -1738,7 +1738,7 @@ void MainWindow::checkForChanges(Profile &profile)
                 }
 
                 bool alreadyAdded = folderIt->filesToAdd.contains(otherFileIt.key());
-                bool hasNewer = alreadyAdded && QFileInfo(folderIt->filesToAdd.value(otherFileIt.key()).first).lastModified() < otherFile.date;
+                bool hasNewer = alreadyAdded && QFileInfo(folderIt->filesToAdd.value(otherFileIt.key()).second).lastModified() < otherFile.date;
 
                 if ((newFile ||
                 // Or if we have a newer version of a file from other folders
