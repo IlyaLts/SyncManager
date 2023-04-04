@@ -87,9 +87,9 @@ struct SyncFolder
     bool toBeRemoved = false;
 };
 
-struct Profile
+struct SyncProfile
 {
-    explicit Profile(bool paused) : paused(paused){}
+    explicit SyncProfile(bool paused) : paused(paused){}
 
     QList<SyncFolder> folders;
 
@@ -159,12 +159,12 @@ private:
     void saveData() const;
     void restoreData();
     int getListOfFiles(SyncFolder &folder);
-    void checkForChanges(Profile &profile);
+    void checkForChanges(SyncProfile &profile);
 
     Ui::MainWindow *ui;
 
     QQueue<int> queue;
-    QList<Profile> profiles;
+    QList<SyncProfile> profiles;
     QMap<QString, QTimer *> notificationList;
 
     DecoratedStringListModel *profileModel;
