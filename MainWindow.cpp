@@ -825,6 +825,8 @@ void MainWindow::sync(int profileNumber)
 
     if (busy) return;
 
+    currentProfileNumber = profileNumber;
+
     busy = true;
     syncing = false;
     syncNowAction->setEnabled(false);
@@ -888,11 +890,14 @@ void MainWindow::sync(int profileNumber)
         int numOfFoldersToRemove = 0;
         int numOfFilesToRemove = 0;
 
-        for (auto &profile : profiles)
+        for (int i = -1; auto &profile : profiles)
         {
+            i++;
+
             for (auto &folder : profile.folders)
             {
                 if (folder.paused && syncingMode == Automatic) continue;
+                if ((profileNumber >= 0 && profileNumber != i) || profile.toBeRemoved) continue;
 
                 numOfFoldersToAdd += folder.foldersToAdd.size();
                 numOfFilesToAdd += folder.filesToAdd.size();
@@ -1171,13 +1176,17 @@ void MainWindow::updateStatus()
     numOfFilesToSync = 0;
 
     // Syncing statuses
-    for (auto &profile : profiles)
+    for (int i = -1; auto &profile : profiles)
     {
+        i++;
         profile.syncing = false;
 
         for (auto &folder : profile.folders)
         {
             folder.syncing = false;
+
+            if ((currentProfileNumber >= 0 && currentProfileNumber != i) || profile.toBeRemoved)
+                continue;
 
             if (!folder.toBeRemoved && !folder.exists)
                 isThereIssue = true;

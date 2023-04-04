@@ -218,6 +218,7 @@ private:
     bool notificationsEnabled = true;
     bool moveToTrash = false;
     bool rememberFilesEnabled = false;
+    int currentProfileNumber = -1;
     int numOfFilesToSync = 0;
     int syncTimeMultiplier = 1;
 
