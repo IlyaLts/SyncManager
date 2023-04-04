@@ -1680,7 +1680,11 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
             bool updated = file.updated;
 
             // Restores filepath if it was loaded from saved file data
-            if (file.path.isEmpty()) file.path = filePath;
+            if (file.path.isEmpty())
+            {
+                file.path = filePath;
+                file.path.squeeze();
+            }
 
             // Quits if hash collision detected
             if (file.path != filePath)
