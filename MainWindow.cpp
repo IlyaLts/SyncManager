@@ -289,7 +289,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     switchSyncingMode(static_cast<SyncingMode>(settings.value("SyncingMode", Automatic).toInt()));
     updateStatus();
-    updateNextSyncingTime();
+
+    if (syncingMode == Automatic) syncNow();
 }
 
 /*
@@ -1057,7 +1058,7 @@ void MainWindow::sync(int profileNumber)
                     for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && (syncingMode != Automatic || (!paused && !folder.paused));)
                     {
                         // Removes from the list if the source file doesn't exist
-                        if (!QFileInfo::exists(it.value().second))
+                        if (!QFileInfo::exists(it.value().second) || it.value().first.isEmpty() || it.value().second.isEmpty())
                         {
                             it = folder.filesToAdd.erase(static_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::const_iterator>(it));
                             continue;
