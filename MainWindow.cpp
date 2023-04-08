@@ -1172,7 +1172,8 @@ MainWindow::updateStatus
 */
 void MainWindow::updateStatus()
 {
-    bool isThereIssue = false;
+    bool isThereIssue = true;
+    bool isThereWarning = false;
     syncing = false;
     numOfFilesToSync = 0;
 
@@ -1181,6 +1182,7 @@ void MainWindow::updateStatus()
     {
         i++;
         profile.syncing = false;
+        int existingFolders = 0;
 
         for (auto &folder : profile.folders)
         {
@@ -1189,8 +1191,19 @@ void MainWindow::updateStatus()
             if ((currentProfileNumber >= 0 && currentProfileNumber != i) || profile.toBeRemoved)
                 continue;
 
-            if (!folder.toBeRemoved && !folder.exists)
-                isThereIssue = true;
+            if (!folder.toBeRemoved)
+            {
+                if (folder.exists)
+                {
+                    existingFolders++;
+
+                    if (existingFolders >= 2) isThereIssue = false;
+                }
+                else
+                {
+                    isThereWarning = true;
+                }
+            }
 
             if (busy && folder.exists && (syncingMode != Automatic || !folder.paused) && (!folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.foldersToRemove.isEmpty() || !folder.filesToRemove.isEmpty()))
             {
@@ -1292,10 +1305,18 @@ void MainWindow::updateStatus()
             if (windowIcon().cacheKey() != trayIconSync.cacheKey())
                 setWindowIcon(trayIconSync);
         }
-        else if (isThereIssue)
+        else if (isThereWarning)
         {
-            trayIcon->setIcon(trayIconWarning);
-            setWindowIcon(trayIconWarning);
+            if (isThereIssue)
+            {
+                trayIcon->setIcon(trayIconIssue);
+                setWindowIcon(trayIconIssue);
+            }
+            else
+            {
+                trayIcon->setIcon(trayIconWarning);
+                setWindowIcon(trayIconWarning);
+            }
         }
         else
         {
