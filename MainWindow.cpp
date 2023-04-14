@@ -162,9 +162,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     enableRememberFilesAction = new QAction("&Remember Files (Requires disk space)", this);
     showAction = new QAction("&Show", this);
     quitAction = new QAction("&Quit", this);
+    QAction *version = new QAction(QString("Version: %1").arg(SYNCMANAGER_VERSION), this);
 
     syncingTimeAction->setDisabled(true);
     decreaseSyncTimeAction->setDisabled(syncTimeMultiplier <= 1);
+    version->setDisabled(true);
 
     automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
@@ -203,6 +205,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     settingsMenu->addAction(disableNotificationAction);
     settingsMenu->addAction(moveToTrashAction);
     settingsMenu->addAction(enableRememberFilesAction);
+    settingsMenu->addSeparator();
+    settingsMenu->addAction(version);
 
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(syncNowAction);
