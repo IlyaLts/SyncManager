@@ -1134,6 +1134,22 @@ void MainWindow::sync(int profileNumber)
         profileIt++;
     }
 
+    // Optimizes memory usage
+    for (int i = -1; auto &profile : profiles)
+    {
+        i++;
+        if (profileNumber >= 0 && profileNumber != i) continue;
+
+        for (auto &folder : profile.folders)
+        {
+            folder.files.squeeze();
+            folder.foldersToAdd.squeeze();
+            folder.filesToAdd.squeeze();
+            folder.foldersToRemove.squeeze();
+            folder.filesToRemove.squeeze();
+        }
+    }
+
     if (!queue.empty() && profileNumber >= 0) queue.dequeue();
     syncNowAction->setEnabled(true);
     moveToTrashAction->setEnabled(true);
@@ -1576,7 +1592,7 @@ void MainWindow::restoreData()
 
                 if (exists)
                 {
-                    const_cast<File *>(profiles[profileIndex].folders[folderIndex].files.insert(hash, File(QByteArray(), type, date, updated, exists, true)).operator->())->path.shrink_to_fit();
+                    const_cast<File *>(profiles[profileIndex].folders[folderIndex].files.insert(hash, File(QByteArray(), type, date, updated, exists, true)).operator->())->path.squeeze();
                 }
             }
 
