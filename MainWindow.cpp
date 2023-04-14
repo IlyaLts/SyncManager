@@ -927,23 +927,23 @@ void MainWindow::sync(int profileNumber)
 
                     auto createParentFolders = [&](QString path)
                     {
-                        QStack<QString> createFolders;
+                        QStack<QString> foldersToCreate;
 
                         while ((path = QFileInfo(path).path()).length() > folder.path.length())
                         {
                             if (QDir(path).exists()) break;
-                            createFolders.append(path);
+                            foldersToCreate.append(path);
                         }
 
-                        while (!createFolders.isEmpty())
+                        while (!foldersToCreate.isEmpty())
                         {
-                            QDir().mkdir(createFolders.top());
-                            QString shortPath(createFolders.top());
+                            QDir().mkdir(foldersToCreate.top());
+                            QString shortPath(foldersToCreate.top());
                             shortPath.remove(0, folder.path.size());
-                            folder.files.insert(hash64(shortPath.toUtf8()), File(shortPath.toUtf8(), File::folder, QFileInfo(createFolders.top()).lastModified()));
-                            folder.foldersToAdd.remove(hash64(createFolders.top().toUtf8()));
-                            foldersToUpdate.insert(createFolders.top());
-                            createFolders.pop();
+                            folder.files.insert(hash64(shortPath.toUtf8()), File(shortPath.toUtf8(), File::folder, QFileInfo(foldersToCreate.top()).lastModified()));
+                            folder.foldersToAdd.remove(hash64(foldersToCreate.top().toUtf8()));
+                            foldersToUpdate.insert(foldersToCreate.top());
+                            foldersToCreate.pop();
                         }
                     };
 
@@ -964,7 +964,7 @@ void MainWindow::sync(int profileNumber)
                         // We need to make sure that moveToTrash really moved a folder to trash as it can return true even though it failed to do so
                         QString pathInTrash;
 
-                        QFuture<bool> future = QtConcurrent::run([&](){ return moveToTrash ? QFile::moveToTrash(folderPath) && !pathInTrash.isEmpty() : QDir(folderPath).removeRecursively(); });
+                        QFuture<bool> future = QtConcurrent::run([&](){ return moveToTrash ? (QFile::moveToTrash(folderPath) && !pathInTrash.isEmpty()) : QDir(folderPath).removeRecursively(); });
                         while (!future.isFinished()) updateApp();
 
                         if (future.result() || !QDir().exists(folderPath))
@@ -1017,25 +1017,8 @@ void MainWindow::sync(int profileNumber)
                         QString folderPath(folder.path);
                         folderPath.append(*it);
                         quint64 fileHash = hash64(*it);
-                        const File &file = folder.files.value(fileHash);
 
                         createParentFolders(QDir::cleanPath(folderPath));
-
-                        // Removes a file/folder with the same filename first before copying if it exists
-                        if (file.exists)
-                        {
-                            if (moveToTrash)
-                            {
-                                QFile::moveToTrash(folderPath);
-                            }
-                            else
-                            {
-                                if (file.type == File::folder)
-                                    QDir(folderPath).removeRecursively();
-                                else
-                                    QFile::remove(folderPath);
-                            }
-                        }
 
                         if (QDir().mkdir(folderPath) || QFileInfo::exists(folderPath))
                         {
@@ -1071,7 +1054,7 @@ void MainWindow::sync(int profileNumber)
 
                         createParentFolders(QDir::cleanPath(filePath));
 
-                        // Removes a file/folder with the same filename first before copying if it exists
+                        // Removes a file with the same filename first before copying if it exists
                         if (file.exists)
                         {
                             if (moveToTrash)
