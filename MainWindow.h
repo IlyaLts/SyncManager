@@ -97,7 +97,7 @@ struct SyncProfile
     bool syncing = false;
     bool paused = false;
     bool toBeRemoved = false;
-    quint64 time = 0;
+    quint64 syncTime = 0;
 };
 
 /*

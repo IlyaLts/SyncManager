@@ -250,7 +250,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
-    // Loads synchronization list
+    // Loads synchronization profiles
     QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
     profileNames = profilesData.allKeys();
     profileModel->setStringList(profileNames);
@@ -268,7 +268,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
 
-    // Loads saved pause states for profiles/folders
+    // Loads saved pause states and checks folders for existence
     for (int i = 0; i < profiles.size(); i++)
     {
         profiles[i].paused = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), false).toBool();
@@ -884,7 +884,7 @@ void MainWindow::sync(int profileNumber)
 
             checkForChanges(profile);
 
-            profile.time = profile.time ? (profile.time + timer.elapsed()) / 2 : timer.elapsed();
+            profile.syncTime = profile.syncTime ? (profile.syncTime + timer.elapsed()) / 2 : timer.elapsed();
         }
 
         syncNowTriggered = false;
@@ -1116,28 +1116,6 @@ void MainWindow::sync(int profileNumber)
         }
     }
 
-    // Removes profiles/folders if they were removed from lists
-    for (auto profileIt = profiles.begin(); profileIt != profiles.end();)
-    {
-        // Profiles
-        if (profileIt->toBeRemoved)
-        {
-            profileIt = profiles.erase(static_cast<QList<SyncProfile>::const_iterator>(profileIt));
-            continue;
-        }
-
-        // Folders
-        for (auto folderIt = profileIt->folders.begin(); folderIt != profileIt->folders.end();)
-        {
-            if (folderIt->toBeRemoved)
-                folderIt = profileIt->folders.erase(static_cast<QList<SyncFolder>::const_iterator>(folderIt));
-            else
-                folderIt++;
-        }
-
-        profileIt++;
-    }
-
     // Optimizes memory usage
     for (int i = -1; auto &profile : profiles)
     {
@@ -1166,6 +1144,28 @@ void MainWindow::sync(int profileNumber)
     TIMESTAMP(syncTime, "Syncing is complete.");
 
     if (!queue.empty()) sync(queue.head());
+
+    // Removes profiles/folders completely if we remove them during syncing
+    for (auto profileIt = profiles.begin(); profileIt != profiles.end();)
+    {
+        // Profiles
+        if (profileIt->toBeRemoved)
+        {
+            profileIt = profiles.erase(static_cast<QList<SyncProfile>::const_iterator>(profileIt));
+            continue;
+        }
+
+        // Folders
+        for (auto folderIt = profileIt->folders.begin(); folderIt != profileIt->folders.end();)
+        {
+            if (folderIt->toBeRemoved)
+                folderIt = profileIt->folders.erase(static_cast<QList<SyncFolder>::const_iterator>(folderIt));
+            else
+                folderIt++;
+        }
+
+        profileIt++;
+    }
 }
 
 /*
@@ -1180,7 +1180,7 @@ void MainWindow::updateStatus()
     syncing = false;
     numOfFilesToSync = 0;
 
-    // Syncing statuses
+    // Syncing status
     for (int i = -1; auto &profile : profiles)
     {
         i++;
@@ -1366,7 +1366,7 @@ void MainWindow::updateNextSyncingTime()
 
     quint64 time = 0;
 
-    // Counts the current number of active files in not paused folders
+    // Counts total syncing time of profiles with at least two active folders
     for (const auto &profile : profiles)
     {
         if (profile.paused) continue;
@@ -1377,7 +1377,7 @@ void MainWindow::updateNextSyncingTime()
             if (!folder.paused && folder.exists)
                 activeFolders++;
 
-        if (activeFolders >= 2) time += profile.time;
+        if (activeFolders >= 2) time += profile.syncTime;
     }
 
     // Multiplies sync time by 2
@@ -1629,7 +1629,6 @@ void MainWindow::restoreData()
                     const auto &it = profiles[profileIndex].folders[folderIndex].filesToAdd.insert(hash64(to), QPair<QByteArray, QByteArray>(to, from));
                     const_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
                     const_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
-
                 }
             }
 
@@ -1733,11 +1732,11 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
                 // Marks all parent folders as updated in case if the current folder was updated
                 if (updated)
                 {
-                    QString folderPath(dir.fileInfo().filePath());
+                    QByteArray folderPath(dir.fileInfo().filePath().toUtf8());
 
                     while (folderPath.remove(folderPath.lastIndexOf("/"), folderPath.length()).length() > folder.path.length())
                     {
-                        quint64 hash = hash64(QByteArray(folderPath.toUtf8()).remove(0, folder.path.size()));
+                        quint64 hash = hash64(QByteArray(folderPath).remove(0, folder.path.size()));
                         if (folder.files.value(hash).updated) break;
 
                         folder.files[hash].updated = true;
@@ -1811,27 +1810,27 @@ void MainWindow::checkForChanges(SyncProfile &profile)
 
                 const File &file = folderIt->files.value(otherFileIt.key());
                 const File &otherFile = otherFileIt.value();
-                bool newFile = file.type == File::unknown;
+                bool newFile = (file.type == File::unknown);
 
                 bool alreadyAdded = folderIt->filesToAdd.contains(otherFileIt.key());
                 bool hasNewer = alreadyAdded && QFileInfo(folderIt->filesToAdd.value(otherFileIt.key()).second).lastModified() < otherFile.date;
 
                 // Removes a file from to remove list if any file was updated
-                if (otherFile.type == File::folder)
-                {
-                    if (otherFile.updated)
-                        otherFolderIt->foldersToRemove.remove(otherFileIt.key());
-
-                    if (file.updated || (otherFile.exists && folderIt->foldersToRemove.contains(otherFileIt.key()) && !otherFolderIt->foldersToRemove.contains(otherFileIt.key())))
-                        folderIt->foldersToRemove.remove(otherFileIt.key());
-                }
-                else
+                if (otherFile.type == File::file)
                 {
                     if (otherFile.updated)
                         otherFolderIt->filesToRemove.remove(otherFileIt.key());
 
                     if (file.updated || (otherFile.exists && folderIt->filesToRemove.contains(otherFileIt.key()) && !otherFolderIt->filesToRemove.contains(otherFileIt.key())))
                         folderIt->filesToRemove.remove(otherFileIt.key());
+                }
+                else if (otherFile.type == File::folder)
+                {
+                    if (otherFile.updated)
+                        otherFolderIt->foldersToRemove.remove(otherFileIt.key());
+
+                    if (file.updated || (otherFile.exists && folderIt->foldersToRemove.contains(otherFileIt.key()) && !otherFolderIt->foldersToRemove.contains(otherFileIt.key())))
+                        folderIt->foldersToRemove.remove(otherFileIt.key());
                 }
 
                 if ((newFile ||
@@ -1841,8 +1840,8 @@ void MainWindow::checkForChanges(SyncProfile &profile)
 #else
                 ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
 #endif
-                // Or if other folders has a new version of a file/folder and our file/folder was removed
-                (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(QString(otherFile.path).indexOf('/', 0), 999999))).updated))) &&
+                // Or if other folders has a new version of a file and our file was removed
+                (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(QByteArray(otherFile.path).indexOf('/', 0), 999999))).updated))) &&
                 // Checks for the newest version of a file in case if we have three folders or more
                 (!alreadyAdded || hasNewer) &&
                 // Checks whether we supposed to remove this file or not
@@ -1856,8 +1855,9 @@ void MainWindow::checkForChanges(SyncProfile &profile)
                     }
                     else
                     {
-                        QString from(otherFolderIt->path);
-                        const auto &it = folderIt->filesToAdd.insert(otherFileIt.key(), QPair<QByteArray, QByteArray>(otherFile.path, from.append(otherFile.path).toUtf8()));
+                        QByteArray from(otherFolderIt->path);
+                        from.append(otherFile.path);
+                        const auto &it = folderIt->filesToAdd.insert(otherFileIt.key(), QPair<QByteArray, QByteArray>(otherFile.path, from));
                         const_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
                         const_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
                         folderIt->filesToRemove.remove(otherFileIt.key());
