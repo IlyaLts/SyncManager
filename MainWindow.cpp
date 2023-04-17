@@ -1498,13 +1498,13 @@ void MainWindow::saveData() const
             stream << folder.path;
             stream << folder.files.size();
 
-            for (const auto &file : folder.files)
+            for (auto it = folder.files.begin(); it != folder.files.end(); it++)
             {
-                stream << hash64(file.path);
-                stream << file.date;
-                stream << file.type;
-                stream << file.updated;
-                stream << file.exists;
+                stream << it.key();
+                stream << it->date;
+                stream << it->type;
+                stream << it->updated;
+                stream << it->exists;
             }
 
             // Folders to add
