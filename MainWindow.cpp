@@ -156,7 +156,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     syncingTimeAction = new QAction(this);
     decreaseSyncTimeAction = new QAction("&Decrease", this);
     launchOnStartupAction = new QAction("&Launch on Startup", this);
-    showInTrayAction = new QAction("&Show in Tray");
+    showInTrayAction = new QAction("&Show in System Tray");
     disableNotificationAction = new QAction("&Disable Notifications", this);
     moveToTrashAction = new QAction("&Move Files and Folders to Trash", this);
     enableRememberFilesAction = new QAction("&Remember Files (Requires disk space)", this);
@@ -492,6 +492,9 @@ MainWindow::removeProfile
 void MainWindow::removeProfile()
 {
     if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty()) return;
+
+    if (QMessageBox::question(nullptr, QString("Remove profile"), QString("Are you sure you want to remove profile?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::No)
+        return;
 
     for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
     {
