@@ -144,9 +144,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     trayIconPause.addFile(":/Images/TrayIconPause.png");
     trayIconSync.addFile(":/Images/TrayIconSync.png");
     trayIconWarning.addFile(":/Images/TrayIconWarning.png");
-
     animSync.setFileName(":/Images/AnimSync.gif");
-    animSync.start();
 
     syncNowAction = new QAction(iconSync, "&Sync Now", this);
     pauseSyncingAction = new QAction(iconPause, "&Pause Syncing", this);
@@ -645,6 +643,7 @@ void MainWindow::syncNow()
     syncNowTriggered = true;
     updateStatus();
     syncTimer.start(0);
+    animSync.start();
 }
 
 /*
@@ -825,7 +824,10 @@ MainWindow::sync
 void MainWindow::sync(int profileNumber)
 {
     if (profileNumber >= 0 && !queue.contains(profileNumber))
+    {
+        animSync.start();
         queue.enqueue(profileNumber);
+    }
 
     if (busy) return;
 
@@ -1165,6 +1167,8 @@ void MainWindow::sync(int profileNumber)
 
         profileIt++;
     }
+
+    animSync.stop();
 }
 
 /*
@@ -1209,6 +1213,7 @@ void MainWindow::updateStatus()
 
             if (busy && folder.exists && (syncingMode != Automatic || !folder.paused) && (!folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.foldersToRemove.isEmpty() || !folder.filesToRemove.isEmpty()))
             {
+                animSync.start();
                 syncing = true;
                 profile.syncing = true;
                 folder.syncing = true;
