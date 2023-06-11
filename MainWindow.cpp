@@ -768,24 +768,20 @@ void MainWindow::switchSyncingMode(SyncingMode mode)
     automaticAction->setChecked(false);
     manualAction->setChecked(false);
 
-    switch (mode)
-    {
-    case Automatic:
-    {
-        pauseSyncingAction->setVisible(true);
-        automaticAction->setChecked(true);
-        syncingTimeMenu->menuAction()->setVisible(true);
-        updateNextSyncingTime();
-        break;
-    }
-    case Manual:
+    if (mode == Manual)
     {
         pauseSyncingAction->setVisible(false);
         manualAction->setChecked(true);
         syncingTimeMenu->menuAction()->setVisible(false);
         syncTimer.stop();
-        break;
     }
+    // Otherwise, automatic
+    else
+    {
+        pauseSyncingAction->setVisible(true);
+        automaticAction->setChecked(true);
+        syncingTimeMenu->menuAction()->setVisible(true);
+        updateNextSyncingTime();
     }
 
     updateStatus();
