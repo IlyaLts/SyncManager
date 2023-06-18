@@ -1,21 +1,21 @@
 function Component()
 {
     installer.setDefaultPageVisible(QInstaller.Introduction, false);
-	installer.setDefaultPageVisible(QInstaller.TargetDirectory, true);
+    installer.setDefaultPageVisible(QInstaller.TargetDirectory, true);
     installer.setDefaultPageVisible(QInstaller.ComponentSelection, false);
-	installer.setDefaultPageVisible(QInstaller.StartMenuSelection, false);
+    installer.setDefaultPageVisible(QInstaller.StartMenuSelection, false);
     installer.setDefaultPageVisible(QInstaller.ReadyForInstallation, false);
-	
+    
     installer.currentPageChanged.connect(this, Component.prototype.currentPageChanged);
 }
 
 Component.prototype.createOperations = function()
 {
     component.createOperations();
-	
-	if (installer.isInstaller())
-	{
-		var targetDirectory = component.userInterface("targetDirectoryForm");
+    
+    if (installer.isInstaller())
+    {
+        var targetDirectory = component.userInterface("targetDirectoryForm");
 
         if (installer.value("os") == "win")
         {
@@ -44,10 +44,10 @@ Component.prototype.createOperations = function()
         {
             if (targetDirectory && targetDirectory.createShortcutOnDesktopCheckBox.checked)
             {
-				component.addElevatedOperation("CreateDesktopEntry",
+                component.addElevatedOperation("CreateDesktopEntry",
                                                "@HomeDir@/Desktop/SyncManager.desktop",
                                                "Version=1.0\nType=Application\nName=Sync Manager\nTerminal=false\nExec=@TargetDir@/SyncManager\nIcon=@TargetDir@/Icon.png\nCategories=Utilities");
-			}
+            }
 
             component.addElevatedOperation("CreateDesktopEntry",
                                            "/usr/share/applications/SyncManager.desktop",
@@ -59,15 +59,15 @@ Component.prototype.createOperations = function()
 Component.prototype.currentPageChanged = function(page)
 {
     try
-	{
+    {
         if (installer.isInstaller() && installer.value("os") == "win")
-		{
+        {
             if (page == QInstaller.TargetDirectory)
-				installer.addWizardPageItem(component, "targetDirectoryForm", QInstaller.TargetDirectory);
-		}
+                installer.addWizardPageItem(component, "targetDirectoryForm", QInstaller.TargetDirectory);
+        }
     }
-	catch(e)
-	{
+    catch(e)
+    {
         console.log(e);
     }
 }

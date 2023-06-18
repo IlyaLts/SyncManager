@@ -4,10 +4,10 @@
     <Description>Files/Folders Synchronization Manager</Description>
     <Version>1.2.5</Version>
     <ReleaseDate>2023-06-11</ReleaseDate>
-	<Checkable>false</Checkable>
-	<ForcedInstallation>true</ForcedInstallation>
-	<ForcedUpdate>true</ForcedUpdate>
-	<Licenses>
+    <Checkable>false</Checkable>
+    <ForcedInstallation>true</ForcedInstallation>
+    <ForcedUpdate>true</ForcedUpdate>
+    <Licenses>
         <License name="GNU GENERAL PUBLIC LICENSE Version 3" file="LICENSE.txt"/>
     </Licenses>
     <Script>InstallScript.qs</Script>

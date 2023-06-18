@@ -120,9 +120,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     paused = settings.value(QLatin1String("Paused"), false).toBool();
     showInTray = settings.value("ShowInTray", true).toBool();
-    notificationsEnabled = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
+    notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     moveToTrash = settings.value("MoveToTrash", false).toBool();
-    rememberFilesEnabled = settings.value("RememberFiles", true).toBool();
+    rememberFiles = settings.value("RememberFiles", true).toBool();
     syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
     if (syncTimeMultiplier <= 0) syncTimeMultiplier = 1;
 
@@ -175,9 +175,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     enableRememberFilesAction->setCheckable(true);
 
     showInTrayAction->setChecked(showInTray);
-    disableNotificationAction->setChecked(!notificationsEnabled);
+    disableNotificationAction->setChecked(!notifications);
     moveToTrashAction->setChecked(moveToTrash);
-    enableRememberFilesAction->setChecked(rememberFilesEnabled);
+    enableRememberFilesAction->setChecked(rememberFiles);
 
 #ifdef Q_OS_WIN
     launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
@@ -238,9 +238,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
     connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
     connect(showInTrayAction, &QAction::triggered, this, [this](){ setTrayVisible(!showInTray); });
-    connect(disableNotificationAction, &QAction::triggered, this, [this](){ notificationsEnabled = !notificationsEnabled; });
+    connect(disableNotificationAction, &QAction::triggered, this, [this](){ notifications = !notifications; });
     connect(moveToTrashAction, &QAction::triggered, this, [this](){ moveToTrash = !moveToTrash; });
-    connect(enableRememberFilesAction, &QAction::triggered, this, [this](){ rememberFilesEnabled = !rememberFilesEnabled; });
+    connect(enableRememberFilesAction, &QAction::triggered, this, [this](){ rememberFiles = !rememberFiles; });
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
@@ -278,12 +278,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             if (!folder.paused) paused = false;
             folder.exists = QFileInfo::exists(folder.path);
 
-            if (notificationsEnabled && !folder.exists)
+            if (notifications && !folder.exists)
                 trayIcon->showMessage("Couldn't find folder", folder.path, QSystemTrayIcon::Warning, 1000);
         }
     }
 
-    if (rememberFilesEnabled) restoreData();
+    if (rememberFiles) restoreData();
     QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
 
     syncTimer.setSingleShot(true);
@@ -328,12 +328,12 @@ MainWindow::~MainWindow()
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("SyncingMode", syncingMode);
     settings.setValue("ShowInTray", showInTray);
-    settings.setValue("Notifications", notificationsEnabled);
+    settings.setValue("Notifications", notifications);
     settings.setValue("MoveToTrash", moveToTrash);
-    settings.setValue("RememberFiles", rememberFilesEnabled);
+    settings.setValue("RememberFiles", rememberFiles);
     settings.setValue("SyncTimeMultiplier", syncTimeMultiplier);
 
-    if (rememberFilesEnabled) saveData();
+    if (rememberFiles) saveData();
 
     delete ui;
 }
@@ -986,7 +986,7 @@ void MainWindow::sync(int profileNumber)
                         }
 
                         // Returns only if remembering files is enabled, as we can lose all made changes
-                        if (updateApp() && rememberFilesEnabled) return;
+                        if (updateApp() && rememberFiles) return;
                     }
 
                     // Files to remove
@@ -1013,7 +1013,7 @@ void MainWindow::sync(int profileNumber)
                         }
 
                         // Returns only if remembering files is enabled, as we can lose all made changes
-                        if (updateApp() && rememberFilesEnabled) return;
+                        if (updateApp() && rememberFiles) return;
                     }
 
                     // Folders to add
@@ -1039,7 +1039,7 @@ void MainWindow::sync(int profileNumber)
                         }
 
                         // Returns only if remembering files is enabled, as we can lose all made changes
-                        if (updateApp() && rememberFilesEnabled) return;
+                        if (updateApp() && rememberFiles) return;
                     }
 
                     // Files to copy
@@ -1089,7 +1089,7 @@ void MainWindow::sync(int profileNumber)
                         else
                         {
                             // Not enough disk space notification
-                            if (notificationsEnabled && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value().second).size())
+                            if (notifications && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value().second).size())
                             {
                                 if (!notificationList.contains(rootPath))
                                     notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);
@@ -1103,7 +1103,7 @@ void MainWindow::sync(int profileNumber)
                         }
 
                         // Returns only if remembering files is enabled, as we can lose all made changes
-                        if (updateApp() && rememberFilesEnabled) return;
+                        if (updateApp() && rememberFiles) return;
                     }
 
                     // Updates parent folders modified date as adding/removing files and folders change their modified date
@@ -1490,15 +1490,15 @@ void MainWindow::saveData() const
 
     for (int i = 0; auto &profile : profiles)
     {
-		if (profile.toBeRemoved) continue;
-		
+        if (profile.toBeRemoved) continue;
+        
         stream << profileNames[i];
         stream << profile.folders.size();
 
         for (auto &folder : profile.folders)
         {
-			if (folder.toBeRemoved) continue;
-			
+            if (folder.toBeRemoved) continue;
+            
             stream << folder.path;
             stream << folder.files.size();
 

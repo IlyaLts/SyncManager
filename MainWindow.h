@@ -216,9 +216,9 @@ private:
     bool syncNowTriggered = false;
     bool shouldQuit = false;
     bool showInTray = true;
-    bool notificationsEnabled = true;
+    bool notifications = true;
     bool moveToTrash = false;
-    bool rememberFilesEnabled = false;
+    bool rememberFiles = false;
     int currentProfileNumber = -1;
     int numOfFilesToSync = 0;
     int syncTimeMultiplier = 1;

@@ -3,12 +3,12 @@
     <Name>Sync Manager</Name>
     <Version>1.2.5</Version>
     <Title>Sync Manager Installer</Title>
-	<ProductUrl>https://github.com/IlyaLts/SyncManager</ProductUrl>
-	<WizardShowPageList>false</WizardShowPageList>
+    <ProductUrl>https://github.com/IlyaLts/SyncManager</ProductUrl>
+    <WizardShowPageList>false</WizardShowPageList>
         <RunProgram>@TargetDir@/SyncManager</RunProgram>
-	<RunProgramArguments>launchOnStartup</RunProgramArguments>
+    <RunProgramArguments>launchOnStartup</RunProgramArguments>
     <StartMenuDir>Sync Manager</StartMenuDir>
     <TargetDir>@ApplicationsDir@/SyncManager</TargetDir>
-	<ControlScript>ControlScript.qs</ControlScript>
+    <ControlScript>ControlScript.qs</ControlScript>
     <InstallerApplicationIcon>../../Icon</InstallerApplicationIcon>
 </Installer>
