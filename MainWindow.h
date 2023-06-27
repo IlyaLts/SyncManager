@@ -50,6 +50,7 @@ QT_END_NAMESPACE
 
 class DecoratedStringListModel;
 class QItemSelection;
+class QMimeData;
 
 struct File
 {
@@ -139,7 +140,7 @@ private Q_SLOTS:
     void removeProfile();
     void profileClicked(const QItemSelection &selected, const QItemSelection &deselected);
     void profileNameChanged(const QModelIndex &index);
-    void addFolder();
+    void addFolder(const QMimeData *mimeData = nullptr);
     void removeFolder();
     void syncNow();
     void pauseSyncing();

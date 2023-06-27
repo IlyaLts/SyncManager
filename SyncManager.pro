@@ -10,12 +10,14 @@ CONFIG += c++20
 
 SOURCES += \
     DecoratedStringListModel.cpp \
+    FolderListView.cpp \
     Main.cpp \
     MainWindow.cpp \
     RemovableListView.cpp
 
 HEADERS += \
     DecoratedStringListModel.h \
+    FolderListView.h \
     MainWindow.h \
     RemovableListView.h
 

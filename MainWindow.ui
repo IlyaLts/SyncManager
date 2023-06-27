@@ -83,7 +83,7 @@
           </widget>
          </item>
          <item>
-          <widget class="RemovableListView" name="folderListView">
+          <widget class="FolderListView" name="folderListView">
            <property name="minimumSize">
             <size>
              <width>300</width>
@@ -116,6 +116,11 @@
    <class>RemovableListView</class>
    <extends>QListView</extends>
    <header>RemovableListView.h</header>
+  </customwidget>
+  <customwidget>
+   <class>FolderListView</class>
+   <extends>QListView</extends>
+   <header>FolderListView.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -230,6 +230,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(profileClicked(QItemSelection,QItemSelection)));
     connect(ui->syncProfilesView->model(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)), SLOT(profileNameChanged(QModelIndex)));
     connect(ui->syncProfilesView, SIGNAL(deletePressed()), SLOT(removeProfile()));
+    connect(ui->folderListView, &FolderListView::drop, this, &MainWindow::addFolder);
+    connect(ui->folderListView, SIGNAL(deletePressed()), SLOT(removeFolder()));
     connect(syncNowAction, SIGNAL(triggered()), this, SLOT(syncNow()));
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Automatic));
@@ -580,37 +582,61 @@ void MainWindow::profileNameChanged(const QModelIndex &index)
 MainWindow::addFolder
 ===================
 */
-void MainWindow::addFolder()
+void MainWindow::addFolder(const QMimeData *mimeData)
 {
     if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty()) return;
 
     int row = ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row();
+    QStringList folders;
 
-    QString folderPath = QFileDialog::getExistingDirectory(this, "Browse For Folder", QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
-    if (folderPath.isEmpty()) return;
-
-    // Checks if we already have a folder for synchronization in the list
-    for (const auto &path : folderPaths[row])
+    if (mimeData)
     {
-#ifdef Q_OS_LINUX
-        if (folderPath.toStdString().compare(0, path.length(), path.toStdString()) == 0)
-#else
-        if (folderPath.toLower().toStdString().compare(0, path.length(), path.toLower().toStdString()) == 0)
-#endif
+        for (const auto &url : mimeData->urls())
         {
-            return;
+            if (!QFileInfo(url.toLocalFile()).isDir())
+                continue;
+
+            folders.append(url.toLocalFile());
         }
     }
+    else
+    {
+        QString folderPath = QFileDialog::getExistingDirectory(this, "Browse For Folder", QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
+        if (folderPath.isEmpty()) return;
+        folders.append(folderPath);
+    }
 
-    folderPaths[row].append(folderPath);
-    profiles[row].folders.append(SyncFolder(paused));
-    profiles[row].folders.last().path = folderPath.append("/").toUtf8();
+    // Checks if we already have a folder for synchronization in the list
+    for (const auto &folder : folders)
+    {
+        bool exists = false;
 
-    QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-    profilesData.setValue(profileNames[row], folderPaths[row]);
+        for (const auto &path : folderPaths[row])
+        {
+#ifdef Q_OS_LINUX
+            if (folder.toStdString().compare(0, path.length(), path.toStdString()) == 0)
+#else
+            if (folder.toLower().toStdString().compare(0, path.length(), path.toLower().toStdString()) == 0)
+#endif
+            {
+                exists = true;
+            }
+        }
 
-    folderModel->setStringList(folderPaths[row]);
-    updateStatus();
+        if (!exists)
+        {
+            folderPaths[row].append(folder);
+            profiles[row].folders.append(SyncFolder(paused));
+            profiles[row].folders.last().path = folder.toUtf8();
+            profiles[row].folders.last().path.append("/");
+
+            QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
+            profilesData.setValue(profileNames[row], folderPaths[row]);
+
+            folderModel->setStringList(folderPaths[row]);
+            updateStatus();
+        }
+    }
 }
 
 /*
