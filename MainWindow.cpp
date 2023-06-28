@@ -285,6 +285,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
 
+    if (int size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME).size())
+    {
+        if (size < 1024)
+            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 bytes)").arg(size));
+        else if ((size / 1024) < 1024)
+            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 KB)").arg(size / 1024));
+        else
+            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 MB)").arg(size / 1024 / 1024));
+    }
+
     if (rememberFiles) restoreData();
     QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
 
