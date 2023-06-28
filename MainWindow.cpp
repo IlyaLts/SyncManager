@@ -1168,6 +1168,9 @@ void MainWindow::sync(int profileNumber)
             folder.filesToAdd.squeeze();
             folder.foldersToRemove.squeeze();
             folder.filesToRemove.squeeze();
+
+            for (auto &file : folder.files)
+                file.path.clear();
         }
     }
 
@@ -1622,6 +1625,7 @@ void MainWindow::restoreData()
             int folderIndex = folderPaths[profileIndex].indexOf(folderPath);
             bool exists = profileIndex >= 0 && folderIndex >= 0;
 
+            // Files
             for (qsizetype k = 0; k < filesSize; k++)
             {
                 quint64 hash;
