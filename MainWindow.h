@@ -99,6 +99,7 @@ struct SyncProfile
     bool paused = false;
     bool toBeRemoved = false;
     quint64 syncTime = 0;
+    QDateTime lastSyncDate;
 };
 
 /*

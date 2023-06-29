@@ -162,6 +162,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     quitAction = new QAction("&Quit", this);
     QAction *version = new QAction(QString("Version: %1").arg(SYNCMANAGER_VERSION), this);
 
+    // Adds file data size info in context menu
+    if (int size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME).size())
+    {
+        if (size < 1024)
+            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 bytes)").arg(size));
+        else if ((size / 1024) < 1024)
+            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 KB)").arg(size / 1024));
+        else
+            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 MB)").arg(size / 1024 / 1024));
+    }
+
     syncingTimeAction->setDisabled(true);
     decreaseSyncTimeAction->setDisabled(syncTimeMultiplier <= 1);
     version->setDisabled(true);
@@ -268,9 +279,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
 
-    // Loads saved pause states and checks folders for existence
     for (int i = 0; i < profiles.size(); i++)
     {
+        // Loads saved pause states and checks folders for existence
         profiles[i].paused = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), false).toBool();
         if (!profiles[i].paused) paused = false;
 
@@ -283,16 +294,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             if (notifications && !folder.exists)
                 trayIcon->showMessage("Couldn't find folder", folder.path, QSystemTrayIcon::Warning, 1000);
         }
-    }
 
-    if (int size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME).size())
-    {
-        if (size < 1024)
-            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 bytes)").arg(size));
-        else if ((size / 1024) < 1024)
-            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 KB)").arg(size / 1024));
+        // Loads last sync dates
+        profiles[i].lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate")).toDateTime();
+
+        if (!profiles[i].lastSyncDate.isNull())
+        {
+            QString lastSync = QString("Last Synchronization: %1.").arg(profiles[i].lastSyncDate.toString());
+            profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
+        }
         else
-            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 MB)").arg(size / 1024 / 1024));
+        {
+            profileModel->setData(profileModel->index(i, 0), "Haven't been synchronized yet.", Qt::ToolTipRole);
+        }
     }
 
     if (rememberFiles) restoreData();
@@ -325,7 +339,7 @@ MainWindow::~MainWindow()
         settings.setValue("Height", size().height());
     }
 
-    // Saves profiles/folders pause states
+    // Saves profiles/folders pause states and last sync dates
     for (int i = 0; i < profiles.size(); i++)
     {
         if (!profiles[i].toBeRemoved) settings.setValue(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), profiles[i].paused);
@@ -333,6 +347,8 @@ MainWindow::~MainWindow()
         for (auto &folder : profiles[i].folders)
             if (!folder.toBeRemoved)
                 settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
+
+        settings.setValue(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profiles[i].lastSyncDate);
     }
 
     settings.setValue("Paused", paused);
@@ -1195,6 +1211,15 @@ void MainWindow::sync(int profileNumber)
 
     TIMESTAMP(syncTime, "Syncing is complete.");
 
+    // Updates last synchronization dates
+    for (int i = ((profileNumber < 0) ? 0 : profileNumber); i < ((profileNumber < 0) ? profiles.size() : profileNumber + 1); i++)
+    {
+        profiles[i].lastSyncDate = QDateTime::currentDateTime();
+        QString lastSync = QString("Last synchronization: %1.").arg(profiles[i].lastSyncDate.toString());
+        profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
+    }
+
+    // Starts synchronization of the next profile in the queue if exists
     if (!queue.empty()) sync(queue.head());
 
     // Removes profiles/folders completely if we remove them during syncing
