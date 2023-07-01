@@ -1351,7 +1351,7 @@ void MainWindow::updateStatus()
 
                 if (syncingMode == Automatic && profiles[row].folders[i].paused)
                     folderModel->setData(index, iconPause, Qt::DecorationRole);
-                else if (profiles[row].folders[i].syncing || (syncHidden && queue.contains(row)))
+                else if ((profiles[row].folders[i].syncing) || (queue.contains(row) && !syncHidden))
                     folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
                 else if (!profiles[row].folders[i].exists)
                     folderModel->setData(index, iconRemove, Qt::DecorationRole);
