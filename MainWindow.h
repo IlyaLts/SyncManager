@@ -143,7 +143,6 @@ private Q_SLOTS:
     void profileNameChanged(const QModelIndex &index);
     void addFolder(const QMimeData *mimeData = nullptr);
     void removeFolder();
-    void syncNow();
     void pauseSyncing();
     void pauseSelected();
     void quit();
@@ -215,7 +214,7 @@ private:
     bool busy = false;
     bool paused = false;
     bool syncing = false;
-    bool syncNowTriggered = false;
+    bool syncHidden = false;
     bool shouldQuit = false;
     bool showInTray = true;
     bool notifications = true;

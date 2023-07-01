@@ -243,7 +243,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(deletePressed()), SLOT(removeProfile()));
     connect(ui->folderListView, &FolderListView::drop, this, &MainWindow::addFolder);
     connect(ui->folderListView, SIGNAL(deletePressed()), SLOT(removeFolder()));
-    connect(syncNowAction, SIGNAL(triggered()), this, SLOT(syncNow()));
+    connect(syncNowAction, SIGNAL(triggered()), this, SLOT(sync()));
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
@@ -257,7 +257,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
-    connect(&syncTimer, SIGNAL(timeout()), this, SLOT(sync()));
+    connect(&syncTimer, &QTimer::timeout, this, [this](){ if (queue.isEmpty()) { syncHidden = true; sync(); } });
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
 
@@ -318,7 +318,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     switchSyncingMode(static_cast<SyncingMode>(settings.value("SyncingMode", Automatic).toInt()));
     updateStatus();
 
-    if (syncingMode == Automatic) syncNow();
+    if (syncingMode == Automatic) syncTimer.start(0);
 }
 
 /*
@@ -699,19 +699,6 @@ void MainWindow::removeFolder()
 
 /*
 ===================
-MainWindow::syncNow
-===================
-*/
-void MainWindow::syncNow()
-{
-    syncNowTriggered = true;
-    updateStatus();
-    syncTimer.start(0);
-    animSync.start();
-}
-
-/*
-===================
 MainWindow::pauseSyncing
 ===================
 */
@@ -887,10 +874,31 @@ MainWindow::sync
 */
 void MainWindow::sync(int profileNumber)
 {
-    if (profileNumber >= 0 && !queue.contains(profileNumber))
+    if (profiles.isEmpty()) return;
+
+    animSync.start();
+
+    if (!queue.contains(profileNumber))
     {
-        animSync.start();
-        queue.enqueue(profileNumber);
+        if (profileNumber >= 0 && profileNumber < profiles.size())
+        {
+            queue.enqueue(profileNumber);
+        }
+        else
+        {
+            for (int i = 0; i < profiles.size(); i++)
+            {
+                if (!profiles[i].toBeRemoved && !queue.contains(i))
+                {
+                    queue.enqueue(i);
+
+                    if (profileNumber < 0 || profileNumber >= profiles.size())
+                        profileNumber = i;
+                }
+            }
+
+
+        }
     }
 
     if (busy) return;
@@ -899,7 +907,6 @@ void MainWindow::sync(int profileNumber)
 
     busy = true;
     syncing = false;
-    syncNowAction->setEnabled(false);
     moveToTrashAction->setEnabled(false);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(false);
 
@@ -908,7 +915,7 @@ void MainWindow::sync(int profileNumber)
     debugSetTime(syncTime);
 #endif
 
-    if (!paused || syncNowTriggered)
+    if (!paused)
     {
         // Checks for changes
         for (int i = -1; auto &profile : profiles)
@@ -951,8 +958,6 @@ void MainWindow::sync(int profileNumber)
 
             profile.syncTime = profile.syncTime ? (profile.syncTime + timer.elapsed()) / 2 : timer.elapsed();
         }
-
-        syncNowTriggered = false;
 
 #ifdef DEBUG
         int numOfFoldersToAdd = 0;
@@ -1200,8 +1205,7 @@ void MainWindow::sync(int profileNumber)
         }
     }
 
-    if (!queue.empty() && profileNumber >= 0) queue.dequeue();
-    syncNowAction->setEnabled(true);
+    queue.dequeue();
     moveToTrashAction->setEnabled(true);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(true);
     busy = false;
@@ -1244,6 +1248,7 @@ void MainWindow::sync(int profileNumber)
         profileIt++;
     }
 
+    syncHidden = false;
     animSync.stop();
 }
 
@@ -1310,7 +1315,7 @@ void MainWindow::updateStatus()
             {
                 profileModel->setData(index, iconPause, Qt::DecorationRole);
             }
-            else if (profiles[i].syncing || syncNowTriggered || queue.contains(i))
+            else if (profiles[i].syncing || (!syncHidden && queue.contains(i)))
             {
                 profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
             }
@@ -1346,7 +1351,7 @@ void MainWindow::updateStatus()
 
                 if (syncingMode == Automatic && profiles[row].folders[i].paused)
                     folderModel->setData(index, iconPause, Qt::DecorationRole);
-                else if (profiles[row].folders[i].syncing || syncNowTriggered || queue.contains(row))
+                else if (profiles[row].folders[i].syncing || (syncHidden && queue.contains(row)))
                     folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
                 else if (!profiles[row].folders[i].exists)
                     folderModel->setData(index, iconRemove, Qt::DecorationRole);
@@ -1380,7 +1385,7 @@ void MainWindow::updateStatus()
     }
     else
     {
-        if (syncing || syncNowTriggered || !queue.empty())
+        if (syncing || (!syncHidden && !queue.empty()))
         {
             if (trayIcon->icon().cacheKey() != trayIconSync.cacheKey())
                 trayIcon->setIcon(trayIconSync);
@@ -1517,11 +1522,8 @@ void MainWindow::showContextMenu(const QPoint &pos) const
                 else
                     menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
             }
-            else if (syncingMode == Manual)
-            {
-                menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(queue.contains(row) || syncNowTriggered);
-            }
 
+            menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(queue.contains(row));
             menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));
         }
 
