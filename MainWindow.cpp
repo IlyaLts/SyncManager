@@ -33,6 +33,7 @@
 #include <QTimer>
 #include <QStack>
 #include <QtConcurrent/QtConcurrent>
+#include "UnhiddableMenu.h"
 
 #ifdef USE_STD_FILESYSTEM
 #include <filesystem>
@@ -196,16 +197,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop"));
 #endif
 
-    syncingModeMenu = new QMenu("&Syncing Mode", this);
+    syncingModeMenu = new UnhiddableMenu("&Syncing Mode", this);
     syncingModeMenu->addAction(automaticAction);
     syncingModeMenu->addAction(manualAction);
 
-    syncingTimeMenu = new QMenu("&Syncing Time", this);
+    syncingTimeMenu = new UnhiddableMenu("&Syncing Time", this);
     syncingTimeMenu->addAction(increaseSyncTimeAction);
     syncingTimeMenu->addAction(syncingTimeAction);
     syncingTimeMenu->addAction(decreaseSyncTimeAction);
 
-    settingsMenu = new QMenu("&Settings", this);
+    settingsMenu = new UnhiddableMenu("&Settings", this);
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(syncingModeMenu);
     settingsMenu->addMenu(syncingTimeMenu);
@@ -217,7 +218,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     settingsMenu->addSeparator();
     settingsMenu->addAction(version);
 
-    trayIconMenu = new QMenu(this);
+    trayIconMenu = new UnhiddableMenu(this);
     trayIconMenu->addAction(syncNowAction);
     trayIconMenu->addAction(pauseSyncingAction);
     trayIconMenu->addSeparator();

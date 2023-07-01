@@ -13,13 +13,15 @@ SOURCES += \
     FolderListView.cpp \
     Main.cpp \
     MainWindow.cpp \
-    RemovableListView.cpp
+    RemovableListView.cpp \
+    UnhiddableMenu.cpp
 
 HEADERS += \
     DecoratedStringListModel.h \
     FolderListView.h \
     MainWindow.h \
-    RemovableListView.h
+    RemovableListView.h \
+    UnhiddableMenu.h
 
 FORMS += \
     MainWindow.ui
