@@ -1092,15 +1092,25 @@ void MainWindow::sync(int profileNumber)
                         QString folderPath(folder.path);
                         folderPath.append(*it);
                         quint64 fileHash = hash64(*it);
+                        QFileInfo fileInfo(folderPath);
 
                         createParentFolders(QDir::cleanPath(folderPath));
 
-                        if (QDir().mkdir(folderPath) || QFileInfo::exists(folderPath))
+                        // Removes a file with the same filename first if exists
+                        if (fileInfo.exists() && fileInfo.isFile())
                         {
-                            folder.files.insert(fileHash, File(*it, File::folder, QFileInfo(folderPath).lastModified()));
+                            if (moveToTrash)
+                                QFile::moveToTrash(folderPath);
+                            else
+                                QFile::remove(folderPath);
+                        }
+
+                        if (QDir().mkdir(folderPath) || fileInfo.exists())
+                        {
+                            folder.files.insert(fileHash, File(*it, File::folder, fileInfo.lastModified()));
                             it = folder.foldersToAdd.erase(static_cast<QHash<quint64, QByteArray>::const_iterator>(it));
 
-                            QString parentPath = QFileInfo(folderPath).path();
+                            QString parentPath = fileInfo.path();
                             if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
                         }
                         else
