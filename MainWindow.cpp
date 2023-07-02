@@ -310,8 +310,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
 
-    if (rememberFiles) restoreData();
-    QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
+    if (rememberFiles)
+        restoreData();
+    else
+        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
 
     syncTimer.setSingleShot(true);
     updateTimer.setSingleShot(true);
