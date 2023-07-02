@@ -163,7 +163,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     quitAction = new QAction("&Quit", this);
     QAction *version = new QAction(QString("Version: %1").arg(SYNCMANAGER_VERSION), this);
 
-    // Adds file data size info in context menu
+    // Adds file data size info to the context menu
     if (int size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME).size())
     {
         if (size < 1024)
@@ -282,7 +282,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (int i = 0; i < profiles.size(); i++)
     {
-        // Loads saved pause states and checks folders for existence
+        // Loads saved pause states and checks if synchronization folders exist
         profiles[i].paused = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), false).toBool();
         if (!profiles[i].paused) paused = false;
 
@@ -296,7 +296,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 trayIcon->showMessage("Couldn't find folder", folder.path, QSystemTrayIcon::Warning, 1000);
         }
 
-        // Loads last sync dates
+        // Loads last sync dates for all profiles
         profiles[i].lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate")).toDateTime();
 
         if (!profiles[i].lastSyncDate.isNull())
@@ -847,9 +847,12 @@ MainWindow::increaseSyncTime
 */
 void MainWindow::increaseSyncTime()
 {
-    syncTimeMultiplier++;
-    decreaseSyncTimeAction->setDisabled(false);
-    updateNextSyncingTime();
+    if (syncEvery != std::numeric_limits<int>::max())
+    {
+        syncTimeMultiplier++;
+        decreaseSyncTimeAction->setDisabled(false);
+        updateNextSyncingTime();
+    }
 }
 
 /*
@@ -1464,7 +1467,7 @@ void MainWindow::updateNextSyncingTime()
 
     int time = 0;
 
-    // Counts total syncing time of profiles with at least two active folders
+    // Counts the total syncing time of profiles with at least two active folders
     for (const auto &profile : profiles)
     {
         if (profile.paused) continue;
@@ -1483,6 +1486,7 @@ void MainWindow::updateNextSyncingTime()
     {
         time <<= 1;
 
+        // If exceeds the maximum value of an int
         if (time < 0)
         {
             time = std::numeric_limits<int>::max();
@@ -1491,9 +1495,7 @@ void MainWindow::updateNextSyncingTime()
     }
 
     if (time < SYNC_MIN_DELAY) time = SYNC_MIN_DELAY;
-
-    if ((!busy && syncTimer.isActive()) || (!syncTimer.isActive() || static_cast<int>(time) < syncTimer.remainingTime()))
-        syncTimer.start(time);
+    syncEvery = time;
 
     int seconds = (time / 1000) % 60;
     int minutes = (time / 1000 / 60) % 60;
@@ -1512,6 +1514,9 @@ void MainWindow::updateNextSyncingTime()
         str.append(QString("%1 seconds").arg(seconds));
 
     syncingTimeAction->setText(str);
+
+    if ((!busy && syncTimer.isActive()) || (!syncTimer.isActive() || time < syncTimer.remainingTime()))
+        syncTimer.start(time);
 }
 
 /*
@@ -1612,6 +1617,7 @@ void MainWindow::saveData() const
         {
             if (folder.toBeRemoved) continue;
             
+            // File data
             stream << folder.path;
             stream << folder.files.size();
 
@@ -1697,7 +1703,7 @@ void MainWindow::restoreData()
             int folderIndex = folderPaths[profileIndex].indexOf(folderPath);
             bool exists = profileIndex >= 0 && folderIndex >= 0;
 
-            // Files
+            // File data
             for (qsizetype k = 0; k < filesSize; k++)
             {
                 quint64 hash;
@@ -1814,21 +1820,21 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
         File::Type type = dir.fileInfo().isDir() ? File::folder : File::file;
         quint64 fileHash = hash64(filePath);
 
-        // If we have a file in our database already
+        // If a file is already in our database
         if (folder.files.contains(fileHash))
         {
             File &file = folder.files[fileHash];
             QDateTime fileDate(dir.fileInfo().lastModified());
             bool updated = file.updated;
 
-            // Restores filepath if it was loaded from saved file data
+            // Restores filepath
             if (file.path.isEmpty())
             {
                 file.path = filePath;
                 file.path.squeeze();
             }
 
-            // Quits if hash collision detected
+            // Quits if a hash collision is detected
             if (file.path != filePath)
             {
 #ifndef DEBUG
@@ -1847,7 +1853,7 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
             {
                 updated = (file.date < fileDate);
 
-                // Marks all parent folders as updated in case if the current folder was updated
+                // Marks all parent folders as updated if the current folder was updated
                 if (updated)
                 {
                     QByteArray folderPath(dir.fileInfo().filePath().toUtf8());

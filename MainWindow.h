@@ -224,6 +224,7 @@ private:
     int currentProfileNumber = -1;
     int numOfFilesToSync = 0;
     int syncTimeMultiplier = 1;
+    int syncEvery = 0;
 
     QTimer syncTimer;
     QTimer updateTimer;
