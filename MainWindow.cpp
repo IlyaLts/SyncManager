@@ -1462,7 +1462,7 @@ void MainWindow::updateNextSyncingTime()
 {
     if (syncingMode == Manual) return;
 
-    quint64 time = 0;
+    int time = 0;
 
     // Counts total syncing time of profiles with at least two active folders
     for (const auto &profile : profiles)
@@ -1479,7 +1479,17 @@ void MainWindow::updateNextSyncingTime()
     }
 
     // Multiplies sync time by 2
-    time <<= (syncTimeMultiplier - 1);
+    for (int i = 0; i < syncTimeMultiplier - 1; i++)
+    {
+        time <<= 1;
+
+        if (time < 0)
+        {
+            time = std::numeric_limits<int>::max();
+            break;
+        }
+    }
+
     if (time < SYNC_MIN_DELAY) time = SYNC_MIN_DELAY;
 
     if ((!busy && syncTimer.isActive()) || (!syncTimer.isActive() || static_cast<int>(time) < syncTimer.remainingTime()))
@@ -1487,9 +1497,21 @@ void MainWindow::updateNextSyncingTime()
 
     int seconds = (time / 1000) % 60;
     int minutes = (time / 1000 / 60) % 60;
-    int hours = (time / 1000 / 60 / 60);
+    int hours = (time / 1000 / 60 / 60) % 24;
+    int days = (time / 1000 / 60 / 60 / 24);
 
-    syncingTimeAction->setText(QString("Synchronize Every: %1:%2:%3").arg(hours, 2, 10, QChar('0')).arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0')));
+    QString str("Synchronize Every: ");
+
+    if (days)
+        str.append(QString("%1 days").arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
+    else if (hours)
+        str.append(QString("%1 hours").arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
+    else if (minutes)
+        str.append(QString("%1 minutes").arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
+    else if (seconds)
+        str.append(QString("%1 seconds").arg(seconds));
+
+    syncingTimeAction->setText(str);
 }
 
 /*
