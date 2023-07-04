@@ -906,7 +906,6 @@ void MainWindow::sync(int profileNumber)
 
     if (busy || queue.isEmpty()) return;
 
-    currentProfileNumber = queue.head();
     animSync.start();
     busy = true;
     syncing = false;
@@ -1254,6 +1253,7 @@ void MainWindow::updateStatus()
 {
     bool isThereIssue = true;
     bool isThereWarning = false;
+    int existingProfiles = 0;
     syncing = false;
     numOfFilesToSync = 0;
 
@@ -1264,11 +1264,15 @@ void MainWindow::updateStatus()
         profile.syncing = false;
         int existingFolders = 0;
 
+        if (profile.toBeRemoved) continue;
+
+        existingProfiles++;
+
         for (auto &folder : profile.folders)
         {
             folder.syncing = false;
 
-            if ((currentProfileNumber >= 0 && currentProfileNumber != i) || profile.toBeRemoved)
+            if (!queue.isEmpty() && queue.head() != i)
                 continue;
 
             if (!folder.toBeRemoved)
@@ -1411,6 +1415,8 @@ void MainWindow::updateStatus()
 
         pauseSyncingAction->setText("&Pause Syncing");
     }
+
+    syncNowAction->setEnabled(queue.size() != existingProfiles);
 
     // Number of files left to sync
     if (busy)
