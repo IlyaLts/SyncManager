@@ -32,7 +32,7 @@
 #include <QDateTime>
 #include <QMovie>
 
-#define SYNCMANAGER_VERSION "1.3.1"
+#define SYNCMANAGER_VERSION "1.3.2"
 #define SETTINGS_FILENAME "Settings.ini"
 #define PROFILES_FILENAME "Profiles.ini"
 #define DATA_FILENAME "Data.dat"
