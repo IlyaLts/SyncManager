@@ -80,7 +80,7 @@ struct SyncFolder
     QByteArray path;
     QHash<quint64, File> files;
     QHash<quint64, QByteArray> foldersToAdd;
-    QHash<quint64, QPair<QByteArray, QByteArray>> filesToAdd;
+    QHash<quint64, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToAdd;
     QHash<quint64, QByteArray> foldersToRemove;
     QHash<quint64, QByteArray> filesToRemove;
 

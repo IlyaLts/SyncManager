@@ -1152,15 +1152,15 @@ void MainWindow::sync(int profileNumber)
                 for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && (syncingMode != Automatic || (!paused && !folder.paused));)
                 {
                     // Removes from the "files to add" list if the source file doesn't exist
-                    if (!QFileInfo::exists(it.value().second) || it.value().first.isEmpty() || it.value().second.isEmpty())
+                    if (!QFileInfo::exists(it.value().first.second) || it.value().first.first.isEmpty() || it.value().first.second.isEmpty())
                     {
-                        it = folder.filesToAdd.erase(static_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+                        it = folder.filesToAdd.erase(static_cast<QHash<quint64, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
                         continue;
                     }
 
                     QString filePath(folder.path);
-                    filePath.append(it.value().first);
-                    quint64 fileHash = hash64(it.value().first);
+                    filePath.append(it.value().first.first);
+                    quint64 fileHash = hash64(it.value().first.first);
                     const File &file = folder.files.value(fileHash);
 
                     createParentFolders(QDir::cleanPath(filePath));
@@ -1181,13 +1181,13 @@ void MainWindow::sync(int profileNumber)
                         }
                     }
 
-                    QFuture<bool> future = QtConcurrent::run([&](){ return QFile::copy(it.value().second, filePath); });
+                    QFuture<bool> future = QtConcurrent::run([&](){ return QFile::copy(it.value().first.second, filePath); });
                     while (!future.isFinished()) updateApp();
 
                     if (future.result())
                     {
-                        folder.files.insert(fileHash, File(it.value().first, File::file, QFileInfo(filePath).lastModified()));
-                        it = folder.filesToAdd.erase(static_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+                        folder.files.insert(fileHash, File(it.value().first.first, File::file, QFileInfo(filePath).lastModified()));
+                        it = folder.filesToAdd.erase(static_cast<QHash<quint64, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
 
                         QString parentPath = QFileInfo(filePath).path();
                         if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
@@ -1195,7 +1195,7 @@ void MainWindow::sync(int profileNumber)
                     else
                     {
                         // Not enough disk space notification
-                        if (notifications && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value().second).size())
+                        if (notifications && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value().first.second).size())
                         {
                             if (!notificationList.contains(rootPath))
                                 notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);
@@ -1760,14 +1760,17 @@ void MainWindow::restoreData()
             {
                 QByteArray to;
                 QByteArray from;
+                QDateTime time;
                 stream >> to;
                 stream >> from;
+                stream >> time;
 
                 if (exists)
                 {
-                    const auto &it = profiles[profileIndex].folders[folderIndex].filesToAdd.insert(hash64(to), QPair<QByteArray, QByteArray>(to, from));
-                    const_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
-                    const_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
+                    QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(to, from), time);
+                    const auto &it = profiles[profileIndex].folders[folderIndex].filesToAdd.insert(hash64(to), pair);
+                    const_cast<QHash<quint64, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.first.squeeze();
+                    const_cast<QHash<quint64, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.second.squeeze();
                 }
             }
 
@@ -1954,7 +1957,7 @@ void MainWindow::checkForChanges(SyncProfile &profile)
                 bool newFile = (file.type == File::unknown);
 
                 bool alreadyAdded = folderIt->filesToAdd.contains(otherFileIt.key());
-                bool hasNewer = alreadyAdded && QFileInfo(folderIt->filesToAdd.value(otherFileIt.key()).second).lastModified() < otherFile.date;
+                bool hasNewer = alreadyAdded && folderIt->filesToAdd.value(otherFileIt.key()).second < otherFile.date;
 
                 // Removes a file path from the "to remove" list if a file was updated
                 if (otherFile.type == File::file)
@@ -1998,9 +2001,10 @@ void MainWindow::checkForChanges(SyncProfile &profile)
                     {
                         QByteArray from(otherFolderIt->path);
                         from.append(otherFile.path);
-                        const auto &it = folderIt->filesToAdd.insert(otherFileIt.key(), QPair<QByteArray, QByteArray>(otherFile.path, from));
-                        const_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
-                        const_cast<QHash<quint64, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
+                        QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(otherFile.path, from), otherFile.date);
+                        const auto &it = folderIt->filesToAdd.insert(otherFileIt.key(), pair);
+                        const_cast<QHash<quint64, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.first.squeeze();
+                        const_cast<QHash<quint64, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.second.squeeze();
                         folderIt->filesToRemove.remove(otherFileIt.key());
                     }
                 }
