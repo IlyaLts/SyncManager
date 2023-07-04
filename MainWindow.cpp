@@ -938,19 +938,53 @@ void MainWindow::sync(int profileNumber)
             qDebug("===== Started syncing %s =====", qUtf8Printable(ui->syncProfilesView->model()->index(queue.head(), 0).data().toString()));
 #endif
 
-            // Gets a list of all files in a folder
-            for (auto &folder : profiles[queue.head()].folders)
-            {
-                SET_TIME(startTime);
+            // Gets lists of all files in folders
+            SET_TIME(startTime);
 
-                QFuture<int> future = QtConcurrent::run([&](){ return getListOfFiles(folder); });
-                while (!future.isFinished())
+            bool isFinished = false;
+            QList<QFuture<int>> futureList;
+            QSet<int> finished;
+
+            while (!isFinished)
+            {
+                int i = 0;
+
+                for (auto &folder : profiles[queue.head()].folders)
                 {
-                    if (updateApp()) return;
+                    if (finished.contains(i)) continue;
+
+                    if (!usedDevices.contains(QStorageInfo(folder.path).device()))
+                    {
+                        finished.insert(i);
+                        usedDevices.insert(QStorageInfo(folder.path).device());
+                        futureList.append(QFuture(QtConcurrent::run([&](){ return getListOfFiles(folder); })));
+                    }
+
+                    i++;
                 }
 
-                TIMESTAMP(startTime, "Found %d files in %s.", future.result(), qUtf8Printable(folder.path));
+                for (const auto &future : futureList)
+                {
+                    if (future.isFinished())
+                    {
+                        isFinished = true;
+                    }
+                    else
+                    {
+                        isFinished = false;
+                        break;
+                    }
+                }
+
+                if (updateApp()) return;
             }
+
+            int result = 0;
+
+            for (const auto &future : futureList)
+                result += future.result();
+
+            TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(ui->syncProfilesView->model()->index(queue.head(), 0).data().toString()));
 
             checkForChanges(profiles[queue.head()]);
 
@@ -1264,15 +1298,13 @@ void MainWindow::updateStatus()
         profile.syncing = false;
         int existingFolders = 0;
 
-        if (profile.toBeRemoved) continue;
-
         existingProfiles++;
 
         for (auto &folder : profile.folders)
         {
             folder.syncing = false;
 
-            if (!queue.isEmpty() && queue.head() != i)
+            if ((!queue.isEmpty() && queue.head() != i ) || profile.toBeRemoved)
                 continue;
 
             if (!folder.toBeRemoved)
@@ -1886,6 +1918,8 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
         if (shouldQuit || folder.toBeRemoved) return -1;
     }
 #endif
+
+    usedDevices.remove(QStorageInfo(folder.path).device());
 
     return totalNumOfFiles;
 }
