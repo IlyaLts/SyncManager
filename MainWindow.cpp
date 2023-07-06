@@ -1340,7 +1340,7 @@ void MainWindow::updateStatus()
 
             QModelIndex index = profileModel->index(j, 0);
 
-            if (syncingMode == Automatic && profiles[i].paused)
+            if (profiles[i].paused)
             {
                 profileModel->setData(index, iconPause, Qt::DecorationRole);
             }
@@ -1569,15 +1569,16 @@ void MainWindow::showContextMenu(const QPoint &pos) const
         {
             int row = ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row();
 
-            if (syncingMode == Automatic)
+            if (profiles[row].paused)
             {
-                if (profiles[row].paused)
-                    menu.addAction(iconResume, "&Resume syncing profile", this, SLOT(pauseSelected()));
-                else
-                    menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
+                menu.addAction(iconResume, "&Resume syncing profile", this, SLOT(pauseSelected()));
+            }
+            else
+            {
+                menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
+                menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(queue.contains(row));
             }
 
-            menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(queue.contains(row));
             menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));
         }
 
@@ -1829,16 +1830,17 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
 
         dir.next();
 
-        QByteArray filePath(dir.fileInfo().filePath().toUtf8());
+        QFileInfo fileInfo(dir.fileInfo());
+        QByteArray filePath(fileInfo.filePath().toUtf8());
         filePath.remove(0, folder.path.size());
-        File::Type type = dir.fileInfo().isDir() ? File::folder : File::file;
+        File::Type type = fileInfo.isDir() ? File::folder : File::file;
         quint64 fileHash = hash64(filePath);
 
         // If a file is already in our database
         if (folder.files.contains(fileHash))
         {
             File &file = folder.files[fileHash];
-            QDateTime fileDate(dir.fileInfo().lastModified());
+            QDateTime fileDate(fileInfo.lastModified());
             bool updated = file.updated;
 
             // Restores filepath
@@ -1870,7 +1872,7 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
                 // Marks all parent folders as updated if the current folder was updated
                 if (updated)
                 {
-                    QByteArray folderPath(dir.fileInfo().filePath().toUtf8());
+                    QByteArray folderPath(fileInfo.filePath().toUtf8());
 
                     while (folderPath.remove(folderPath.lastIndexOf("/"), folderPath.length()).length() > folder.path.length())
                     {
@@ -1893,7 +1895,7 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
         }
         else
         {
-            const_cast<File *>(folder.files.insert(fileHash, File(filePath, type, dir.fileInfo().lastModified())).operator->())->path.squeeze();
+            const_cast<File *>(folder.files.insert(fileHash, File(filePath, type, fileInfo.lastModified())).operator->())->path.squeeze();
         }
 
         totalNumOfFiles++;
