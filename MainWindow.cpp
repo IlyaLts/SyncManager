@@ -928,7 +928,7 @@ void MainWindow::sync(int profileNumber)
         {
             folder.exists = QFileInfo::exists(folder.path);
 
-            if ((syncingMode != Automatic || (!folder.paused || syncingMode != Automatic)) && folder.exists && !folder.toBeRemoved)
+            if (!folder.paused && folder.exists && !folder.toBeRemoved)
                 activeFolders++;
         }
 
@@ -1053,7 +1053,7 @@ void MainWindow::sync(int profileNumber)
                 std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const QString &a, const QString &b) -> bool { return a.size() < b.size(); });
 
                 // Folders to remove
-                for (auto it = sortedFoldersToRemove.begin(); it != sortedFoldersToRemove.end() && (syncingMode != Automatic || (!paused && !folder.paused));)
+                for (auto it = sortedFoldersToRemove.begin(); it != sortedFoldersToRemove.end() && (!paused && !folder.paused);)
                 {
                     QString folderPath(folder.path);
                     folderPath.append(*it);
@@ -1085,7 +1085,7 @@ void MainWindow::sync(int profileNumber)
                 }
 
                 // Files to remove
-                for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && (syncingMode != Automatic || (!paused && !folder.paused));)
+                for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && (!paused && !folder.paused);)
                 {
                     QString filePath(folder.path);
                     filePath.append(*it);
@@ -1113,7 +1113,7 @@ void MainWindow::sync(int profileNumber)
                 }
 
                 // Folders to add
-                for (auto it = folder.foldersToAdd.begin(); it != folder.foldersToAdd.end() && (syncingMode != Automatic || (!paused && !folder.paused));)
+                for (auto it = folder.foldersToAdd.begin(); it != folder.foldersToAdd.end() && (!paused && !folder.paused);)
                 {
                     QString folderPath(folder.path);
                     folderPath.append(*it);
@@ -1149,7 +1149,7 @@ void MainWindow::sync(int profileNumber)
                 }
 
                 // Files to copy
-                for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && (syncingMode != Automatic || (!paused && !folder.paused));)
+                for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && (!paused && !folder.paused);)
                 {
                     // Removes from the "files to add" list if the source file doesn't exist
                     if (!QFileInfo::exists(it.value().first.second) || it.value().first.first.isEmpty() || it.value().first.second.isEmpty())
@@ -1321,7 +1321,7 @@ void MainWindow::updateStatus()
                 }
             }
 
-            if (busy && folder.exists && (syncingMode != Automatic || !folder.paused) && (!folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.foldersToRemove.isEmpty() || !folder.filesToRemove.isEmpty()))
+            if (busy && folder.exists && !folder.paused && (!folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.foldersToRemove.isEmpty() || !folder.filesToRemove.isEmpty()))
             {
                 animSync.start();
                 syncing = true;
@@ -1378,7 +1378,7 @@ void MainWindow::updateStatus()
 
                 QModelIndex index = folderModel->index(i, 0);
 
-                if (syncingMode == Automatic && profiles[row].folders[i].paused)
+                if (profiles[row].folders[i].paused)
                     folderModel->setData(index, iconPause, Qt::DecorationRole);
                 else if (profiles[row].folders[i].syncing || (queue.contains(row) && !syncing && !syncHidden))
                     folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
@@ -1453,10 +1453,9 @@ void MainWindow::updateStatus()
     // Number of files left to sync
     if (busy)
     {
-        for (auto &profile : profiles)
-            for (auto &folder : profile.folders)
-                if (folder.exists && (syncingMode == Manual || !folder.paused))
-                    numOfFilesToSync += folder.foldersToAdd.size() + folder.filesToAdd.size() + folder.foldersToRemove.size() + folder.filesToRemove.size();
+        for (auto &folder : profiles[queue.head()].folders)
+            if (folder.exists && !folder.paused)
+                numOfFilesToSync += folder.foldersToAdd.size() + folder.filesToAdd.size() + folder.foldersToRemove.size() + folder.filesToRemove.size();
     }
 
     if (!numOfFilesToSync)
@@ -1593,13 +1592,10 @@ void MainWindow::showContextMenu(const QPoint &pos) const
 
         if (!ui->folderListView->selectionModel()->selectedIndexes().isEmpty())
         {
-            if (syncingMode == Automatic)
-            {
-                if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].folders[ui->folderListView->selectionModel()->selectedIndexes()[0].row()].paused)
-                    menu.addAction(iconResume, "&Resume syncing folder", this, SLOT(pauseSelected()));
-                else
-                    menu.addAction(iconPause, "&Pause syncing folder", this, SLOT(pauseSelected()));
-            }
+            if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].folders[ui->folderListView->selectionModel()->selectedIndexes()[0].row()].paused)
+                menu.addAction(iconResume, "&Resume syncing folder", this, SLOT(pauseSelected()));
+            else
+                menu.addAction(iconPause, "&Pause syncing folder", this, SLOT(pauseSelected()));
 
             menu.addAction(iconRemove, "&Remove folder", this, SLOT(removeFolder()));
         }
@@ -1812,7 +1808,7 @@ MainWindow::getListOfFiles
 */
 int MainWindow::getListOfFiles(SyncFolder &folder)
 {
-    if ((syncingMode == Automatic && folder.paused) || !folder.exists) return -1;
+    if (folder.paused || !folder.exists) return -1;
 
     int totalNumOfFiles = 0;
 
@@ -1829,7 +1825,7 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
 
     while (dir.hasNext())
     {
-        if (syncingMode == Automatic && folder.paused) return -1;
+        if (folder.paused) return -1;
 
         dir.next();
 
@@ -1907,7 +1903,7 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
 #error FIX: An update required
     for (auto const &dir : std::filesystem::recursive_directory_iterator{std::filesystem::path{folder.path.toStdString()}})
     {
-        if (folder.paused && syncingMode == Automatic) return;
+        if (folder.paused) return -1;
 
         QString filePath(dir.path().string().c_str());
         filePath.remove(0, folder.path.size());
@@ -1946,11 +1942,11 @@ void MainWindow::checkForChanges(SyncProfile &profile)
         for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
         {
             if (folderIt == otherFolderIt || !otherFolderIt->exists) continue;
-            if (syncingMode == Automatic && folderIt->paused) break;
+            if (folderIt->paused) break;
 
             for (QHash<quint64, File>::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
             {
-                if (syncingMode == Automatic && otherFolderIt->paused) break;
+                if (otherFolderIt->paused) break;
 
                 const File &file = folderIt->files.value(otherFileIt.key());
                 const File &otherFile = otherFileIt.value();
@@ -2022,7 +2018,7 @@ void MainWindow::checkForChanges(SyncProfile &profile)
 
         for (QHash<quint64, File>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
         {
-            if (syncingMode == Automatic && folderIt->paused) break;
+            if (folderIt->paused) break;
 
             if (!fileIt.value().exists && !folderIt->foldersToAdd.contains(fileIt.key()) && !folderIt->filesToAdd.contains(fileIt.key()) &&
                ((fileIt.value().type == File::file && !folderIt->filesToRemove.contains(fileIt.key())) ||
@@ -2031,7 +2027,7 @@ void MainWindow::checkForChanges(SyncProfile &profile)
                 // Adds files from other folders for removal
                 for (auto removeIt = profile.folders.begin(); removeIt != profile.folders.end(); ++removeIt)
                 {
-                    if (folderIt == removeIt || !removeIt->exists || (syncingMode == Automatic && removeIt->paused)) continue;
+                    if (folderIt == removeIt || !removeIt->exists || removeIt->paused) continue;
 
                     const File &fileToRemove = removeIt->files.value(fileIt.key());
 
