@@ -224,7 +224,7 @@ private:
     int numOfFilesToSync = 0;
     int syncTimeMultiplier = 1;
     int syncEvery = 0;
-    QSet<QString> usedDevices;
+    QSet<quint64> usedDevices;
 
     QTimer syncTimer;
     QTimer updateTimer;

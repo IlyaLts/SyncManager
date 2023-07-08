@@ -944,6 +944,10 @@ void MainWindow::sync(int profileNumber)
             bool isFinished = false;
             QList<QFuture<int>> futureList;
             QSet<int> finished;
+            QList<quint64> devicesRequired;
+
+            for (auto &folder : profiles[queue.head()].folders)
+                devicesRequired.append(hash64(QStorageInfo(folder.path).device()));
 
             while (!isFinished)
             {
@@ -953,10 +957,12 @@ void MainWindow::sync(int profileNumber)
                 {
                     if (finished.contains(i)) continue;
 
-                    if (!usedDevices.contains(QStorageInfo(folder.path).device()))
+                    quint64 device = devicesRequired.value(i);
+
+                    if (!usedDevices.contains(device))
                     {
                         finished.insert(i);
-                        usedDevices.insert(QStorageInfo(folder.path).device());
+                        usedDevices.insert(device);
                         futureList.append(QFuture(QtConcurrent::run([&](){ return getListOfFiles(folder); })));
                     }
 
@@ -1920,7 +1926,7 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
     }
 #endif
 
-    usedDevices.remove(QStorageInfo(folder.path).device());
+    usedDevices.remove(hash64(QStorageInfo(folder.path).device()));
 
     return totalNumOfFiles;
 }
