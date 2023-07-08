@@ -17,8 +17,8 @@
 ===============================================================================
 */
 
-#ifndef UNHIDDABLEMENU_H
-#define UNHIDDABLEMENU_H
+#ifndef UNHIDABLEMENU_H
+#define UNHIDABLEMENU_H
 
 #include <QMenu>
 
@@ -29,18 +29,18 @@
 
 ===========================================================
 */
-class UnhiddableMenu : public QMenu
+class UnhidableMenu : public QMenu
 {
     Q_OBJECT
 
 public:
 
-    explicit UnhiddableMenu(QWidget *parent = nullptr) : QMenu(parent){}
-    explicit UnhiddableMenu(const QString &title, QWidget *parent = nullptr) : QMenu(title, parent){}
+    explicit UnhidableMenu(QWidget *parent = nullptr) : QMenu(parent){}
+    explicit UnhidableMenu(const QString &title, QWidget *parent = nullptr) : QMenu(title, parent){}
 
     void keyPressEvent(QKeyEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
 };
 
-#endif // UNHIDDABLEMENU_H
+#endif // UNHIDABLEMENU_H

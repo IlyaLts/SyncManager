@@ -51,7 +51,7 @@ QT_END_NAMESPACE
 class DecoratedStringListModel;
 class QItemSelection;
 class QMimeData;
-class UnhiddableMenu;
+class UnhidableMenu;
 
 struct File
 {
@@ -207,10 +207,10 @@ private:
     QAction *quitAction;
 
     QSystemTrayIcon *trayIcon;
-    UnhiddableMenu *trayIconMenu;
-    UnhiddableMenu *settingsMenu;
-    UnhiddableMenu *syncingModeMenu;
-    UnhiddableMenu *syncingTimeMenu;
+    QMenu *trayIconMenu;
+    UnhidableMenu *settingsMenu;
+    UnhidableMenu *syncingModeMenu;
+    UnhidableMenu *syncingTimeMenu;
 
     bool busy = false;
     bool paused = false;

@@ -18,14 +18,14 @@
 */
 
 #include <QKeyEvent>
-#include "UnhiddableMenu.h"
+#include "UnhidableMenu.h"
 
 /*
 ===================
-UnhiddableMenu::keyPressEvent
+UnhidableMenu::keyPressEvent
 ===================
 */
-void UnhiddableMenu::keyPressEvent(QKeyEvent *event)
+void UnhidableMenu::keyPressEvent(QKeyEvent *event)
 {
     QAction *action = activeAction();
 
@@ -45,10 +45,10 @@ void UnhiddableMenu::keyPressEvent(QKeyEvent *event)
 
 /*
 ===================
-UnhiddableMenu::mouseReleaseEvent
+UnhidableMenu::mouseReleaseEvent
 ===================
 */
-void UnhiddableMenu::mouseReleaseEvent(QMouseEvent *event)
+void UnhidableMenu::mouseReleaseEvent(QMouseEvent *event)
 {
     QAction *action = activeAction();
 
