@@ -1045,7 +1045,7 @@ void MainWindow::sync(int profileNumber)
                         QString shortPath(foldersToCreate.top());
                         shortPath.remove(0, folder.path.size());
                         folder.files.insert(hash64(shortPath.toUtf8()), File(shortPath.toUtf8(), File::folder, QFileInfo(foldersToCreate.top()).lastModified()));
-                        folder.foldersToAdd.remove(hash64(foldersToCreate.top().toUtf8()));
+                        folder.foldersToAdd.remove(hash64(shortPath.toUtf8()));
                         foldersToUpdate.insert(foldersToCreate.top());
                         foldersToCreate.pop();
                     }
