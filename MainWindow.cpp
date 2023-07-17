@@ -1719,7 +1719,7 @@ void MainWindow::restoreData()
 
             folderPath.chop(1); // Removes a forward slash in the end of the path
             int folderIndex = folderPaths[profileIndex].indexOf(folderPath);
-            bool exists = profileIndex >= 0 && folderIndex >= 0;
+            bool restore = profileIndex >= 0 && folderIndex >= 0;
 
             // File data
             for (qsizetype k = 0; k < filesSize; k++)
@@ -1736,7 +1736,7 @@ void MainWindow::restoreData()
                 stream >> updated;
                 stream >> exists;
 
-                if (exists)
+                if (restore)
                 {
                     const_cast<File *>(profiles[profileIndex].folders[folderIndex].files.insert(hash, File(QByteArray(), type, date, updated, exists, true)).operator->())->path.squeeze();
                 }
@@ -1750,7 +1750,7 @@ void MainWindow::restoreData()
                 QByteArray path;
                 stream >> path;
 
-                if (exists)
+                if (restore)
                 {
                     const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].foldersToAdd.insert(hash64(path), path).operator->())->squeeze();
                 }
@@ -1768,7 +1768,7 @@ void MainWindow::restoreData()
                 stream >> from;
                 stream >> time;
 
-                if (exists)
+                if (restore)
                 {
                     QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(to, from), time);
                     const auto &it = profiles[profileIndex].folders[folderIndex].filesToAdd.insert(hash64(to), pair);
@@ -1785,7 +1785,7 @@ void MainWindow::restoreData()
                 QByteArray path;
                 stream >> path;
 
-                if (exists)
+                if (restore)
                 {
                     const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(hash64(path), path).operator->())->squeeze();
                 }
@@ -1799,7 +1799,7 @@ void MainWindow::restoreData()
                 QByteArray path;
                 stream >> path;
 
-                if (exists)
+                if (restore)
                 {
                     const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].filesToRemove.insert(hash64(path), path).operator->())->squeeze();
                 }
