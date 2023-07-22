@@ -643,9 +643,9 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         for (const auto &path : folderPaths[row])
         {
 #ifdef Q_OS_LINUX
-            if (folder.toStdString().compare(0, path.length(), path.toStdString()) == 0)
+            if (folder.toStdString().compare(0, std::string::npos, path.toStdString()) == 0)
 #else
-            if (folder.toLower().toStdString().compare(0, path.length(), path.toLower().toStdString()) == 0)
+            if (folder.toLower().toStdString().compare(0, std::string::npos, path.toLower().toStdString()) == 0)
 #endif
             {
                 exists = true;
