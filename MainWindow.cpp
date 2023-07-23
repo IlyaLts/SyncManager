@@ -1041,12 +1041,17 @@ void MainWindow::sync(int profileNumber)
 
                     while (!foldersToCreate.isEmpty())
                     {
-                        QDir().mkdir(foldersToCreate.top());
-                        QString shortPath(foldersToCreate.top());
-                        shortPath.remove(0, folder.path.size());
-                        folder.files.insert(hash64(shortPath.toUtf8()), File(shortPath.toUtf8(), File::folder, QFileInfo(foldersToCreate.top()).lastModified()));
-                        folder.foldersToAdd.remove(hash64(shortPath.toUtf8()));
-                        foldersToUpdate.insert(foldersToCreate.top());
+                        if (QDir().mkdir(foldersToCreate.top()))
+                        {
+                            QString shortPath(foldersToCreate.top());
+                            shortPath.remove(0, folder.path.size());
+                            quint64 hash = hash64(shortPath.toUtf8());
+
+                            folder.files.insert(hash, File(shortPath.toUtf8(), File::folder, QFileInfo(foldersToCreate.top()).lastModified()));
+                            folder.foldersToAdd.remove(hash);
+                            foldersToUpdate.insert(foldersToCreate.top());
+                        }
+
                         foldersToCreate.pop();
                     }
                 };
@@ -1076,7 +1081,7 @@ void MainWindow::sync(int profileNumber)
                     if (future.result() || !QDir().exists(folderPath))
                     {
                         folder.files.remove(fileHash);
-                        folder.foldersToRemove.remove(hash64(it->toUtf8()));
+                        folder.foldersToRemove.remove(fileHash);
                         it = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(it));
 
                         if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
