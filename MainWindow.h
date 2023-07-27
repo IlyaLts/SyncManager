@@ -53,6 +53,8 @@ class QItemSelection;
 class QMimeData;
 class UnhidableMenu;
 
+using hash64_t = quint64;
+
 struct File
 {
     enum Type : qint8
@@ -71,6 +73,9 @@ struct File
     bool updated = false;
     bool exists = false;
     bool onRestore = false;
+    bool newlyAdded = false;
+    bool moved = false;
+    bool movedSource = false;
 };
 
 struct SyncFolder
@@ -78,11 +83,14 @@ struct SyncFolder
     explicit SyncFolder(bool paused) : paused(paused){}
 
     QByteArray path;
-    QHash<quint64, File> files;
-    QHash<quint64, QByteArray> foldersToAdd;
-    QHash<quint64, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToAdd;
-    QHash<quint64, QByteArray> foldersToRemove;
-    QHash<quint64, QByteArray> filesToRemove;
+    QHash<hash64_t, File> files;
+    QHash<hash64_t, QPair<QByteArray, QByteArray>> filesToMove;
+    QHash<hash64_t, QByteArray> foldersToAdd;
+    QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToAdd;
+    QHash<hash64_t, QByteArray> foldersToRemove;
+    QHash<hash64_t, QByteArray> filesToRemove;
+
+    QHash<hash64_t, qint64> sizeList;
 
     bool exists = true;
     bool syncing = false;
@@ -203,6 +211,7 @@ private:
     QAction *showInTrayAction;
     QAction *disableNotificationAction;
     QAction *enableRememberFilesAction;
+    QAction *detectMovedFilesAction;
     QAction *showAction;
     QAction *quitAction;
 
@@ -221,10 +230,11 @@ private:
     bool notifications = true;
     bool moveToTrash = false;
     bool rememberFiles = false;
+    bool detectMovedFiles = false;
     int numOfFilesToSync = 0;
     int syncTimeMultiplier = 1;
     int syncEvery = 0;
-    QSet<quint64> usedDevices;
+    QSet<hash64_t> usedDevices;
 
     QTimer syncTimer;
     QTimer updateTimer;
