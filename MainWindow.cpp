@@ -1008,28 +1008,31 @@ void MainWindow::sync(int profileNumber)
             if (countAverage) profiles[queue.head()].syncTime /= 2;
 
 #ifdef DEBUG
+            int numOfFilesToMove = 0;
             int numOfFoldersToAdd = 0;
             int numOfFilesToAdd = 0;
-            int numOfFilesToMove = 0;
             int numOfFoldersToRemove = 0;
             int numOfFilesToRemove = 0;
 
             for (auto &folder : profiles[queue.head()].folders)
             {
+                numOfFilesToMove += folder.filesToMove.size();
                 numOfFoldersToAdd += folder.foldersToAdd.size();
                 numOfFilesToAdd += folder.filesToAdd.size();
-                numOfFilesToMove += folder.filesToMove.size();
                 numOfFoldersToRemove += folder.foldersToRemove.size();
                 numOfFilesToRemove += folder.filesToRemove.size();
             }
 
-            qDebug("-----------------------------------------------------------");
-            if (numOfFilesToMove)       qDebug("Files to move: %d", numOfFilesToMove);
-            if (numOfFoldersToAdd)      qDebug("Folders to add: %d", numOfFoldersToAdd);
-            if (numOfFilesToAdd)        qDebug("Files to add: %d", numOfFilesToAdd);
-            if (numOfFoldersToRemove)   qDebug("Folders to remove: %d", numOfFoldersToRemove);
-            if (numOfFilesToRemove)     qDebug("Files to remove: %d", numOfFilesToRemove);
-            qDebug("-----------------------------------------------------------");
+            if (numOfFilesToMove || numOfFoldersToAdd || numOfFilesToAdd || numOfFoldersToRemove || numOfFilesToRemove)
+            {
+                qDebug("---------------------------------------");
+                if (numOfFilesToMove)       qDebug("Files to move: %d", numOfFilesToMove);
+                if (numOfFoldersToAdd)      qDebug("Folders to add: %d", numOfFoldersToAdd);
+                if (numOfFilesToAdd)        qDebug("Files to add: %d", numOfFilesToAdd);
+                if (numOfFoldersToRemove)   qDebug("Folders to remove: %d", numOfFoldersToRemove);
+                if (numOfFilesToRemove)     qDebug("Files to remove: %d", numOfFilesToRemove);
+                qDebug("---------------------------------------");
+            }
 #endif
 
             updateStatus();
@@ -1097,6 +1100,7 @@ void MainWindow::sync(int profileNumber)
 
                         createParentFolders(QDir::cleanPath(filePath));
 
+                        // TODO: Fix the case if a file exists at the given destination file path
                         QFuture<bool> future = QtConcurrent::run([&](){ return QFile::rename(it.value().second, filePath); });
                         while (!future.isFinished()) updateApp();
 
@@ -1105,12 +1109,12 @@ void MainWindow::sync(int profileNumber)
                             QString parentFrom = QFileInfo(filePath).path();
                             QString parentTo = QFileInfo(it.value().second).path();
 
+                            if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom);
+                            if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo);
+
                             folder.files.remove(hash64(QByteArray(it.value().second).remove(0, folder.path.size())));
                             folder.files.insert(fileHash, File(it.value().first, File::file, QFileInfo(filePath).lastModified()));
                             it = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
-
-                            if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom);
-                            if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo);
                         }
                         else
                         {
@@ -1798,24 +1802,18 @@ void MainWindow::restoreData()
 
         for (qsizetype j = 0; j < foldersSize; j++)
         {
-            qsizetype filesSize;
-            qsizetype sizeListSize;
-            qsizetype filesToMoveSize;
-            qsizetype foldersToAddSize;
-            qsizetype filesToAddSize;
-            qsizetype folderToRemoveSize;
-            qsizetype filesToRemoveSize;
+            qsizetype size;
             QByteArray folderPath;
 
             stream >> folderPath;
-            stream >> filesSize;
+            stream >> size;
 
             folderPath.chop(1); // Removes a forward slash in the end of the path
             int folderIndex = folderPaths[profileIndex].indexOf(folderPath);
             bool restore = profileIndex >= 0 && folderIndex >= 0;
 
             // File data
-            for (qsizetype k = 0; k < filesSize; k++)
+            for (qsizetype k = 0; k < size; k++)
             {
                 hash64_t hash;
                 QDateTime date;
@@ -1836,30 +1834,31 @@ void MainWindow::restoreData()
             }
 
             // File sizes
-            stream >> sizeListSize;
+            stream >> size;
 
-            for (qsizetype k = 0; k < sizeListSize; k++)
+            for (qsizetype k = 0; k < size; k++)
             {
-                hash64_t hash;
-                qint64 size;
+                hash64_t fileHash;
+                qint64 fileSize;
 
-                stream >> hash;
-                stream >> size;
+                stream >> fileHash;
+                stream >> fileSize;
 
                 if (restore)
                 {
-                    profiles[profileIndex].folders[folderIndex].sizeList.insert(hash, size);
+                    profiles[profileIndex].folders[folderIndex].sizeList.insert(fileHash, fileSize);
                 }
             }
 
 
             // Files to move
-            stream >> filesToMoveSize;
+            stream >> size;
 
-            for (qsizetype k = 0; k < filesToMoveSize; k++)
+            for (qsizetype k = 0; k < size; k++)
             {
                 QByteArray to;
                 QByteArray from;
+
                 stream >> to;
                 stream >> from;
 
@@ -1873,9 +1872,9 @@ void MainWindow::restoreData()
             }
 
             // Folders to add
-            stream >> foldersToAddSize;
+            stream >> size;
 
-            for (qsizetype k = 0; k < foldersToAddSize; k++)
+            for (qsizetype k = 0; k < size; k++)
             {
                 QByteArray path;
                 stream >> path;
@@ -1887,13 +1886,14 @@ void MainWindow::restoreData()
             }
 
             // Files to add
-            stream >> filesToAddSize;
+            stream >> size;
 
-            for (qsizetype k = 0; k < filesToAddSize; k++)
+            for (qsizetype k = 0; k < size; k++)
             {
                 QByteArray to;
                 QByteArray from;
                 QDateTime time;
+
                 stream >> to;
                 stream >> from;
                 stream >> time;
@@ -1908,9 +1908,9 @@ void MainWindow::restoreData()
             }
 
             // Folders to remove
-            stream >> folderToRemoveSize;
+            stream >> size;
 
-            for (qsizetype k = 0; k < folderToRemoveSize; k++)
+            for (qsizetype k = 0; k < size; k++)
             {
                 QByteArray path;
                 stream >> path;
@@ -1922,9 +1922,9 @@ void MainWindow::restoreData()
             }
 
             // Files to remove
-            stream >> filesToRemoveSize;
+            stream >> size;
 
-            for (qsizetype k = 0; k < filesToRemoveSize; k++)
+            for (qsizetype k = 0; k < size; k++)
             {
                 QByteArray path;
                 stream >> path;
@@ -2091,7 +2091,14 @@ void MainWindow::checkForChanges(SyncProfile &profile)
         {
             for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
             {
-                bool add = false;
+                bool needToCheck = false;
+
+                // Only a newly added file could be renamed or moved
+                if (!fileIt->newlyAdded || fileIt->type != File::file || !fileIt->exists)
+                {
+                    ++fileIt;
+                    continue;
+                }
 
                 // Checks if other folders contain the same file or not
                 for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
@@ -2100,39 +2107,32 @@ void MainWindow::checkForChanges(SyncProfile &profile)
 
                     if (otherFolderIt->files.value(fileIt.key()).type == File::unknown)
                     {
-                        add = true;
+                        needToCheck = true;
                         break;
                     }
                 }
 
-                if (!add) continue;
+                if (!needToCheck) continue;
 
-                // Only a newly added file could be renamed or moved
-                if (!fileIt->exists || !fileIt->newlyAdded || fileIt->type != File::file)
-                {
-                    ++fileIt;
-                    continue;
-                }
-
-                QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
                 int matches = 0;
                 File *matchedFile;
                 hash64_t matchedHash;
+                QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
 
-                // Searches for potential matches using its file size
+                // Searches for potential matches using the moved/renamed file size
                 for (auto &match : folderIt->sizeList.keys(fileInfo.size()))
                 {
-                    const File &otherFile = folderIt->files.value(match);
+                    const File &file = folderIt->files.value(match);
 
-                    // Files don't contain a specific file
-                    if (otherFile.type == File::unknown)
+                    // Files don't contain the specific file
+                    if (file.type == File::unknown)
                     {
                         ++fileIt;
                         continue;
                     }
 
                     // A potential match should not exist and have the same modified date as the moved/renamed file
-                    if (!otherFile.exists && fileInfo.lastModified() == fileIt->date)
+                    if (!file.exists && fileInfo.lastModified() == fileIt->date)
                     {
                         matches++;
                         matchedFile = &folderIt->files[match];
