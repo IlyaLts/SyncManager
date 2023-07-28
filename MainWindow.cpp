@@ -2039,10 +2039,7 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
             file->newlyAdded = true;
         }
 
-        if (type == File::file)
-        {
-            folder.sizeList.insert(fileHash, fileInfo.size());
-        }
+        if (type == File::file) folder.sizeList[fileHash] = fileInfo.size();
 
         totalNumOfFiles++;
         if (shouldQuit || folder.toBeRemoved) return -1;
@@ -2089,7 +2086,7 @@ void MainWindow::checkForChanges(SyncProfile &profile)
     {
         for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
         {
-            for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
+            for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end();)
             {
                 bool needToCheck = false;
 
@@ -2112,7 +2109,11 @@ void MainWindow::checkForChanges(SyncProfile &profile)
                     }
                 }
 
-                if (!needToCheck) continue;
+                if (!needToCheck)
+                {
+                    ++fileIt;
+                    continue;
+                }
 
                 int matches = 0;
                 File *matchedFile;
