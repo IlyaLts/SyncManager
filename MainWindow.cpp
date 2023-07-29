@@ -372,6 +372,7 @@ MainWindow::~MainWindow()
     settings.setValue("RememberFiles", rememberFiles);
     settings.setValue("DetectMovedFiles", detectMovedFiles);
     settings.setValue("SyncTimeMultiplier", syncTimeMultiplier);
+    settings.setValue("caseSensitiveSystem", caseSensitiveSystem);
 
     if (rememberFiles) saveData();
 
