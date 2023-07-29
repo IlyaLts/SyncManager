@@ -1236,11 +1236,44 @@ void MainWindow::sync(int profileNumber)
                     filePath.append(it.value().first.first);
                     hash64_t fileHash = hash64(it.value().first.first);
                     const File &file = folder.files.value(fileHash);
+                    QFileInfo destination(filePath);
+
+                    // Destination file is a newly added file
+                    if (file.type == File::unknown && destination.exists())
+                    {
+                        QFileInfo origin(it.value().first.second);
+
+                        // Aborts the copy operation if the origin file is older than the destination file
+                        if (destination.lastModified() > origin.lastModified())
+                        {
+                            it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
+                            continue;
+                        }
+
+                        // Fixes the case of two new files in two folders (one file for each folder) with the same file names but in different cases (e.g. filename vs. FILENAME)
+                        // Without this, copy operation causes undefined behavior as some file systems, such as Windows, are case insensitive.
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+                        QDirIterator originIterator(origin.absolutePath(), {origin.fileName()}, QDir::Files);
+
+                        // Using QDirIterator is the only way to find out the current filename on a disk
+                        if (originIterator.hasNext())
+                        {
+                            originIterator.next();
+
+                            // Aborts the copy operation if the origin path and the path on a disk have different cases
+                            if (originIterator.filePath().compare(it.value().first.second, Qt::CaseSensitivity::CaseSensitive) != 0)
+                            {
+                                it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
+                                continue;
+                            }
+                        }
+#endif
+                    }
 
                     createParentFolders(QDir::cleanPath(filePath));
 
                     // Removes a file with the same filename first if it exists
-                    if (file.exists)
+                    if (destination.exists())
                     {
                         if (moveToTrash)
                         {
@@ -1260,10 +1293,10 @@ void MainWindow::sync(int profileNumber)
 
                     if (future.result())
                     {
-                        folder.files.insert(fileHash, File(it.value().first.first, File::file, QFileInfo(filePath).lastModified()));
+                        folder.files.insert(fileHash, File(it.value().first.first, File::file, destination.lastModified()));
                         it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
 
-                        QString parentPath = QFileInfo(filePath).path();
+                        QString parentPath = destination.path();
                         if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
                     }
                     else
