@@ -1737,14 +1737,14 @@ void MainWindow::saveData() const
     for (int i = 0; auto &profile : profiles)
     {
         if (profile.toBeRemoved) continue;
-        
+
         stream << profileNames[i];
         stream << profile.folders.size();
 
         for (auto &folder : profile.folders)
         {
             if (folder.toBeRemoved) continue;
-            
+
             // File data
             stream << folder.path;
             stream << folder.files.size();
@@ -2152,60 +2152,71 @@ void MainWindow::checkForChanges(SyncProfile &profile)
                 File *matchedFile;
                 hash64_t matchedHash;
                 QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
+                auto keys = folderIt->sizeList.keys(fileInfo.size());
 
-                // Searches for potential matches using the moved/renamed file size
-                for (auto &match : folderIt->sizeList.keys(fileInfo.size()))
+                // Searches for potential matches by comparing the size of moved or renamed files to the size of their counterparts
+                for (auto &match : keys)
                 {
-                    const File &file = folderIt->files.value(match);
-
-                    // Files don't contain the specific file
-                    if (file.type == File::unknown)
-                    {
-                        ++fileIt;
-                        continue;
-                    }
+                    if (!folderIt->files.contains(match)) continue;
 
                     // A potential match should not exist and have the same modified date as the moved/renamed file
-                    if (!file.exists && fileInfo.lastModified() == fileIt->date)
+                    if (!folderIt->files.value(match).exists && fileInfo.lastModified() == fileIt->date)
                     {
                         matches++;
                         matchedFile = &folderIt->files[match];
                         matchedHash = match;
-                    }
 
-                    // We only need one match, not more
-                    if (matches > 1) break;
+                        // We only need one match, not more
+                        if (matches > 1) break;
+                    }
                 }
 
-                // Marks files as moved
                 if (matches == 1)
                 {
-                    matchedFile->moved = true;
-                    matchedFile->movedSource = true;
-                    fileIt->moved = true;
+                    bool needToMove = false;
 
                     for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                     {
-                        if (folderIt == otherFolderIt) continue;
+                        if (folderIt == otherFolderIt || !otherFolderIt->files.contains(matchedHash))
+                            continue;
 
-                        if (otherFolderIt->files.value(hash64(fileIt->path)).type != File::unknown)
-                                otherFolderIt->files[hash64(fileIt->path)].moved = true;
+                        const File &otherFile = otherFolderIt->files.value(matchedHash);
+
+                        if (!otherFile.exists)
+                            continue;
+
+                        // We do not want to move files that have different sizes and dates
+                        if (otherFolderIt->sizeList.value(matchedHash) != folderIt->sizeList.value(matchedHash) || otherFile.date != fileIt->date)
+                            continue;
+
+                        hash64_t hash = hash64(fileIt->path);
+
+                        // Marks a file as moved, which prevents it from being added to other folders
+                        if (!otherFolderIt->files.contains(hash))
+                            otherFolderIt->files[hash].moved = true;
 
                         QByteArray from(otherFolderIt->path);
-                        from.append(otherFolderIt->files.value(matchedHash).path);
+                        from.append(otherFile.path);
                         otherFolderIt->filesToMove.insert(matchedHash, QPair<QByteArray, QByteArray>(fileIt->path, from));
+                        needToMove = true;
 
                         qDebug("Moving file from %s to %s", qUtf8Printable(from), qUtf8Printable(fileIt->path));
                     }
 
+                    if (needToMove)
+                    {
+                        matchedFile->moved = true;
+                        matchedFile->movedSource = true;
+                        fileIt->moved = true;
+                    }
+
                     //fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
                     //folderIt->files.remove(matchedHash);
+
                     ++fileIt;
                 }
                 else
                 {
-                    fileIt->moved = false;
-                    fileIt->movedSource = false;
                     ++fileIt;
                 }
             }
