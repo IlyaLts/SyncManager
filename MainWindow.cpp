@@ -128,6 +128,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
     if (syncTimeMultiplier <= 0) syncTimeMultiplier = 1;
 
+    caseSensitiveSystem = settings.value("caseSensitiveSystem", caseSensitiveSystem).toBool();
+
     profileModel = new DecoratedStringListModel;
     folderModel = new DecoratedStringListModel;
     ui->syncProfilesView->setModel(profileModel);
@@ -649,11 +651,8 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
         for (const auto &path : folderPaths[row])
         {
-#ifdef Q_OS_LINUX
-            if (folder.toStdString().compare(0, std::string::npos, path.toStdString()) == 0)
-#else
-            if (folder.toLower().toStdString().compare(0, std::string::npos, path.toLower().toStdString()) == 0)
-#endif
+            if ((caseSensitiveSystem && folder.toStdString().compare(0, std::string::npos, path.toStdString()) == 0) ||
+                (!caseSensitiveSystem && folder.toLower().toStdString().compare(0, std::string::npos, path.toLower().toStdString()) == 0))
             {
                 exists = true;
             }
@@ -1252,22 +1251,23 @@ void MainWindow::sync(int profileNumber)
 
                         // Fixes the case of two new files in two folders (one file for each folder) with the same file names but in different cases (e.g. filename vs. FILENAME)
                         // Without this, copy operation causes undefined behavior as some file systems, such as Windows, are case insensitive.
-#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-                        QDirIterator originIterator(origin.absolutePath(), {origin.fileName()}, QDir::Files);
-
-                        // Using QDirIterator is the only way to find out the current filename on a disk
-                        if (originIterator.hasNext())
+                        if (!caseSensitiveSystem)
                         {
-                            originIterator.next();
+                            QDirIterator originIterator(origin.absolutePath(), {origin.fileName()}, QDir::Files);
 
-                            // Aborts the copy operation if the origin path and the path on a disk have different cases
-                            if (originIterator.filePath().compare(it.value().first.second, Qt::CaseSensitivity::CaseSensitive) != 0)
+                            // Using QDirIterator is the only way to find out the current filename on a disk
+                            if (originIterator.hasNext())
                             {
-                                it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
-                                continue;
+                                originIterator.next();
+
+                                // Aborts the copy operation if the origin path and the path on a disk have different cases
+                                if (originIterator.filePath().compare(it.value().first.second, Qt::CaseSensitivity::CaseSensitive) != 0)
+                                {
+                                    it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
+                                    continue;
+                                }
                             }
                         }
-#endif
                     }
 
                     createParentFolders(QDir::cleanPath(filePath));
@@ -2259,11 +2259,8 @@ void MainWindow::checkForChanges(SyncProfile &profile)
 
                 if ((newFile ||
                 // Or if we have a newer version of a file from other folders
-#ifdef Q_OS_LINUX
-                ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
-#else
-                ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
-#endif
+                (caseSensitiveSystem && (file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
+                (!caseSensitiveSystem && (file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
                 // Or if other folders has a new version of a file and our file was removed
                 (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(QByteArray(otherFile.path).indexOf('/', 0), 999999))).updated))) &&
                 // Checks for the newest version of a file in case if we have three folders or more

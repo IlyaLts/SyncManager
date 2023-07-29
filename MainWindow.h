@@ -231,6 +231,13 @@ private:
     bool moveToTrash = false;
     bool rememberFiles = false;
     bool detectMovedFiles = false;
+
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+    bool caseSensitiveSystem = false;
+#else
+    bool caseSensitiveSystem = true;
+#endif
+
     int numOfFilesToSync = 0;
     int syncTimeMultiplier = 1;
     int syncEvery = 0;
