@@ -130,6 +130,13 @@ public:
         Manual
     } syncingMode;
 
+    enum DeletionMode
+    {
+        MoveToTrash,
+        MoveToVersionFolder,
+        DeletePermanently
+    } deletionMode;
+
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
@@ -159,6 +166,7 @@ private Q_SLOTS:
     void switchSyncingMode(MainWindow::SyncingMode mode);
     void increaseSyncTime();
     void decreaseSyncTime();
+    void switchDeletionMode(DeletionMode mode);
     void sync(int profileNumber = -1);
     void updateStatus();
     void updateNextSyncingTime();
@@ -207,6 +215,8 @@ private:
     QAction *syncingTimeAction;
     QAction *decreaseSyncTimeAction;
     QAction *moveToTrashAction;
+    QAction *moveToVersionFolderAction;
+    QAction *deletePermanentlyAction;
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
     QAction *disableNotificationAction;
@@ -220,6 +230,7 @@ private:
     UnhidableMenu *settingsMenu;
     UnhidableMenu *syncingModeMenu;
     UnhidableMenu *syncingTimeMenu;
+    UnhidableMenu *deletionModeMenu;
 
     bool busy = false;
     bool paused = false;
@@ -228,7 +239,6 @@ private:
     bool shouldQuit = false;
     bool showInTray = true;
     bool notifications = true;
-    bool moveToTrash = false;
     bool rememberFiles = false;
     bool detectMovedFiles = false;
 
@@ -242,6 +252,8 @@ private:
     int syncTimeMultiplier = 1;
     int syncEvery = 0;
     QSet<hash64_t> usedDevices;
+    QString versionFolder;
+    QString versionPattern;
 
     QTimer syncTimer;
     QTimer updateTimer;

@@ -122,13 +122,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     paused = settings.value(QLatin1String("Paused"), false).toBool();
     showInTray = settings.value("ShowInTray", true).toBool();
     notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
-    moveToTrash = settings.value("MoveToTrash", false).toBool();
     rememberFiles = settings.value("RememberFiles", true).toBool();
     detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
     syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
     if (syncTimeMultiplier <= 0) syncTimeMultiplier = 1;
 
     caseSensitiveSystem = settings.value("caseSensitiveSystem", caseSensitiveSystem).toBool();
+    versionFolder = settings.value("VersionFolder", "!Versions").toString();
+    versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
 
     profileModel = new DecoratedStringListModel;
     folderModel = new DecoratedStringListModel;
@@ -157,10 +158,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     increaseSyncTimeAction = new QAction("&Increase", this);
     syncingTimeAction = new QAction(this);
     decreaseSyncTimeAction = new QAction("&Decrease", this);
+    moveToTrashAction = new QAction("&Move Files and Folders to Trash", this);
+    moveToVersionFolderAction = new QAction("&Move Files to Version Folder", this);
+    deletePermanentlyAction = new QAction("&Delete Files Permanently", this);
     launchOnStartupAction = new QAction("&Launch on Startup", this);
     showInTrayAction = new QAction("&Show in System Tray");
     disableNotificationAction = new QAction("&Disable Notifications", this);
-    moveToTrashAction = new QAction("&Move Files and Folders to Trash", this);
     enableRememberFilesAction = new QAction("&Remember Files (Requires disk space)", this);
     detectMovedFilesAction = new QAction("&Detect Renamed and Moved Files (Beta)", this);
     showAction = new QAction("&Show", this);
@@ -184,16 +187,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
+    deletePermanentlyAction->setCheckable(true);
+    moveToTrashAction->setCheckable(true);
+    moveToVersionFolderAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
-    moveToTrashAction->setCheckable(true);
     enableRememberFilesAction->setCheckable(true);
     detectMovedFilesAction->setCheckable(true);
 
     showInTrayAction->setChecked(showInTray);
     disableNotificationAction->setChecked(!notifications);
-    moveToTrashAction->setChecked(moveToTrash);
     enableRememberFilesAction->setChecked(rememberFiles);
     detectMovedFilesAction->setChecked(detectMovedFiles);
 
@@ -212,14 +216,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     syncingTimeMenu->addAction(syncingTimeAction);
     syncingTimeMenu->addAction(decreaseSyncTimeAction);
 
+    deletionModeMenu = new UnhidableMenu("&Deletion Mode", this);
+    deletionModeMenu->addAction(moveToTrashAction);
+    deletionModeMenu->addAction(moveToVersionFolderAction);
+    deletionModeMenu->addAction(deletePermanentlyAction);
+
     settingsMenu = new UnhidableMenu("&Settings", this);
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(syncingModeMenu);
     settingsMenu->addMenu(syncingTimeMenu);
+    settingsMenu->addMenu(deletionModeMenu);
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(showInTrayAction);
     settingsMenu->addAction(disableNotificationAction);
-    settingsMenu->addAction(moveToTrashAction);
     settingsMenu->addAction(enableRememberFilesAction);
     settingsMenu->addAction(detectMovedFilesAction);
     settingsMenu->addSeparator();
@@ -257,10 +266,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
+    connect(moveToTrashAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, MoveToTrash));
+    connect(moveToVersionFolderAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, MoveToVersionFolder));
+    connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, DeletePermanently));
     connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
     connect(showInTrayAction, &QAction::triggered, this, [this](){ setTrayVisible(!showInTray); });
     connect(disableNotificationAction, &QAction::triggered, this, [this](){ notifications = !notifications; });
-    connect(moveToTrashAction, &QAction::triggered, this, [this](){ moveToTrash = !moveToTrash; });
     connect(enableRememberFilesAction, &QAction::triggered, this, [this](){ rememberFiles = !rememberFiles; });
     connect(detectMovedFilesAction, &QAction::triggered, this, [this](){ detectMovedFiles = !detectMovedFiles; });
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
@@ -327,6 +338,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     updateTimer.setSingleShot(true);
 
     switchSyncingMode(static_cast<SyncingMode>(settings.value("SyncingMode", Automatic).toInt()));
+    switchDeletionMode(static_cast<DeletionMode>(settings.value("DeletionMode", MoveToTrash).toInt()));
     updateStatus();
 
     if (syncingMode == Automatic) syncTimer.start(0);
@@ -366,13 +378,15 @@ MainWindow::~MainWindow()
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("SyncingMode", syncingMode);
+    settings.setValue("DeletionMode", deletionMode);
     settings.setValue("ShowInTray", showInTray);
     settings.setValue("Notifications", notifications);
-    settings.setValue("MoveToTrash", moveToTrash);
     settings.setValue("RememberFiles", rememberFiles);
     settings.setValue("DetectMovedFiles", detectMovedFiles);
     settings.setValue("SyncTimeMultiplier", syncTimeMultiplier);
     settings.setValue("caseSensitiveSystem", caseSensitiveSystem);
+    settings.setValue("caseSensitiveSystem", versionFolder);
+    settings.setValue("caseSensitiveSystem", versionPattern);
 
     if (rememberFiles) saveData();
 
@@ -882,6 +896,27 @@ void MainWindow::decreaseSyncTime()
 
 /*
 ===================
+MainWindow::switchDeletionMode
+===================
+*/
+void MainWindow::switchDeletionMode(DeletionMode mode)
+{
+    deletionMode = mode;
+
+    moveToTrashAction->setChecked(false);
+    moveToVersionFolderAction->setChecked(false);
+    deletePermanentlyAction->setChecked(false);
+
+    if (mode == MoveToTrash)
+        moveToTrashAction->setChecked(true);
+    else if (mode == MoveToVersionFolder)
+        moveToVersionFolderAction->setChecked(true);
+    else
+        deletePermanentlyAction->setChecked(true);
+}
+
+/*
+===================
 MainWindow::sync
 ===================
 */
@@ -916,8 +951,8 @@ void MainWindow::sync(int profileNumber)
     animSync.start();
     busy = true;
     syncing = false;
-    moveToTrashAction->setEnabled(false);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(false);
+    for (auto &action : deletionModeMenu->actions()) action->setEnabled(false);
 
 #ifdef DEBUG
     std::chrono::high_resolution_clock::time_point syncTime;
@@ -1048,6 +1083,12 @@ void MainWindow::sync(int profileNumber)
                 bool shouldNotify = notificationList.contains(rootPath) ? !notificationList.value(rootPath)->isActive() : true;
                 QSet<QString> foldersToUpdate;
 
+                QString timeStampFolder(folder.path);
+                timeStampFolder.append(versionFolder);
+                timeStampFolder.append("/");
+                timeStampFolder.append(QDateTime::currentDateTime().toString(versionPattern));
+                timeStampFolder.append("/");
+
                 auto createParentFolders = [&](QString path)
                 {
                     QStack<QString> foldersToCreate;
@@ -1132,11 +1173,30 @@ void MainWindow::sync(int profileNumber)
                     hash64_t fileHash = hash64(it->toUtf8());
                     QString parentPath = QFileInfo(folderPath).path();
 
-                    // Used to make sure that moveToTrash function really moved a folder
-                    // to the trash as it can return true even though it failed to do so
-                    QString pathInTrash;
+                    QFuture<bool> future = QtConcurrent::run([&]()
+                    {
+                        if (deletionMode == MoveToTrash)
+                        {
+                            // Used to make sure that moveToTrash function really moved a folder
+                            // to the trash as it can return true even though it failed to do so
+                            QString pathInTrash;
 
-                    QFuture<bool> future = QtConcurrent::run([&](){ return moveToTrash ? (QFile::moveToTrash(folderPath) && !pathInTrash.isEmpty()) : QDir(folderPath).removeRecursively(); });
+                            return QFile::moveToTrash(folderPath) && !pathInTrash.isEmpty();
+                        }
+                        else if (deletionMode == MoveToVersionFolder)
+                        {
+                            QString newLocation(timeStampFolder);
+                            newLocation.append(*it);
+
+                            createParentFolders(QDir::cleanPath(newLocation));
+                            return QDir().rename(folderPath, newLocation);
+                        }
+                        else
+                        {
+                            return QDir(folderPath).removeRecursively();
+                        }
+                    });
+
                     while (!future.isFinished()) updateApp();
 
                     if (future.result() || !QDir().exists(folderPath))
@@ -1164,11 +1224,33 @@ void MainWindow::sync(int profileNumber)
                     hash64_t fileHash = hash64(*it);
                     QString parentPath = QFileInfo(filePath).path();
 
-                    // Used to make sure that moveToTrash function really moved a file
-                    // to the trash as it can return true even though it failed to do so
-                    QString pathInTrash;
+                    QFuture<bool> future = QtConcurrent::run([&]()
+                    {
+                        if (deletionMode == MoveToTrash)
+                        {
+                            // Used to make sure that moveToTrash function really moved a folder
+                            // to the trash as it can return true even though it failed to do so
+                            QString pathInTrash;
 
-                    if ((moveToTrash ? QFile::moveToTrash(filePath, &pathInTrash) && !pathInTrash.isEmpty() : QFile::remove(filePath)) || !QFileInfo::exists(filePath))
+                            return QFile::moveToTrash(filePath, &pathInTrash) && !pathInTrash.isEmpty();
+                        }
+                        else if (deletionMode == MoveToVersionFolder)
+                        {
+                            QString newLocation(timeStampFolder);
+                            newLocation.append(*it);
+
+                            createParentFolders(QDir::cleanPath(newLocation));
+                            return QFile().rename(filePath, newLocation);
+                        }
+                        else
+                        {
+                            return QFile::remove(filePath) || !QFileInfo::exists(filePath);
+                        }
+                    });
+
+                    while (!future.isFinished()) updateApp();
+
+                    if (future.result() || !QFile().exists(filePath))
                     {
                         folder.files.remove(fileHash);
                         it = folder.filesToRemove.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(it));
@@ -1197,10 +1279,22 @@ void MainWindow::sync(int profileNumber)
                     // Removes a file with the same filename first if exists
                     if (fileInfo.exists() && fileInfo.isFile())
                     {
-                        if (moveToTrash)
+                        if (deletionMode == MoveToTrash)
+                        {
                             QFile::moveToTrash(folderPath);
+                        }
+                        else if (deletionMode == MoveToVersionFolder)
+                        {
+                            QString newLocation(timeStampFolder);
+                            newLocation.append(*it);
+
+                            createParentFolders(QDir::cleanPath(newLocation));
+                            QFile::rename(folderPath, newLocation);
+                        }
                         else
+                        {
                             QFile::remove(folderPath);
+                        }
                     }
 
                     if (QDir().mkdir(folderPath) || fileInfo.exists())
@@ -1274,9 +1368,17 @@ void MainWindow::sync(int profileNumber)
                     // Removes a file with the same filename first if it exists
                     if (destination.exists())
                     {
-                        if (moveToTrash)
+                        if (deletionMode == MoveToTrash)
                         {
                             QFile::moveToTrash(filePath);
+                        }
+                        else if (deletionMode == MoveToVersionFolder)
+                        {
+                            QString newLocation(timeStampFolder);
+                            newLocation.append(it.value().first.first);
+
+                            createParentFolders(QDir::cleanPath(newLocation));
+                            QFile::rename(filePath, newLocation);
                         }
                         else
                         {
@@ -1388,8 +1490,8 @@ void MainWindow::sync(int profileNumber)
         profileIt++;
     }
 
-    moveToTrashAction->setEnabled(true);
     for (auto &action : syncingModeMenu->actions()) action->setEnabled(true);
+    for (auto &action : deletionModeMenu->actions()) action->setEnabled(true);
     syncHidden = false;
     animSync.stop();
 }
@@ -2007,6 +2109,12 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
         filePath.remove(0, folder.path.size());
         File::Type type = fileInfo.isDir() ? File::folder : File::file;
         hash64_t fileHash = hash64(filePath);
+
+        // Excludes the versioning folder from scanning
+        QByteArray vf(versionFolder.toUtf8());
+
+        if (caseSensitiveSystem ? qstrncmp(vf, filePath, vf.length()) == 0 : qstrnicmp(vf, filePath, vf.length()) == 0)
+            continue;
 
         // If a file is already in our database
         if (folder.files.contains(fileHash))
