@@ -385,8 +385,8 @@ MainWindow::~MainWindow()
     settings.setValue("DetectMovedFiles", detectMovedFiles);
     settings.setValue("SyncTimeMultiplier", syncTimeMultiplier);
     settings.setValue("caseSensitiveSystem", caseSensitiveSystem);
-    settings.setValue("caseSensitiveSystem", versionFolder);
-    settings.setValue("caseSensitiveSystem", versionPattern);
+    settings.setValue("VersionFolder", versionFolder);
+    settings.setValue("VersionPattern", versionPattern);
 
     if (rememberFiles) saveData();
 
