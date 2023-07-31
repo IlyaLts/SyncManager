@@ -1353,8 +1353,11 @@ void MainWindow::sync(int profileNumber)
                             {
                                 originIterator.next();
 
+                                QString fileName = it.value().first.second;
+                                fileName.remove(0, fileName.lastIndexOf("/") + 1);
+
                                 // Aborts the copy operation if the origin path and the path on a disk have different cases
-                                if (originIterator.filePath().compare(it.value().first.second, Qt::CaseSensitive) != 0)
+                                if (originIterator.fileName().compare(fileName, Qt::CaseSensitive) != 0)
                                 {
                                     it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
                                     continue;
