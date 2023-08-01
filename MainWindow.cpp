@@ -985,54 +985,47 @@ void MainWindow::sync(int profileNumber)
             // Gets lists of all files in folders
             SET_TIME(startTime);
 
-            bool isFinished = false;
+            int result = 0;
             QList<QFuture<int>> futureList;
-            QSet<int> finished;
             QList<hash64_t> devicesRequired;
 
             for (auto &folder : profiles[queue.head()].folders)
+            {
+                futureList.append(QFuture(QtConcurrent::run([&](){ return getListOfFiles(folder); })));
+                futureList.last().suspend();
                 devicesRequired.append(hash64(QStorageInfo(folder.path).device()));
+            }
 
-            while (!isFinished)
+            while (!futureList.isEmpty())
             {
                 int i = 0;
 
-                for (auto &folder : profiles[queue.head()].folders)
+                for (auto it = futureList.begin(); it != futureList.end();)
                 {
-                    if (finished.contains(i)) continue;
-
                     hash64_t device = devicesRequired.value(i);
 
                     if (!usedDevices.contains(device))
                     {
-                        finished.insert(i);
                         usedDevices.insert(device);
-                        futureList.append(QFuture(QtConcurrent::run([&](){ return getListOfFiles(folder); })));
+                        it->resume();
+                    }
+
+                    if (it->isFinished())
+                    {
+                        result += it->result();
+                        usedDevices.remove(device);
+                        it = futureList.erase(static_cast<QList<QFuture<int>>::const_iterator>(it));
+                    }
+                    else
+                    {
+                        it++;
                     }
 
                     i++;
                 }
 
-                for (const auto &future : futureList)
-                {
-                    if (future.isFinished())
-                    {
-                        isFinished = true;
-                    }
-                    else
-                    {
-                        isFinished = false;
-                        break;
-                    }
-                }
-
                 if (updateApp()) return;
             }
-
-            int result = 0;
-
-            for (const auto &future : futureList)
-                result += future.result();
 
             TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(ui->syncProfilesView->model()->index(queue.head(), 0).data().toString()));
 
