@@ -1390,7 +1390,8 @@ void MainWindow::sync(int profileNumber)
 
                     if (future.result())
                     {
-                        folder.files.insert(fileHash, File(it.value().first.first, File::file, destination.lastModified()));
+                        // Do not touch QFileInfo(filePath).lastModified()), as we want to get the latest modified date
+                        folder.files.insert(fileHash, File(it.value().first.first, File::file, QFileInfo(filePath).lastModified()));
                         folder.sizeList[fileHash] = QFileInfo(filePath).size();
                         it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
 
