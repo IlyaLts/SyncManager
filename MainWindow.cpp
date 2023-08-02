@@ -986,14 +986,14 @@ void MainWindow::sync(int profileNumber)
             SET_TIME(startTime);
 
             int result = 0;
-            QList<QFuture<int>> futureList;
-            QList<hash64_t> devicesRequired;
+            QList<QPair<hash64_t, QFuture<int>>> futureList;
 
             for (auto &folder : profiles[queue.head()].folders)
             {
-                futureList.append(QFuture(QtConcurrent::run([&](){ return getListOfFiles(folder); })));
-                futureList.last().suspend();
-                devicesRequired.append(hash64(QStorageInfo(folder.path).device()));
+                hash64_t requiredDevice = hash64(QStorageInfo(folder.path).device());
+                QPair<hash64_t, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return getListOfFiles(folder); })));
+                pair.second.suspend();
+                futureList.append(pair);
             }
 
             while (!futureList.isEmpty())
@@ -1002,19 +1002,17 @@ void MainWindow::sync(int profileNumber)
 
                 for (auto it = futureList.begin(); it != futureList.end();)
                 {
-                    hash64_t device = devicesRequired.value(i);
-
-                    if (!usedDevices.contains(device))
+                    if (!usedDevices.contains(it->first))
                     {
-                        usedDevices.insert(device);
-                        it->resume();
+                        usedDevices.insert(it->first);
+                        it->second.resume();
                     }
 
-                    if (it->isFinished())
+                    if (it->second.isFinished())
                     {
-                        result += it->result();
-                        usedDevices.remove(device);
-                        it = futureList.erase(static_cast<QList<QFuture<int>>::const_iterator>(it));
+                        result += it->second.result();
+                        usedDevices.remove(it->first);
+                        it = futureList.erase(static_cast<QList<QPair<hash64_t, QFuture<int>>>::const_iterator>(it));
                     }
                     else
                     {
