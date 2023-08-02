@@ -1034,6 +1034,7 @@ void MainWindow::sync(int profileNumber)
             if (countAverage) profiles[queue.head()].syncTime /= 2;
 
 #ifdef DEBUG
+            int numOfFoldersToMove = 0;
             int numOfFilesToMove = 0;
             int numOfFoldersToAdd = 0;
             int numOfFilesToAdd = 0;
@@ -1042,6 +1043,7 @@ void MainWindow::sync(int profileNumber)
 
             for (auto &folder : profiles[queue.head()].folders)
             {
+                numOfFoldersToMove += folder.foldersToMove.size();
                 numOfFilesToMove += folder.filesToMove.size();
                 numOfFoldersToAdd += folder.foldersToAdd.size();
                 numOfFilesToAdd += folder.filesToAdd.size();
@@ -1049,9 +1051,10 @@ void MainWindow::sync(int profileNumber)
                 numOfFilesToRemove += folder.filesToRemove.size();
             }
 
-            if (numOfFilesToMove || numOfFoldersToAdd || numOfFilesToAdd || numOfFoldersToRemove || numOfFilesToRemove)
+            if (numOfFoldersToMove || numOfFilesToMove || numOfFoldersToAdd || numOfFilesToAdd || numOfFoldersToRemove || numOfFilesToRemove)
             {
                 qDebug("---------------------------------------");
+                if (numOfFoldersToMove)     qDebug("Folders to move: %d", numOfFoldersToMove);
                 if (numOfFilesToMove)       qDebug("Files to move: %d", numOfFilesToMove);
                 if (numOfFoldersToAdd)      qDebug("Folders to add: %d", numOfFoldersToAdd);
                 if (numOfFilesToAdd)        qDebug("Files to add: %d", numOfFilesToAdd);
@@ -1113,6 +1116,44 @@ void MainWindow::sync(int profileNumber)
                 sortedFoldersToRemove.reserve(folder.foldersToRemove.size());
                 for (const auto &str : qAsConst(folder.foldersToRemove)) sortedFoldersToRemove.append(str);
                 std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const QString &a, const QString &b) -> bool { return a.size() < b.size(); });
+
+                // Folders to move
+                for (auto it = folder.foldersToMove.begin(); it != folder.foldersToMove.end() && (!paused && !folder.paused);)
+                {
+                    // Removes from the "files to move" list if the source file doesn't exist
+                    if (!QFileInfo::exists(it.value().second))
+                    {
+                        it = folder.foldersToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+                        continue;
+                    }
+
+                    QString filePath(folder.path);
+                    filePath.append(it.value().first);
+                    hash64_t fileHash = hash64(it.value().first);
+
+                    QFuture<bool> future = QtConcurrent::run([&](){ return QDir().rename(it.value().second, filePath); });
+                    while (!future.isFinished()) updateApp();
+
+                    if (future.result())
+                    {
+                        QString parentFrom = QFileInfo(filePath).path();
+                        QString parentTo = QFileInfo(it.value().second).path();
+
+                        if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom);
+                        if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo);
+
+                        folder.files.remove(hash64(QByteArray(it.value().second).remove(0, folder.path.size())));
+                        folder.files.insert(fileHash, File(it.value().first, File::folder, QFileInfo(filePath).lastModified()));
+                        it = folder.foldersToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+                    }
+                    else
+                    {
+                        ++it;
+                    }
+
+                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
+                    if (updateApp() && rememberFiles) return;
+                }
 
                 // Files to move
                 for (auto it = folder.filesToMove.begin(); it != folder.filesToMove.end() && (!paused && !folder.paused);)
@@ -1534,7 +1575,7 @@ void MainWindow::updateStatus()
                 }
             }
 
-            if (busy && folder.exists && !folder.paused && (!folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.filesToMove.isEmpty() || !folder.foldersToRemove.isEmpty() || !folder.filesToRemove.isEmpty()))
+            if (busy && folder.exists && !folder.paused && (!folder.foldersToMove.isEmpty() || !folder.filesToMove.isEmpty() || !folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.foldersToRemove.isEmpty() || !folder.filesToRemove.isEmpty()))
             {
                 animSync.start();
                 syncing = true;
@@ -1668,7 +1709,7 @@ void MainWindow::updateStatus()
     {
         for (auto &folder : profiles[queue.head()].folders)
             if (folder.exists && !folder.paused)
-                numOfFilesToSync += folder.foldersToAdd.size() + folder.filesToAdd.size() + folder.filesToMove.size() + folder.foldersToRemove.size() + folder.filesToRemove.size();
+                numOfFilesToSync += folder.foldersToMove.size() + folder.filesToMove.size() + folder.foldersToAdd.size() + folder.filesToAdd.size() + folder.foldersToRemove.size() + folder.filesToRemove.size();
     }
 
     if (!numOfFilesToSync)
@@ -1864,6 +1905,15 @@ void MainWindow::saveData() const
                 stream << it.value();
             }
 
+            // Folders to move
+            stream << folder.foldersToMove.size();
+
+            for (const auto &it : folder.foldersToMove)
+            {
+                stream << it.first;
+                stream << it.second;
+            }
+
             // Files to move
             stream << folder.filesToMove.size();
 
@@ -1980,6 +2030,25 @@ void MainWindow::restoreData()
                 }
             }
 
+            // Folders to move
+            stream >> size;
+
+            for (qsizetype k = 0; k < size; k++)
+            {
+                QByteArray to;
+                QByteArray from;
+
+                stream >> to;
+                stream >> from;
+
+                if (restore)
+                {
+                    QPair<QByteArray, QByteArray> pair(to, from);
+                    const auto &it = profiles[profileIndex].folders[folderIndex].foldersToMove.insert(hash64(to), pair);
+                    const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
+                    const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
+                }
+            }
 
             // Files to move
             stream >> size;
@@ -2086,8 +2155,6 @@ int MainWindow::getListOfFiles(SyncFolder &folder)
         file.updated = (file.onRestore) ? file.updated : false;     // Keeps value if it was loaded from saved file data
         file.onRestore = false;
         file.newlyAdded = false;
-        file.moved = false;
-        file.movedSource = false;
     }
 
 #ifndef USE_STD_FILESYSTEM
@@ -2291,6 +2358,34 @@ void MainWindow::checkForChanges(SyncProfile &profile)
 
                         QByteArray from(otherFolderIt->path);
                         from.append(otherFile.path);
+
+                        if (!caseSensitiveSystem)
+                        {
+                            QByteArray fr(otherFile.path);
+                            QByteArray t(fileIt->path);
+
+                            fr.remove(fr.lastIndexOf("/"), fr.length());
+                            t.remove(t.lastIndexOf("/"), t.length());
+
+                            if (fr.compare(t, Qt::CaseInsensitive) == 0 && fr.compare(t, Qt::CaseSensitive) != 0)
+                            {
+                                QByteArray from(otherFolderIt->path);
+                                from.append(fr);
+
+                                qDebug("Renaming folder from %s to %s", qUtf8Printable(from), qUtf8Printable(t));
+
+                                folderIt->files[hash64(fr)].moved = true;
+                                folderIt->files[hash64(fr)].movedSource = true;
+                                folderIt->files[hash64(t)].moved = true;
+
+                                //otherFolderIt->files[hash64(fr)].moved = true;
+                                otherFolderIt->files[matchedHash].moved = true;
+                                otherFolderIt->foldersToMove.insert(hash64(fr), QPair<QByteArray, QByteArray>(t, from));
+                                needToMove = true;
+                            }
+                        }
+
+                        otherFolderIt->files[matchedHash].moved = true;
                         otherFolderIt->filesToMove.insert(matchedHash, QPair<QByteArray, QByteArray>(fileIt->path, from));
                         needToMove = true;
 
