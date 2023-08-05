@@ -2450,9 +2450,11 @@ void MainWindow::checkForChanges(SyncProfile &profile)
 
                 if ((newFile ||
                 // Or if we have a newer version of a file from other folders
-                (caseSensitiveSystem && (file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
-                (!caseSensitiveSystem && (file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
-                // Or if other folders has a new version of a file and our file was removed
+ #ifdef Q_OS_LINUX
+                 ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
+ #else
+                 ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
+ #endif                // Or if other folders has a new version of a file and our file was removed
                 (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(QByteArray(otherFile.path).indexOf('/', 0), 999999))).updated))) &&
                 // Checks for the newest version of a file in case if we have three folders or more
                 (!alreadyAdded || hasNewer) &&
