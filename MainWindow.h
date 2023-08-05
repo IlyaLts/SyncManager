@@ -84,7 +84,7 @@ struct SyncFolder
 
     QByteArray path;
     QHash<hash64_t, File> files;
-    QHash<hash64_t, QPair<QByteArray, QByteArray>> foldersToMove;
+    QHash<hash64_t, QPair<QByteArray, QByteArray>> foldersToRename;
     QHash<hash64_t, QPair<QByteArray, QByteArray>> filesToMove;
     QHash<hash64_t, QByteArray> foldersToAdd;
     QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToAdd;

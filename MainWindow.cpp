@@ -1034,7 +1034,7 @@ void MainWindow::sync(int profileNumber)
             if (countAverage) profiles[queue.head()].syncTime /= 2;
 
 #ifdef DEBUG
-            int numOfFoldersToMove = 0;
+            int numOfFoldersToRename = 0;
             int numOfFilesToMove = 0;
             int numOfFoldersToAdd = 0;
             int numOfFilesToAdd = 0;
@@ -1043,7 +1043,7 @@ void MainWindow::sync(int profileNumber)
 
             for (auto &folder : profiles[queue.head()].folders)
             {
-                numOfFoldersToMove += folder.foldersToMove.size();
+                numOfFoldersToRename += folder.foldersToRename.size();
                 numOfFilesToMove += folder.filesToMove.size();
                 numOfFoldersToAdd += folder.foldersToAdd.size();
                 numOfFilesToAdd += folder.filesToAdd.size();
@@ -1051,10 +1051,10 @@ void MainWindow::sync(int profileNumber)
                 numOfFilesToRemove += folder.filesToRemove.size();
             }
 
-            if (numOfFoldersToMove || numOfFilesToMove || numOfFoldersToAdd || numOfFilesToAdd || numOfFoldersToRemove || numOfFilesToRemove)
+            if (numOfFoldersToRename || numOfFilesToMove || numOfFoldersToAdd || numOfFilesToAdd || numOfFoldersToRemove || numOfFilesToRemove)
             {
                 qDebug("---------------------------------------");
-                if (numOfFoldersToMove)     qDebug("Folders to move: %d", numOfFoldersToMove);
+                if (numOfFoldersToRename)     qDebug("Folders to rename: %d", numOfFoldersToRename);
                 if (numOfFilesToMove)       qDebug("Files to move: %d", numOfFilesToMove);
                 if (numOfFoldersToAdd)      qDebug("Folders to add: %d", numOfFoldersToAdd);
                 if (numOfFilesToAdd)        qDebug("Files to add: %d", numOfFilesToAdd);
@@ -1118,12 +1118,12 @@ void MainWindow::sync(int profileNumber)
                 std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const QString &a, const QString &b) -> bool { return a.size() < b.size(); });
 
                 // Folders to move
-                for (auto it = folder.foldersToMove.begin(); it != folder.foldersToMove.end() && (!paused && !folder.paused);)
+                for (auto it = folder.foldersToRename.begin(); it != folder.foldersToRename.end() && (!paused && !folder.paused);)
                 {
                     // Removes from the "files to move" list if the source file doesn't exist
                     if (!QFileInfo::exists(it.value().second))
                     {
-                        it = folder.foldersToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+                        it = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
                         continue;
                     }
 
@@ -1144,7 +1144,21 @@ void MainWindow::sync(int profileNumber)
 
                         folder.files.remove(hash64(QByteArray(it.value().second).remove(0, folder.path.size())));
                         folder.files.insert(fileHash, File(it.value().first, File::folder, QFileInfo(filePath).lastModified()));
-                        it = folder.foldersToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+                        it = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+
+                        // Unmarks moved flag from all subdirectories
+                        QDirIterator dirIterator(filePath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+
+                        if (dirIterator.hasNext())
+                        {
+                            dirIterator.next();
+                            QByteArray path(dirIterator.filePath().toUtf8());
+                            path.remove(0, folder.path.size());
+                            hash64_t hash = hash64(path);
+
+                            if (folder.files.contains(hash))
+                                folder.files[hash].moved = false;
+                        }
                     }
                     else
                     {
@@ -1575,7 +1589,7 @@ void MainWindow::updateStatus()
                 }
             }
 
-            if (busy && folder.exists && !folder.paused && (!folder.foldersToMove.isEmpty() || !folder.filesToMove.isEmpty() || !folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.foldersToRemove.isEmpty() || !folder.filesToRemove.isEmpty()))
+            if (busy && folder.exists && !folder.paused && (!folder.foldersToRename.isEmpty() || !folder.filesToMove.isEmpty() || !folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.foldersToRemove.isEmpty() || !folder.filesToRemove.isEmpty()))
             {
                 animSync.start();
                 syncing = true;
@@ -1709,7 +1723,7 @@ void MainWindow::updateStatus()
     {
         for (auto &folder : profiles[queue.head()].folders)
             if (folder.exists && !folder.paused)
-                numOfFilesToSync += folder.foldersToMove.size() + folder.filesToMove.size() + folder.foldersToAdd.size() + folder.filesToAdd.size() + folder.foldersToRemove.size() + folder.filesToRemove.size();
+                numOfFilesToSync += folder.foldersToRename.size() + folder.filesToMove.size() + folder.foldersToAdd.size() + folder.filesToAdd.size() + folder.foldersToRemove.size() + folder.filesToRemove.size();
     }
 
     if (!numOfFilesToSync)
@@ -1906,9 +1920,9 @@ void MainWindow::saveData() const
             }
 
             // Folders to move
-            stream << folder.foldersToMove.size();
+            stream << folder.foldersToRename.size();
 
-            for (const auto &it : folder.foldersToMove)
+            for (const auto &it : folder.foldersToRename)
             {
                 stream << it.first;
                 stream << it.second;
@@ -2044,7 +2058,7 @@ void MainWindow::restoreData()
                 if (restore)
                 {
                     QPair<QByteArray, QByteArray> pair(to, from);
-                    const auto &it = profiles[profileIndex].folders[folderIndex].foldersToMove.insert(hash64(to), pair);
+                    const auto &it = profiles[profileIndex].folders[folderIndex].foldersToRename.insert(hash64(to), pair);
                     const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
                     const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
                 }
@@ -2282,121 +2296,208 @@ void MainWindow::checkForChanges(SyncProfile &profile)
 
     SET_TIME(startTime);
 
-    // Checks for moved/renamed files
+    // Checks for moved/renamed files and changed case of folders
     if (detectMovedFiles)
     {
         for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
         {
             for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
             {
-                bool needToCheck = false;
-
-                // Only a newly added file could be renamed or moved
-                if (!fileIt->newlyAdded || fileIt->type != File::file || !fileIt->exists)
-                    continue;
-
-                // Checks if other folders contain the same file or not
-                for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
+                if (fileIt->type == File::file)
                 {
-                    if (folderIt == otherFolderIt) continue;
+                    bool needToCheck = false;
 
-                    if (otherFolderIt->files.value(fileIt.key()).type == File::unknown)
-                    {
-                        needToCheck = true;
-                        break;
-                    }
-                }
+                    // Only a newly added file could be renamed or moved
+                    if (!fileIt->newlyAdded || !fileIt->exists)
+                        continue;
 
-                if (!needToCheck) continue;
-
-                int matches = 0;
-                File *matchedFile;
-                hash64_t matchedHash;
-                QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
-                auto keys = folderIt->sizeList.keys(fileInfo.size());
-
-                // Searches for potential matches by comparing the size of moved or renamed files to the size of their counterparts
-                for (auto &match : keys)
-                {
-                    if (!folderIt->files.contains(match)) continue;
-
-                    // A potential match should not exist and have the same modified date as the moved/renamed file
-                    if (!folderIt->files.value(match).exists && fileInfo.lastModified() == fileIt->date)
-                    {
-                        matches++;
-                        matchedFile = &folderIt->files[match];
-                        matchedHash = match;
-
-                        // We only need one match, not more
-                        if (matches > 1) break;
-                    }
-                }
-
-                if (matches == 1)
-                {
-                    bool needToMove = false;
-
+                    // Checks if other folders contain the same file or not
                     for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                     {
-                        if (folderIt == otherFolderIt || !otherFolderIt->files.contains(matchedHash))
-                            continue;
+                        if (folderIt == otherFolderIt) continue;
 
-                        const File &otherFile = otherFolderIt->files.value(matchedHash);                        
-
-                        if (!otherFile.exists)
-                            continue;
-
-                        // We do not want to move files that have different sizes and dates
-                        if (otherFolderIt->sizeList.value(matchedHash) != folderIt->sizeList.value(matchedHash) || otherFile.date != fileIt->date)
-                            continue;
-
-                        hash64_t hash = hash64(fileIt->path);
-
-                        // Marks a file as moved, which prevents it from being added to other folders
-                        if (!otherFolderIt->files.contains(hash))
-                            otherFolderIt->files[hash].moved = true;
-
-                        QByteArray from(otherFolderIt->path);
-                        from.append(otherFile.path);
-
-                        if (!caseSensitiveSystem)
+                        if (otherFolderIt->files.value(fileIt.key()).type == File::unknown)
                         {
-                            QByteArray fr(otherFile.path);
-                            QByteArray t(fileIt->path);
-
-                            fr.remove(fr.lastIndexOf("/"), fr.length());
-                            t.remove(t.lastIndexOf("/"), t.length());
-
-                            if (fr.compare(t, Qt::CaseInsensitive) == 0 && fr.compare(t, Qt::CaseSensitive) != 0)
-                            {
-                                QByteArray from(otherFolderIt->path);
-                                from.append(fr);
-
-                                qDebug("Renaming folder from %s to %s", qUtf8Printable(from), qUtf8Printable(t));
-
-                                folderIt->files[hash64(fr)].moved = true;
-                                folderIt->files[hash64(fr)].movedSource = true;
-                                folderIt->files[hash64(t)].moved = true;
-
-                                //otherFolderIt->files[hash64(fr)].moved = true;
-                                otherFolderIt->files[matchedHash].moved = true;
-                                otherFolderIt->foldersToMove.insert(hash64(fr), QPair<QByteArray, QByteArray>(t, from));
-                                needToMove = true;
-                            }
+                            needToCheck = true;
+                            break;
                         }
-
-                        otherFolderIt->files[matchedHash].moved = true;
-                        otherFolderIt->filesToMove.insert(matchedHash, QPair<QByteArray, QByteArray>(fileIt->path, from));
-                        needToMove = true;
-
-                        qDebug("Moving file from %s to %s", qUtf8Printable(from), qUtf8Printable(fileIt->path));
                     }
 
-                    if (needToMove)
+                    if (!needToCheck) continue;
+
+                    int matches = 0;
+                    File *matchedFile;
+                    hash64_t matchedHash;
+                    QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
+                    auto keys = folderIt->sizeList.keys(fileInfo.size());
+
+                    // Searches for potential matches by comparing the size of moved or renamed files to the size of their counterparts
+                    for (auto &match : keys)
                     {
-                        matchedFile->moved = true;
-                        matchedFile->movedSource = true;
-                        fileIt->moved = true;
+                        if (!folderIt->files.contains(match)) continue;
+
+                        // A potential match should not exist and have the same modified date as the moved/renamed file
+                        if (!folderIt->files.value(match).exists && fileInfo.lastModified() == fileIt->date)
+                        {
+                            matches++;
+                            matchedFile = &folderIt->files[match];
+                            matchedHash = match;
+
+                            // We only need one match, not more
+                            if (matches > 1) break;
+                        }
+                    }
+
+                    if (matches == 1)
+                    {
+                        bool needToMove = false;
+
+                        for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
+                        {
+                            if (folderIt == otherFolderIt || !otherFolderIt->files.contains(matchedHash))
+                                continue;
+
+                            const File &otherFile = otherFolderIt->files.value(matchedHash);
+
+                            if (!otherFile.exists)
+                                continue;
+
+                            // We do not want to move files that have different sizes and dates
+                            if (otherFolderIt->sizeList.value(matchedHash) != folderIt->sizeList.value(matchedHash) || otherFile.date != fileIt->date)
+                                continue;
+
+                            hash64_t hash = hash64(fileIt->path);
+
+                            // Marks a file as moved, which prevents it from being added to other folders
+                            if (!otherFolderIt->files.contains(hash))
+                                otherFolderIt->files[hash].moved = true;
+
+                            QByteArray folderPath(fileInfo.filePath().toUtf8());
+                            QByteArray from(otherFolderIt->path);
+                            from.append(otherFile.path);
+
+                            otherFolderIt->files[matchedHash].moved = true;
+                            otherFolderIt->filesToMove.insert(matchedHash, QPair<QByteArray, QByteArray>(fileIt->path, from));
+                            needToMove = true;
+
+                            qDebug("Moving file from %s to %s", qUtf8Printable(from), qUtf8Printable(fileIt->path));
+                        }
+
+                        if (needToMove)
+                        {
+                            matchedFile->moved = true;
+                            matchedFile->movedSource = true;
+                            fileIt->moved = true;
+                        }
+                    }
+                }
+                else if (!caseSensitiveSystem && fileIt->type == File::folder)
+                {
+                    // Only newly folder can indicate that probably the case of filename was changed
+                    if (!fileIt->newlyAdded || !fileIt->exists)
+                        continue;
+
+                    // Checks other folders
+                    for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
+                    {
+                        if (folderIt == otherFolderIt) continue;
+
+                        // Other folders should not contain the renamed folder
+                        if (otherFolderIt->files.value(fileIt.key()).type == File::unknown)
+                        {
+                            QByteArray fileName(fileIt.value().path);
+                            fileName.remove(0, fileName.lastIndexOf("/") + 1);
+
+                            QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
+
+                            QByteArray otherPath(otherFolderIt->path);
+                            otherPath.append(fileIt->path);
+                            QFileInfo otherFileInfo(otherPath);
+                            QByteArray otherCurrentlFilename;
+                            QByteArray otherCurrentPath;
+
+                            // Gets the current name of folders in other sync folders on a disk
+                            // Using QDirIterator is the only way to find out this
+                            QDirIterator otherDirIterator(otherFileInfo.absolutePath(), {otherFileInfo.fileName()}, QDir::Dirs);
+
+                            if (otherDirIterator.hasNext())
+                            {
+                                otherDirIterator.next();
+                                otherCurrentlFilename = otherDirIterator.fileName().toUtf8();
+                                otherCurrentPath = otherDirIterator.filePath().toUtf8();
+                                otherCurrentPath.remove(0, otherFolderIt->path.size());
+                            }
+
+                            QDirIterator otherDirIterator2(otherFileInfo.absolutePath(), {otherFileInfo.fileName()}, QDir::Dirs);
+                            QByteArray currentPath;
+
+                            if (otherDirIterator2.hasNext())
+                            {
+                                otherDirIterator2.next();
+                                currentPath = otherDirIterator2.filePath().toUtf8();
+                                currentPath.remove(0, otherFolderIt->path.size());
+                            }
+
+                            QByteArray temp(fileIt->path);
+                            temp.remove(0, temp.lastIndexOf("/"));
+                            currentPath.chop(temp.size());
+                            currentPath.append(temp);
+
+                            // Both file names should have the same filename, but differ in case
+                            if (!folderIt->files.value(hash64(currentPath)).moved &&
+                                 otherCurrentlFilename.compare(fileName, Qt::CaseInsensitive) == 0 &&
+                                 otherCurrentlFilename.compare(fileName, Qt::CaseSensitive) != 0)
+                            {
+                                QPair<QByteArray, QByteArray> pair(fileIt->path, otherDirIterator.filePath().toUtf8());
+                                otherFolderIt->foldersToRename.insert(hash64(otherCurrentPath), pair);
+                                qDebug("Rename folder from %s to %s", qUtf8Printable(pair.second), qUtf8Printable(pair.first));
+
+                                fileIt->moved = true;
+
+                                if (folderIt->files.contains(hash64(otherCurrentPath)))
+                                    folderIt->files[hash64(otherCurrentPath)].moved = true;
+
+                                if (otherFolderIt->files.contains(hash64(otherCurrentPath)))
+                                    otherFolderIt->files[hash64(otherCurrentPath)].moved = true;
+
+                                // Marks all subdirectories in folderIt as moved
+                                QString path(folderIt->path);
+                                path.append(fileIt->path);
+                                QDirIterator dirIterator(path, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+
+                                // Doesn't work at all. Intended to mark all subdirectories as moved
+                                // Using QDirIterator is the only way to find out the current filename on a disk
+                                if (dirIterator.hasNext())
+                                {
+                                    dirIterator.next();
+                                    QByteArray path(dirIterator.filePath().toUtf8());
+                                    path.remove(0, folderIt->path.size());
+                                    hash64_t hash = hash64(path);
+
+                                    if (folderIt->files.contains(hash))
+                                        folderIt->files[hash].moved = true;
+                                }
+
+                                // Marks all subdirectories in folderIt as moved
+                                QString oldPath(folderIt->path);
+                                oldPath.append(otherCurrentPath);
+
+                                QDirIterator oldDirIterator(oldPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+
+                                // Doesn't work at all. Intended to mark all subdirectories as moved
+                                // Using QDirIterator is the only way to find out the current filename on a disk
+                                if (oldDirIterator.hasNext())
+                                {
+                                    oldDirIterator.next();
+                                    QByteArray path(oldDirIterator.filePath().toUtf8());
+                                    path.remove(0, folderIt->path.size());
+                                    hash64_t hash = hash64(path);
+
+                                    if (folderIt->files.contains(hash))
+                                        folderIt->files[hash].moved = true;
+                                }
+                            }
+                        }
                     }
                 }
             }
