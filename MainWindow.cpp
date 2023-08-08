@@ -158,8 +158,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     increaseSyncTimeAction = new QAction("&Increase", this);
     syncingTimeAction = new QAction(this);
     decreaseSyncTimeAction = new QAction("&Decrease", this);
-    moveToTrashAction = new QAction("&Move Files and Folders to Trash", this);
-    moveToVersionFolderAction = new QAction("&Move Files to Version Folder", this);
+    moveToTrashAction = new QAction("&Move Files to Trash", this);
+    versioningAction = new QAction("&Versioning", this);
     deletePermanentlyAction = new QAction("&Delete Files Permanently", this);
     launchOnStartupAction = new QAction("&Launch on Startup", this);
     showInTrayAction = new QAction("&Show in System Tray");
@@ -189,7 +189,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     manualAction->setCheckable(true);
     deletePermanentlyAction->setCheckable(true);
     moveToTrashAction->setCheckable(true);
-    moveToVersionFolderAction->setCheckable(true);
+    versioningAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
@@ -218,7 +218,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     deletionModeMenu = new UnhidableMenu("&Deletion Mode", this);
     deletionModeMenu->addAction(moveToTrashAction);
-    deletionModeMenu->addAction(moveToVersionFolderAction);
+    deletionModeMenu->addAction(versioningAction);
     deletionModeMenu->addAction(deletePermanentlyAction);
 
     settingsMenu = new UnhidableMenu("&Settings", this);
@@ -267,7 +267,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
     connect(moveToTrashAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, MoveToTrash));
-    connect(moveToVersionFolderAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, MoveToVersionFolder));
+    connect(versioningAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, Versioning));
     connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, DeletePermanently));
     connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
     connect(showInTrayAction, &QAction::triggered, this, [this](){ setTrayVisible(!showInTray); });
@@ -904,13 +904,13 @@ void MainWindow::switchDeletionMode(DeletionMode mode)
     deletionMode = mode;
 
     moveToTrashAction->setChecked(false);
-    moveToVersionFolderAction->setChecked(false);
+    versioningAction->setChecked(false);
     deletePermanentlyAction->setChecked(false);
 
     if (mode == MoveToTrash)
         moveToTrashAction->setChecked(true);
-    else if (mode == MoveToVersionFolder)
-        moveToVersionFolderAction->setChecked(true);
+    else if (mode == Versioning)
+        versioningAction->setChecked(true);
     else
         deletePermanentlyAction->setChecked(true);
 }
@@ -1229,7 +1229,7 @@ void MainWindow::sync(int profileNumber)
 
                             return QFile::moveToTrash(folderPath) && !pathInTrash.isEmpty();
                         }
-                        else if (deletionMode == MoveToVersionFolder)
+                        else if (deletionMode == Versioning)
                         {
                             QString newLocation(timeStampFolder);
                             newLocation.append(*it);
@@ -1280,7 +1280,7 @@ void MainWindow::sync(int profileNumber)
 
                             return QFile::moveToTrash(filePath, &pathInTrash) && !pathInTrash.isEmpty();
                         }
-                        else if (deletionMode == MoveToVersionFolder)
+                        else if (deletionMode == Versioning)
                         {
                             QString newLocation(timeStampFolder);
                             newLocation.append(*it);
@@ -1329,7 +1329,7 @@ void MainWindow::sync(int profileNumber)
                         {
                             QFile::moveToTrash(folderPath);
                         }
-                        else if (deletionMode == MoveToVersionFolder)
+                        else if (deletionMode == Versioning)
                         {
                             QString newLocation(timeStampFolder);
                             newLocation.append(*it);
@@ -1421,7 +1421,7 @@ void MainWindow::sync(int profileNumber)
                         {
                             QFile::moveToTrash(filePath);
                         }
-                        else if (deletionMode == MoveToVersionFolder)
+                        else if (deletionMode == Versioning)
                         {
                             QString newLocation(timeStampFolder);
                             newLocation.append(it.value().first.first);
@@ -2294,11 +2294,11 @@ void MainWindow::checkForChanges(SyncProfile &profile)
 {
     if ((syncingMode == Automatic && profile.paused) || profile.folders.size() < 2) return;
 
-    SET_TIME(startTime);
-
     // Checks for changed case of folders
     if (detectMovedFiles && !caseSensitiveSystem)
     {
+        SET_TIME(startTime);
+
         for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
         {
             for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
@@ -2402,14 +2402,15 @@ void MainWindow::checkForChanges(SyncProfile &profile)
                 }
             }
         }
-    }
 
-    TIMESTAMP(startTime, "Checked for changed case of folders.");
-    SET_TIME(startTime);
+        TIMESTAMP(startTime, "Checked for changed case of folders.");
+    }
 
     // Checks for moved/renamed files
     if (detectMovedFiles)
     {
+        SET_TIME(startTime);
+
         for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
         {
             for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
@@ -2432,10 +2433,11 @@ void MainWindow::checkForChanges(SyncProfile &profile)
                 hash64_t matchedHash;
                 QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
 
-                // Searches for potential matches by comparing the size of moved or renamed files to the size of their counterparts
+                // Searches for potential matches by comparing the size of moved or renamed files to the size of their counterpart
                 for (auto &match : folderIt->sizeList.keys(fileInfo.size()))
                 {
-                    if (!folderIt->files.contains(match)) continue;
+                    if (!folderIt->files.contains(match))
+                        continue;
 
                     // A potential match should not exist and have the same modified date as the moved/renamed file
                     if (!folderIt->files.value(match).exists && fileInfo.lastModified() == fileIt->date)
@@ -2480,6 +2482,7 @@ void MainWindow::checkForChanges(SyncProfile &profile)
 
                     if (abort) continue;
 
+                    // Finally adds to the file moving list
                     for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                     {
                         if (folderIt == otherFolderIt || !otherFolderIt->files.contains(matchedHash))
@@ -2509,9 +2512,10 @@ void MainWindow::checkForChanges(SyncProfile &profile)
                 }
             }
         }
+
+        TIMESTAMP(startTime, "Checked for moved/renamed files.");
     }
 
-    TIMESTAMP(startTime, "Checked for moved/renamed files.");
     SET_TIME(startTime);
 
     // Checks for added/modified files and folders
@@ -2601,7 +2605,7 @@ void MainWindow::checkForChanges(SyncProfile &profile)
         {
             if (folderIt->paused) break;
 
-            //
+            // This file was moved and should be removed from the files list
             if (fileIt.value().movedSource)
             {
                 fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));

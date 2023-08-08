@@ -134,7 +134,7 @@ public:
     enum DeletionMode
     {
         MoveToTrash,
-        MoveToVersionFolder,
+        Versioning,
         DeletePermanently
     } deletionMode;
 
@@ -216,7 +216,7 @@ private:
     QAction *syncingTimeAction;
     QAction *decreaseSyncTimeAction;
     QAction *moveToTrashAction;
-    QAction *moveToVersionFolderAction;
+    QAction *versioningAction;
     QAction *deletePermanentlyAction;
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
