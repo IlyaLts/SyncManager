@@ -329,7 +329,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
 
-    if (rememberFiles)
+    QString appVersion(settings.value("AppVersion").toString());
+
+    if (rememberFiles && appVersion.compare("1.5") >= 0)
         restoreData();
     else
         QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
@@ -387,6 +389,7 @@ MainWindow::~MainWindow()
     settings.setValue("caseSensitiveSystem", caseSensitiveSystem);
     settings.setValue("VersionFolder", versionFolder);
     settings.setValue("VersionPattern", versionPattern);
+    settings.setValue("AppVersion", SYNCMANAGER_VERSION);
 
     if (rememberFiles) saveData();
 
