@@ -20,6 +20,7 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include "DecoratedStringListModel.h"
+#include "UnhidableMenu.h"
 #include <QStringListModel>
 #include <QSettings>
 #include <QCloseEvent>
@@ -29,72 +30,8 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QMenuBar>
-#include <QDirIterator>
 #include <QTimer>
-#include <QStack>
 #include <QtConcurrent/QtConcurrent>
-#include "UnhidableMenu.h"
-
-#ifdef USE_STD_FILESYSTEM
-#include <filesystem>
-#endif
-
-#ifdef DEBUG
-#include <chrono>
-
-#define SET_TIME(t) debugSetTime(t);
-#define TIMESTAMP(t, ...) debugTimestamp(t, __VA_ARGS__);
-
-std::chrono::high_resolution_clock::time_point startTime;
-
-/*
-===================
-debugSetTime
-===================
-*/
-void debugSetTime(std::chrono::high_resolution_clock::time_point &startTime)
-{
-    startTime = std::chrono::high_resolution_clock::now();
-}
-
-/*
-===================
-debugTimestamp
-===================
-*/
-void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startTime, const char *message, ...)
-{
-    char buffer[256];
-
-    va_list ap;
-    va_start(ap, message);
-    vsnprintf(buffer, sizeof(buffer), message, ap);
-    va_end(ap);
-
-    std::chrono::high_resolution_clock::time_point time(std::chrono::high_resolution_clock::now() - startTime);
-    auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
-    qDebug("%lld ms - %s", ml.count(), buffer);
-}
-#else
-
-#define SET_TIME(t)
-#define TIMESTAMP(t, m, ...)
-
-#endif // DEBUG
-
-/*
-===================
-hash64
-===================
-*/
-hash64_t hash64(const QByteArray &str)
-{
-    QByteArray hash = QCryptographicHash::hash(str, QCryptographicHash::Md5);
-    QDataStream stream(hash);
-    quint64 a, b;
-    stream >> a >> b;
-    return a ^ b;
-}
 
 /*
 ===================
@@ -119,17 +56,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->horizontalSplitter->setStretchFactor(0, 0);
     ui->horizontalSplitter->setStretchFactor(1, 1);
 
-    paused = settings.value(QLatin1String("Paused"), false).toBool();
+    manager.paused = settings.value(QLatin1String("Paused"), false).toBool();
     showInTray = settings.value("ShowInTray", true).toBool();
-    notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
-    rememberFiles = settings.value("RememberFiles", true).toBool();
-    detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
-    syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
-    if (syncTimeMultiplier <= 0) syncTimeMultiplier = 1;
+    manager.notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
+    manager.rememberFiles = settings.value("RememberFiles", true).toBool();
+    manager.detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
+    manager.syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
+    if (manager.syncTimeMultiplier <= 0) manager.syncTimeMultiplier = 1;
 
-    caseSensitiveSystem = settings.value("caseSensitiveSystem", caseSensitiveSystem).toBool();
-    versionFolder = settings.value("VersionFolder", "!Versions").toString();
-    versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
+    manager.caseSensitiveSystem = settings.value("caseSensitiveSystem", manager.caseSensitiveSystem).toBool();
+    manager.versionFolder = settings.value("VersionFolder", "!Versions").toString();
+    manager.versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
 
     profileModel = new DecoratedStringListModel;
     folderModel = new DecoratedStringListModel;
@@ -156,7 +93,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     automaticAction = new QAction("&Automatic", this);
     manualAction = new QAction("&Manual", this);
     increaseSyncTimeAction = new QAction("&Increase", this);
-    syncingTimeAction = new QAction(this);
+    syncingTimeAction = new QAction("Synchronize Every:", this);
     decreaseSyncTimeAction = new QAction("&Decrease", this);
     moveToTrashAction = new QAction("&Move Files to Trash", this);
     versioningAction = new QAction("&Versioning", this);
@@ -182,7 +119,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
 
     syncingTimeAction->setDisabled(true);
-    decreaseSyncTimeAction->setDisabled(syncTimeMultiplier <= 1);
+    decreaseSyncTimeAction->setDisabled(manager.syncTimeMultiplier <= 1);
     version->setDisabled(true);
 
     automaticAction->setCheckable(true);
@@ -197,9 +134,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     detectMovedFilesAction->setCheckable(true);
 
     showInTrayAction->setChecked(showInTray);
-    disableNotificationAction->setChecked(!notifications);
-    enableRememberFilesAction->setChecked(rememberFiles);
-    detectMovedFilesAction->setChecked(detectMovedFiles);
+    disableNotificationAction->setChecked(!manager.notifications);
+    enableRememberFilesAction->setChecked(manager.rememberFiles);
+    detectMovedFilesAction->setChecked(manager.detectMovedFiles);
 
 #ifdef Q_OS_WIN
     launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
@@ -260,67 +197,71 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(deletePressed()), SLOT(removeProfile()));
     connect(ui->folderListView, &FolderListView::drop, this, &MainWindow::addFolder);
     connect(ui->folderListView, SIGNAL(deletePressed()), SLOT(removeFolder()));
-    connect(syncNowAction, &QAction::triggered, this, [this](){ syncHidden = false; sync(); });
+    connect(syncNowAction, &QAction::triggered, this, [this](){ manager.syncHidden = false; doSync(); });
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
-    connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Automatic));
-    connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, Manual));
+    connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Automatic));
+    connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Manual));
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
-    connect(moveToTrashAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, MoveToTrash));
-    connect(versioningAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, Versioning));
-    connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, DeletePermanently));
+    connect(moveToTrashAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.MoveToTrash));
+    connect(versioningAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.Versioning));
+    connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.DeletePermanently));
     connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
     connect(showInTrayAction, &QAction::triggered, this, [this](){ setTrayVisible(!showInTray); });
-    connect(disableNotificationAction, &QAction::triggered, this, [this](){ notifications = !notifications; });
-    connect(enableRememberFilesAction, &QAction::triggered, this, [this](){ rememberFiles = !rememberFiles; });
-    connect(detectMovedFilesAction, &QAction::triggered, this, [this](){ detectMovedFiles = !detectMovedFiles; });
+    connect(disableNotificationAction, &QAction::triggered, this, [this](){ manager.notifications = !manager.notifications; });
+    connect(enableRememberFilesAction, &QAction::triggered, this, [this](){ manager.rememberFiles = !manager.rememberFiles; });
+    connect(detectMovedFilesAction, &QAction::triggered, this, [this](){ manager.detectMovedFiles = !manager.detectMovedFiles; });
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
-    connect(&syncTimer, &QTimer::timeout, this, [this](){ if (queue.isEmpty()) { syncHidden = true; sync(); }});
+    connect(&manager.syncTimer, &QTimer::timeout, this, [this](){ if (manager.queue.isEmpty()) { manager.syncHidden = true; doSync(); }});
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
+    connect(&manager, &SyncManager::warning, this, &MainWindow::trayMessage);
 
     // Loads synchronization profiles
     QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-    profileNames = profilesData.allKeys();
+    QStringList profileNames = profilesData.allKeys();
+    profileNames.sort();
     profileModel->setStringList(profileNames);
 
     for (auto &name : profileNames)
     {
-        profiles.append(SyncProfile(paused));
-        folderPaths.append(profilesData.value(name).toStringList());
+        manager.profiles.append(SyncProfile(manager.paused));
+        manager.profiles.last().name = name;
 
-        for (const auto &path : folderPaths.last())
+        QStringList paths = profilesData.value(name).toStringList();
+        paths.sort();
+
+        for (const auto &path : paths)
         {
-            profiles.last().folders.append(SyncFolder(paused));
-            profiles.last().folders.last().path = path.toUtf8();
-            profiles.last().folders.last().path.append("/");
+            manager.profiles.last().folders.append(SyncFolder(manager.paused));
+            manager.profiles.last().folders.last().path = path.toUtf8();
         }
     }
 
-    for (int i = 0; i < profiles.size(); i++)
+    for (int i = 0; i < manager.profiles.size(); i++)
     {
         // Loads saved pause states and checks if synchronization folders exist
-        profiles[i].paused = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), false).toBool();
-        if (!profiles[i].paused) paused = false;
+        manager.profiles[i].paused = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), false).toBool();
+        if (!manager.profiles[i].paused) manager.paused = false;
 
-        for (auto &folder : profiles[i].folders)
+        for (auto &folder : manager.profiles[i].folders)
         {
             folder.paused = settings.value(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), false).toBool();
-            if (!folder.paused) paused = false;
+            if (!folder.paused) manager.paused = false;
             folder.exists = QFileInfo::exists(folder.path);
 
-            if (notifications && !folder.exists)
+            if (manager.notifications && !folder.exists)
                 trayIcon->showMessage("Couldn't find folder", folder.path, QSystemTrayIcon::Warning, 1000);
         }
 
         // Loads last sync dates for all profiles
-        profiles[i].lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate")).toDateTime();
+        manager.profiles[i].lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate")).toDateTime();
 
-        if (!profiles[i].lastSyncDate.isNull())
+        if (!manager.profiles[i].lastSyncDate.isNull())
         {
-            QString lastSync = QString("Last Synchronization: %1.").arg(profiles[i].lastSyncDate.toString());
+            QString lastSync = QString("Last Synchronization: %1.").arg(manager.profiles[i].lastSyncDate.toString());
             profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
         }
         else
@@ -329,21 +270,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
 
-    QString appVersion(settings.value("AppVersion").toString());
-
-    if (rememberFiles && appVersion.compare("1.5") >= 0)
-        restoreData();
+    if (manager.rememberFiles && settings.value("AppVersion").toString().compare("1.5") >= 0)
+        manager.restoreData();
     else
         QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
 
-    syncTimer.setSingleShot(true);
+    manager.syncTimer.setSingleShot(true);
     updateTimer.setSingleShot(true);
 
-    switchSyncingMode(static_cast<SyncingMode>(settings.value("SyncingMode", Automatic).toInt()));
-    switchDeletionMode(static_cast<DeletionMode>(settings.value("DeletionMode", MoveToTrash).toInt()));
+    switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
+    switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", manager.MoveToTrash).toInt()));
     updateStatus();
 
-    if (syncingMode == Automatic) syncTimer.start(0);
+    if (manager.syncingMode == SyncManager::Automatic) manager.syncTimer.start(0);
 }
 
 /*
@@ -365,33 +304,33 @@ MainWindow::~MainWindow()
     }
 
     // Saves profiles/folders pause states and last sync dates
-    for (int i = 0; i < profiles.size(); i++)
+    for (int i = 0; i < manager.profiles.size(); i++)
     {
-        if (!profiles[i].toBeRemoved) settings.setValue(profileNames[i] + QLatin1String("_profile/") + QLatin1String("Paused"), profiles[i].paused);
+        if (!manager.profiles[i].toBeRemoved) settings.setValue(manager.profiles[i].name + QLatin1String("_profile/") + QLatin1String("Paused"), manager.profiles[i].paused);
 
-        for (auto &folder : profiles[i].folders)
+        for (auto &folder : manager.profiles[i].folders)
             if (!folder.toBeRemoved)
-                settings.setValue(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
+                settings.setValue(manager.profiles[i].name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
 
-        settings.setValue(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profiles[i].lastSyncDate);
+        settings.setValue(manager.profiles[i].name + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), manager.profiles[i].lastSyncDate);
     }
 
-    settings.setValue("Paused", paused);
+    settings.setValue("Paused", manager.paused);
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("HorizontalSplitter", hSizes);
-    settings.setValue("SyncingMode", syncingMode);
-    settings.setValue("DeletionMode", deletionMode);
+    settings.setValue("SyncingMode", manager.syncingMode);
+    settings.setValue("DeletionMode", manager.deletionMode);
     settings.setValue("ShowInTray", showInTray);
-    settings.setValue("Notifications", notifications);
-    settings.setValue("RememberFiles", rememberFiles);
-    settings.setValue("DetectMovedFiles", detectMovedFiles);
-    settings.setValue("SyncTimeMultiplier", syncTimeMultiplier);
-    settings.setValue("caseSensitiveSystem", caseSensitiveSystem);
-    settings.setValue("VersionFolder", versionFolder);
-    settings.setValue("VersionPattern", versionPattern);
+    settings.setValue("Notifications", manager.notifications);
+    settings.setValue("RememberFiles", manager.rememberFiles);
+    settings.setValue("DetectMovedFiles", manager.detectMovedFiles);
+    settings.setValue("SyncTimeMultiplier", manager.syncTimeMultiplier);
+    settings.setValue("caseSensitiveSystem", manager.caseSensitiveSystem);
+    settings.setValue("VersionFolder", manager.versionFolder);
+    settings.setValue("VersionPattern", manager.versionPattern);
     settings.setValue("AppVersion", SYNCMANAGER_VERSION);
 
-    if (rememberFiles) saveData();
+    if (manager.rememberFiles) manager.saveData();
 
     delete ui;
 }
@@ -487,13 +426,15 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     else
     {
-        if (busy && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No), QMessageBox::No) == QMessageBox::No)
+        auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
+
+        if (manager.busy && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::No)
         {
             event->ignore();
             return;
         }
 
-        shouldQuit = true;
+        manager.shouldQuit = true;
         event->accept();
     }
 }
@@ -518,12 +459,17 @@ void MainWindow::addProfile()
 {
     QString newName("New profile");
 
+    QStringList profileNames;
+
+    for (auto &profile : manager.profiles)
+        profileNames.append(profile.name);
+
     for (int i = 2; profileNames.contains(newName); i++)
         newName = QString("New profile (%1)").arg(i);
 
-    profiles.append(SyncProfile(paused));
+    manager.profiles.append(SyncProfile(manager.paused));
+    manager.profiles.last().name = newName;
     profileNames.append(newName);
-    folderPaths.append(QStringList());
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
 
@@ -549,7 +495,9 @@ void MainWindow::removeProfile()
 {
     if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty()) return;
 
-    if (QMessageBox::question(nullptr, QString("Remove profile"), QString("Are you sure you want to remove profile?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::No)
+    auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
+
+    if (QMessageBox::question(nullptr, QString("Remove profile"), QString("Are you sure you want to remove profile?"), buttons, QMessageBox::Yes) == QMessageBox::No)
         return;
 
     for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
@@ -557,29 +505,27 @@ void MainWindow::removeProfile()
         ui->syncProfilesView->model()->removeRow(index.row());
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-        settings.remove(profileNames[index.row()] + QLatin1String("_profile"));
+        settings.remove(manager.profiles[index.row()].name + QLatin1String("_profile"));
 
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-        profilesData.remove(profileNames[index.row()]);
+        profilesData.remove(manager.profiles[index.row()].name);
 
-        profiles[index.row()].paused = true;
-        profiles[index.row()].toBeRemoved = true;
+        manager.profiles[index.row()].paused = true;
+        manager.profiles[index.row()].toBeRemoved = true;
 
-        for (auto &folder : profiles[index.row()].folders)
+        for (auto &folder : manager.profiles[index.row()].folders)
         {
             folder.paused = true;
             folder.toBeRemoved = true;
         }
 
-        if (!busy) profiles.remove(index.row());
-        profileNames.removeAt(index.row());
-        folderPaths.removeAt(index.row());
+        if (!manager.busy) manager.profiles.remove(index.row());
         folderModel->setStringList(QStringList());
     }
 
     ui->syncProfilesView->selectionModel()->reset();
     updateStatus();
-    updateNextSyncingTime();
+    manager.updateNextSyncingTime();
 }
 
 /*
@@ -598,7 +544,12 @@ void MainWindow::profileClicked(const QItemSelection &selected, const QItemSelec
         return;
     }
 
-    folderModel->setStringList(folderPaths[ui->syncProfilesView->currentIndex().row()]);
+    QStringList folderPaths;
+
+    for (auto &folder : manager.profiles[ui->syncProfilesView->currentIndex().row()].folders)
+        folderPaths.append(folder.path);
+
+    folderModel->setStringList(folderPaths);
     updateStatus();
 }
 
@@ -614,23 +565,32 @@ void MainWindow::profileNameChanged(const QModelIndex &index)
     newName.remove('/');
     newName.remove('\\');
 
+    QStringList profileNames;
+    QStringList folderPaths;
+
+    for (auto &profile : manager.profiles)
+        profileNames.append(profile.name);
+
+    for (auto &folder : manager.profiles[row].folders)
+        folderPaths.append(folder.path);
+
     // Sets its name back to original if there's the profile name that already exists
-    if (newName.compare(profileNames[row], Qt::CaseInsensitive) && (newName.isEmpty() || profileNames.contains(newName, Qt::CaseInsensitive)))
+    if (newName.compare(manager.profiles[row].name, Qt::CaseInsensitive) && (newName.isEmpty() || profileNames.contains(newName, Qt::CaseInsensitive)))
     {
-        ui->syncProfilesView->model()->setData(index, profileNames[row], Qt::DisplayRole);
+        ui->syncProfilesView->model()->setData(index, manager.profiles[row].name, Qt::DisplayRole);
         return;
     }
 
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    settings.remove(profileNames[row] + QLatin1String("_profile"));
-    settings.setValue(newName + QLatin1String("_profile/") + QLatin1String("Paused"), profiles[row].paused);
-    for (auto &folder : profiles[row].folders) settings.setValue(newName + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
+    settings.remove(manager.profiles[row].name + QLatin1String("_profile"));
+    settings.setValue(newName + QLatin1String("_profile/") + QLatin1String("Paused"), manager.profiles[row].paused);
+    for (auto &folder : manager.profiles[row].folders) settings.setValue(newName + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
 
     QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-    profilesData.remove(profileNames[row]);
-    profilesData.setValue(newName, folderPaths[row]);
+    profilesData.remove(manager.profiles[row].name);
+    profilesData.setValue(newName, folderPaths);
 
-    profileNames[row] = newName;
+    manager.profiles[row].name = newName;
 }
 
 /*
@@ -662,15 +622,20 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         folders.append(folderPath);
     }
 
+    QStringList folderPaths;
+
+    for (auto &folder : manager.profiles[row].folders)
+        folderPaths.append(folder.path);
+
     // Checks if we already have a folder for synchronization in the list
     for (const auto &folder : folders)
     {
         bool exists = false;
 
-        for (const auto &path : folderPaths[row])
+        for (const auto &path : folderPaths)
         {
-            if ((caseSensitiveSystem && folder.toStdString().compare(0, std::string::npos, path.toStdString()) == 0) ||
-                (!caseSensitiveSystem && folder.toLower().toStdString().compare(0, std::string::npos, path.toLower().toStdString()) == 0))
+            if ((manager.caseSensitiveSystem && path.toStdString().compare(0, folder.size(), folder.toStdString()) == 0) ||
+                (!manager.caseSensitiveSystem && path.toLower().toStdString().compare(0, folder.size(), folder.toLower().toStdString()) == 0))
             {
                 exists = true;
             }
@@ -678,15 +643,15 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
         if (!exists)
         {
-            folderPaths[row].append(folder);
-            profiles[row].folders.append(SyncFolder(paused));
-            profiles[row].folders.last().path = folder.toUtf8();
-            profiles[row].folders.last().path.append("/");
+            manager.profiles[row].folders.append(SyncFolder(manager.paused));
+            manager.profiles[row].folders.last().path = folder.toUtf8();
+            manager.profiles[row].folders.last().path.append("/");
+            folderPaths.append(manager.profiles[row].folders.last().path);
 
             QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-            profilesData.setValue(profileNames[row], folderPaths[row]);
+            profilesData.setValue(manager.profiles[row].name, folderPaths);
 
-            folderModel->setStringList(folderPaths[row]);
+            folderModel->setStringList(folderPaths);
             updateStatus();
         }
     }
@@ -706,22 +671,27 @@ void MainWindow::removeFolder()
     {
         int profileRow = ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row();
 
-        profiles[profileRow].folders[index.row()].paused = true;
-        profiles[profileRow].folders[index.row()].toBeRemoved = true;
-        if (!busy) profiles[profileRow].folders.remove(index.row());
-        folderPaths[profileRow].removeAt(index.row());
+        manager.profiles[profileRow].folders[index.row()].paused = true;
+        manager.profiles[profileRow].folders[index.row()].toBeRemoved = true;
         ui->folderListView->model()->removeRow(index.row());
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-        settings.remove(profileNames[profileRow] + QLatin1String("_profile/") + profiles[profileRow].folders[index.row()].path + QLatin1String("_Paused"));
+        settings.remove(manager.profiles[profileRow].name + QLatin1String("_profile/") + manager.profiles[profileRow].folders[index.row()].path + QLatin1String("_Paused"));
+
+        if (!manager.busy) manager.profiles[profileRow].folders.remove(index.row());
+
+        QStringList foldersPaths;
+
+        for (auto &folder : manager.profiles[profileRow].folders)
+            foldersPaths.append(folder.path);
 
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-        profilesData.setValue(profileNames[profileRow], folderPaths[profileRow]);
+        profilesData.setValue(manager.profiles[profileRow].name, foldersPaths);
     }
 
     ui->folderListView->selectionModel()->reset();
     updateStatus();
-    updateNextSyncingTime();
+    manager.updateNextSyncingTime();
 }
 
 /*
@@ -731,18 +701,18 @@ MainWindow::pauseSyncing
 */
 void MainWindow::pauseSyncing()
 {
-    paused = !paused;
+    manager.paused = !manager.paused;
 
-    for (auto &profile : profiles)
+    for (auto &profile : manager.profiles)
     {
-        profile.paused = paused;
+        profile.paused = manager.paused;
 
         for (auto &folder : profile.folders)
-            folder.paused = paused;
+            folder.paused = manager.paused;
     }
 
     updateStatus();
-    updateNextSyncingTime();
+    manager.updateNextSyncingTime();
 }
 
 /*
@@ -760,28 +730,28 @@ void MainWindow::pauseSelected()
             int profileRow = ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row();
 
             for (auto &index : ui->folderListView->selectionModel()->selectedIndexes())
-                profiles[profileRow].folders[index.row()].paused = !profiles[profileRow].folders[index.row()].paused;
+                manager.profiles[profileRow].folders[index.row()].paused = !manager.profiles[profileRow].folders[index.row()].paused;
 
-            profiles[profileRow].paused = true;
+            manager.profiles[profileRow].paused = true;
 
-            for (const auto &folder : profiles[profileRow].folders)
+            for (const auto &folder : manager.profiles[profileRow].folders)
                 if (!folder.paused)
-                    profiles[profileRow].paused = false;
+                    manager.profiles[profileRow].paused = false;
         }
         // Profiles are selected
         else if (ui->syncProfilesView->hasFocus())
         {
             for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
             {
-                profiles[index.row()].paused = !profiles[index.row()].paused;
+                manager.profiles[index.row()].paused = !manager.profiles[index.row()].paused;
 
-                for (auto &folder : profiles[index.row()].folders)
-                    folder.paused = profiles[index.row()].paused;
+                for (auto &folder : manager.profiles[index.row()].folders)
+                    folder.paused = manager.profiles[index.row()].paused;
             }
         }
 
         updateStatus();
-        updateNextSyncingTime();
+        manager.updateNextSyncingTime();
     }
 }
 
@@ -794,10 +764,10 @@ void MainWindow::quit()
 {
     auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
 
-    if ((!busy && QMessageBox::question(nullptr, QString("Quit"), QString("Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes) ||
-        (busy && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes))
+    if ((!manager.busy && QMessageBox::question(nullptr, QString("Quit"), QString("Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes) ||
+        (manager.busy && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes))
     {
-        shouldQuit = true;
+        manager.shouldQuit = true;
         qApp->quit();
     }
 }
@@ -838,19 +808,19 @@ void MainWindow::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 MainWindow::switchSyncingMode
 ===================
 */
-void MainWindow::switchSyncingMode(SyncingMode mode)
+void MainWindow::switchSyncingMode(SyncManager::SyncingMode mode)
 {
-    syncingMode = mode;
+    manager.syncingMode = mode;
 
     automaticAction->setChecked(false);
     manualAction->setChecked(false);
 
-    if (mode == Manual)
+    if (mode == SyncManager::Manual)
     {
         pauseSyncingAction->setVisible(false);
         manualAction->setChecked(true);
         syncingTimeMenu->menuAction()->setVisible(false);
-        syncTimer.stop();
+        manager.syncTimer.stop();
     }
     // Otherwise, automatic
     else
@@ -858,7 +828,8 @@ void MainWindow::switchSyncingMode(SyncingMode mode)
         pauseSyncingAction->setVisible(true);
         automaticAction->setChecked(true);
         syncingTimeMenu->menuAction()->setVisible(true);
-        updateNextSyncingTime();
+        manager.updateNextSyncingTime();
+        manager.syncTimer.start(manager.syncEvery);
     }
 
     updateStatus();
@@ -871,11 +842,11 @@ MainWindow::increaseSyncTime
 */
 void MainWindow::increaseSyncTime()
 {
-    if (syncEvery != std::numeric_limits<int>::max())
+    if (manager.syncEvery != std::numeric_limits<int>::max())
     {
-        syncTimeMultiplier++;
+        manager.syncTimeMultiplier++;
         decreaseSyncTimeAction->setDisabled(false);
-        updateNextSyncingTime();
+        manager.updateNextSyncingTime();
     }
 }
 
@@ -886,15 +857,15 @@ MainWindow::decreaseSyncTime
 */
 void MainWindow::decreaseSyncTime()
 {
-    syncTimeMultiplier--;
+    manager.syncTimeMultiplier--;
 
-    if (syncTimeMultiplier <= 1)
+    if (manager.syncTimeMultiplier <= 1)
     {
-        syncTimeMultiplier = 1;
+        manager.syncTimeMultiplier = 1;
         decreaseSyncTimeAction->setDisabled(true);
     }
 
-    updateNextSyncingTime();
+    manager.updateNextSyncingTime();
 }
 
 /*
@@ -902,651 +873,20 @@ void MainWindow::decreaseSyncTime()
 MainWindow::switchDeletionMode
 ===================
 */
-void MainWindow::switchDeletionMode(DeletionMode mode)
+void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
 {
-    deletionMode = mode;
+    manager.deletionMode = mode;
 
     moveToTrashAction->setChecked(false);
     versioningAction->setChecked(false);
     deletePermanentlyAction->setChecked(false);
 
-    if (mode == MoveToTrash)
+    if (mode == SyncManager::MoveToTrash)
         moveToTrashAction->setChecked(true);
-    else if (mode == Versioning)
+    else if (mode == SyncManager::Versioning)
         versioningAction->setChecked(true);
     else
         deletePermanentlyAction->setChecked(true);
-}
-
-/*
-===================
-MainWindow::sync
-===================
-*/
-void MainWindow::sync(int profileNumber)
-{
-    if (profiles.isEmpty()) return;
-
-    if (!queue.contains(profileNumber))
-    {
-        // Adds the passed profile number to the sync queue
-        if (profileNumber >= 0 && profileNumber < profiles.size())
-        {
-            if ((!profiles[profileNumber].paused || syncingMode != Automatic) && !profiles[profileNumber].toBeRemoved)
-
-            queue.enqueue(profileNumber);
-        }
-        // If a profile number is not passed, adds all remaining profiles to the sync queue
-        else
-        {
-            for (int i = 0; i < profiles.size(); i++)
-            {
-                if ((!profiles[i].paused || syncingMode != Automatic) && !profiles[i].toBeRemoved && !queue.contains(i))
-                {
-                    queue.enqueue(i);
-                }
-            }
-        }
-    }
-
-    if (busy || queue.isEmpty()) return;
-
-    animSync.start();
-    busy = true;
-    syncing = false;
-    for (auto &action : syncingModeMenu->actions()) action->setEnabled(false);
-    for (auto &action : deletionModeMenu->actions()) action->setEnabled(false);
-
-#ifdef DEBUG
-    std::chrono::high_resolution_clock::time_point syncTime;
-    debugSetTime(syncTime);
-#endif
-
-    if (!paused)
-    {
-        int activeFolders = 0;
-        QElapsedTimer timer;
-        timer.start();
-
-        // Counts active folders in a profile
-        for (auto &folder : profiles[queue.head()].folders)
-        {
-            folder.exists = QFileInfo::exists(folder.path);
-
-            if (!folder.paused && folder.exists && !folder.toBeRemoved)
-                activeFolders++;
-        }
-
-        if (activeFolders >= 2)
-        {
-#ifdef DEBUG
-            qDebug("=======================================");
-            qDebug("Started syncing %s", qUtf8Printable(ui->syncProfilesView->model()->index(queue.head(), 0).data().toString()));
-            qDebug("=======================================");
-#endif
-
-            // Gets lists of all files in folders
-            SET_TIME(startTime);
-
-            int result = 0;
-            QList<QPair<hash64_t, QFuture<int>>> futureList;
-
-            for (auto &folder : profiles[queue.head()].folders)
-            {
-                hash64_t requiredDevice = hash64(QStorageInfo(folder.path).device());
-                QPair<hash64_t, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return getListOfFiles(folder); })));
-                pair.second.suspend();
-                futureList.append(pair);
-            }
-
-            while (!futureList.isEmpty())
-            {
-                int i = 0;
-
-                for (auto it = futureList.begin(); it != futureList.end();)
-                {
-                    if (!usedDevices.contains(it->first))
-                    {
-                        usedDevices.insert(it->first);
-                        it->second.resume();
-                    }
-
-                    if (it->second.isFinished())
-                    {
-                        result += it->second.result();
-                        usedDevices.remove(it->first);
-                        it = futureList.erase(static_cast<QList<QPair<hash64_t, QFuture<int>>>::const_iterator>(it));
-                    }
-                    else
-                    {
-                        it++;
-                    }
-
-                    i++;
-                }
-
-                if (updateApp()) return;
-            }
-
-            TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(ui->syncProfilesView->model()->index(queue.head(), 0).data().toString()));
-
-            checkForChanges(profiles[queue.head()]);
-
-            bool countAverage = profiles[queue.head()].syncTime ? true : false;
-            profiles[queue.head()].syncTime += timer.elapsed();
-            if (countAverage) profiles[queue.head()].syncTime /= 2;
-
-#ifdef DEBUG
-            int numOfFoldersToRename = 0;
-            int numOfFilesToMove = 0;
-            int numOfFoldersToAdd = 0;
-            int numOfFilesToAdd = 0;
-            int numOfFoldersToRemove = 0;
-            int numOfFilesToRemove = 0;
-
-            for (auto &folder : profiles[queue.head()].folders)
-            {
-                numOfFoldersToRename += folder.foldersToRename.size();
-                numOfFilesToMove += folder.filesToMove.size();
-                numOfFoldersToAdd += folder.foldersToAdd.size();
-                numOfFilesToAdd += folder.filesToAdd.size();
-                numOfFoldersToRemove += folder.foldersToRemove.size();
-                numOfFilesToRemove += folder.filesToRemove.size();
-            }
-
-            if (numOfFoldersToRename || numOfFilesToMove || numOfFoldersToAdd || numOfFilesToAdd || numOfFoldersToRemove || numOfFilesToRemove)
-            {
-                qDebug("---------------------------------------");
-                if (numOfFoldersToRename)   qDebug("Folders to rename: %d", numOfFoldersToRename);
-                if (numOfFilesToMove)       qDebug("Files to move: %d", numOfFilesToMove);
-                if (numOfFoldersToAdd)      qDebug("Folders to add: %d", numOfFoldersToAdd);
-                if (numOfFilesToAdd)        qDebug("Files to add: %d", numOfFilesToAdd);
-                if (numOfFoldersToRemove)   qDebug("Folders to remove: %d", numOfFoldersToRemove);
-                if (numOfFilesToRemove)     qDebug("Files to remove: %d", numOfFilesToRemove);
-                qDebug("---------------------------------------");
-            }
-#endif
-
-            updateStatus();
-            if (updateApp()) return;
-        }
-
-        if (syncing)
-        {
-            // Synchronizes files/folders
-            for (auto &folder : profiles[queue.head()].folders)
-            {
-                QString rootPath = QStorageInfo(folder.path).rootPath();
-                bool shouldNotify = notificationList.contains(rootPath) ? !notificationList.value(rootPath)->isActive() : true;
-                QSet<QString> foldersToUpdate;
-
-                QString timeStampFolder(folder.path);
-                timeStampFolder.append(versionFolder);
-                timeStampFolder.append("/");
-                timeStampFolder.append(QDateTime::currentDateTime().toString(versionPattern));
-                timeStampFolder.append("/");
-
-                auto createParentFolders = [&](QString path)
-                {
-                    QStack<QString> foldersToCreate;
-
-                    while ((path = QFileInfo(path).path()).length() > folder.path.length())
-                    {
-                        if (QDir(path).exists()) break;
-                        foldersToCreate.append(path);
-                    }
-
-                    while (!foldersToCreate.isEmpty())
-                    {
-                        if (QDir().mkdir(foldersToCreate.top()))
-                        {
-                            QString shortPath(foldersToCreate.top());
-                            shortPath.remove(0, folder.path.size());
-                            hash64_t hash = hash64(shortPath.toUtf8());
-
-                            folder.files.insert(hash, File(shortPath.toUtf8(), File::folder, QFileInfo(foldersToCreate.top()).lastModified()));
-                            folder.foldersToAdd.remove(hash);
-                            foldersToUpdate.insert(foldersToCreate.top());
-                        }
-
-                        foldersToCreate.pop();
-                    }
-                };
-
-                // Sorts the folders for removal from the top to the bottom.
-                // This ensures that the trash folder has the exact same folder structure as in the original destination.
-                QVector<QString> sortedFoldersToRemove;
-                sortedFoldersToRemove.reserve(folder.foldersToRemove.size());
-                for (const auto &str : qAsConst(folder.foldersToRemove)) sortedFoldersToRemove.append(str);
-                std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const QString &a, const QString &b) -> bool { return a.size() < b.size(); });
-
-                // Folders to rename
-                for (auto it = folder.foldersToRename.begin(); it != folder.foldersToRename.end() && (!paused && !folder.paused);)
-                {
-                    // Removes from the "files to move" list if the source file doesn't exist
-                    if (!QFileInfo::exists(it.value().second))
-                    {
-                        it = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
-                        continue;
-                    }
-
-                    QString filePath(folder.path);
-                    filePath.append(it.value().first);
-                    hash64_t fileHash = hash64(it.value().first);
-
-                    QFuture<bool> future = QtConcurrent::run([&](){ return QDir().rename(it.value().second, filePath); });
-                    while (!future.isFinished()) updateApp();
-
-                    if (future.result())
-                    {
-                        QString parentFrom = QFileInfo(filePath).path();
-                        QString parentTo = QFileInfo(it.value().second).path();
-
-                        if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom);
-                        if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo);
-
-                        folder.files.remove(hash64(QByteArray(it.value().second).remove(0, folder.path.size())));
-                        folder.files.insert(fileHash, File(it.value().first, File::folder, QFileInfo(filePath).lastModified()));
-                        it = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
-
-                        // Unsets moved flag from all subdirectories
-                        QDirIterator dirIterator(filePath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
-
-                        if (dirIterator.hasNext())
-                        {
-                            dirIterator.next();
-                            QByteArray path(dirIterator.filePath().toUtf8());
-                            path.remove(0, folder.path.size());
-                            hash64_t hash = hash64(path);
-
-                            if (folder.files.contains(hash))
-                                folder.files[hash].moved = false;
-                        }
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (updateApp() && rememberFiles) return;
-                }
-
-                // Files to move
-                for (auto it = folder.filesToMove.begin(); it != folder.filesToMove.end() && (!paused && !folder.paused);)
-                {
-                    // Removes from the "files to move" list if the source file doesn't exist
-                    if (!QFileInfo::exists(it.value().second))
-                    {
-                        it = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
-                        continue;
-                    }
-
-                    QString filePath(folder.path);
-                    filePath.append(it.value().first);
-                    hash64_t fileHash = hash64(it.value().first);
-
-                    createParentFolders(QDir::cleanPath(filePath));
-
-                    // TODO: Fix the case if a file exists at the given destination file path
-                    QFuture<bool> future = QtConcurrent::run([&](){ return QFile::rename(it.value().second, filePath); });
-                    while (!future.isFinished()) updateApp();
-
-                    if (future.result())
-                    {
-                        QString parentFrom = QFileInfo(filePath).path();
-                        QString parentTo = QFileInfo(it.value().second).path();
-
-                        if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom);
-                        if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo);
-
-                        folder.files.remove(hash64(QByteArray(it.value().second).remove(0, folder.path.size())));
-                        folder.files.insert(fileHash, File(it.value().first, File::file, QFileInfo(filePath).lastModified()));
-                        folder.sizeList[fileHash] = QFileInfo(filePath).size();
-                        it = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (updateApp() && rememberFiles) return;
-                }
-
-                // Folders to remove
-                for (auto it = sortedFoldersToRemove.begin(); it != sortedFoldersToRemove.end() && (!paused && !folder.paused);)
-                {
-                    QString folderPath(folder.path);
-                    folderPath.append(*it);
-                    hash64_t fileHash = hash64(it->toUtf8());
-                    QString parentPath = QFileInfo(folderPath).path();
-
-                    QFuture<bool> future = QtConcurrent::run([&]()
-                    {
-                        if (deletionMode == MoveToTrash)
-                        {
-                            // Used to make sure that moveToTrash function really moved a folder
-                            // to the trash as it can return true even though it failed to do so
-                            QString pathInTrash;
-
-                            return QFile::moveToTrash(folderPath) && !pathInTrash.isEmpty();
-                        }
-                        else if (deletionMode == Versioning)
-                        {
-                            QString newLocation(timeStampFolder);
-                            newLocation.append(*it);
-
-                            createParentFolders(QDir::cleanPath(newLocation));
-                            return QDir().rename(folderPath, newLocation);
-                        }
-                        else
-                        {
-                            return QDir(folderPath).removeRecursively();
-                        }
-                    });
-
-                    while (!future.isFinished()) updateApp();
-
-                    if (future.result() || !QDir().exists(folderPath))
-                    {
-                        folder.files.remove(fileHash);
-                        folder.foldersToRemove.remove(fileHash);
-                        it = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(it));
-
-                        if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (updateApp() && rememberFiles) return;
-                }
-
-                // Files to remove
-                for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && (!paused && !folder.paused);)
-                {
-                    QString filePath(folder.path);
-                    filePath.append(*it);
-                    hash64_t fileHash = hash64(*it);
-                    QString parentPath = QFileInfo(filePath).path();
-
-                    QFuture<bool> future = QtConcurrent::run([&]()
-                    {
-                        if (deletionMode == MoveToTrash)
-                        {
-                            // Used to make sure that moveToTrash function really moved a folder
-                            // to the trash as it can return true even though it failed to do so
-                            QString pathInTrash;
-
-                            return QFile::moveToTrash(filePath, &pathInTrash) && !pathInTrash.isEmpty();
-                        }
-                        else if (deletionMode == Versioning)
-                        {
-                            QString newLocation(timeStampFolder);
-                            newLocation.append(*it);
-
-                            createParentFolders(QDir::cleanPath(newLocation));
-                            return QFile().rename(filePath, newLocation);
-                        }
-                        else
-                        {
-                            return QFile::remove(filePath) || !QFileInfo::exists(filePath);
-                        }
-                    });
-
-                    while (!future.isFinished()) updateApp();
-
-                    if (future.result() || !QFile().exists(filePath))
-                    {
-                        folder.files.remove(fileHash);
-                        it = folder.filesToRemove.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(it));
-
-                        if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (updateApp() && rememberFiles) return;
-                }
-
-                // Folders to add
-                for (auto it = folder.foldersToAdd.begin(); it != folder.foldersToAdd.end() && (!paused && !folder.paused);)
-                {
-                    QString folderPath(folder.path);
-                    folderPath.append(*it);
-                    hash64_t fileHash = hash64(*it);
-                    QFileInfo fileInfo(folderPath);
-
-                    createParentFolders(QDir::cleanPath(folderPath));
-
-                    // Removes a file with the same filename first if exists
-                    if (fileInfo.exists() && fileInfo.isFile())
-                    {
-                        if (deletionMode == MoveToTrash)
-                        {
-                            QFile::moveToTrash(folderPath);
-                        }
-                        else if (deletionMode == Versioning)
-                        {
-                            QString newLocation(timeStampFolder);
-                            newLocation.append(*it);
-
-                            createParentFolders(QDir::cleanPath(newLocation));
-                            QFile::rename(folderPath, newLocation);
-                        }
-                        else
-                        {
-                            QFile::remove(folderPath);
-                        }
-                    }
-
-                    if (QDir().mkdir(folderPath) || fileInfo.exists())
-                    {
-                        folder.files.insert(fileHash, File(*it, File::folder, fileInfo.lastModified()));
-                        it = folder.foldersToAdd.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(it));
-
-                        QString parentPath = fileInfo.path();
-                        if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (updateApp() && rememberFiles) return;
-                }
-
-                // Files to copy
-                for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && (!paused && !folder.paused);)
-                {
-                    // Removes from the "files to add" list if the source file doesn't exist
-                    if (!QFileInfo::exists(it.value().first.second) || it.value().first.first.isEmpty() || it.value().first.second.isEmpty())
-                    {
-                        it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
-                        continue;
-                    }
-
-                    QString filePath(folder.path);
-                    filePath.append(it.value().first.first);
-                    hash64_t fileHash = hash64(it.value().first.first);
-                    const File &file = folder.files.value(fileHash);
-                    QFileInfo destination(filePath);
-
-                    // Destination file is a newly added file
-                    if (file.type == File::unknown && destination.exists())
-                    {
-                        QFileInfo origin(it.value().first.second);
-
-                        // Aborts the copy operation if the origin file is older than the destination file
-                        if (destination.lastModified() > origin.lastModified())
-                        {
-                            it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
-                            continue;
-                        }
-
-                        // Fixes the case of two new files in two folders (one file for each folder) with the same file names but in different cases (e.g. filename vs. FILENAME)
-                        // Without this, copy operation causes undefined behavior as some file systems, such as Windows, are case insensitive.
-                        if (!caseSensitiveSystem)
-                        {
-                            QDirIterator originIterator(origin.absolutePath(), {origin.fileName()}, QDir::Files);
-
-                            // Using QDirIterator is the only way to find out the current filename on a disk
-                            if (originIterator.hasNext())
-                            {
-                                originIterator.next();
-
-                                QString fileName = it.value().first.second;
-                                fileName.remove(0, fileName.lastIndexOf("/") + 1);
-
-                                // Aborts the copy operation if the origin path and the path on a disk have different cases
-                                if (originIterator.fileName().compare(fileName, Qt::CaseSensitive) != 0)
-                                {
-                                    it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
-                                    continue;
-                                }
-                            }
-                        }
-                    }
-
-                    createParentFolders(QDir::cleanPath(filePath));
-
-                    // Removes a file with the same filename first if it exists
-                    if (destination.exists())
-                    {
-                        if (deletionMode == MoveToTrash)
-                        {
-                            QFile::moveToTrash(filePath);
-                        }
-                        else if (deletionMode == Versioning)
-                        {
-                            QString newLocation(timeStampFolder);
-                            newLocation.append(it.value().first.first);
-
-                            createParentFolders(QDir::cleanPath(newLocation));
-                            QFile::rename(filePath, newLocation);
-                        }
-                        else
-                        {
-                            if (file.type == File::folder)
-                                QDir(filePath).removeRecursively();
-                            else
-                                QFile::remove(filePath);
-                        }
-                    }
-
-                    QFuture<bool> future = QtConcurrent::run([&](){ return QFile::copy(it.value().first.second, filePath); });
-                    while (!future.isFinished()) updateApp();
-
-                    if (future.result())
-                    {
-                        // Do not touch QFileInfo(filePath).lastModified()), as we want to get the latest modified date
-                        folder.files.insert(fileHash, File(it.value().first.first, File::file, QFileInfo(filePath).lastModified()));
-                        folder.sizeList[fileHash] = QFileInfo(filePath).size();
-                        it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
-
-                        QString parentPath = destination.path();
-                        if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
-                    }
-                    else
-                    {
-                        // Not enough disk space notification
-                        if (notifications && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value().first.second).size())
-                        {
-                            if (!notificationList.contains(rootPath))
-                                notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);
-
-                            shouldNotify = false;
-                            notificationList.value(rootPath)->start(NOTIFICATION_DELAY);
-                            trayIcon->showMessage(QString("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "", QSystemTrayIcon::Critical, 1000);
-                        }
-
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (updateApp() && rememberFiles) return;
-                }
-
-                // Updates the modified date of the parent folders as adding/removing files and folders change their modified date
-                for (auto &folderPath : foldersToUpdate)
-                {
-                    hash64_t folderHash = hash64(QByteArray(folderPath.toUtf8()).remove(0, folder.path.size()));
-                    if (folder.files.contains(folderHash)) folder.files[folderHash].date = QFileInfo(folderPath).lastModified();
-                }
-            }
-        }
-    }
-
-    // Optimizes memory usage
-    for (auto &folder : profiles[queue.head()].folders)
-    {
-        folder.files.squeeze();
-        folder.filesToMove.squeeze();
-        folder.foldersToAdd.squeeze();
-        folder.filesToAdd.squeeze();
-        folder.foldersToRemove.squeeze();
-        folder.filesToRemove.squeeze();
-
-        for (auto &file : folder.files)
-            file.path.clear();
-
-        for (auto it = folder.sizeList.begin(); it != folder.sizeList.end();)
-        {
-            if (!folder.files.contains(it.key()))
-                it = folder.sizeList.erase(static_cast<QHash<hash64_t, qint64>::const_iterator>(it));
-            else
-                ++it;
-        }
-    }
-
-    // Updates the last synchronization date
-    profiles[queue.head()].lastSyncDate = QDateTime::currentDateTime();
-    QString lastSync = QString("Last synchronization: %1.").arg(profiles[queue.head()].lastSyncDate.toString());
-    profileModel->setData(profileModel->index(queue.head(), 0), lastSync, Qt::ToolTipRole);
-
-    queue.dequeue();
-    busy = false;
-    updateStatus();
-    updateNextSyncingTime();
-
-    TIMESTAMP(syncTime, "Syncing is complete.");
-
-    // Starts synchronization of the next profile in the queue if exists
-    if (!queue.empty()) sync(queue.head());
-
-    // Removes profiles/folders completely if we remove them during syncing
-    for (auto profileIt = profiles.begin(); profileIt != profiles.end();)
-    {
-        // Profiles
-        if (profileIt->toBeRemoved)
-        {
-            profileIt = profiles.erase(static_cast<QList<SyncProfile>::const_iterator>(profileIt));
-            continue;
-        }
-
-        // Folders
-        for (auto folderIt = profileIt->folders.begin(); folderIt != profileIt->folders.end();)
-        {
-            if (folderIt->toBeRemoved)
-                folderIt = profileIt->folders.erase(static_cast<QList<SyncFolder>::const_iterator>(folderIt));
-            else
-                folderIt++;
-        }
-
-        profileIt++;
-    }
-
-    for (auto &action : syncingModeMenu->actions()) action->setEnabled(true);
-    for (auto &action : deletionModeMenu->actions()) action->setEnabled(true);
-    syncHidden = false;
-    animSync.stop();
 }
 
 /*
@@ -1556,66 +896,25 @@ MainWindow::updateStatus
 */
 void MainWindow::updateStatus()
 {
-    bool isThereIssue = true;
-    bool isThereWarning = false;
-    int existingProfiles = 0;
-    syncing = false;
-    numOfFilesToSync = 0;
+    manager.syncing = false;
+    manager.numOfFilesToSync = 0;
 
-    // Syncing status
-    for (int i = -1; auto &profile : profiles)
-    {
-        i++;
-        profile.syncing = false;
-        int existingFolders = 0;
-
-        existingProfiles++;
-
-        for (auto &folder : profile.folders)
-        {
-            folder.syncing = false;
-
-            if ((!queue.isEmpty() && queue.head() != i ) || profile.toBeRemoved)
-                continue;
-
-            if (!folder.toBeRemoved)
-            {
-                if (folder.exists)
-                {
-                    existingFolders++;
-
-                    if (existingFolders >= 2) isThereIssue = false;
-                }
-                else
-                {
-                    isThereWarning = true;
-                }
-            }
-
-            if (busy && folder.exists && !folder.paused && (!folder.foldersToRename.isEmpty() || !folder.filesToMove.isEmpty() || !folder.foldersToAdd.isEmpty() || !folder.filesToAdd.isEmpty() || !folder.foldersToRemove.isEmpty() || !folder.filesToRemove.isEmpty()))
-            {
-                animSync.start();
-                syncing = true;
-                profile.syncing = true;
-                folder.syncing = true;
-            }
-        }
-    }
+    manager.updateStatus();
 
     if (isVisible())
     {
         // Profile list
-        for (int i = 0, j = 0; i < profiles.size(); i++)
+        for (int i = 0, j = 0; i < manager.profiles.size(); i++)
         {
-            if (profiles[i].toBeRemoved) continue;
+            if (manager.profiles[i].toBeRemoved) continue;
 
             QModelIndex index = profileModel->index(j, 0);
 
-            if (profiles[i].paused)
+            if (manager.profiles[i].paused)
             {
                 profileModel->setData(index, iconPause, Qt::DecorationRole);
             }
-            else if (profiles[i].syncing || (!syncHidden && queue.contains(i)))
+            else if (manager.profiles[i].syncing || (!manager.syncHidden && manager.queue.contains(i)))
             {
                 profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
             }
@@ -1624,7 +923,7 @@ void MainWindow::updateStatus()
                 profileModel->setData(index, iconDone, Qt::DecorationRole);
 
                 // Shows a warning icon if at least one folder doesn't exist
-                for (const auto &folder : profiles[i].folders)
+                for (const auto &folder : manager.profiles[i].folders)
                 {
                     if (!folder.exists)
                     {
@@ -1643,17 +942,17 @@ void MainWindow::updateStatus()
         {
             int row = ui->syncProfilesView->selectionModel()->selectedRows()[0].row();
 
-            for (int i = 0, j = 0; i < profiles[row].folders.size(); i++)
+            for (int i = 0, j = 0; i < manager.profiles[row].folders.size(); i++)
             {
-                if (profiles[row].folders[j].toBeRemoved) continue;
+                if (manager.profiles[row].folders[j].toBeRemoved) continue;
 
                 QModelIndex index = folderModel->index(i, 0);
 
-                if (profiles[row].folders[i].paused)
+                if (manager.profiles[row].folders[i].paused)
                     folderModel->setData(index, iconPause, Qt::DecorationRole);
-                else if (profiles[row].folders[i].syncing || (queue.contains(row) && !syncing && !syncHidden))
+                else if (manager.profiles[row].folders[i].syncing || (manager.queue.contains(row) && !manager.syncing && !manager.syncHidden))
                     folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-                else if (!profiles[row].folders[i].exists)
+                else if (!manager.profiles[row].folders[i].exists)
                     folderModel->setData(index, iconRemove, Qt::DecorationRole);
                 else
                     folderModel->setData(index, iconDone, Qt::DecorationRole);
@@ -1665,14 +964,14 @@ void MainWindow::updateStatus()
     }
 
     // Pause status
-    for (const auto &profile : profiles)
+    for (const auto &profile : manager.profiles)
     {
-        paused = profile.paused;
-        if (!paused) break;
+        manager.paused = profile.paused;
+        if (!manager.paused) break;
     }
 
     // Tray & Icon
-    if (syncingMode == Automatic && paused)
+    if (manager.syncingMode == SyncManager::Automatic && manager.paused)
     {
         trayIcon->setIcon(trayIconPause);
         setWindowIcon(trayIconPause);
@@ -1685,7 +984,7 @@ void MainWindow::updateStatus()
     }
     else
     {
-        if (syncing || (!syncHidden && !queue.empty()))
+        if (manager.syncing || (!manager.syncHidden && !manager.queue.empty()))
         {
             if (trayIcon->icon().cacheKey() != trayIconSync.cacheKey())
                 trayIcon->setIcon(trayIconSync);
@@ -1693,9 +992,9 @@ void MainWindow::updateStatus()
             if (windowIcon().cacheKey() != trayIconSync.cacheKey())
                 setWindowIcon(trayIconSync);
         }
-        else if (isThereWarning)
+        else if (manager.isThereWarning)
         {
-            if (isThereIssue)
+            if (manager.isThereIssue)
             {
                 trayIcon->setIcon(trayIconIssue);
                 setWindowIcon(trayIconIssue);
@@ -1719,89 +1018,35 @@ void MainWindow::updateStatus()
         pauseSyncingAction->setText("&Pause Syncing");
     }
 
-    syncNowAction->setEnabled(queue.size() != existingProfiles);
+    syncNowAction->setEnabled(manager.queue.size() != manager.existingProfiles);
 
     // Number of files left to sync
-    if (busy)
+    if (manager.busy)
     {
-        for (auto &folder : profiles[queue.head()].folders)
+        for (auto &folder : manager.profiles[manager.queue.head()].folders)
+        {
             if (folder.exists && !folder.paused)
-                numOfFilesToSync += folder.foldersToRename.size() + folder.filesToMove.size() + folder.foldersToAdd.size() + folder.filesToAdd.size() + folder.foldersToRemove.size() + folder.filesToRemove.size();
+            {
+                manager.numOfFilesToSync += folder.foldersToRename.size();
+                manager.numOfFilesToSync += folder.filesToMove.size();
+                manager.numOfFilesToSync += folder.foldersToAdd.size();
+                manager.numOfFilesToSync += folder.filesToAdd.size();
+                manager.numOfFilesToSync += folder.foldersToRemove.size();
+                manager.numOfFilesToSync += folder.filesToRemove.size();
+            }
+        }
     }
 
-    if (!numOfFilesToSync)
+    if (!manager.numOfFilesToSync)
     {
         trayIcon->setToolTip("Sync Manager");
         setWindowTitle("Sync Manager");
     }
     else
     {
-        trayIcon->setToolTip(QString("Sync Manager - %1 files to synchronize").arg(numOfFilesToSync));
-        setWindowTitle(QString("Sync Manager - %1 files to synchronize").arg(numOfFilesToSync));
+        trayIcon->setToolTip(QString("Sync Manager - %1 files to synchronize").arg(manager.numOfFilesToSync));
+        setWindowTitle(QString("Sync Manager - %1 files to synchronize").arg(manager.numOfFilesToSync));
     }
-}
-
-/*
-===================
-MainWindow::updateNextSyncingTime
-===================
-*/
-void MainWindow::updateNextSyncingTime()
-{
-    if (syncingMode == Manual) return;
-
-    int time = 0;
-
-    // Counts the total syncing time of profiles with at least two active folders
-    for (const auto &profile : profiles)
-    {
-        if (profile.paused) continue;
-
-        int activeFolders = 0;
-
-        for (const auto &folder : profile.folders)
-            if (!folder.paused && folder.exists)
-                activeFolders++;
-
-        if (activeFolders >= 2) time += profile.syncTime;
-    }
-
-    // Multiplies sync time by 2
-    for (int i = 0; i < syncTimeMultiplier - 1; i++)
-    {
-        time <<= 1;
-
-        // If exceeds the maximum value of an int
-        if (time < 0)
-        {
-            time = std::numeric_limits<int>::max();
-            break;
-        }
-    }
-
-    if (time < SYNC_MIN_DELAY) time = SYNC_MIN_DELAY;
-    syncEvery = time;
-
-    int seconds = (time / 1000) % 60;
-    int minutes = (time / 1000 / 60) % 60;
-    int hours = (time / 1000 / 60 / 60) % 24;
-    int days = (time / 1000 / 60 / 60 / 24);
-
-    QString str("Synchronize Every: ");
-
-    if (days)
-        str.append(QString("%1 days").arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
-    else if (hours)
-        str.append(QString("%1 hours").arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
-    else if (minutes)
-        str.append(QString("%1 minutes").arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
-    else if (seconds)
-        str.append(QString("%1 seconds").arg(seconds));
-
-    syncingTimeAction->setText(str);
-
-    if ((!busy && syncTimer.isActive()) || (!syncTimer.isActive() || time < syncTimer.remainingTime()))
-        syncTimer.start(time);
 }
 
 /*
@@ -1818,7 +1063,7 @@ bool MainWindow::updateApp()
     }
 
     QApplication::processEvents();
-    return shouldQuit;
+    return manager.shouldQuit;
 }
 
 /*
@@ -1840,14 +1085,14 @@ void MainWindow::showContextMenu(const QPoint &pos) const
         {
             int row = ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row();
 
-            if (profiles[row].paused)
+            if (manager.profiles[row].paused)
             {
                 menu.addAction(iconResume, "&Resume syncing profile", this, SLOT(pauseSelected()));
             }
             else
             {
                 menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
-                menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(queue.contains(row));
+                menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::doSync, const_cast<MainWindow *>(this), row))->setDisabled(manager.queue.contains(row));
             }
 
             menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));
@@ -1864,7 +1109,7 @@ void MainWindow::showContextMenu(const QPoint &pos) const
 
         if (!ui->folderListView->selectionModel()->selectedIndexes().isEmpty())
         {
-            if (profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].folders[ui->folderListView->selectionModel()->selectedIndexes()[0].row()].paused)
+            if (manager.profiles[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].folders[ui->folderListView->selectionModel()->selectedIndexes()[0].row()].paused)
                 menu.addAction(iconResume, "&Resume syncing folder", this, SLOT(pauseSelected()));
             else
                 menu.addAction(iconPause, "&Pause syncing folder", this, SLOT(pauseSelected()));
@@ -1878,277 +1123,51 @@ void MainWindow::showContextMenu(const QPoint &pos) const
 
 /*
 ===================
-MainWindow::saveData
+MainWindow::doSync
 ===================
 */
-void MainWindow::saveData() const
+void MainWindow::doSync(int profileNumber)
 {
-    QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
-    if (!data.open(QIODevice::WriteOnly)) return;
+    manager.addToQueue(profileNumber);
 
-    QDataStream stream(&data);
-    stream << profiles.size();
-
-    for (int i = 0; auto &profile : profiles)
+    if (!manager.busy)
     {
-        if (profile.toBeRemoved) continue;
+        animSync.start();
+        for (auto &action : syncingModeMenu->actions()) action->setEnabled(false);
+        for (auto &action : deletionModeMenu->actions()) action->setEnabled(false);
 
-        stream << profileNames[i];
-        stream << profile.folders.size();
+        QFuture<void> future = QtConcurrent::run([&]() { manager.sync(); });
+        while (!future.isFinished()) updateApp();
 
-        for (auto &folder : profile.folders)
+        for (auto &action : syncingModeMenu->actions()) action->setEnabled(true);
+        for (auto &action : deletionModeMenu->actions()) action->setEnabled(true);
+        animSync.stop();
+
+        updateStatus();
+
+        int seconds = (manager.syncEvery / 1000) % 60;
+        int minutes = (manager.syncEvery / 1000 / 60) % 60;
+        int hours = (manager.syncEvery / 1000 / 60 / 60) % 24;
+        int days = (manager.syncEvery / 1000 / 60 / 60 / 24);
+
+        QString str("Synchronize Every: ");
+
+        if (days)
+            str.append(QString("%1 days").arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
+        else if (hours)
+            str.append(QString("%1 hours").arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
+        else if (minutes)
+            str.append(QString("%1 minutes").arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
+        else if (seconds)
+            str.append(QString("%1 seconds").arg(seconds));
+
+        syncingTimeAction->setText(str);
+
+        if (manager.syncingMode == SyncManager::Automatic)
         {
-            if (folder.toBeRemoved) continue;
-
-            // File data
-            stream << folder.path;
-            stream << folder.files.size();
-
-            for (auto it = folder.files.begin(); it != folder.files.end(); it++)
+            if ((!manager.busy && manager.syncTimer.isActive()) || (!manager.syncTimer.isActive() || manager.syncEvery < manager.syncTimer.remainingTime()))
             {
-                stream << it.key();
-                stream << it->date;
-                stream << it->type;
-                stream << it->updated;
-                stream << it->exists;
-            }
-
-            // File sizes
-            stream << folder.sizeList.size();
-
-            for (auto it = folder.sizeList.begin(); it != folder.sizeList.end(); it++)
-            {
-                stream << it.key();
-                stream << it.value();
-            }
-
-            // Folders to rename
-            stream << folder.foldersToRename.size();
-
-            for (const auto &it : folder.foldersToRename)
-            {
-                stream << it.first;
-                stream << it.second;
-            }
-
-            // Files to move
-            stream << folder.filesToMove.size();
-
-            for (const auto &it : folder.filesToMove)
-            {
-                stream << it.first;
-                stream << it.second;
-            }
-
-            // Folders to add
-            stream << folder.foldersToAdd.size();
-
-            for (const auto &path : folder.foldersToAdd)
-                stream << path;
-
-            // Files to add
-            stream << folder.filesToAdd.size();
-
-            for (const auto &it : folder.filesToAdd)
-            {
-                stream << it.first;
-                stream << it.second;
-            }
-
-            // Folders to remove
-            stream << folder.foldersToRemove.size();
-
-            for (const auto &path : folder.foldersToRemove)
-                stream << path;
-
-            // Files to remove
-            stream << folder.filesToRemove.size();
-
-            for (const auto &path : folder.filesToRemove)
-                stream << path;
-        }
-
-        i++;
-    }
-}
-
-/*
-===================
-MainWindow::restoreData
-===================
-*/
-void MainWindow::restoreData()
-{
-    QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
-    if (!data.open(QIODevice::ReadOnly)) return;
-
-    QDataStream stream(&data);
-
-    qsizetype profilesSize;
-    stream >> profilesSize;
-
-    for (qsizetype i = 0; i < profilesSize; i++)
-    {
-        QString profileName;
-        qsizetype foldersSize;
-
-        stream >> profileName;
-        stream >> foldersSize;
-
-        int profileIndex = profileNames.indexOf(profileName);
-
-        for (qsizetype j = 0; j < foldersSize; j++)
-        {
-            qsizetype size;
-            QByteArray folderPath;
-
-            stream >> folderPath;
-            stream >> size;
-
-            folderPath.chop(1); // Removes a forward slash in the end of the path
-            int folderIndex = folderPaths[profileIndex].indexOf(folderPath);
-            bool restore = profileIndex >= 0 && folderIndex >= 0;
-
-            // File data
-            for (qsizetype k = 0; k < size; k++)
-            {
-                hash64_t hash;
-                QDateTime date;
-                File::Type type;
-                bool updated;
-                bool exists;
-
-                stream >> hash;
-                stream >> date;
-                stream >> type;
-                stream >> updated;
-                stream >> exists;
-
-                if (restore)
-                {
-                    const_cast<File *>(profiles[profileIndex].folders[folderIndex].files.insert(hash, File(QByteArray(), type, date, updated, exists, true)).operator->())->path.squeeze();
-                }
-            }
-
-            // File sizes
-            stream >> size;
-
-            for (qsizetype k = 0; k < size; k++)
-            {
-                hash64_t fileHash;
-                qint64 fileSize;
-
-                stream >> fileHash;
-                stream >> fileSize;
-
-                if (restore)
-                {
-                    profiles[profileIndex].folders[folderIndex].sizeList.insert(fileHash, fileSize);
-                }
-            }
-
-            // Folders to rename
-            stream >> size;
-
-            for (qsizetype k = 0; k < size; k++)
-            {
-                QByteArray to;
-                QByteArray from;
-
-                stream >> to;
-                stream >> from;
-
-                if (restore)
-                {
-                    QPair<QByteArray, QByteArray> pair(to, from);
-                    const auto &it = profiles[profileIndex].folders[folderIndex].foldersToRename.insert(hash64(to), pair);
-                    const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
-                    const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
-                }
-            }
-
-            // Files to move
-            stream >> size;
-
-            for (qsizetype k = 0; k < size; k++)
-            {
-                QByteArray to;
-                QByteArray from;
-
-                stream >> to;
-                stream >> from;
-
-                if (restore)
-                {
-                    QPair<QByteArray, QByteArray> pair(to, from);
-                    const auto &it = profiles[profileIndex].folders[folderIndex].filesToMove.insert(hash64(to), pair);
-                    const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
-                    const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
-                }
-            }
-
-            // Folders to add
-            stream >> size;
-
-            for (qsizetype k = 0; k < size; k++)
-            {
-                QByteArray path;
-                stream >> path;
-
-                if (restore)
-                {
-                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].foldersToAdd.insert(hash64(path), path).operator->())->squeeze();
-                }
-            }
-
-            // Files to add
-            stream >> size;
-
-            for (qsizetype k = 0; k < size; k++)
-            {
-                QByteArray to;
-                QByteArray from;
-                QDateTime time;
-
-                stream >> to;
-                stream >> from;
-                stream >> time;
-
-                if (restore)
-                {
-                    QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(to, from), time);
-                    const auto &it = profiles[profileIndex].folders[folderIndex].filesToAdd.insert(hash64(to), pair);
-                    const_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.first.squeeze();
-                    const_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.second.squeeze();
-                }
-            }
-
-            // Folders to remove
-            stream >> size;
-
-            for (qsizetype k = 0; k < size; k++)
-            {
-                QByteArray path;
-                stream >> path;
-
-                if (restore)
-                {
-                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(hash64(path), path).operator->())->squeeze();
-                }
-            }
-
-            // Files to remove
-            stream >> size;
-
-            for (qsizetype k = 0; k < size; k++)
-            {
-                QByteArray path;
-                stream >> path;
-
-                if (restore)
-                {
-                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].filesToRemove.insert(hash64(path), path).operator->())->squeeze();
-                }
+                manager.syncTimer.start(manager.syncEvery);
             }
         }
     }
@@ -2156,534 +1175,10 @@ void MainWindow::restoreData()
 
 /*
 ===================
-MainWindow::getListOfFiles
+MainWindow::trayMessage
 ===================
 */
-int MainWindow::getListOfFiles(SyncFolder &folder)
+void MainWindow::trayMessage(QString title, QString message)
 {
-    if (folder.paused || !folder.exists) return -1;
-
-    int totalNumOfFiles = 0;
-
-    // Resets file states
-    for (auto &file : folder.files)
-    {
-        file.exists = false;
-        file.updated = (file.onRestore) ? file.updated : false;     // Keeps value if it was loaded from saved file data
-        file.onRestore = false;
-        file.newlyAdded = false;
-    }
-
-#ifndef USE_STD_FILESYSTEM
-    QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
-
-    while (dir.hasNext())
-    {
-        if (folder.paused) return -1;
-
-        dir.next();
-
-        QFileInfo fileInfo(dir.fileInfo());
-        QByteArray filePath(fileInfo.filePath().toUtf8());
-        filePath.remove(0, folder.path.size());
-        File::Type type = fileInfo.isDir() ? File::folder : File::file;
-        hash64_t fileHash = hash64(filePath);
-
-        // Excludes the versioning folder from scanning
-        QByteArray vf(versionFolder.toUtf8());
-
-        if (caseSensitiveSystem ? qstrncmp(vf, filePath, vf.length()) == 0 : qstrnicmp(vf, filePath, vf.length()) == 0)
-            continue;
-
-        // If a file is already in our database
-        if (folder.files.contains(fileHash))
-        {
-            File &file = folder.files[fileHash];
-            QDateTime fileDate(fileInfo.lastModified());
-            bool updated = file.updated;
-
-            // Restores filepath
-            if (file.path.isEmpty())
-            {
-                file.path = filePath;
-                file.path.squeeze();
-            }
-
-            // Quits if a hash collision is detected
-            if (file.path != filePath)
-            {
-#ifndef DEBUG
-                QMessageBox::critical(nullptr, QString("Hash collision detected!"), QString("%s vs %s").arg(qUtf8Printable(filePath), qUtf8Printable(file.path)));
-#else
-                qCritical("Hash collision detected: %s vs %s", qUtf8Printable(filePath), qUtf8Printable(file.path));
-#endif
-
-                shouldQuit = true;
-                qApp->quit();
-                return -1;
-            }
-
-            // Sets updated flag if the last modified date of a file differs with a new one
-            if (type == File::folder)
-            {
-                updated = (file.date < fileDate);
-
-                // Marks all parent folders as updated if the current folder was updated
-                if (updated)
-                {
-                    QByteArray folderPath(fileInfo.filePath().toUtf8());
-
-                    while (folderPath.remove(folderPath.lastIndexOf("/"), folderPath.length()).length() > folder.path.length())
-                    {
-                        hash64_t hash = hash64(QByteArray(folderPath).remove(0, folder.path.size()));
-                        if (folder.files.value(hash).updated) break;
-
-                        folder.files[hash].updated = true;
-                    }
-                }
-            }
-            else if (type == File::file && file.date != fileDate)
-            {
-                updated = true;
-            }
-
-            file.date = fileDate;
-            file.type = type;
-            file.exists = true;
-            file.updated = updated;
-        }
-        else
-        {
-            File *file = const_cast<File *>(folder.files.insert(fileHash, File(filePath, type, fileInfo.lastModified())).operator->());
-            file->path.squeeze();
-            file->newlyAdded = true;
-        }
-
-        if (type == File::file) folder.sizeList[fileHash] = fileInfo.size();
-
-        totalNumOfFiles++;
-        if (shouldQuit || folder.toBeRemoved) return -1;
-    }
-#elif defined(USE_STD_FILESYSTEM)
-#error FIX: An update required
-    for (auto const &dir : std::filesystem::recursive_directory_iterator{std::filesystem::path{folder.path.toStdString()}})
-    {
-        if (folder.paused) return -1;
-
-        QString filePath(dir.path().string().c_str());
-        filePath.remove(0, folder.path.size());
-        filePath.replace("\\", "/");
-
-        File::Type type = dir.is_directory() ? File::dir : File::file;
-        hash_t fileHash = hash64(filePath);
-
-        const_cast<File *>(folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)).operator->())->path.squeeze();
-        totalNumOfFiles++;
-        if (shouldQuit || folder.toBeRemoved) return -1;
-    }
-#endif
-
-    usedDevices.remove(hash64(QStorageInfo(folder.path).device()));
-
-    return totalNumOfFiles;
-}
-
-/*
-===================
-MainWindow::checkForChanges
-===================
-*/
-void MainWindow::checkForChanges(SyncProfile &profile)
-{
-    if ((syncingMode == Automatic && profile.paused) || profile.folders.size() < 2) return;
-
-    // Checks for changed case of folders
-    if (detectMovedFiles && !caseSensitiveSystem)
-    {
-        SET_TIME(startTime);
-
-        for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
-        {
-            for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
-            {
-                // Only newly added folder can indicate that the case of filename was changed
-                if (fileIt->type != File::folder || !fileIt->newlyAdded || !fileIt->exists)
-                    continue;
-
-                bool abort = false;
-                QByteArray fileName(fileIt->path);
-                fileName.remove(0, fileName.lastIndexOf("/") + 1);
-
-                // Pre checks
-                for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
-                {
-                    if (folderIt == otherFolderIt) continue;
-
-                    QString otherPath(otherFolderIt->path);
-                    otherPath.append(fileIt->path);
-                    QFileInfo otherFileInfo(otherPath);
-                    QByteArray otherCurrentlFilename;
-
-                    // Aborts remove operation if other folders don't contain that folder or contain a folder with the same path
-                    if (!otherFileInfo.exists() || otherFolderIt->files.contains(fileIt.key()))
-                    {
-                        abort = true;
-                        break;
-                    }
-
-                    // Gets the current filename and path of a folder in other sync folder on a disk
-                    // Using QDirIterator is the only way to find out this
-                    QDirIterator otherDirIterator(otherFileInfo.absolutePath(), {otherFileInfo.fileName()}, QDir::Dirs);
-
-                    if (otherDirIterator.hasNext())
-                    {
-                        otherDirIterator.next();
-                        otherCurrentlFilename = otherDirIterator.fileName().toUtf8();
-                    }
-
-                    // Aborts if other folders contain at least a folder with the same case
-                    if (otherCurrentlFilename.compare(fileName, Qt::CaseSensitive) == 0)
-                    {
-                        abort = true;
-                        break;
-                    }
-                }
-
-                if (abort) continue;
-
-                // Finally adds to the folder renaming list
-                for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
-                {
-                    if (folderIt == otherFolderIt) continue;
-
-                    QByteArray otherPath(otherFolderIt->path);
-                    otherPath.append(fileIt->path);
-                    QFileInfo otherFileInfo(otherPath);
-                    QByteArray otherCurrentlFilename;
-                    QByteArray otherCurrentPath;
-
-                    // Gets the current filename and path of a folder in other sync folder on a disk
-                    // Using QDirIterator is the only way to find out this
-                    QDirIterator otherDirIterator(otherFileInfo.absolutePath(), {otherFileInfo.fileName()}, QDir::Dirs);
-
-                    if (otherDirIterator.hasNext())
-                    {
-                        otherDirIterator.next();
-                        otherCurrentlFilename = otherDirIterator.fileName().toUtf8();
-                        otherCurrentPath = otherDirIterator.filePath().toUtf8();
-                        otherCurrentPath.remove(0, otherFolderIt->path.size());
-                    }
-
-                    QByteArray newPath(otherCurrentPath);
-                    newPath.chop(fileName.size());
-                    newPath.append(fileName);
-
-                    // Both folder should have the same filename, but differ in case
-                    if (otherCurrentlFilename.compare(fileName, Qt::CaseInsensitive) == 0 && otherCurrentlFilename.compare(fileName, Qt::CaseSensitive) != 0)
-                    {
-                        if (!fileIt->moved || !otherFolderIt->files.value(hash64(otherCurrentPath)).moved)
-                        {
-                            QPair<QByteArray, QByteArray> pair(fileIt->path, otherDirIterator.filePath().toUtf8());
-                            otherFolderIt->foldersToRename.insert(hash64(otherCurrentPath), pair);
-                            qDebug("Rename folder from %s to %s", qUtf8Printable(pair.second), qUtf8Printable(pair.first));
-                        }
-
-                        fileIt->moved = true;
-
-                        // Marks all subdirectories in folderIt as moved
-                        QString folderPath(folderIt->path);
-                        folderPath.append(fileIt->path);
-                        QDirIterator dirIterator(folderPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
-
-                        if (dirIterator.hasNext())
-                        {
-                            dirIterator.next();
-                            QByteArray path(dirIterator.filePath().toUtf8());
-                            path.remove(0, folderIt->path.size());
-                            hash64_t hash = hash64(path);
-
-                            if (folderIt->files.contains(hash))
-                                folderIt->files[hash].moved = true;
-                        }
-
-                        // Marks all subdirectories in folderIt as moved
-                        hash64_t hash = hash64(otherCurrentPath);
-
-                        if (otherFolderIt->files.contains(hash))
-                        {
-                            File &file = otherFolderIt->files[hash];
-
-                            file.moved = true;
-                            file.movedSource = true;
-                        }
-
-                        QString oldPath(folderIt->path);
-                        oldPath.append(otherCurrentPath);
-
-                        QDirIterator oldDirIterator(oldPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
-
-                        if (oldDirIterator.hasNext())
-                        {
-                            oldDirIterator.next();
-                            QByteArray path(oldDirIterator.filePath().toUtf8());
-                            path.remove(0, folderIt->path.size());
-                            hash64_t hash = hash64(path);
-
-                            if (folderIt->files.contains(hash))
-                                folderIt->files[hash].movedSource = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        TIMESTAMP(startTime, "Checked for changed case of folders.");
-    }
-
-    // Checks for moved/renamed files
-    if (detectMovedFiles)
-    {
-        SET_TIME(startTime);
-
-        for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
-        {
-            for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
-            {
-                bool abort = false;
-
-                // Only newly added file can be renamed or moved
-                if (fileIt->type != File::file || !fileIt->newlyAdded || !fileIt->exists)
-                    continue;
-
-                // Other folders should not contain the same file
-                for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
-                    if (folderIt != otherFolderIt && otherFolderIt->files.contains(fileIt.key()))
-                        abort = true;
-
-                if (abort) continue;
-
-                int matches = 0;
-                File *matchedFile;
-                hash64_t matchedHash;
-                QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
-
-                // Searches for potential matches by comparing the size of moved or renamed files to the size of their counterpart
-                for (auto &match : folderIt->sizeList.keys(fileInfo.size()))
-                {
-                    if (!folderIt->files.contains(match))
-                        continue;
-
-                    // A potential match should not exist and have the same modified date as the moved/renamed file
-                    if (!folderIt->files.value(match).exists && fileInfo.lastModified() == fileIt->date)
-                    {
-                        matches++;
-                        matchedFile = &folderIt->files[match];
-                        matchedHash = match;
-
-                        // We only need one match, not more
-                        if (matches > 1) break;
-                    }
-                }
-
-                // Moves a file only if we have one match, otherwise deletes and copies the file
-                if (matches == 1)
-                {
-                    // Pre move checks
-                    for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
-                    {
-                        if (folderIt == otherFolderIt || !otherFolderIt->files.contains(matchedHash))
-                            continue;
-
-                        QString path(otherFolderIt->path);
-                        path.append(fileIt->path);
-
-                        const File &otherFile = otherFolderIt->files.value(matchedHash);
-
-                        // Aborts move operation if other folders have at least a file at the destination location
-                        if ((QFileInfo::exists(path) && fileIt->path.compare(otherFile.path, Qt::CaseInsensitive) != 0) || otherFolderIt->files.contains(fileIt.key()))
-                        {
-                            abort = true;
-                            break;
-                        }
-
-                        // Aborts move operation if files have different sizes and dates
-                        if (otherFolderIt->sizeList.value(matchedHash) != folderIt->sizeList.value(matchedHash) || otherFile.date != fileIt->date)
-                        {
-                            abort = true;
-                            break;
-                        }
-                    }
-
-                    if (abort) continue;
-
-                    // Finally adds to the file moving list
-                    for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
-                    {
-                        if (folderIt == otherFolderIt || !otherFolderIt->files.contains(matchedHash))
-                            continue;
-
-                        const File &otherFile = otherFolderIt->files.value(matchedHash);
-
-                        if (!otherFile.exists)
-                            continue;
-
-                        hash64_t hash = hash64(fileIt->path);
-
-                        // Marks a file as moved, which prevents it from being added to other folders
-                        if (!otherFolderIt->files.contains(hash))
-                            otherFolderIt->files[hash].moved = true;
-
-                        QByteArray from(otherFolderIt->path);
-                        from.append(otherFile.path);
-
-                        otherFolderIt->files[matchedHash].moved = true;
-                        otherFolderIt->filesToMove.insert(matchedHash, QPair<QByteArray, QByteArray>(fileIt->path, from));
-
-                        matchedFile->moved = true;
-                        matchedFile->movedSource = true;
-                        fileIt->moved = true;
-                    }
-                }
-            }
-        }
-
-        TIMESTAMP(startTime, "Checked for moved/renamed files.");
-    }
-
-    SET_TIME(startTime);
-
-    // Checks for added/modified files and folders
-    for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
-    {
-        if (!folderIt->exists) continue;
-
-        for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
-        {
-            if (folderIt == otherFolderIt || !otherFolderIt->exists) continue;
-            if (folderIt->paused) break;
-
-            for (QHash<hash64_t, File>::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
-            {
-                if (otherFolderIt->paused) break;
-                if (!otherFileIt.value().exists) continue;
-
-                const File &file = folderIt->files.value(otherFileIt.key());
-                const File &otherFile = otherFileIt.value();
-
-                if (file.moved || otherFile.moved || otherFile.movedSource) continue;
-
-                bool alreadyAdded = folderIt->filesToAdd.contains(otherFileIt.key());
-                bool hasNewer = alreadyAdded && folderIt->filesToAdd.value(otherFileIt.key()).second < otherFile.date;
-
-                // Removes a file path from the "to remove" list if a file was updated
-                if (otherFile.type == File::file)
-                {
-                    if (otherFile.updated)
-                        otherFolderIt->filesToRemove.remove(otherFileIt.key());
-
-                    if (file.updated || (otherFile.exists && folderIt->filesToRemove.contains(otherFileIt.key()) && !otherFolderIt->filesToRemove.contains(otherFileIt.key())))
-                        folderIt->filesToRemove.remove(otherFileIt.key());
-                }
-                else if (otherFile.type == File::folder)
-                {
-                    if (otherFile.updated)
-                        otherFolderIt->foldersToRemove.remove(otherFileIt.key());
-
-                    if (file.updated || (otherFile.exists && folderIt->foldersToRemove.contains(otherFileIt.key()) && !otherFolderIt->foldersToRemove.contains(otherFileIt.key())))
-                        folderIt->foldersToRemove.remove(otherFileIt.key());
-                }
-
-                if ((!folderIt->files.contains(otherFileIt.key()) ||
-                // Or if we have a newer version of a file from other folders
- #ifdef Q_OS_LINUX
-                 ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
- #else
-                 ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
- #endif                // Or if other folders has a new version of a file and our file was removed
-                (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(QByteArray(otherFile.path).indexOf('/', 0), 999999))).updated))) &&
-                // Checks for the newest version of a file in case if we have three folders or more
-                (!alreadyAdded || hasNewer) &&
-                // Checks whether we supposed to remove this file or not
-                ((otherFile.type == File::file && !otherFolderIt->filesToRemove.contains(otherFileIt.key())) ||
-                 (otherFile.type == File::folder && !otherFolderIt->foldersToRemove.contains(otherFileIt.key()))))
-                {
-                    if (otherFile.type == File::folder)
-                    {
-                        const_cast<QByteArray *>(folderIt->foldersToAdd.insert(otherFileIt.key(), otherFile.path).operator->())->squeeze();
-                        folderIt->foldersToRemove.remove(otherFileIt.key());
-                    }
-                    else
-                    {
-                        QByteArray from(otherFolderIt->path);
-                        from.append(otherFile.path);
-                        QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(otherFile.path, from), otherFile.date);
-                        const auto &it = folderIt->filesToAdd.insert(otherFileIt.key(), pair);
-                        const_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.first.squeeze();
-                        const_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.second.squeeze();
-                        folderIt->filesToRemove.remove(otherFileIt.key());
-                    }
-                }
-            }
-        }
-    }
-
-    TIMESTAMP(startTime, "Checked for added/modified files and folders.");
-    SET_TIME(startTime);
-
-    // Checks for removed files and folders
-    for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
-    {
-        if (!folderIt->exists) continue;
-
-        for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
-        {
-            if (folderIt->paused) break;
-
-            // This file was moved and should be removed from the files list
-            if (fileIt.value().movedSource)
-            {
-                fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
-                continue;
-            }
-
-            if (fileIt.value().moved)
-            {
-                ++fileIt;
-                continue;
-            }
-
-            if (!fileIt.value().exists && !folderIt->filesToMove.contains(fileIt.key()) && !folderIt->foldersToAdd.contains(fileIt.key()) && !folderIt->filesToAdd.contains(fileIt.key()) &&
-               ((fileIt.value().type == File::file && !folderIt->filesToRemove.contains(fileIt.key())) ||
-               (fileIt.value().type == File::folder && !folderIt->foldersToRemove.contains(fileIt.key()))))
-            {
-                // Adds files from other folders for removal
-                for (auto removeIt = profile.folders.begin(); removeIt != profile.folders.end(); ++removeIt)
-                {
-                    if (folderIt == removeIt || !removeIt->exists || removeIt->paused) continue;
-
-                    const File &fileToRemove = removeIt->files.value(fileIt.key());
-
-                    if (fileToRemove.exists)
-                    {
-                        if (fileIt.value().type == File::folder)
-                            const_cast<QByteArray *>(removeIt->foldersToRemove.insert(fileIt.key(), fileToRemove.path).operator->())->squeeze();
-                        else
-                            const_cast<QByteArray *>(removeIt->filesToRemove.insert(fileIt.key(), fileToRemove.path).operator->())->squeeze();
-                    }
-                    else
-                    {
-                        removeIt->files.remove(fileIt.key());
-                    }
-                }
-
-                fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
-            }
-            else
-            {
-                ++fileIt;
-            }
-        }
-    }
-
-    TIMESTAMP(startTime, "Checked for removed files.");
+    trayIcon->showMessage(title, message, QSystemTrayIcon::Critical, TRAY_MESSAGE_TIME);
 }

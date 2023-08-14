@@ -14,6 +14,7 @@ SOURCES += \
     Main.cpp \
     MainWindow.cpp \
     RemovableListView.cpp \
+    SyncManager.cpp \
     UnhidableMenu.cpp
 
 HEADERS += \
@@ -21,6 +22,7 @@ HEADERS += \
     FolderListView.h \
     MainWindow.h \
     RemovableListView.h \
+    SyncManager.h \
     UnhidableMenu.h
 
 FORMS += \
