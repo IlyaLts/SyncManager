@@ -217,7 +217,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(&manager.syncTimer, &QTimer::timeout, this, [this](){ if (manager.queue.isEmpty()) { manager.syncHidden = true; doSync(); }});
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
-    connect(&manager, &SyncManager::warning, this, &MainWindow::trayMessage);
+    connect(&manager, &SyncManager::warning, this, [this](QString title, QString message){ trayIcon->showMessage(title, message, QSystemTrayIcon::Critical, TRAY_MESSAGE_TIME); });
+    connect(&manager, &SyncManager::profileSynced, this, &MainWindow::updateLastSyncTime);
 
     // Loads synchronization profiles
     QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
@@ -526,6 +527,7 @@ void MainWindow::removeProfile()
     ui->syncProfilesView->selectionModel()->reset();
     updateStatus();
     manager.updateNextSyncingTime();
+    manager.updateTimer();
 }
 
 /*
@@ -692,6 +694,7 @@ void MainWindow::removeFolder()
     ui->folderListView->selectionModel()->reset();
     updateStatus();
     manager.updateNextSyncingTime();
+    manager.updateTimer();
 }
 
 /*
@@ -713,6 +716,7 @@ void MainWindow::pauseSyncing()
 
     updateStatus();
     manager.updateNextSyncingTime();
+    manager.updateTimer();
 }
 
 /*
@@ -752,6 +756,7 @@ void MainWindow::pauseSelected()
 
         updateStatus();
         manager.updateNextSyncingTime();
+        manager.updateTimer();
     }
 }
 
@@ -829,7 +834,7 @@ void MainWindow::switchSyncingMode(SyncManager::SyncingMode mode)
         automaticAction->setChecked(true);
         syncingTimeMenu->menuAction()->setVisible(true);
         manager.updateNextSyncingTime();
-        manager.syncTimer.start(manager.syncEvery);
+        manager.updateTimer();
     }
 
     updateStatus();
@@ -847,6 +852,8 @@ void MainWindow::increaseSyncTime()
         manager.syncTimeMultiplier++;
         decreaseSyncTimeAction->setDisabled(false);
         manager.updateNextSyncingTime();
+        manager.updateTimer();
+        updateSyncTime();
     }
 }
 
@@ -858,14 +865,56 @@ MainWindow::decreaseSyncTime
 void MainWindow::decreaseSyncTime()
 {
     manager.syncTimeMultiplier--;
+    manager.updateNextSyncingTime();
+    manager.updateTimer();
+    updateSyncTime();
 
     if (manager.syncTimeMultiplier <= 1)
-    {
-        manager.syncTimeMultiplier = 1;
         decreaseSyncTimeAction->setDisabled(true);
-    }
+}
 
-    manager.updateNextSyncingTime();
+/*
+===================
+MainWindow::updateSyncTime
+===================
+*/
+void MainWindow::updateSyncTime()
+{
+    int seconds = (manager.syncEvery / 1000) % 60;
+    int minutes = (manager.syncEvery / 1000 / 60) % 60;
+    int hours = (manager.syncEvery / 1000 / 60 / 60) % 24;
+    int days = (manager.syncEvery / 1000 / 60 / 60 / 24);
+
+    QString str("Synchronize Every: ");
+
+    if (days)
+        str.append(QString("%1 days").arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
+    else if (hours)
+        str.append(QString("%1 hours").arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
+    else if (minutes)
+        str.append(QString("%1 minutes").arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
+    else if (seconds)
+        str.append(QString("%1 seconds").arg(seconds));
+
+    syncingTimeAction->setText(str);
+}
+
+/*
+===================
+MainWindow::updateLastSyncTime
+===================
+*/
+void MainWindow::updateLastSyncTime(SyncProfile *profile)
+{
+    for (int i = 0; i < profileModel->rowCount(); i++)
+    {
+        if (profileModel->index(i, 0).data(Qt::DisplayRole).toString() == profile->name)
+        {
+            QString lastSync = QString("Last synchronization: %1.").arg(profile->lastSyncDate.toString());
+            profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
+            return;
+        }
+    }
 }
 
 /*
@@ -1144,41 +1193,7 @@ void MainWindow::doSync(int profileNumber)
         animSync.stop();
 
         updateStatus();
-
-        int seconds = (manager.syncEvery / 1000) % 60;
-        int minutes = (manager.syncEvery / 1000 / 60) % 60;
-        int hours = (manager.syncEvery / 1000 / 60 / 60) % 24;
-        int days = (manager.syncEvery / 1000 / 60 / 60 / 24);
-
-        QString str("Synchronize Every: ");
-
-        if (days)
-            str.append(QString("%1 days").arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
-        else if (hours)
-            str.append(QString("%1 hours").arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
-        else if (minutes)
-            str.append(QString("%1 minutes").arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
-        else if (seconds)
-            str.append(QString("%1 seconds").arg(seconds));
-
-        syncingTimeAction->setText(str);
-
-        if (manager.syncingMode == SyncManager::Automatic)
-        {
-            if ((!manager.busy && manager.syncTimer.isActive()) || (!manager.syncTimer.isActive() || manager.syncEvery < manager.syncTimer.remainingTime()))
-            {
-                manager.syncTimer.start(manager.syncEvery);
-            }
-        }
+        updateSyncTime();
+        manager.updateTimer();
     }
-}
-
-/*
-===================
-MainWindow::trayMessage
-===================
-*/
-void MainWindow::trayMessage(QString title, QString message)
-{
-    trayIcon->showMessage(title, message, QSystemTrayIcon::Critical, TRAY_MESSAGE_TIME);
 }

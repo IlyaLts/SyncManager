@@ -82,12 +82,13 @@ private Q_SLOTS:
     void switchSyncingMode(SyncManager::SyncingMode mode);
     void increaseSyncTime();
     void decreaseSyncTime();
+    void updateSyncTime();
+    void updateLastSyncTime(SyncProfile *profile);
     void switchDeletionMode(SyncManager::DeletionMode mode);
     void updateStatus();
     bool updateApp();
     void showContextMenu(const QPoint &pos) const;
     void doSync(int profileNumber = -1);
-    void trayMessage(QString title, QString message);
 
 private:
 

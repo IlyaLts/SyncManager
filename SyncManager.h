@@ -129,17 +129,19 @@ public:
 
     void addToQueue(int profileNumber = -1);
     void sync();
-    void updateNextSyncingTime();
-    void saveData() const;
-    void restoreData();
     int getListOfFiles(SyncFolder &folder);
     void checkForChanges(SyncProfile &profile);
 
+    void updateTimer();
     void updateStatus();
+    void updateNextSyncingTime();
+    void saveData() const;
+    void restoreData();
 
 Q_SIGNALS:
 
     void warning(QString title, QString message);
+    void profileSynced(SyncProfile *profile);
 
 public:
 
