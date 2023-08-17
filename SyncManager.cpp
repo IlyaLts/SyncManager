@@ -366,7 +366,6 @@ void SyncManager::sync()
 
                     createParentFolders(QDir::cleanPath(filePath));
 
-                    // TODO: Fix the case if a file exists at the given destination file path
                     if (QFile::rename(it.value().second, filePath))
                     {
                         QString parentFrom = QFileInfo(filePath).path();
@@ -880,15 +879,15 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                     QFileInfo otherFileInfo(otherPath);
                     QByteArray otherCurrentlFilename;
 
-                    // Aborts remove operation if other folders don't contain that folder or contain a folder with the same path
+                    // Aborts if another sync folder doesn't contain a folder with the same case-insensitive path or the folder exists in another database
                     if (!otherFileInfo.exists() || otherFolderIt->files.contains(fileIt.key()))
                     {
                         abort = true;
                         break;
                     }
 
-                    // Gets the current filename and path of a folder in other sync folder on a disk
-                    // Using QDirIterator is the only way to find out this
+                    // Gets the current filename and path of a folder in another sync folder on a disk
+                    // The only way to find out this is to use QDirIterator
                     QDirIterator otherDirIterator(otherFileInfo.absolutePath(), {otherFileInfo.fileName()}, QDir::Dirs);
 
                     if (otherDirIterator.hasNext())
@@ -897,7 +896,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                         otherCurrentlFilename = otherDirIterator.fileName().toUtf8();
                     }
 
-                    // Aborts if other folders contain at least a folder with the same case
+                    // Aborts if another sync folder contains a folder with the same case-sensitive filename
                     if (otherCurrentlFilename.compare(fileName, Qt::CaseSensitive) == 0)
                     {
                         abort = true;
@@ -907,7 +906,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
                 if (abort) continue;
 
-                // Finally adds to the folder renaming list
+                // Finally, adds to the folder renaming list
                 for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                 {
                     if (folderIt == otherFolderIt) continue;
@@ -918,8 +917,8 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                     QByteArray otherCurrentlFilename;
                     QByteArray otherCurrentPath;
 
-                    // Gets the current filename and path of a folder in other sync folder on a disk
-                    // Using QDirIterator is the only way to find out this
+                    // Gets the current filename and path of a folder in another sync folder on a disk
+                    // The only way to find out this is to use QDirIterator
                     QDirIterator otherDirIterator(otherFileInfo.absolutePath(), {otherFileInfo.fileName()}, QDir::Dirs);
 
                     if (otherDirIterator.hasNext())
@@ -934,19 +933,20 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                     newPath.chop(fileName.size());
                     newPath.append(fileName);
 
-                    // Both folder should have the same filename, but differ in case
+                    // Both folders should have the same filename, but differ in case
                     if (otherCurrentlFilename.compare(fileName, Qt::CaseInsensitive) == 0 && otherCurrentlFilename.compare(fileName, Qt::CaseSensitive) != 0)
                     {
-                        if (!fileIt->moved || !otherFolderIt->files.value(hash64(otherCurrentPath)).moved)
+                        hash64_t otherFileHash = hash64(otherCurrentPath);
+
+                        // Skips adding if a folder was already moved. This fixes the case if we have three sync folders or more
+                        if (!fileIt->moved || !otherFolderIt->files.value(otherFileHash).moved)
                         {
                             QPair<QByteArray, QByteArray> pair(fileIt->path, otherDirIterator.filePath().toUtf8());
-                            otherFolderIt->foldersToRename.insert(hash64(otherCurrentPath), pair);
-                            qDebug("Rename folder from %s to %s", qUtf8Printable(pair.second), qUtf8Printable(pair.first));
+                            otherFolderIt->foldersToRename.insert(otherFileHash, pair);
+                            fileIt->moved = true;
                         }
 
-                        fileIt->moved = true;
-
-                        // Marks all subdirectories in folderIt as moved
+                        // Marks all subdirectories of a renamed folder in our sync folder as moved
                         QString folderPath(folderIt->path);
                         folderPath.append(fileIt->path);
                         QDirIterator dirIterator(folderPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
@@ -962,18 +962,17 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                                 folderIt->files[hash].moved = true;
                         }
 
-                        // Marks all subdirectories in folderIt as moved
-                        hash64_t otherHash = hash64(otherCurrentPath);
-
-                        if (otherFolderIt->files.contains(otherHash))
+                        // Marks all subdirectories of a folder that doesn't exist anymore in our sync folder as moved using the path from another sync folder
+                        if (otherFolderIt->files.contains(otherFileHash))
                         {
-                            File &file = otherFolderIt->files[otherHash];
+                            File &file = otherFolderIt->files[otherFileHash];
 
                             file.moved = true;
                             file.movedSource = true;
                         }
 
-                        QString oldPath(folderIt->path);
+                        // Marks all subdirectories of a folder in another sync folder as moved
+                        QString oldPath(otherFolderIt->path);
                         oldPath.append(otherCurrentPath);
 
                         QDirIterator oldDirIterator(oldPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
@@ -1011,7 +1010,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                 if (fileIt->type != File::file || !fileIt->newlyAdded || !fileIt->exists)
                     continue;
 
-                // Other folders should not contain the same file
+                // Other sync folders should not contain the same file
                 for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                     if (folderIt != otherFolderIt && otherFolderIt->files.contains(fileIt.key()))
                         abort = true;
@@ -1023,7 +1022,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                 hash64_t matchedHash;
                 QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
 
-                // Searches for potential matches by comparing the size of moved or renamed files to the size of their counterpart
+                // Searches for potential matches by comparing the size of moved or renamed files to the size of other files
                 for (auto &match : folderIt->sizeList.keys(fileInfo.size()))
                 {
                     if (!folderIt->files.contains(match))
@@ -1044,7 +1043,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                 // Moves a file only if we have one match, otherwise deletes and copies the file
                 if (matches == 1)
                 {
-                    // Pre move checks
+                    // Pre checks
                     for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                     {
                         if (folderIt == otherFolderIt || !otherFolderIt->files.contains(matchedHash))
@@ -1055,14 +1054,14 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
                         const File &otherFile = otherFolderIt->files.value(matchedHash);
 
-                        // Aborts move operation if other folders have at least a file at the destination location
+                        // Aborts the move operation if other sync folders have at least a file at the destination location
                         if ((QFileInfo::exists(path) && fileIt->path.compare(otherFile.path, Qt::CaseInsensitive) != 0) || otherFolderIt->files.contains(fileIt.key()))
                         {
                             abort = true;
                             break;
                         }
 
-                        // Aborts move operation if files have different sizes and dates
+                        // Aborts the move operation if files have different sizes and dates
                         if (otherFolderIt->sizeList.value(matchedHash) != folderIt->sizeList.value(matchedHash) || otherFile.date != fileIt->date)
                         {
                             abort = true;
@@ -1072,7 +1071,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
                     if (abort) continue;
 
-                    // Finally adds to the file moving list
+                    // Finally, adds to the file moving list
                     for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                     {
                         if (folderIt == otherFolderIt || !otherFolderIt->files.contains(matchedHash))
@@ -1085,7 +1084,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
                         hash64_t hash = hash64(fileIt->path);
 
-                        // Marks a file as moved, which prevents it from being added to other folders
+                        // Marks a file as moved, which prevents it from being added to other sync folders
                         if (!otherFolderIt->files.contains(hash))
                             otherFolderIt->files[hash].moved = true;
 
@@ -1195,7 +1194,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
         {
             if (folderIt->paused) break;
 
-            // This file was moved and should be removed from the files list
+            // This file was moved and should be removed from the file datebase
             if (fileIt.value().movedSource)
             {
                 fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
@@ -1212,6 +1211,38 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                ((fileIt.value().type == File::file && !folderIt->filesToRemove.contains(fileIt.key())) ||
                (fileIt.value().type == File::folder && !folderIt->foldersToRemove.contains(fileIt.key()))))
             {
+                // Aborts if a removed file still exists, but with a different case
+                if (!caseSensitiveSystem)
+                {
+                    bool abort = false;
+
+                    // As a removed file doesn't have a file path anymore, we need to construct a file path using other files in other folders
+                    for (auto removeIt = profile.folders.begin(); removeIt != profile.folders.end(); ++removeIt)
+                    {
+                        if (folderIt == removeIt || !removeIt->exists || removeIt->paused) continue;
+
+                        const File &fileToRemove = removeIt->files.value(fileIt.key());
+
+                        if (!fileToRemove.path.isEmpty())
+                        {
+                            QString path(folderIt->path);
+                            path.append(fileToRemove.path);
+
+                            if (QFileInfo::exists(path))
+                            {
+                                abort = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (abort)
+                    {
+                        ++fileIt;
+                        continue;
+                    }
+                }
+
                 // Adds files from other folders for removal
                 for (auto removeIt = profile.folders.begin(); removeIt != profile.folders.end(); ++removeIt)
                 {
