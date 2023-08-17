@@ -29,7 +29,6 @@
 #include <QDateTime>
 
 #define DATA_FILENAME           "Data.dat"
-#define SYNCMANAGER_VERSION     "1.5"
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_DELAY      300000
 

@@ -26,10 +26,11 @@
 #include <QTimer>
 #include <QMovie>
 
-#define SETTINGS_FILENAME   "Settings.ini"
-#define PROFILES_FILENAME   "Profiles.ini"
-#define UPDATE_DELAY        40
-#define TRAY_MESSAGE_TIME   1000
+#define SYNCMANAGER_VERSION     "1.5.1"
+#define SETTINGS_FILENAME       "Settings.ini"
+#define PROFILES_FILENAME       "Profiles.ini"
+#define UPDATE_DELAY            40
+#define TRAY_MESSAGE_TIME       1000
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
