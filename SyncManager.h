@@ -56,6 +56,7 @@ struct File
 
     QByteArray path;
     QDateTime date;
+    qint64 size = 0;
     Type type = unknown;
     bool updated = false;
     bool exists = false;

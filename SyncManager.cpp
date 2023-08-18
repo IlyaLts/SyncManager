@@ -803,6 +803,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder)
             }
 
             file.date = fileDate;
+            file.size = fileInfo.size();
             file.type = type;
             file.exists = true;
             file.updated = updated;
@@ -811,6 +812,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder)
         {
             File *file = const_cast<File *>(folder.files.insert(fileHash, File(filePath, type, fileInfo.lastModified())).operator->());
             file->path.squeeze();
+            file->size = fileInfo.size();
             file->newlyAdded = true;
         }
 
@@ -1002,6 +1004,12 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
         for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
         {
+            QHash<hash64_t, qint64> candidates;
+
+            for (QHash<hash64_t, qint64>::iterator fileIt = folderIt->sizeList.begin(); fileIt != folderIt->sizeList.end(); ++fileIt)
+                if (!folderIt->files.value(fileIt.key()).exists)
+                    candidates.insert(fileIt.key(), fileIt.value());
+
             for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
             {
                 bool abort = false;
@@ -1020,24 +1028,36 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                 int matches = 0;
                 File *matchedFile;
                 hash64_t matchedHash;
-                QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
 
                 // Searches for potential matches by comparing the size of moved or renamed files to the size of other files
-                for (auto &match : folderIt->sizeList.keys(fileInfo.size()))
+                for (QHash<hash64_t, qint64>::iterator match = candidates.begin(); match != candidates.end();)
                 {
-                    if (!folderIt->files.contains(match))
+                    if (match.value() != fileIt.value().size)
+                    {
+                        ++match;
                         continue;
+                    }
+
+                     QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
+
+                    if (!folderIt->files.contains(match.key()))
+                    {
+                        ++match;
+                        continue;
+                    }
 
                     // A potential match should not exist and have the same modified date as the moved/renamed file
-                    if (!folderIt->files.value(match).exists && fileInfo.lastModified() == fileIt->date)
+                    if (!folderIt->files.value(match.key()).exists && fileInfo.lastModified() == fileIt->date)
                     {
                         matches++;
-                        matchedFile = &folderIt->files[match];
-                        matchedHash = match;
+                        matchedFile = &folderIt->files[match.key()];
+                        matchedHash = match.key();
 
                         // We only need one match, not more
                         if (matches > 1) break;
                     }
+
+                    ++match;
                 }
 
                 // Moves a file only if we have one match, otherwise deletes and copies the file
