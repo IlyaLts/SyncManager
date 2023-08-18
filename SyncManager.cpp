@@ -374,8 +374,11 @@ void SyncManager::sync()
                         if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom);
                         if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo);
 
-                        folder.files.remove(hash64(QByteArray(it.value().second).remove(0, folder.path.size())));
+                        hash64_t oldHash = hash64(QByteArray(it.value().second).remove(0, folder.path.size()));
+
+                        folder.files.remove(oldHash);
                         folder.files.insert(fileHash, File(it.value().first, File::file, QFileInfo(filePath).lastModified()));
+                        folder.sizeList.remove(oldHash);
                         folder.sizeList[fileHash] = QFileInfo(filePath).size();
                         it = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
                     }
@@ -470,6 +473,8 @@ void SyncManager::sync()
                     if (success || !QFile().exists(filePath))
                     {
                         folder.files.remove(fileHash);
+                        folder.sizeList.remove(fileHash);
+
                         it = folder.filesToRemove.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(it));
 
                         if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
@@ -1116,7 +1121,6 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
                         matchedFile->moved = true;
                         matchedFile->movedSource = true;
-                        fileIt->moved = true;
                     }
                 }
             }
