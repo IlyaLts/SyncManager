@@ -636,8 +636,10 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
         for (const auto &path : folderPaths)
         {
-            if ((manager.caseSensitiveSystem && path.toStdString().compare(0, folder.size(), folder.toStdString()) == 0) ||
-                (!manager.caseSensitiveSystem && path.toLower().toStdString().compare(0, folder.size(), folder.toLower().toStdString()) == 0))
+            int n = path.size() > folder.size() ? path.size() - 1 : folder.size() - 1;
+
+            if ((manager.caseSensitiveSystem && path.toStdString().compare(0, n, folder.toStdString()) == 0) ||
+                (!manager.caseSensitiveSystem && path.toLower().toStdString().compare(0, n, folder.toLower().toStdString()) == 0))
             {
                 exists = true;
             }
