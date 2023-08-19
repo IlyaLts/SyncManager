@@ -1034,6 +1034,9 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                 File *matchedFile;
                 hash64_t matchedHash;
 
+                hash64_t hash = hash64(fileIt->path);
+                const File &file = folderIt->files.value(hash);
+
                 // Searches for potential matches by comparing the size of moved or renamed files to the size of other files
                 for (QHash<hash64_t, qint64>::iterator match = candidates.begin(); match != candidates.end();)
                 {
@@ -1043,8 +1046,6 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                         continue;
                     }
 
-                     QFileInfo fileInfo(QString(folderIt->path).append(fileIt->path));
-
                     if (!folderIt->files.contains(match.key()))
                     {
                         ++match;
@@ -1052,7 +1053,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                     }
 
                     // A potential match should not exist and have the same modified date as the moved/renamed file
-                    if (!folderIt->files.value(match.key()).exists && fileInfo.lastModified() == fileIt->date)
+                    if (!folderIt->files.value(match.key()).exists && file.date == fileIt->date)
                     {
                         matches++;
                         matchedFile = &folderIt->files[match.key()];
@@ -1106,8 +1107,6 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
                         if (!otherFile.exists)
                             continue;
-
-                        hash64_t hash = hash64(fileIt->path);
 
                         // Marks a file as moved, which prevents it from being added to other sync folders
                         if (!otherFolderIt->files.contains(hash))
