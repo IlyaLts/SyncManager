@@ -2,8 +2,8 @@
 <Package>
     <DisplayName>Sync Manager</DisplayName>
     <Description>Files/Folders Synchronization Manager</Description>
-    <Version>1.5.1</Version>
-    <ReleaseDate>2023-08-17</ReleaseDate>
+    <Version>1.5.2</Version>
+    <ReleaseDate>2023-08-19</ReleaseDate>
     <Checkable>false</Checkable>
     <ForcedInstallation>true</ForcedInstallation>
     <ForcedUpdate>true</ForcedUpdate>
