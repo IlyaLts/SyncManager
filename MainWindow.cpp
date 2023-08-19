@@ -961,6 +961,17 @@ void MainWindow::updateStatus()
 
             QModelIndex index = profileModel->index(j, 0);
 
+            bool hasFolders = false;
+            bool missingFolder = false;
+
+            for (const auto &folder : manager.profiles[i].folders)
+            {
+                if (folder.exists)
+                    hasFolders = true;
+                else
+                    missingFolder = true;
+            }
+
             if (manager.profiles[i].paused)
             {
                 profileModel->setData(index, iconPause, Qt::DecorationRole);
@@ -969,19 +980,17 @@ void MainWindow::updateStatus()
             {
                 profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
             }
+            else if (!hasFolders && !manager.profiles[i].folders.isEmpty())
+            {
+                profileModel->setData(index, iconRemove, Qt::DecorationRole);
+            }
+            else if (missingFolder)
+            {
+                profileModel->setData(index, iconWarning, Qt::DecorationRole);
+            }
             else
             {
                 profileModel->setData(index, iconDone, Qt::DecorationRole);
-
-                // Shows a warning icon if at least one folder doesn't exist
-                for (const auto &folder : manager.profiles[i].folders)
-                {
-                    if (!folder.exists)
-                    {
-                        profileModel->setData(index, iconWarning, Qt::DecorationRole);
-                        break;
-                    }
-                }
             }
 
             ui->syncProfilesView->update(index);
