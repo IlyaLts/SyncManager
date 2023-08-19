@@ -627,7 +627,8 @@ void MainWindow::addFolder(const QMimeData *mimeData)
     QStringList folderPaths;
 
     for (auto &folder : manager.profiles[row].folders)
-        folderPaths.append(folder.path);
+        if (!folder.toBeRemoved)
+            folderPaths.append(folder.path);
 
     // Checks if we already have a folder for synchronization in the list
     for (const auto &folder : folders)
