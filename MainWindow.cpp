@@ -459,7 +459,6 @@ MainWindow::addProfile
 void MainWindow::addProfile()
 {
     QString newName("New profile");
-
     QStringList profileNames;
 
     for (auto &profile : manager.profiles)
@@ -857,6 +856,9 @@ void MainWindow::increaseSyncTime()
         manager.updateNextSyncingTime();
         manager.updateTimer();
         updateSyncTime();
+
+        if (manager.syncEvery == std::numeric_limits<int>::max())
+            increaseSyncTimeAction->setDisabled(true);
     }
 }
 
@@ -871,6 +873,9 @@ void MainWindow::decreaseSyncTime()
     manager.updateNextSyncingTime();
     manager.updateTimer();
     updateSyncTime();
+
+    if (manager.syncEvery != std::numeric_limits<int>::max())
+        increaseSyncTimeAction->setDisabled(false);
 
     if (manager.syncTimeMultiplier <= 1)
         decreaseSyncTimeAction->setDisabled(true);

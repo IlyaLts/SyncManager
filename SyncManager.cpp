@@ -1174,10 +1174,13 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                 if ((!folderIt->files.contains(otherFileIt.key()) ||
                 // Or if we have a newer version of a file from other folders
  #ifdef Q_OS_LINUX
-                 ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
+                ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists &&
+                 (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
  #else
-                 ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists && (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
- #endif                // Or if other folders has a new version of a file and our file was removed
+                ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists &&
+                 (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
+ #endif
+                // Or if other folders has a new version of a file and our file was removed
                 (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(QByteArray(otherFile.path).indexOf('/', 0), 999999))).updated))) &&
                 // Checks for the newest version of a file in case if we have three folders or more
                 (!alreadyAdded || hasNewer) &&
