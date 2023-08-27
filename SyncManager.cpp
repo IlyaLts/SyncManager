@@ -736,6 +736,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder)
 
 #ifndef USE_STD_FILESYSTEM
     QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+    QByteArray exclude(versionFolder.toUtf8());
 
     while (dir.hasNext())
     {
@@ -750,9 +751,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder)
         hash64_t fileHash = hash64(filePath);
 
         // Excludes the versioning folder from scanning
-        QByteArray vf(versionFolder.toUtf8());
-
-        if (caseSensitiveSystem ? qstrncmp(vf, filePath, vf.length()) == 0 : qstrnicmp(vf, filePath, vf.length()) == 0)
+        if (caseSensitiveSystem ? qstrncmp(exclude, filePath, exclude.length()) == 0 : qstrnicmp(exclude, filePath, exclude.length()) == 0)
             continue;
 
         // If a file is already in our database

@@ -346,11 +346,13 @@ void MainWindow::show()
     if (QSystemTrayIcon::isSystemTrayAvailable() && showInTray)
     {
         trayIcon->show();
+        qApp->setQuitOnLastWindowClosed(false);
     }
     else
     {
         QMainWindow::show();
         trayIcon->hide();
+        qApp->setQuitOnLastWindowClosed(true);
     }
 }
 
@@ -361,7 +363,11 @@ MainWindow::setTrayVisible
 */
 void MainWindow::setTrayVisible(bool visible)
 {
-    showInTray = visible;
+    if (QSystemTrayIcon::isSystemTrayAvailable())
+        showInTray = visible;
+    else
+        showInTray = false;
+
     show();
 }
 
