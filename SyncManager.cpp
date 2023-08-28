@@ -252,406 +252,7 @@ void SyncManager::sync()
             if (shouldQuit) return;
         }
 
-        if (syncing)
-        {
-            // Synchronizes files/folders
-            for (auto &folder : profiles[queue.head()].folders)
-            {
-                QString rootPath = QStorageInfo(folder.path).rootPath();
-                bool shouldNotify = notificationList.contains(rootPath) ? !notificationList.value(rootPath)->isActive() : true;
-                QSet<QString> foldersToUpdate;
-
-                QString timeStampFolder(folder.path);
-                timeStampFolder.append(versionFolder);
-                timeStampFolder.append("/");
-                timeStampFolder.append(QDateTime::currentDateTime().toString(versionPattern));
-                timeStampFolder.append("/");
-
-                auto createParentFolders = [&](QString path)
-                {
-                    QStack<QString> foldersToCreate;
-
-                    while ((path = QFileInfo(path).path()).length() > folder.path.length())
-                    {
-                        if (QDir(path).exists()) break;
-                        foldersToCreate.append(path);
-                    }
-
-                    while (!foldersToCreate.isEmpty())
-                    {
-                        if (QDir().mkdir(foldersToCreate.top()))
-                        {
-                            QString shortPath(foldersToCreate.top());
-                            shortPath.remove(0, folder.path.size());
-                            hash64_t hash = hash64(shortPath.toUtf8());
-
-                            folder.files.insert(hash, File(shortPath.toUtf8(), File::folder, QFileInfo(foldersToCreate.top()).lastModified()));
-                            folder.foldersToAdd.remove(hash);
-                            foldersToUpdate.insert(foldersToCreate.top());
-                        }
-
-                        foldersToCreate.pop();
-                    }
-                };
-
-                // Sorts the folders for removal from the top to the bottom.
-                // This ensures that the trash folder has the exact same folder structure as in the original destination.
-                QVector<QString> sortedFoldersToRemove;
-                sortedFoldersToRemove.reserve(folder.foldersToRemove.size());
-                for (const auto &str : qAsConst(folder.foldersToRemove)) sortedFoldersToRemove.append(str);
-                std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const QString &a, const QString &b) -> bool { return a.size() < b.size(); });
-
-                // Folders to rename
-                for (auto it = folder.foldersToRename.begin(); it != folder.foldersToRename.end() && (!paused && !folder.paused);)
-                {
-                    // Removes from the "files to move" list if the source file doesn't exist
-                    if (!QFileInfo::exists(it.value().second))
-                    {
-                        it = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
-                        continue;
-                    }
-
-                    QString filePath(folder.path);
-                    filePath.append(it.value().first);
-                    hash64_t fileHash = hash64(it.value().first);
-
-                    if (QDir().rename(it.value().second, filePath))
-                    {
-                        QString parentFrom = QFileInfo(filePath).path();
-                        QString parentTo = QFileInfo(it.value().second).path();
-
-                        if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom);
-                        if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo);
-
-                        folder.files.remove(hash64(QByteArray(it.value().second).remove(0, folder.path.size())));
-                        folder.files.insert(fileHash, File(it.value().first, File::folder, QFileInfo(filePath).lastModified()));
-                        it = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
-
-                        // Unsets moved flag from all subdirectories
-                        QDirIterator dirIterator(filePath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
-
-                        if (dirIterator.hasNext())
-                        {
-                            dirIterator.next();
-                            QByteArray path(dirIterator.filePath().toUtf8());
-                            path.remove(0, folder.path.size());
-                            hash64_t hash = hash64(path);
-
-                            if (folder.files.contains(hash))
-                                folder.files[hash].moved = false;
-                        }
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (shouldQuit && rememberFiles) return;
-                }
-
-                // Files to move
-                for (auto it = folder.filesToMove.begin(); it != folder.filesToMove.end() && (!paused && !folder.paused);)
-                {
-                    // Removes from the "files to move" list if the source file doesn't exist
-                    if (!QFileInfo::exists(it.value().second))
-                    {
-                        it = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
-                        continue;
-                    }
-
-                    QString filePath(folder.path);
-                    filePath.append(it.value().first);
-                    hash64_t fileHash = hash64(it.value().first);
-
-                    createParentFolders(QDir::cleanPath(filePath));
-
-                    if (QFile::rename(it.value().second, filePath))
-                    {
-                        QString parentFrom = QFileInfo(filePath).path();
-                        QString parentTo = QFileInfo(it.value().second).path();
-
-                        if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom);
-                        if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo);
-
-                        hash64_t oldHash = hash64(QByteArray(it.value().second).remove(0, folder.path.size()));
-
-                        folder.files.remove(oldHash);
-                        folder.files.insert(fileHash, File(it.value().first, File::file, QFileInfo(filePath).lastModified()));
-                        folder.sizeList.remove(oldHash);
-                        folder.sizeList[fileHash] = QFileInfo(filePath).size();
-                        it = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (shouldQuit && rememberFiles) return;
-                }
-
-                // Folders to remove
-                for (auto it = sortedFoldersToRemove.begin(); it != sortedFoldersToRemove.end() && (!paused && !folder.paused);)
-                {
-                    QString folderPath(folder.path);
-                    folderPath.append(*it);
-                    hash64_t fileHash = hash64(it->toUtf8());
-                    QString parentPath = QFileInfo(folderPath).path();
-
-                    bool success;
-
-                    if (deletionMode == MoveToTrash)
-                    {
-                        // Used to make sure that moveToTrash function really moved a folder
-                        // to the trash as it can return true even though it failed to do so
-                        QString pathInTrash;
-
-                        success = QFile::moveToTrash(folderPath) && !pathInTrash.isEmpty();
-                    }
-                    else if (deletionMode == Versioning)
-                    {
-                        QString newLocation(timeStampFolder);
-                        newLocation.append(*it);
-
-                        createParentFolders(QDir::cleanPath(newLocation));
-                        success = QDir().rename(folderPath, newLocation);
-                    }
-                    else
-                    {
-                        success = QDir(folderPath).removeRecursively();
-                    }
-
-                    if (success || !QDir().exists(folderPath))
-                    {
-                        folder.files.remove(fileHash);
-                        folder.foldersToRemove.remove(fileHash);
-                        it = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(it));
-
-                        if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (shouldQuit && rememberFiles) return;
-                }
-
-                // Files to remove
-                for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && (!paused && !folder.paused);)
-                {
-                    QString filePath(folder.path);
-                    filePath.append(*it);
-                    hash64_t fileHash = hash64(*it);
-                    QString parentPath = QFileInfo(filePath).path();
-
-                    bool success;
-
-                    if (deletionMode == MoveToTrash)
-                    {
-                        // Used to make sure that moveToTrash function really moved a folder
-                        // to the trash as it can return true even though it failed to do so
-                        QString pathInTrash;
-
-                        success = QFile::moveToTrash(filePath, &pathInTrash) && !pathInTrash.isEmpty();
-                    }
-                    else if (deletionMode == Versioning)
-                    {
-                        QString newLocation(timeStampFolder);
-                        newLocation.append(*it);
-
-                        createParentFolders(QDir::cleanPath(newLocation));
-                        success = QFile().rename(filePath, newLocation);
-                    }
-                    else
-                    {
-                        success = QFile::remove(filePath) || !QFileInfo::exists(filePath);
-                    }
-
-                    if (success || !QFile().exists(filePath))
-                    {
-                        folder.files.remove(fileHash);
-                        folder.sizeList.remove(fileHash);
-
-                        it = folder.filesToRemove.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(it));
-
-                        if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (shouldQuit && rememberFiles) return;
-                }
-
-                // Folders to add
-                for (auto it = folder.foldersToAdd.begin(); it != folder.foldersToAdd.end() && (!paused && !folder.paused);)
-                {
-                    QString folderPath(folder.path);
-                    folderPath.append(*it);
-                    hash64_t fileHash = hash64(*it);
-                    QFileInfo fileInfo(folderPath);
-
-                    createParentFolders(QDir::cleanPath(folderPath));
-
-                    // Removes a file with the same filename first if exists
-                    if (fileInfo.exists() && fileInfo.isFile())
-                    {
-                        if (deletionMode == MoveToTrash)
-                        {
-                            QFile::moveToTrash(folderPath);
-                        }
-                        else if (deletionMode == Versioning)
-                        {
-                            QString newLocation(timeStampFolder);
-                            newLocation.append(*it);
-
-                            createParentFolders(QDir::cleanPath(newLocation));
-                            QFile::rename(folderPath, newLocation);
-                        }
-                        else
-                        {
-                            QFile::remove(folderPath);
-                        }
-                    }
-
-                    if (QDir().mkdir(folderPath) || fileInfo.exists())
-                    {
-                        folder.files.insert(fileHash, File(*it, File::folder, fileInfo.lastModified()));
-                        it = folder.foldersToAdd.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(it));
-
-                        QString parentPath = fileInfo.path();
-                        if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (shouldQuit && rememberFiles) return;
-                }
-
-                // Files to copy
-                for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && (!paused && !folder.paused);)
-                {
-                    // Removes from the "files to add" list if the source file doesn't exist
-                    if (!QFileInfo::exists(it.value().first.second) || it.value().first.first.isEmpty() || it.value().first.second.isEmpty())
-                    {
-                        it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
-                        continue;
-                    }
-
-                    QString filePath(folder.path);
-                    filePath.append(it.value().first.first);
-                    hash64_t fileHash = hash64(it.value().first.first);
-                    const File &file = folder.files.value(fileHash);
-                    QFileInfo destination(filePath);
-
-                    // Destination file is a newly added file
-                    if (file.type == File::unknown && destination.exists())
-                    {
-                        QFileInfo origin(it.value().first.second);
-
-                        // Aborts the copy operation if the origin file is older than the destination file
-                        if (destination.lastModified() > origin.lastModified())
-                        {
-                            it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
-                            continue;
-                        }
-
-                        // Fixes the case of two new files in two folders (one file for each folder) with the same file names but in different cases (e.g. filename vs. FILENAME)
-                        // Without this, copy operation causes undefined behavior as some file systems, such as Windows, are case insensitive.
-                        if (!caseSensitiveSystem)
-                        {
-                            QDirIterator originIterator(origin.absolutePath(), {origin.fileName()}, QDir::Files);
-
-                            // Using QDirIterator is the only way to find out the current filename on a disk
-                            if (originIterator.hasNext())
-                            {
-                                originIterator.next();
-
-                                QString fileName = it.value().first.second;
-                                fileName.remove(0, fileName.lastIndexOf("/") + 1);
-
-                                // Aborts the copy operation if the origin path and the path on a disk have different cases
-                                if (originIterator.fileName().compare(fileName, Qt::CaseSensitive) != 0)
-                                {
-                                    it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
-                                    continue;
-                                }
-                            }
-                        }
-                    }
-
-                    createParentFolders(QDir::cleanPath(filePath));
-
-                    // Removes a file with the same filename first if it exists
-                    if (destination.exists())
-                    {
-                        if (deletionMode == MoveToTrash)
-                        {
-                            QFile::moveToTrash(filePath);
-                        }
-                        else if (deletionMode == Versioning)
-                        {
-                            QString newLocation(timeStampFolder);
-                            newLocation.append(it.value().first.first);
-
-                            createParentFolders(QDir::cleanPath(newLocation));
-                            QFile::rename(filePath, newLocation);
-                        }
-                        else
-                        {
-                            if (file.type == File::folder)
-                                QDir(filePath).removeRecursively();
-                            else
-                                QFile::remove(filePath);
-                        }
-                    }
-
-                    if (QFile::copy(it.value().first.second, filePath))
-                    {
-                        // Do not touch QFileInfo(filePath).lastModified()), as we want to get the latest modified date
-                        folder.files.insert(fileHash, File(it.value().first.first, File::file, QFileInfo(filePath).lastModified()));
-                        folder.sizeList[fileHash] = QFileInfo(filePath).size();
-                        it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
-
-                        QString parentPath = destination.path();
-                        if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
-                    }
-                    else
-                    {
-                        // Not enough disk space notification
-                        if (notifications && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value().first.second).size())
-                        {
-                            if (!notificationList.contains(rootPath))
-                                notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);
-
-                            shouldNotify = false;
-                            notificationList.value(rootPath)->start(NOTIFICATION_DELAY);
-                            emit warning(QString("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "");
-                        }
-
-                        ++it;
-                    }
-
-                    // Returns only if "remember files" is enabled, otherwise all made changes will be lost
-                    if (shouldQuit && rememberFiles) return;
-                }
-
-                // Updates the modified date of the parent folders as adding/removing files and folders change their modified date
-                for (auto &folderPath : foldersToUpdate)
-                {
-                    hash64_t folderHash = hash64(QByteArray(folderPath.toUtf8()).remove(0, folder.path.size()));
-                    if (folder.files.contains(folderHash)) folder.files[folderHash].date = QFileInfo(folderPath).lastModified();
-                }
-            }
-        }
+        if (syncing) syncFiles(profiles[queue.head()]);
     }
 
     // Optimizes memory usage
@@ -1298,6 +899,412 @@ void SyncManager::checkForChanges(SyncProfile &profile)
     }
 
     TIMESTAMP(startTime, "Checked for removed files.");
+}
+
+/*
+===================
+SyncManager::syncFiles
+===================
+*/
+void SyncManager::syncFiles(SyncProfile &profile)
+{
+    // Synchronizes files/folders
+    for (auto &folder : profile.folders)
+    {
+        QString rootPath = QStorageInfo(folder.path).rootPath();
+        bool shouldNotify = notificationList.contains(rootPath) ? !notificationList.value(rootPath)->isActive() : true;
+        QSet<QString> foldersToUpdate;
+
+        QString timeStampFolder(folder.path);
+        timeStampFolder.append(versionFolder);
+        timeStampFolder.append("/");
+        timeStampFolder.append(QDateTime::currentDateTime().toString(versionPattern));
+        timeStampFolder.append("/");
+
+        auto createParentFolders = [&](QString path)
+        {
+            QStack<QString> foldersToCreate;
+
+            while ((path = QFileInfo(path).path()).length() > folder.path.length())
+            {
+                if (QDir(path).exists()) break;
+                foldersToCreate.append(path);
+            }
+
+            while (!foldersToCreate.isEmpty())
+            {
+                if (QDir().mkdir(foldersToCreate.top()))
+                {
+                    QString shortPath(foldersToCreate.top());
+                    shortPath.remove(0, folder.path.size());
+                    hash64_t hash = hash64(shortPath.toUtf8());
+
+                    folder.files.insert(hash, File(shortPath.toUtf8(), File::folder, QFileInfo(foldersToCreate.top()).lastModified()));
+                    folder.foldersToAdd.remove(hash);
+                    foldersToUpdate.insert(foldersToCreate.top());
+                }
+
+                foldersToCreate.pop();
+            }
+        };
+
+        // Sorts the folders for removal from the top to the bottom.
+        // This ensures that the trash folder has the exact same folder structure as in the original destination.
+        QVector<QString> sortedFoldersToRemove;
+        sortedFoldersToRemove.reserve(folder.foldersToRemove.size());
+        for (const auto &str : qAsConst(folder.foldersToRemove)) sortedFoldersToRemove.append(str);
+        std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const QString &a, const QString &b) -> bool { return a.size() < b.size(); });
+
+        // Folders to rename
+        for (auto it = folder.foldersToRename.begin(); it != folder.foldersToRename.end() && (!paused && !folder.paused);)
+        {
+            // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
+            if (shouldQuit && rememberFiles) break;
+
+            // Removes from the "files to move" list if the source file doesn't exist
+            if (!QFileInfo::exists(it.value().second))
+            {
+                it = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+                continue;
+            }
+
+            QString filePath(folder.path);
+            filePath.append(it.value().first);
+            hash64_t fileHash = hash64(it.value().first);
+
+            if (QDir().rename(it.value().second, filePath))
+            {
+                QString parentFrom = QFileInfo(filePath).path();
+                QString parentTo = QFileInfo(it.value().second).path();
+
+                if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom);
+                if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo);
+
+                folder.files.remove(hash64(QByteArray(it.value().second).remove(0, folder.path.size())));
+                folder.files.insert(fileHash, File(it.value().first, File::folder, QFileInfo(filePath).lastModified()));
+                it = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+
+                // Unsets moved flag from all subdirectories
+                QDirIterator dirIterator(filePath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+
+                if (dirIterator.hasNext())
+                {
+                    dirIterator.next();
+                    QByteArray path(dirIterator.filePath().toUtf8());
+                    path.remove(0, folder.path.size());
+                    hash64_t hash = hash64(path);
+
+                    if (folder.files.contains(hash))
+                        folder.files[hash].moved = false;
+                }
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // Files to move
+        for (auto it = folder.filesToMove.begin(); it != folder.filesToMove.end() && (!paused && !folder.paused);)
+        {
+            // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
+            if (shouldQuit && rememberFiles) break;
+
+            // Removes from the "files to move" list if the source file doesn't exist
+            if (!QFileInfo::exists(it.value().second))
+            {
+                it = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+                continue;
+            }
+
+            QString filePath(folder.path);
+            filePath.append(it.value().first);
+            hash64_t fileHash = hash64(it.value().first);
+
+            createParentFolders(QDir::cleanPath(filePath));
+
+            if (QFile::rename(it.value().second, filePath))
+            {
+                QString parentFrom = QFileInfo(filePath).path();
+                QString parentTo = QFileInfo(it.value().second).path();
+
+                if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom);
+                if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo);
+
+                hash64_t oldHash = hash64(QByteArray(it.value().second).remove(0, folder.path.size()));
+
+                folder.files.remove(oldHash);
+                folder.files.insert(fileHash, File(it.value().first, File::file, QFileInfo(filePath).lastModified()));
+                folder.sizeList.remove(oldHash);
+                folder.sizeList[fileHash] = QFileInfo(filePath).size();
+                it = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(it));
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // Folders to remove
+        for (auto it = sortedFoldersToRemove.begin(); it != sortedFoldersToRemove.end() && (!paused && !folder.paused);)
+        {
+            // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
+            if (shouldQuit && rememberFiles) break;
+
+            QString folderPath(folder.path);
+            folderPath.append(*it);
+            hash64_t fileHash = hash64(it->toUtf8());
+            QString parentPath = QFileInfo(folderPath).path();
+
+            bool success;
+
+            if (deletionMode == MoveToTrash)
+            {
+                // Used to make sure that moveToTrash function really moved a folder
+                // to the trash as it can return true even though it failed to do so
+                QString pathInTrash;
+
+                success = QFile::moveToTrash(folderPath) && !pathInTrash.isEmpty();
+            }
+            else if (deletionMode == Versioning)
+            {
+                QString newLocation(timeStampFolder);
+                newLocation.append(*it);
+
+                createParentFolders(QDir::cleanPath(newLocation));
+                success = QDir().rename(folderPath, newLocation);
+            }
+            else
+            {
+                success = QDir(folderPath).removeRecursively();
+            }
+
+            if (success || !QDir().exists(folderPath))
+            {
+                folder.files.remove(fileHash);
+                folder.foldersToRemove.remove(fileHash);
+                it = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(it));
+
+                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // Files to remove
+        for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && (!paused && !folder.paused);)
+        {
+            // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
+            if (shouldQuit && rememberFiles) break;
+
+            QString filePath(folder.path);
+            filePath.append(*it);
+            hash64_t fileHash = hash64(*it);
+            QString parentPath = QFileInfo(filePath).path();
+
+            bool success;
+
+            if (deletionMode == MoveToTrash)
+            {
+                // Used to make sure that moveToTrash function really moved a folder
+                // to the trash as it can return true even though it failed to do so
+                QString pathInTrash;
+
+                success = QFile::moveToTrash(filePath, &pathInTrash) && !pathInTrash.isEmpty();
+            }
+            else if (deletionMode == Versioning)
+            {
+                QString newLocation(timeStampFolder);
+                newLocation.append(*it);
+
+                createParentFolders(QDir::cleanPath(newLocation));
+                success = QFile().rename(filePath, newLocation);
+            }
+            else
+            {
+                success = QFile::remove(filePath) || !QFileInfo::exists(filePath);
+            }
+
+            if (success || !QFile().exists(filePath))
+            {
+                folder.files.remove(fileHash);
+                folder.sizeList.remove(fileHash);
+
+                it = folder.filesToRemove.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(it));
+
+                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // Folders to add
+        for (auto it = folder.foldersToAdd.begin(); it != folder.foldersToAdd.end() && (!paused && !folder.paused);)
+        {
+            // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
+            if (shouldQuit && rememberFiles) break;
+
+            QString folderPath(folder.path);
+            folderPath.append(*it);
+            hash64_t fileHash = hash64(*it);
+            QFileInfo fileInfo(folderPath);
+
+            createParentFolders(QDir::cleanPath(folderPath));
+
+            // Removes a file with the same filename first if exists
+            if (fileInfo.exists() && fileInfo.isFile())
+            {
+                if (deletionMode == MoveToTrash)
+                {
+                    QFile::moveToTrash(folderPath);
+                }
+                else if (deletionMode == Versioning)
+                {
+                    QString newLocation(timeStampFolder);
+                    newLocation.append(*it);
+
+                    createParentFolders(QDir::cleanPath(newLocation));
+                    QFile::rename(folderPath, newLocation);
+                }
+                else
+                {
+                    QFile::remove(folderPath);
+                }
+            }
+
+            if (QDir().mkdir(folderPath) || fileInfo.exists())
+            {
+                folder.files.insert(fileHash, File(*it, File::folder, fileInfo.lastModified()));
+                it = folder.foldersToAdd.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(it));
+
+                QString parentPath = fileInfo.path();
+                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // Files to copy
+        for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && (!paused && !folder.paused);)
+        {
+            // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
+            if (shouldQuit && rememberFiles) break;
+
+            // Removes from the "files to add" list if the source file doesn't exist
+            if (!QFileInfo::exists(it.value().first.second) || it.value().first.first.isEmpty() || it.value().first.second.isEmpty())
+            {
+                it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
+                continue;
+            }
+
+            QString filePath(folder.path);
+            filePath.append(it.value().first.first);
+            hash64_t fileHash = hash64(it.value().first.first);
+            const File &file = folder.files.value(fileHash);
+            QFileInfo destination(filePath);
+
+            // Destination file is a newly added file
+            if (file.type == File::unknown && destination.exists())
+            {
+                QFileInfo origin(it.value().first.second);
+
+                // Aborts the copy operation if the origin file is older than the destination file
+                if (destination.lastModified() > origin.lastModified())
+                {
+                    it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
+                    continue;
+                }
+
+                // Fixes the case of two new files in two folders (one file for each folder) with the same file names but in different cases (e.g. filename vs. FILENAME)
+                // Without this, copy operation causes undefined behavior as some file systems, such as Windows, are case insensitive.
+                if (!caseSensitiveSystem)
+                {
+                    QDirIterator originIterator(origin.absolutePath(), {origin.fileName()}, QDir::Files);
+
+                    // Using QDirIterator is the only way to find out the current filename on a disk
+                    if (originIterator.hasNext())
+                    {
+                        originIterator.next();
+
+                        QString fileName = it.value().first.second;
+                        fileName.remove(0, fileName.lastIndexOf("/") + 1);
+
+                        // Aborts the copy operation if the origin path and the path on a disk have different cases
+                        if (originIterator.fileName().compare(fileName, Qt::CaseSensitive) != 0)
+                        {
+                            it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            createParentFolders(QDir::cleanPath(filePath));
+
+            // Removes a file with the same filename first if it exists
+            if (destination.exists())
+            {
+                if (deletionMode == MoveToTrash)
+                {
+                    QFile::moveToTrash(filePath);
+                }
+                else if (deletionMode == Versioning)
+                {
+                    QString newLocation(timeStampFolder);
+                    newLocation.append(it.value().first.first);
+
+                    createParentFolders(QDir::cleanPath(newLocation));
+                    QFile::rename(filePath, newLocation);
+                }
+                else
+                {
+                    if (file.type == File::folder)
+                        QDir(filePath).removeRecursively();
+                    else
+                        QFile::remove(filePath);
+                }
+            }
+
+            if (QFile::copy(it.value().first.second, filePath))
+            {
+                // Do not touch QFileInfo(filePath).lastModified()), as we want to get the latest modified date
+                folder.files.insert(fileHash, File(it.value().first.first, File::file, QFileInfo(filePath).lastModified()));
+                folder.sizeList[fileHash] = QFileInfo(filePath).size();
+                it = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(it));
+
+                QString parentPath = destination.path();
+                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath);
+            }
+            else
+            {
+                // Not enough disk space notification
+                if (notifications && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value().first.second).size())
+                {
+                    if (!notificationList.contains(rootPath))
+                        notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);
+
+                    shouldNotify = false;
+                    notificationList.value(rootPath)->start(NOTIFICATION_DELAY);
+                    emit warning(QString("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "");
+                }
+
+                ++it;
+            }
+        }
+
+        // Updates the modified date of the parent folders as adding/removing files and folders change their modified date
+        for (auto &folderPath : foldersToUpdate)
+        {
+            hash64_t folderHash = hash64(QByteArray(folderPath.toUtf8()).remove(0, folder.path.size()));
+            if (folder.files.contains(folderHash)) folder.files[folderHash].date = QFileInfo(folderPath).lastModified();
+        }
+    }
 }
 
 /*

@@ -131,6 +131,7 @@ public:
     void sync();
     int getListOfFiles(SyncFolder &folder);
     void checkForChanges(SyncProfile &profile);
+    void syncFiles(SyncProfile &profile);
 
     void updateTimer();
     void updateStatus();
