@@ -92,6 +92,7 @@ struct SyncProfile
     explicit SyncProfile(bool paused) : paused(paused){}
 
     QList<SyncFolder> folders;
+    QList<QByteArray> excludeList;
 
     bool syncing = false;
     bool paused = false;
@@ -129,7 +130,7 @@ public:
 
     void addToQueue(int profileNumber = -1);
     void sync();
-    int getListOfFiles(SyncFolder &folder);
+    int getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList);
     void checkForChanges(SyncProfile &profile);
     void syncFiles(SyncProfile &profile);
 

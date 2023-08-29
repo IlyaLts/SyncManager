@@ -65,7 +65,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     if (manager.syncTimeMultiplier <= 0) manager.syncTimeMultiplier = 1;
 
     manager.caseSensitiveSystem = settings.value("caseSensitiveSystem", manager.caseSensitiveSystem).toBool();
-    manager.versionFolder = settings.value("VersionFolder", "!Versions").toString();
+    manager.versionFolder = settings.value("VersionFolder", "[Deletions]").toString();
     manager.versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
 
     profileModel = new DecoratedStringListModel;

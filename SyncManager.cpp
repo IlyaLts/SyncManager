@@ -137,6 +137,7 @@ void SyncManager::sync()
 
     busy = true;
     syncing = false;
+    SyncProfile &profile = profiles[queue.head()];
 
 #ifdef DEBUG
     std::chrono::high_resolution_clock::time_point syncTime;
@@ -150,7 +151,7 @@ void SyncManager::sync()
         timer.start();
 
         // Counts active folders in a profile
-        for (auto &folder : profiles[queue.head()].folders)
+        for (auto &folder : profile.folders)
         {
             folder.exists = QFileInfo::exists(folder.path);
 
@@ -162,7 +163,7 @@ void SyncManager::sync()
         {
 #ifdef DEBUG
             qDebug("=======================================");
-            qDebug("Started syncing %s", qUtf8Printable(profiles[queue.head()].name));
+            qDebug("Started syncing %s", qUtf8Printable(profile.name));
             qDebug("=======================================");
 #endif
 
@@ -172,10 +173,10 @@ void SyncManager::sync()
             int result = 0;
             QList<QPair<hash64_t, QFuture<int>>> futureList;
 
-            for (auto &folder : profiles[queue.head()].folders)
+            for (auto &folder : profile.folders)
             {
                 hash64_t requiredDevice = hash64(QStorageInfo(folder.path).device());
-                QPair<hash64_t, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return getListOfFiles(folder); })));
+                QPair<hash64_t, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return getListOfFiles(folder, profile.excludeList); })));
                 pair.second.suspend();
                 futureList.append(pair);
             }
@@ -209,13 +210,13 @@ void SyncManager::sync()
                 if (shouldQuit) return;
             }
 
-            TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(profiles[queue.head()].name));
+            TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(profile.name));
 
-            checkForChanges(profiles[queue.head()]);
+            checkForChanges(profile);
 
-            bool countAverage = profiles[queue.head()].syncTime ? true : false;
-            profiles[queue.head()].syncTime += timer.elapsed();
-            if (countAverage) profiles[queue.head()].syncTime /= 2;
+            bool countAverage = profile.syncTime ? true : false;
+            profile.syncTime += timer.elapsed();
+            if (countAverage) profile.syncTime /= 2;
 
 #ifdef DEBUG
             int numOfFoldersToRename = 0;
@@ -225,7 +226,7 @@ void SyncManager::sync()
             int numOfFoldersToRemove = 0;
             int numOfFilesToRemove = 0;
 
-            for (auto &folder : profiles[queue.head()].folders)
+            for (auto &folder : profile.folders)
             {
                 numOfFoldersToRename += folder.foldersToRename.size();
                 numOfFilesToMove += folder.filesToMove.size();
@@ -252,11 +253,11 @@ void SyncManager::sync()
             if (shouldQuit) return;
         }
 
-        if (syncing) syncFiles(profiles[queue.head()]);
+        if (syncing) syncFiles(profile);
     }
 
     // Optimizes memory usage
-    for (auto &folder : profiles[queue.head()].folders)
+    for (auto &folder : profile.folders)
     {
         folder.files.squeeze();
         folder.filesToMove.squeeze();
@@ -277,8 +278,8 @@ void SyncManager::sync()
         }
     }
 
-    profiles[queue.head()].lastSyncDate = QDateTime::currentDateTime();
-    emit profileSynced(&profiles[queue.head()]);
+    profile.lastSyncDate = QDateTime::currentDateTime();
+    emit profileSynced(&profile);
 
     queue.dequeue();
     busy = false;
@@ -320,7 +321,7 @@ void SyncManager::sync()
 SyncManager::getListOfFiles
 ===================
 */
-int SyncManager::getListOfFiles(SyncFolder &folder)
+int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList)
 {
     if (folder.paused || !folder.exists) return -1;
 
@@ -337,7 +338,6 @@ int SyncManager::getListOfFiles(SyncFolder &folder)
 
 #ifndef USE_STD_FILESYSTEM
     QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
-    QByteArray exclude(versionFolder.toUtf8());
 
     while (dir.hasNext())
     {
@@ -351,9 +351,14 @@ int SyncManager::getListOfFiles(SyncFolder &folder)
         File::Type type = fileInfo.isDir() ? File::folder : File::file;
         hash64_t fileHash = hash64(filePath);
 
-        // Excludes the versioning folder from scanning
-        if (caseSensitiveSystem ? qstrncmp(exclude, filePath, exclude.length()) == 0 : qstrnicmp(exclude, filePath, exclude.length()) == 0)
-            continue;
+        // Excludes unwanted files and folder from scanning
+        for (auto &exclude : excludeList)
+        {
+            if (caseSensitiveSystem ? qstrncmp(exclude, filePath, exclude.length()) == 0 : qstrnicmp(exclude, filePath, exclude.length()) == 0)
+            {
+                continue;
+            }
+        }
 
         // If a file is already in our database
         if (folder.files.contains(fileHash))
@@ -916,6 +921,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
         QSet<QString> foldersToUpdate;
 
         QString timeStampFolder(folder.path);
+        timeStampFolder.remove(timeStampFolder.lastIndexOf("/", 1), timeStampFolder.size());
+        timeStampFolder.append("_");
         timeStampFolder.append(versionFolder);
         timeStampFolder.append("/");
         timeStampFolder.append(QDateTime::currentDateTime().toString(versionPattern));
