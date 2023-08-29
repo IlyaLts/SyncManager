@@ -260,6 +260,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Loads last sync dates for all profiles
         manager.profiles[i].lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate")).toDateTime();
         updateLastSyncTime(&manager.profiles[i]);
+
+        // Loads exclude list
+        for (auto &exclude : settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("ExcludeList")).toStringList())
+            manager.profiles[i].excludeList.append(exclude.toUtf8());
     }
 
     if (manager.rememberFiles && settings.value("AppVersion").toString().compare("1.5") >= 0)
