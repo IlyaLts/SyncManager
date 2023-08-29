@@ -259,16 +259,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         // Loads last sync dates for all profiles
         manager.profiles[i].lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate")).toDateTime();
-
-        if (!manager.profiles[i].lastSyncDate.isNull())
-        {
-            QString lastSync = QString("Last Synchronization: %1.").arg(manager.profiles[i].lastSyncDate.toString());
-            profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
-        }
-        else
-        {
-            profileModel->setData(profileModel->index(i, 0), "Haven't been synchronized yet.", Qt::ToolTipRole);
-        }
+        updateLastSyncTime(&manager.profiles[i]);
     }
 
     if (manager.rememberFiles && settings.value("AppVersion").toString().compare("1.5") >= 0)
@@ -305,15 +296,15 @@ MainWindow::~MainWindow()
     }
 
     // Saves profiles/folders pause states and last sync dates
-    for (int i = 0; i < manager.profiles.size(); i++)
+    for (auto &profile : manager.profiles)
     {
-        if (!manager.profiles[i].toBeRemoved) settings.setValue(manager.profiles[i].name + QLatin1String("_profile/") + QLatin1String("Paused"), manager.profiles[i].paused);
+        if (!profile.toBeRemoved) settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("Paused"), profile.paused);
 
-        for (auto &folder : manager.profiles[i].folders)
+        for (auto &folder : profile.folders)
             if (!folder.toBeRemoved)
-                settings.setValue(manager.profiles[i].name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
+                settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
 
-        settings.setValue(manager.profiles[i].name + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), manager.profiles[i].lastSyncDate);
+        settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profile.lastSyncDate);
     }
 
     settings.setValue("Paused", manager.paused);
@@ -489,6 +480,7 @@ void MainWindow::addProfile()
 
     ui->folderListView->selectionModel()->reset();
     ui->folderListView->update();
+    updateLastSyncTime(&manager.profiles.last());
     updateStatus();
 }
 
@@ -924,8 +916,16 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
     {
         if (profileModel->index(i, 0).data(Qt::DisplayRole).toString() == profile->name)
         {
-            QString lastSync = QString("Last synchronization: %1.").arg(profile->lastSyncDate.toString());
-            profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
+            if (!manager.profiles[i].lastSyncDate.isNull())
+            {
+                QString lastSync = QString("Last synchronization: %1.").arg(profile->lastSyncDate.toString());
+                profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
+            }
+            else
+            {
+                profileModel->setData(profileModel->index(i, 0), "Haven't been synchronized yet.", Qt::ToolTipRole);
+            }
+
             return;
         }
     }
