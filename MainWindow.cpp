@@ -56,17 +56,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->horizontalSplitter->setStretchFactor(0, 0);
     ui->horizontalSplitter->setStretchFactor(1, 1);
 
-    manager.paused = settings.value(QLatin1String("Paused"), false).toBool();
     showInTray = settings.value("ShowInTray", true).toBool();
-    manager.notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
-    manager.rememberFiles = settings.value("RememberFiles", true).toBool();
-    manager.detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
-    manager.syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
-    if (manager.syncTimeMultiplier <= 0) manager.syncTimeMultiplier = 1;
-
-    manager.caseSensitiveSystem = settings.value("caseSensitiveSystem", manager.caseSensitiveSystem).toBool();
-    manager.versionFolder = settings.value("VersionFolder", "[Deletions]").toString();
-    manager.versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
 
     profileModel = new DecoratedStringListModel;
     folderModel = new DecoratedStringListModel;
@@ -197,7 +187,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(deletePressed()), SLOT(removeProfile()));
     connect(ui->folderListView, &FolderListView::drop, this, &MainWindow::addFolder);
     connect(ui->folderListView, SIGNAL(deletePressed()), SLOT(removeFolder()));
-    connect(syncNowAction, &QAction::triggered, this, [this](){ manager.syncHidden = false; doSync(); });
+    connect(syncNowAction, &QAction::triggered, this, [this](){ manager.syncHidden = false; sync(); });
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Manual));
@@ -214,7 +204,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
-    connect(&manager.syncTimer, &QTimer::timeout, this, [this](){ if (manager.queue.isEmpty()) { manager.syncHidden = true; doSync(); }});
+    connect(&manager.syncTimer, &QTimer::timeout, this, [this](){ if (manager.queue.isEmpty()) { manager.syncHidden = true; sync(); }});
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(&manager, &SyncManager::warning, this, [this](QString title, QString message){ trayIcon->showMessage(title, message, QSystemTrayIcon::Critical, TRAY_MESSAGE_TIME); });
@@ -271,14 +261,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     else
         QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
 
-    manager.syncTimer.setSingleShot(true);
     updateTimer.setSingleShot(true);
 
     switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
     switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", manager.MoveToTrash).toInt()));
     updateStatus();
-
-    if (manager.syncingMode == SyncManager::Automatic) manager.syncTimer.start(0);
 }
 
 /*
@@ -299,34 +286,10 @@ MainWindow::~MainWindow()
         settings.setValue("Height", size().height());
     }
 
-    // Saves profiles/folders pause states and last sync dates
-    for (auto &profile : manager.profiles)
-    {
-        if (!profile.toBeRemoved) settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("Paused"), profile.paused);
-
-        for (auto &folder : profile.folders)
-            if (!folder.toBeRemoved)
-                settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
-
-        settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profile.lastSyncDate);
-    }
-
-    settings.setValue("Paused", manager.paused);
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("HorizontalSplitter", hSizes);
-    settings.setValue("SyncingMode", manager.syncingMode);
-    settings.setValue("DeletionMode", manager.deletionMode);
     settings.setValue("ShowInTray", showInTray);
-    settings.setValue("Notifications", manager.notifications);
-    settings.setValue("RememberFiles", manager.rememberFiles);
-    settings.setValue("DetectMovedFiles", manager.detectMovedFiles);
-    settings.setValue("SyncTimeMultiplier", manager.syncTimeMultiplier);
-    settings.setValue("caseSensitiveSystem", manager.caseSensitiveSystem);
-    settings.setValue("VersionFolder", manager.versionFolder);
-    settings.setValue("VersionPattern", manager.versionPattern);
     settings.setValue("AppVersion", SYNCMANAGER_VERSION);
-
-    if (manager.rememberFiles) manager.saveData();
 
     delete ui;
 }
@@ -1168,7 +1131,7 @@ void MainWindow::showContextMenu(const QPoint &pos) const
             else
             {
                 menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
-                menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::doSync, const_cast<MainWindow *>(this), row))->setDisabled(manager.queue.contains(row));
+                menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(manager.queue.contains(row));
             }
 
             menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));
@@ -1199,10 +1162,10 @@ void MainWindow::showContextMenu(const QPoint &pos) const
 
 /*
 ===================
-MainWindow::doSync
+MainWindow::sync
 ===================
 */
-void MainWindow::doSync(int profileNumber)
+void MainWindow::sync(int profileNumber)
 {
     manager.addToQueue(profileNumber);
 

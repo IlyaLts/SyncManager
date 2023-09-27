@@ -89,7 +89,7 @@ private Q_SLOTS:
     void updateStatus();
     bool updateApp();
     void showContextMenu(const QPoint &pos) const;
-    void doSync(int profileNumber = -1);
+    void sync(int profileNumber = -1);
 
 private:
 

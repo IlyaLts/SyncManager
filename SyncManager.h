@@ -128,29 +128,34 @@ public:
         DeletePermanently
     } deletionMode;
 
+    SyncManager();
+    ~SyncManager();
+
     void addToQueue(int profileNumber = -1);
     void sync();
-    int getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList);
-    void checkForChanges(SyncProfile &profile);
-    void syncFiles(SyncProfile &profile);
 
     void updateTimer();
     void updateStatus();
     void updateNextSyncingTime();
+
     void saveData() const;
     void restoreData();
 
 Q_SIGNALS:
 
-    void warning(QString title, QString message);
+    void warning(const QString &title, const QString &message);
     void profileSynced(SyncProfile *profile);
+
+private:
+
+    int getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList);
+    void checkForChanges(SyncProfile &profile);
+    void syncFiles(SyncProfile &profile);
 
 public:
 
     QQueue<int> queue;
     QList<SyncProfile> profiles;
-    QMap<QString, QTimer *> notificationList;
-    QSet<hash64_t> usedDevices;
 
 #if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     bool caseSensitiveSystem = false;
@@ -174,10 +179,15 @@ public:
     int syncEvery = 0;
     int existingProfiles = 0;
 
+    QTimer syncTimer;
+
+private:
+
+    QMap<QString, QTimer *> notificationList;
+    QSet<hash64_t> usedDevices;
+
     QString versionFolder;
     QString versionPattern;
-
-    QTimer syncTimer;
 };
 
 #endif // SYNCMANAGER_H
