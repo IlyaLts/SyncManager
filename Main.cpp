@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 {
     Q_INIT_RESOURCE(SyncManager);
     QApplication app(argc, argv);
-    QSharedMemory sharedMemory("SyncManagerLaunched");
+    QSharedMemory sharedMemory("SyncManagerRunning");
 
     // Default style (Fusion) is too buggy
 #ifdef Q_OS_LINUX
@@ -63,6 +63,5 @@ int main(int argc, char *argv[])
         window.setLaunchOnStartup(true);
 
     window.show();
-
     return app.exec();
 }

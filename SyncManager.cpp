@@ -104,20 +104,21 @@ SyncManager::SyncManager()
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
 
-    paused = settings.value(QLatin1String("Paused"), false).toBool();
-    notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
-    rememberFiles = settings.value("RememberFiles", true).toBool();
-    detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
-    syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
-    if (syncTimeMultiplier <= 0) syncTimeMultiplier = 1;
+    m_paused = settings.value(QLatin1String("Paused"), false).toBool();
+    m_notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
+    m_rememberFiles = settings.value("RememberFiles", true).toBool();
+    m_detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
+    m_syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
+    if (m_syncTimeMultiplier <= 0) m_syncTimeMultiplier = 1;
 
-    caseSensitiveSystem = settings.value("caseSensitiveSystem", caseSensitiveSystem).toBool();
-    versionFolder = settings.value("VersionFolder", "[Deletions]").toString();
-    versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
+    m_caseSensitiveSystem = settings.value("caseSensitiveSystem", m_caseSensitiveSystem).toBool();
+    m_versionFolder = settings.value("VersionFolder", "[Deletions]").toString();
+    m_versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
 
-    syncTimer.setSingleShot(true);
+    m_syncTimer.setSingleShot(true);
 
-    if (syncingMode == SyncManager::Automatic) syncTimer.start(0);
+    if (syncingMode == SyncManager::Automatic)
+        m_syncTimer.start(0);
 }
 
 /*
@@ -130,7 +131,7 @@ SyncManager::~SyncManager()
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
 
     // Saves profiles/folders pause states and last sync dates
-    for (auto &profile : profiles)
+    for (auto &profile : m_profiles)
     {
         if (!profile.toBeRemoved) settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("Paused"), profile.paused);
 
@@ -141,18 +142,18 @@ SyncManager::~SyncManager()
         settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profile.lastSyncDate);
     }
 
-    settings.setValue("Paused", paused);
+    settings.setValue("Paused", m_paused);
     settings.setValue("SyncingMode", syncingMode);
     settings.setValue("DeletionMode", deletionMode);
-    settings.setValue("Notifications", notifications);
-    settings.setValue("RememberFiles", rememberFiles);
-    settings.setValue("DetectMovedFiles", detectMovedFiles);
-    settings.setValue("SyncTimeMultiplier", syncTimeMultiplier);
-    settings.setValue("caseSensitiveSystem", caseSensitiveSystem);
-    settings.setValue("VersionFolder", versionFolder);
-    settings.setValue("VersionPattern", versionPattern);
+    settings.setValue("Notifications", m_notifications);
+    settings.setValue("RememberFiles", m_rememberFiles);
+    settings.setValue("DetectMovedFiles", m_detectMovedFiles);
+    settings.setValue("SyncTimeMultiplier", m_syncTimeMultiplier);
+    settings.setValue("caseSensitiveSystem", m_caseSensitiveSystem);
+    settings.setValue("VersionFolder", m_versionFolder);
+    settings.setValue("VersionPattern", m_versionPattern);
 
-    if (rememberFiles) saveData();
+    if (m_rememberFiles) saveData();
 }
 
 /*
@@ -162,25 +163,26 @@ SyncManager::addToQueue
 */
 void SyncManager::addToQueue(int profileNumber)
 {
-    if (profiles.isEmpty()) return;
+    if (m_profiles.isEmpty())
+        return;
 
-    if (!queue.contains(profileNumber))
+    if (!m_queue.contains(profileNumber))
     {
         // Adds the passed profile number to the sync queue
-        if (profileNumber >= 0 && profileNumber < profiles.size())
+        if (profileNumber >= 0 && profileNumber < m_profiles.size())
         {
-            if ((!profiles[profileNumber].paused || syncingMode != Automatic) && !profiles[profileNumber].toBeRemoved)
+            if ((!m_profiles[profileNumber].paused || syncingMode != Automatic) && !m_profiles[profileNumber].toBeRemoved)
 
-            queue.enqueue(profileNumber);
+            m_queue.enqueue(profileNumber);
         }
         // If a profile number is not passed, adds all remaining profiles to the sync queue
         else
         {
-            for (int i = 0; i < profiles.size(); i++)
+            for (int i = 0; i < m_profiles.size(); i++)
             {
-                if ((!profiles[i].paused || syncingMode != Automatic) && !profiles[i].toBeRemoved && !queue.contains(i))
+                if ((!m_profiles[i].paused || syncingMode != Automatic) && !m_profiles[i].toBeRemoved && !m_queue.contains(i))
                 {
-                    queue.enqueue(i);
+                    m_queue.enqueue(i);
                 }
             }
         }
@@ -194,18 +196,19 @@ SyncManager::sync
 */
 void SyncManager::sync()
 {
-    if (busy || queue.isEmpty()) return;
+    if (m_busy || m_queue.isEmpty())
+        return;
 
-    busy = true;
-    syncing = false;
-    SyncProfile &profile = profiles[queue.head()];
+    m_busy = true;
+    m_syncing = false;
+    SyncProfile &profile = m_profiles[m_queue.head()];
 
 #ifdef DEBUG
     std::chrono::high_resolution_clock::time_point syncTime;
     debugSetTime(syncTime);
 #endif
 
-    if (!paused)
+    if (!m_paused)
     {
         int activeFolders = 0;
         QElapsedTimer timer;
@@ -248,16 +251,16 @@ void SyncManager::sync()
 
                 for (auto it = futureList.begin(); it != futureList.end();)
                 {
-                    if (!usedDevices.contains(it->first))
+                    if (!m_usedDevices.contains(it->first))
                     {
-                        usedDevices.insert(it->first);
+                        m_usedDevices.insert(it->first);
                         it->second.resume();
                     }
 
                     if (it->second.isFinished())
                     {
                         result += it->second.result();
-                        usedDevices.remove(it->first);
+                        m_usedDevices.remove(it->first);
                         it = futureList.erase(static_cast<QList<QPair<hash64_t, QFuture<int>>>::const_iterator>(it));
                     }
                     else
@@ -268,7 +271,7 @@ void SyncManager::sync()
                     i++;
                 }
 
-                if (shouldQuit) return;
+                if (m_shouldQuit) return;
             }
 
             TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(profile.name));
@@ -311,10 +314,10 @@ void SyncManager::sync()
 #endif
 
             updateStatus();
-            if (shouldQuit) return;
+            if (m_shouldQuit) return;
         }
 
-        if (syncing) syncFiles(profile);
+        if (m_syncing) syncFiles(profile);
     }
 
     // Optimizes memory usage
@@ -342,23 +345,24 @@ void SyncManager::sync()
     profile.lastSyncDate = QDateTime::currentDateTime();
     emit profileSynced(&profile);
 
-    queue.dequeue();
-    busy = false;
+    m_queue.dequeue();
+    m_busy = false;
     updateStatus();
     updateNextSyncingTime();
 
     TIMESTAMP(syncTime, "Syncing is complete.");
 
     // Starts synchronization of the next profile in the queue if exists
-    if (!queue.empty()) sync();
+    if (!m_queue.empty())
+        sync();
 
     // Removes profiles/folders completely if we remove them during syncing
-    for (auto profileIt = profiles.begin(); profileIt != profiles.end();)
+    for (auto profileIt = m_profiles.begin(); profileIt != m_profiles.end();)
     {
         // Profiles
         if (profileIt->toBeRemoved)
         {
-            profileIt = profiles.erase(static_cast<QList<SyncProfile>::const_iterator>(profileIt));
+            profileIt = m_profiles.erase(static_cast<QList<SyncProfile>::const_iterator>(profileIt));
             continue;
         }
 
@@ -374,7 +378,7 @@ void SyncManager::sync()
         profileIt++;
     }
 
-    syncHidden = false;
+    m_syncHidden = false;
 }
 
 /*
@@ -384,7 +388,8 @@ SyncManager::getListOfFiles
 */
 int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList)
 {
-    if (folder.paused || !folder.exists) return -1;
+    if (folder.paused || !folder.exists)
+        return -1;
 
     int totalNumOfFiles = 0;
 
@@ -402,7 +407,8 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
 
     while (dir.hasNext())
     {
-        if (folder.paused) return -1;
+        if (folder.paused)
+            return -1;
 
         dir.next();
 
@@ -415,7 +421,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         // Excludes unwanted files and folder from scanning
         for (auto &exclude : excludeList)
         {
-            if (caseSensitiveSystem ? qstrncmp(exclude, filePath, exclude.length()) == 0 : qstrnicmp(exclude, filePath, exclude.length()) == 0)
+            if (m_caseSensitiveSystem ? qstrncmp(exclude, filePath, exclude.length()) == 0 : qstrnicmp(exclude, filePath, exclude.length()) == 0)
             {
                 continue;
             }
@@ -444,7 +450,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
                 qCritical("Hash collision detected: %s vs %s", qUtf8Printable(filePath), qUtf8Printable(file.path));
 #endif
 
-                shouldQuit = true;
+                m_shouldQuit = true;
                 qApp->quit();
                 return -1;
             }
@@ -462,7 +468,9 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
                     while (folderPath.remove(folderPath.lastIndexOf("/"), folderPath.length()).length() > folder.path.length())
                     {
                         hash64_t hash = hash64(QByteArray(folderPath).remove(0, folder.path.size()));
-                        if (folder.files.value(hash).updated) break;
+
+                        if (folder.files.value(hash).updated)
+                            break;
 
                         folder.files[hash].updated = true;
                     }
@@ -487,16 +495,20 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
             file->newlyAdded = true;
         }
 
-        if (type == File::file) folder.sizeList[fileHash] = fileInfo.size();
+        if (type == File::file)
+            folder.sizeList[fileHash] = fileInfo.size();
 
         totalNumOfFiles++;
-        if (shouldQuit || folder.toBeRemoved) return -1;
+
+        if (m_shouldQuit || folder.toBeRemoved)
+            return -1;
     }
 #elif defined(USE_STD_FILESYSTEM)
 #error FIX: An update required
     for (auto const &dir : std::filesystem::recursive_directory_iterator{std::filesystem::path{folder.path.toStdString()}})
     {
-        if (folder.paused) return -1;
+        if (folder.paused)
+            return -1;
 
         QString filePath(dir.path().string().c_str());
         filePath.remove(0, folder.path.size());
@@ -507,11 +519,12 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
 
         const_cast<File *>(folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)).operator->())->path.squeeze();
         totalNumOfFiles++;
-        if (shouldQuit || folder.toBeRemoved) return -1;
+        if (shouldQuit || folder.toBeRemoved)
+            return -1;
     }
 #endif
 
-    usedDevices.remove(hash64(QStorageInfo(folder.path).device()));
+    m_usedDevices.remove(hash64(QStorageInfo(folder.path).device()));
 
     return totalNumOfFiles;
 }
@@ -523,24 +536,25 @@ SyncManager::updateStatus
 */
 void SyncManager::updateStatus()
 {
-    existingProfiles = 0;
-    isThereIssue = true;
-    isThereWarning = false;
+    m_existingProfiles = 0;
+    m_issue = true;
+    m_warning = false;
+    m_syncing = false;
 
     // Syncing status
-    for (int i = -1; auto &profile : profiles)
+    for (int i = -1; auto &profile : m_profiles)
     {
         i++;
         profile.syncing = false;
         int existingFolders = 0;
 
-        existingProfiles++;
+        m_existingProfiles++;
 
         for (auto &folder : profile.folders)
         {
             folder.syncing = false;
 
-            if ((!queue.isEmpty() && queue.head() != i ) || profile.toBeRemoved)
+            if ((!m_queue.isEmpty() && m_queue.head() != i ) || profile.toBeRemoved)
                 continue;
 
             if (!folder.toBeRemoved)
@@ -549,27 +563,50 @@ void SyncManager::updateStatus()
                 {
                     existingFolders++;
 
-                    if (existingFolders >= 2) isThereIssue = false;
+                    if (existingFolders >= 2)
+                        m_issue = false;
                 }
                 else
                 {
-                    isThereWarning = true;
+                    m_warning = true;
                 }
             }
 
-            if (busy && folder.exists && !folder.paused && (!folder.foldersToRename.isEmpty() ||
-                                                            !folder.filesToMove.isEmpty() ||
-                                                            !folder.foldersToAdd.isEmpty() ||
-                                                            !folder.filesToAdd.isEmpty() ||
-                                                            !folder.foldersToRemove.isEmpty() ||
-                                                            !folder.filesToRemove.isEmpty()))
+            if (m_busy && folder.exists && !folder.paused && (!folder.foldersToRename.isEmpty() ||
+                                                              !folder.filesToMove.isEmpty() ||
+                                                              !folder.foldersToAdd.isEmpty() ||
+                                                              !folder.filesToAdd.isEmpty() ||
+                                                              !folder.foldersToRemove.isEmpty() ||
+                                                              !folder.filesToRemove.isEmpty()))
             {
-                syncing = true;
+                m_syncing = true;
                 profile.syncing = true;
                 folder.syncing = true;
             }
         }
     }
+
+    // Number of files left to sync
+    qsizetype size = 0;
+
+    if (m_busy)
+    {
+        for (auto &folder : m_profiles[m_queue.head()].folders)
+        {
+            if (folder.exists && !folder.paused)
+            {
+                size = folder.foldersToRename.size();
+                size += folder.filesToMove.size();
+                size += folder.foldersToAdd.size();
+                size += folder.filesToAdd.size();
+                size += folder.foldersToRemove.size();
+                size += folder.filesToRemove.size();
+            }
+        }
+
+    }
+
+    m_filesToSync = size;
 }
 
 /*
@@ -581,9 +618,9 @@ void SyncManager::updateTimer()
 {
     if (syncingMode == SyncManager::Automatic)
     {
-        if ((!busy && syncTimer.isActive()) || (!syncTimer.isActive() || syncEvery < syncTimer.remainingTime()))
+        if ((!m_busy && m_syncTimer.isActive()) || (!m_syncTimer.isActive() || m_syncEvery < m_syncTimer.remainingTime()))
         {
-            syncTimer.start(syncEvery);
+            m_syncTimer.start(m_syncEvery);
         }
     }
 }
@@ -598,9 +635,10 @@ void SyncManager::updateNextSyncingTime()
     int time = 0;
 
     // Counts the total syncing time of profiles with at least two active folders
-    for (const auto &profile : profiles)
+    for (const auto &profile : m_profiles)
     {
-        if (profile.paused) continue;
+        if (profile.paused)
+            continue;
 
         int activeFolders = 0;
 
@@ -608,11 +646,12 @@ void SyncManager::updateNextSyncingTime()
             if (!folder.paused && folder.exists)
                 activeFolders++;
 
-        if (activeFolders >= 2) time += profile.syncTime;
+        if (activeFolders >= 2)
+            time += profile.syncTime;
     }
 
     // Multiplies sync time by 2
-    for (int i = 0; i < syncTimeMultiplier - 1; i++)
+    for (int i = 0; i < m_syncTimeMultiplier - 1; i++)
     {
         time <<= 1;
 
@@ -625,7 +664,7 @@ void SyncManager::updateNextSyncingTime()
     }
 
     if (time < SYNC_MIN_DELAY) time = SYNC_MIN_DELAY;
-    syncEvery = time;
+    m_syncEvery = time;
 }
 
 /*
@@ -636,17 +675,18 @@ SyncManager::saveData
 void SyncManager::saveData() const
 {
     QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
-    if (!data.open(QIODevice::WriteOnly)) return;
+    if (!data.open(QIODevice::WriteOnly))
+        return;
 
     QDataStream stream(&data);
-    stream << profiles.size();
+    stream << m_profiles.size();
 
     QStringList profileNames;
 
-    for (auto &profile : profiles)
+    for (auto &profile : m_profiles)
         profileNames.append(profile.name);
 
-    for (int i = 0; auto &profile : profiles)
+    for (int i = 0; auto &profile : m_profiles)
     {
         if (profile.toBeRemoved) continue;
 
@@ -655,7 +695,8 @@ void SyncManager::saveData() const
 
         for (auto &folder : profile.folders)
         {
-            if (folder.toBeRemoved) continue;
+            if (folder.toBeRemoved)
+                continue;
 
             // File data
             stream << folder.path;
@@ -737,7 +778,8 @@ SyncManager::restoreData
 void SyncManager::restoreData()
 {
     QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
-    if (!data.open(QIODevice::ReadOnly)) return;
+    if (!data.open(QIODevice::ReadOnly))
+        return;
 
     QDataStream stream(&data);
 
@@ -746,7 +788,7 @@ void SyncManager::restoreData()
 
     QStringList profileNames;
 
-    for (auto &profile : profiles)
+    for (auto &profile : m_profiles)
         profileNames.append(profile.name);
 
     for (qsizetype i = 0; i < profilesSize; i++)
@@ -772,7 +814,7 @@ void SyncManager::restoreData()
 
             if (restore)
             {
-                for (auto &folder : profiles[profileIndex].folders)
+                for (auto &folder : m_profiles[profileIndex].folders)
                     folderPaths.append(folder.path);
             }
 
@@ -796,7 +838,8 @@ void SyncManager::restoreData()
 
                 if (restore)
                 {
-                    const_cast<File *>(profiles[profileIndex].folders[folderIndex].files.insert(hash, File(QByteArray(), type, date, updated, exists, true)).operator->())->path.squeeze();
+                    const auto it = m_profiles[profileIndex].folders[folderIndex].files.insert(hash, File(QByteArray(), type, date, updated, exists, true));
+                    it->path.squeeze();
                 }
             }
 
@@ -813,7 +856,7 @@ void SyncManager::restoreData()
 
                 if (restore)
                 {
-                    profiles[profileIndex].folders[folderIndex].sizeList.insert(fileHash, fileSize);
+                    m_profiles[profileIndex].folders[folderIndex].sizeList.insert(fileHash, fileSize);
                 }
             }
 
@@ -831,9 +874,9 @@ void SyncManager::restoreData()
                 if (restore)
                 {
                     QPair<QByteArray, QByteArray> pair(to, from);
-                    const auto &it = profiles[profileIndex].folders[folderIndex].foldersToRename.insert(hash64(to), pair);
-                    const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
-                    const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
+                    const auto it = m_profiles[profileIndex].folders[folderIndex].foldersToRename.insert(hash64(to), pair);
+                    it.value().first.squeeze();
+                    it.value().second.squeeze();
                 }
             }
 
@@ -851,9 +894,9 @@ void SyncManager::restoreData()
                 if (restore)
                 {
                     QPair<QByteArray, QByteArray> pair(to, from);
-                    const auto &it = profiles[profileIndex].folders[folderIndex].filesToMove.insert(hash64(to), pair);
-                    const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().first.squeeze();
-                    const_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::iterator &>(it).value().second.squeeze();
+                    const auto it = m_profiles[profileIndex].folders[folderIndex].filesToMove.insert(hash64(to), pair);
+                    it.value().first.squeeze();
+                    it.value().second.squeeze();
                 }
             }
 
@@ -867,7 +910,8 @@ void SyncManager::restoreData()
 
                 if (restore)
                 {
-                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].foldersToAdd.insert(hash64(path), path).operator->())->squeeze();
+                    const auto it = m_profiles[profileIndex].folders[folderIndex].foldersToAdd.insert(hash64(path), path);
+                    it->squeeze();
                 }
             }
 
@@ -887,9 +931,9 @@ void SyncManager::restoreData()
                 if (restore)
                 {
                     QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(to, from), time);
-                    const auto &it = profiles[profileIndex].folders[folderIndex].filesToAdd.insert(hash64(to), pair);
-                    const_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.first.squeeze();
-                    const_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.second.squeeze();
+                    const auto it = m_profiles[profileIndex].folders[folderIndex].filesToAdd.insert(hash64(to), pair);
+                    it.value().first.first.squeeze();
+                    it.value().first.second.squeeze();
                 }
             }
 
@@ -903,7 +947,8 @@ void SyncManager::restoreData()
 
                 if (restore)
                 {
-                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(hash64(path), path).operator->())->squeeze();
+                    const auto it = m_profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(hash64(path), path);
+                    it->squeeze();
                 }
             }
 
@@ -917,7 +962,8 @@ void SyncManager::restoreData()
 
                 if (restore)
                 {
-                    const_cast<QByteArray *>(profiles[profileIndex].folders[folderIndex].filesToRemove.insert(hash64(path), path).operator->())->squeeze();
+                    const auto it = m_profiles[profileIndex].folders[folderIndex].filesToRemove.insert(hash64(path), path);
+                    it->squeeze();
                 }
             }
         }
@@ -931,10 +977,11 @@ SyncManager::checkForChanges
 */
 void SyncManager::checkForChanges(SyncProfile &profile)
 {
-    if ((syncingMode == Automatic && profile.paused) || profile.folders.size() < 2) return;
+    if ((syncingMode == Automatic && profile.paused) || profile.folders.size() < 2)
+        return;
 
     // Checks for changed case of folders
-    if (detectMovedFiles && !caseSensitiveSystem)
+    if (m_detectMovedFiles && !m_caseSensitiveSystem)
     {
         SET_TIME(startTime);
 
@@ -953,7 +1000,8 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                 // Pre checks
                 for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                 {
-                    if (folderIt == otherFolderIt) continue;
+                    if (folderIt == otherFolderIt)
+                        continue;
 
                     QString otherPath(otherFolderIt->path);
                     otherPath.append(fileIt->path);
@@ -990,7 +1038,8 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                 // Finally, adds to the folder renaming list
                 for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                 {
-                    if (folderIt == otherFolderIt) continue;
+                    if (folderIt == otherFolderIt)
+                        continue;
 
                     QByteArray otherPath(otherFolderIt->path);
                     otherPath.append(fileIt->path);
@@ -1077,7 +1126,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
     }
 
     // Checks for moved/renamed files
-    if (detectMovedFiles)
+    if (m_detectMovedFiles)
     {
         SET_TIME(startTime);
 
@@ -1307,12 +1356,13 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                 continue;
             }
 
-            if (!fileIt.value().exists && !folderIt->filesToMove.contains(fileIt.key()) && !folderIt->foldersToAdd.contains(fileIt.key()) && !folderIt->filesToAdd.contains(fileIt.key()) &&
+            if (!fileIt.value().exists && !folderIt->filesToMove.contains(fileIt.key()) &&
+                !folderIt->foldersToAdd.contains(fileIt.key()) && !folderIt->filesToAdd.contains(fileIt.key()) &&
                ((fileIt.value().type == File::file && !folderIt->filesToRemove.contains(fileIt.key())) ||
                (fileIt.value().type == File::folder && !folderIt->foldersToRemove.contains(fileIt.key()))))
             {
                 // Aborts if a removed file still exists, but with a different case
-                if (!caseSensitiveSystem)
+                if (!m_caseSensitiveSystem)
                 {
                     bool abort = false;
 
@@ -1386,15 +1436,15 @@ void SyncManager::syncFiles(SyncProfile &profile)
     for (auto &folder : profile.folders)
     {
         QString rootPath = QStorageInfo(folder.path).rootPath();
-        bool shouldNotify = notificationList.contains(rootPath) ? !notificationList.value(rootPath)->isActive() : true;
+        bool shouldNotify = m_notificationList.contains(rootPath) ? !m_notificationList.value(rootPath)->isActive() : true;
         QSet<QString> foldersToUpdate;
 
         QString timeStampFolder(folder.path);
         timeStampFolder.remove(timeStampFolder.lastIndexOf("/", 1), timeStampFolder.size());
         timeStampFolder.append("_");
-        timeStampFolder.append(versionFolder);
+        timeStampFolder.append(m_versionFolder);
         timeStampFolder.append("/");
-        timeStampFolder.append(QDateTime::currentDateTime().toString(versionPattern));
+        timeStampFolder.append(QDateTime::currentDateTime().toString(m_versionPattern));
         timeStampFolder.append("/");
 
         auto createParentFolders = [&](QString path)
@@ -1432,10 +1482,10 @@ void SyncManager::syncFiles(SyncProfile &profile)
         std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const QString &a, const QString &b) -> bool { return a.size() < b.size(); });
 
         // Folders to rename
-        for (auto it = folder.foldersToRename.begin(); it != folder.foldersToRename.end() && (!paused && !folder.paused);)
+        for (auto it = folder.foldersToRename.begin(); it != folder.foldersToRename.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (shouldQuit && rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles) break;
 
             // Removes from the "files to move" list if the source file doesn't exist
             if (!QFileInfo::exists(it.value().second))
@@ -1481,10 +1531,10 @@ void SyncManager::syncFiles(SyncProfile &profile)
         }
 
         // Files to move
-        for (auto it = folder.filesToMove.begin(); it != folder.filesToMove.end() && (!paused && !folder.paused);)
+        for (auto it = folder.filesToMove.begin(); it != folder.filesToMove.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (shouldQuit && rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles) break;
 
             // Removes from the "files to move" list if the source file doesn't exist
             if (!QFileInfo::exists(it.value().second))
@@ -1522,10 +1572,10 @@ void SyncManager::syncFiles(SyncProfile &profile)
         }
 
         // Folders to remove
-        for (auto it = sortedFoldersToRemove.begin(); it != sortedFoldersToRemove.end() && (!paused && !folder.paused);)
+        for (auto it = sortedFoldersToRemove.begin(); it != sortedFoldersToRemove.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (shouldQuit && rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles) break;
 
             QString folderPath(folder.path);
             folderPath.append(*it);
@@ -1570,10 +1620,10 @@ void SyncManager::syncFiles(SyncProfile &profile)
         }
 
         // Files to remove
-        for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && (!paused && !folder.paused);)
+        for (auto it = folder.filesToRemove.begin(); it != folder.filesToRemove.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (shouldQuit && rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles) break;
 
             QString filePath(folder.path);
             filePath.append(*it);
@@ -1619,10 +1669,10 @@ void SyncManager::syncFiles(SyncProfile &profile)
         }
 
         // Folders to add
-        for (auto it = folder.foldersToAdd.begin(); it != folder.foldersToAdd.end() && (!paused && !folder.paused);)
+        for (auto it = folder.foldersToAdd.begin(); it != folder.foldersToAdd.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (shouldQuit && rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles) break;
 
             QString folderPath(folder.path);
             folderPath.append(*it);
@@ -1667,10 +1717,10 @@ void SyncManager::syncFiles(SyncProfile &profile)
         }
 
         // Files to copy
-        for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && (!paused && !folder.paused);)
+        for (auto it = folder.filesToAdd.begin(); it != folder.filesToAdd.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (shouldQuit && rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles) break;
 
             // Removes from the "files to add" list if the source file doesn't exist
             if (!QFileInfo::exists(it.value().first.second) || it.value().first.first.isEmpty() || it.value().first.second.isEmpty())
@@ -1699,7 +1749,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
                 // Fixes the case of two new files in two folders (one file for each folder) with the same file names but in different cases (e.g. filename vs. FILENAME)
                 // Without this, copy operation causes undefined behavior as some file systems, such as Windows, are case insensitive.
-                if (!caseSensitiveSystem)
+                if (!m_caseSensitiveSystem)
                 {
                     QDirIterator originIterator(origin.absolutePath(), {origin.fileName()}, QDir::Files);
 
@@ -1760,13 +1810,13 @@ void SyncManager::syncFiles(SyncProfile &profile)
             else
             {
                 // Not enough disk space notification
-                if (notifications && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value().first.second).size())
+                if (m_notifications && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(it.value().first.second).size())
                 {
-                    if (!notificationList.contains(rootPath))
-                        notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);
+                    if (!m_notificationList.contains(rootPath))
+                        m_notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);
 
                     shouldNotify = false;
-                    notificationList.value(rootPath)->start(NOTIFICATION_DELAY);
+                    m_notificationList.value(rootPath)->start(NOTIFICATION_DELAY);
                     emit warning(QString("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "");
                 }
 
