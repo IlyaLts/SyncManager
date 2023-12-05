@@ -1211,7 +1211,11 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                         }
 
                         // Aborts the move operation if files have different sizes and dates
+#ifdef Q_OS_LINUX
+                        if (otherFolderIt->sizeList.value(matchedHash) != folderIt->sizeList.value(matchedHash))
+#else
                         if (otherFolderIt->sizeList.value(matchedHash) != folderIt->sizeList.value(matchedHash) || otherFile.date != fileIt->date)
+#endif
                         {
                             abort = true;
                             break;
