@@ -21,6 +21,7 @@
 #include "ui_MainWindow.h"
 #include "DecoratedStringListModel.h"
 #include "UnhidableMenu.h"
+#include "FolderListView.h"
 #include <QStringListModel>
 #include <QSettings>
 #include <QCloseEvent>
