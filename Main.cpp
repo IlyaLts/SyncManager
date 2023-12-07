@@ -46,8 +46,15 @@ int main(int argc, char *argv[])
     // Prevention of multiple instances
     if (!sharedMemory.create(1))
     {
-        QMessageBox::warning(NULL, "Couldn't launch!", "The app is already launched and cannot be launched as a second instance.");
-        return -1;
+        // Fixes the app being prevented from launch after crashing on Linux
+        sharedMemory.attach();
+        sharedMemory.detach();
+
+        if (!sharedMemory.create(1))
+        {
+            QMessageBox::warning(NULL, "Couldn't launch!", "The app is already launched and cannot be launched as a second instance.");
+            return -1;
+        }
     }
 
     if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
