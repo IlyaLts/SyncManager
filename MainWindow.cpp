@@ -895,7 +895,17 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
     {
         if (profileModel->index(i, 0).data(Qt::DisplayRole).toString() == profile->name)
         {
-            if (!manager.profiles()[i].lastSyncDate.isNull())
+            bool hasFolders = false;
+
+            for (const auto &folder : manager.profiles()[i].folders)
+                if (folder.exists)
+                    hasFolders = true;
+
+            if (!hasFolders)
+            {
+                profileModel->setData(profileModel->index(i, 0), "The profile has no folders available.", Qt::ToolTipRole);
+            }
+            else if (!manager.profiles()[i].lastSyncDate.isNull())
             {
                 QString lastSync = QString("Last synchronization: %1.").arg(profile->lastSyncDate.toString());
                 profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
@@ -909,7 +919,11 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             {
                 for (int j = 0; auto &folder : profile->folders)
                 {
-                    if (!folder.lastSyncDate.isNull())
+                    if (!folder.exists)
+                    {
+                        folderModel->setData(folderModel->index(j, 0), "The folder is currently unavailable.", Qt::ToolTipRole);
+                    }
+                    else if (!folder.lastSyncDate.isNull())
                     {
                         QString lastSync = QString("Last synchronization: %1.").arg(folder.lastSyncDate.toString());
                         folderModel->setData(folderModel->index(j, 0), lastSync, Qt::ToolTipRole);
