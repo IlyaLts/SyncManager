@@ -250,6 +250,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         // Loads last sync dates for all profiles
         manager.profiles()[i].lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate")).toDateTime();
+
+        for (auto &folder : manager.profiles()[i].folders)
+        {
+            folder.lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_LastSyncDate")).toDateTime();
+        }
+
         updateLastSyncTime(&manager.profiles()[i]);
 
         // Loads exclude list
@@ -517,6 +523,7 @@ void MainWindow::profileClicked(const QItemSelection &selected, const QItemSelec
         folderPaths.append(folder.path);
 
     folderModel->setStringList(folderPaths);
+    updateLastSyncTime(&manager.profiles()[ui->syncProfilesView->currentIndex().row()]);
     updateStatus();
 }
 
@@ -551,7 +558,9 @@ void MainWindow::profileNameChanged(const QModelIndex &index)
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     settings.remove(manager.profiles()[row].name + QLatin1String("_profile"));
     settings.setValue(newName + QLatin1String("_profile/") + QLatin1String("Paused"), manager.profiles()[row].paused);
+    settings.setValue(newName + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), manager.profiles()[row].lastSyncDate);
     for (auto &folder : manager.profiles()[row].folders) settings.setValue(newName + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
+    for (auto &folder : manager.profiles()[row].folders) settings.setValue(newName + QLatin1String("_profile/") + folder.path + QLatin1String("_LastSyncDate"), folder.lastSyncDate);
 
     QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
     profilesData.remove(manager.profiles()[row].name);
@@ -625,6 +634,8 @@ void MainWindow::addFolder(const QMimeData *mimeData)
             updateStatus();
         }
     }
+
+    updateLastSyncTime(&manager.profiles()[row]);
 }
 
 /*
@@ -892,6 +903,24 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             else
             {
                 profileModel->setData(profileModel->index(i, 0), "Haven't been synchronized yet.", Qt::ToolTipRole);
+            }
+
+            if (ui->syncProfilesView->selectionModel()->selectedIndexes().contains(profileModel->index(i, 0)))
+            {
+                for (int j = 0; auto &folder : profile->folders)
+                {
+                    if (!folder.lastSyncDate.isNull())
+                    {
+                        QString lastSync = QString("Last synchronization: %1.").arg(folder.lastSyncDate.toString());
+                        folderModel->setData(folderModel->index(j, 0), lastSync, Qt::ToolTipRole);
+                    }
+                    else
+                    {
+                        folderModel->setData(folderModel->index(j, 0), "Haven't been synchronized yet.", Qt::ToolTipRole);
+                    }
+
+                    j++;
+                }
             }
 
             return;

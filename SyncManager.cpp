@@ -136,8 +136,13 @@ SyncManager::~SyncManager()
         if (!profile.toBeRemoved) settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("Paused"), profile.paused);
 
         for (auto &folder : profile.folders)
+        {
             if (!folder.toBeRemoved)
+            {
+                settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_LastSyncDate"), profile.lastSyncDate);
                 settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
+            }
+        }
 
         settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profile.lastSyncDate);
     }
@@ -343,6 +348,11 @@ void SyncManager::sync()
     }
 
     profile.lastSyncDate = QDateTime::currentDateTime();
+
+    for (auto &folder : profile.folders)
+        if (!folder.paused)
+            folder.lastSyncDate = QDateTime::currentDateTime();
+
     emit profileSynced(&profile);
 
     m_queue.dequeue();
