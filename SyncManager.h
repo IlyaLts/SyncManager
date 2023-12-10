@@ -119,14 +119,14 @@ public:
     {
         Automatic,
         Manual
-    } syncingMode;
+    };
 
     enum DeletionMode
     {
         MoveToTrash,
         Versioning,
         DeletePermanently
-    } deletionMode;
+    };
 
     SyncManager();
     ~SyncManager();
@@ -141,6 +141,10 @@ public:
     void saveData() const;
     void restoreData();
 
+    inline void setSyncingMode(SyncingMode mode) { m_syncingMode = mode; }
+    inline void setDeletionMode(DeletionMode mode) { m_deletionMode = mode; }
+    inline SyncingMode syncingMode() const { return m_syncingMode; }
+    inline DeletionMode deletionMode() const { return m_deletionMode; }
     inline const QQueue<int> &queue() const { return m_queue; }
     inline const QList<SyncProfile> &profiles() const { return m_profiles; }
     inline QList<SyncProfile> &profiles() { return m_profiles; }
@@ -169,6 +173,8 @@ public:
     inline bool notificationsEnabled() const { return m_notifications; }
     inline bool rememberFilesEnabled() const { return m_rememberFiles; }
     inline bool detectMovedFilesEnabled() const { return m_detectMovedFiles; }
+    inline const QString &versionFolder() const { return m_versionFolder; }
+    inline const QString &versionPattern() const { return m_versionPattern; }
 
 Q_SIGNALS:
 
@@ -180,6 +186,9 @@ private:
     int getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList);
     void checkForChanges(SyncProfile &profile);
     void syncFiles(SyncProfile &profile);
+
+    SyncingMode m_syncingMode;
+    DeletionMode m_deletionMode;
 
     QQueue<int> m_queue;
     QList<SyncProfile> m_profiles;

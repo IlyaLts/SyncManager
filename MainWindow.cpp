@@ -192,16 +192,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Manual));
-    connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
-    connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
     connect(moveToTrashAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.MoveToTrash));
     connect(versioningAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.Versioning));
     connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.DeletePermanently));
-    connect(launchOnStartupAction, &QAction::triggered, this, [this](){ setLaunchOnStartup(launchOnStartupAction->isChecked()); });
-    connect(showInTrayAction, &QAction::triggered, this, [this](){ setTrayVisible(!showInTray); });
-    connect(disableNotificationAction, &QAction::triggered, this, [this](){ manager.enableNotifications(!manager.notificationsEnabled()); });
-    connect(enableRememberFilesAction, &QAction::triggered, this, [this](){ manager.enableRememberFiles(!manager.rememberFilesEnabled()); });
-    connect(detectMovedFilesAction, &QAction::triggered, this, [this](){ manager.enableDetectMovedFiles(!manager.detectMovedFilesEnabled()); });
+    connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
+    connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
+    connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
+    connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
+    connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
+    connect(enableRememberFilesAction, &QAction::triggered, this, &MainWindow::toggleRememberFiles);
+    connect(detectMovedFilesAction, &QAction::triggered, this, &MainWindow::toggleDetectMoved);
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
@@ -209,7 +209,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(&manager, &SyncManager::warning, this, [this](QString title, QString message){ trayIcon->showMessage(title, message, QSystemTrayIcon::Critical, TRAY_MESSAGE_TIME); });
-    connect(&manager, &SyncManager::profileSynced, this, &MainWindow::updateLastSyncTime);
+    connect(&manager, &SyncManager::profileSynced, this, [this](SyncProfile *profile){ updateLastSyncTime(profile); saveSettings(); });
 
     // Loads synchronization profiles
     QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
@@ -282,22 +282,7 @@ MainWindow::~MainWindow
 */
 MainWindow::~MainWindow()
 {
-    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    QVariantList hSizes;
-
-    for (auto &size : ui->horizontalSplitter->sizes()) hSizes.append(size);
-
-    if (!isMaximized())
-    {
-        settings.setValue("Width", size().width());
-        settings.setValue("Height", size().height());
-    }
-
-    settings.setValue("Fullscreen", isMaximized());
-    settings.setValue("HorizontalSplitter", hSizes);
-    settings.setValue("ShowInTray", showInTray);
-    settings.setValue("AppVersion", SYNCMANAGER_VERSION);
-
+    saveSettings();
     delete ui;
 }
 
@@ -334,6 +319,7 @@ void MainWindow::setTrayVisible(bool visible)
         showInTray = false;
 
     show();
+    saveSettings();
 }
 
 /*
@@ -381,6 +367,8 @@ void MainWindow::setLaunchOnStartup(bool enable)
     {
         QFile::remove(path);
     }
+
+    saveSettings();
 }
 
 /*
@@ -696,6 +684,7 @@ void MainWindow::pauseSyncing()
     updateStatus();
     manager.updateNextSyncingTime();
     manager.updateTimer();
+    saveSettings();
 }
 
 /*
@@ -736,6 +725,7 @@ void MainWindow::pauseSelected()
         updateStatus();
         manager.updateNextSyncingTime();
         manager.updateTimer();
+        saveSettings();
     }
 }
 
@@ -794,8 +784,7 @@ MainWindow::switchSyncingMode
 */
 void MainWindow::switchSyncingMode(SyncManager::SyncingMode mode)
 {
-    manager.syncingMode = mode;
-
+    manager.setSyncingMode(mode);
     automaticAction->setChecked(false);
     manualAction->setChecked(false);
 
@@ -817,6 +806,29 @@ void MainWindow::switchSyncingMode(SyncManager::SyncingMode mode)
     }
 
     updateStatus();
+    saveSettings();
+}
+
+/*
+===================
+MainWindow::switchDeletionMode
+===================
+*/
+void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
+{
+    manager.setDeletionMode(mode);
+    moveToTrashAction->setChecked(false);
+    versioningAction->setChecked(false);
+    deletePermanentlyAction->setChecked(false);
+
+    if (mode == SyncManager::MoveToTrash)
+        moveToTrashAction->setChecked(true);
+    else if (mode == SyncManager::Versioning)
+        versioningAction->setChecked(true);
+    else
+        deletePermanentlyAction->setChecked(true);
+
+    saveSettings();
 }
 
 /*
@@ -836,6 +848,8 @@ void MainWindow::increaseSyncTime()
 
         if (manager.syncEvery() == std::numeric_limits<int>::max())
             increaseSyncTimeAction->setDisabled(true);
+
+        saveSettings();
     }
 }
 
@@ -856,6 +870,63 @@ void MainWindow::decreaseSyncTime()
 
     if (manager.syncTimeMultiplier() <= 1)
         decreaseSyncTimeAction->setDisabled(true);
+
+    saveSettings();
+}
+
+/*
+===================
+MainWindow::launchOnStartup
+===================
+*/
+void MainWindow::toggleLaunchOnStartup()
+{
+    setLaunchOnStartup(launchOnStartupAction->isChecked());
+    saveSettings();
+}
+
+/*
+===================
+MainWindow::showInTray
+===================
+*/
+void MainWindow::toggleShowInTray()
+{
+    setTrayVisible(!showInTray);
+    saveSettings();
+}
+
+/*
+===================
+MainWindow::disableNotification
+===================
+*/
+void MainWindow::toggleNotification()
+{
+    manager.enableNotifications(!manager.notificationsEnabled());
+    saveSettings();
+}
+
+/*
+===================
+MainWindow::enableRememberFiles
+===================
+*/
+void MainWindow::toggleRememberFiles()
+{
+    manager.enableRememberFiles(!manager.rememberFilesEnabled());
+    saveSettings();
+}
+
+/*
+===================
+MainWindow::detectMovedFiles
+===================
+*/
+void MainWindow::toggleDetectMoved()
+{
+    manager.enableDetectMovedFiles(!manager.detectMovedFilesEnabled());
+    saveSettings();
 }
 
 /*
@@ -940,27 +1011,6 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             return;
         }
     }
-}
-
-/*
-===================
-MainWindow::switchDeletionMode
-===================
-*/
-void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
-{
-    manager.deletionMode = mode;
-
-    moveToTrashAction->setChecked(false);
-    versioningAction->setChecked(false);
-    deletePermanentlyAction->setChecked(false);
-
-    if (mode == SyncManager::MoveToTrash)
-        moveToTrashAction->setChecked(true);
-    else if (mode == SyncManager::Versioning)
-        versioningAction->setChecked(true);
-    else
-        deletePermanentlyAction->setChecked(true);
 }
 
 /*
@@ -1051,7 +1101,7 @@ void MainWindow::updateStatus()
     }
 
     // Tray & Icon
-    if (manager.syncingMode == SyncManager::Automatic && manager.isPaused())
+    if (manager.syncingMode() == SyncManager::Automatic && manager.isPaused())
     {
         trayIcon->setIcon(trayIconPause);
         setWindowIcon(trayIconPause);
@@ -1209,5 +1259,56 @@ void MainWindow::sync(int profileNumber)
         updateStatus();
         updateSyncTime();
         manager.updateTimer();
+    }
+}
+
+/*
+===================
+MainWindow::saveSettings
+===================
+*/
+void MainWindow::saveSettings() const
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    QVariantList hSizes;
+
+    for (auto &size : ui->horizontalSplitter->sizes()) hSizes.append(size);
+
+    if (!isMaximized())
+    {
+        settings.setValue("Width", size().width());
+        settings.setValue("Height", size().height());
+    }
+
+    settings.setValue("Fullscreen", isMaximized());
+    settings.setValue("HorizontalSplitter", hSizes);
+    settings.setValue("ShowInTray", showInTray);
+    settings.setValue("AppVersion", SYNCMANAGER_VERSION);
+    settings.setValue("Paused", manager.isPaused());
+    settings.setValue("SyncingMode", manager.syncingMode());
+    settings.setValue("DeletionMode", manager.deletionMode());
+    settings.setValue("Notifications", manager.notificationsEnabled());
+    settings.setValue("RememberFiles", manager.rememberFilesEnabled());
+    settings.setValue("DetectMovedFiles", manager.detectMovedFilesEnabled());
+    settings.setValue("SyncTimeMultiplier", manager.syncTimeMultiplier());
+    settings.setValue("caseSensitiveSystem", manager.isCaseSensitiveSystem());
+    settings.setValue("VersionFolder", manager.versionFolder());
+    settings.setValue("VersionPattern", manager.versionPattern());
+
+    // Saves profiles/folders pause states and last sync dates
+    for (auto &profile : manager.profiles())
+    {
+        if (!profile.toBeRemoved) settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("Paused"), profile.paused);
+
+        for (auto &folder : profile.folders)
+        {
+            if (!folder.toBeRemoved)
+            {
+                settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_LastSyncDate"), profile.lastSyncDate);
+                settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
+            }
+        }
+
+        settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profile.lastSyncDate);
     }
 }

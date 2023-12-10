@@ -81,15 +81,21 @@ private Q_SLOTS:
     void quit();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void switchSyncingMode(SyncManager::SyncingMode mode);
+    void switchDeletionMode(SyncManager::DeletionMode mode);
     void increaseSyncTime();
     void decreaseSyncTime();
+    void toggleLaunchOnStartup();
+    void toggleShowInTray();
+    void toggleNotification();
+    void toggleRememberFiles();
+    void toggleDetectMoved();
     void updateSyncTime();
     void updateLastSyncTime(SyncProfile *profile);
-    void switchDeletionMode(SyncManager::DeletionMode mode);
     void updateStatus();
     bool updateApp();
     void showContextMenu(const QPoint &pos) const;
     void sync(int profileNumber = -1);
+    void saveSettings() const;
 
 private:
 

@@ -117,7 +117,7 @@ SyncManager::SyncManager()
 
     m_syncTimer.setSingleShot(true);
 
-    if (syncingMode == SyncManager::Automatic)
+    if (m_syncingMode == SyncManager::Automatic)
         m_syncTimer.start(0);
 }
 
@@ -128,36 +128,6 @@ SyncManager::~SyncManager
 */
 SyncManager::~SyncManager()
 {
-    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-
-    // Saves profiles/folders pause states and last sync dates
-    for (auto &profile : m_profiles)
-    {
-        if (!profile.toBeRemoved) settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("Paused"), profile.paused);
-
-        for (auto &folder : profile.folders)
-        {
-            if (!folder.toBeRemoved)
-            {
-                settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_LastSyncDate"), profile.lastSyncDate);
-                settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
-            }
-        }
-
-        settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profile.lastSyncDate);
-    }
-
-    settings.setValue("Paused", m_paused);
-    settings.setValue("SyncingMode", syncingMode);
-    settings.setValue("DeletionMode", deletionMode);
-    settings.setValue("Notifications", m_notifications);
-    settings.setValue("RememberFiles", m_rememberFiles);
-    settings.setValue("DetectMovedFiles", m_detectMovedFiles);
-    settings.setValue("SyncTimeMultiplier", m_syncTimeMultiplier);
-    settings.setValue("caseSensitiveSystem", m_caseSensitiveSystem);
-    settings.setValue("VersionFolder", m_versionFolder);
-    settings.setValue("VersionPattern", m_versionPattern);
-
     if (m_rememberFiles) saveData();
 }
 
@@ -176,7 +146,7 @@ void SyncManager::addToQueue(int profileNumber)
         // Adds the passed profile number to the sync queue
         if (profileNumber >= 0 && profileNumber < m_profiles.size())
         {
-            if ((!m_profiles[profileNumber].paused || syncingMode != Automatic) && !m_profiles[profileNumber].toBeRemoved)
+            if ((!m_profiles[profileNumber].paused || m_syncingMode != Automatic) && !m_profiles[profileNumber].toBeRemoved)
 
             m_queue.enqueue(profileNumber);
         }
@@ -185,7 +155,7 @@ void SyncManager::addToQueue(int profileNumber)
         {
             for (int i = 0; i < m_profiles.size(); i++)
             {
-                if ((!m_profiles[i].paused || syncingMode != Automatic) && !m_profiles[i].toBeRemoved && !m_queue.contains(i))
+                if ((!m_profiles[i].paused || m_syncingMode != Automatic) && !m_profiles[i].toBeRemoved && !m_queue.contains(i))
                 {
                     m_queue.enqueue(i);
                 }
@@ -626,7 +596,7 @@ SyncManager::updateTimer
 */
 void SyncManager::updateTimer()
 {
-    if (syncingMode == SyncManager::Automatic)
+    if (m_syncingMode == SyncManager::Automatic)
     {
         if ((!m_busy && m_syncTimer.isActive()) || (!m_syncTimer.isActive() || m_syncEvery < m_syncTimer.remainingTime()))
         {
@@ -987,7 +957,7 @@ SyncManager::checkForChanges
 */
 void SyncManager::checkForChanges(SyncProfile &profile)
 {
-    if ((syncingMode == Automatic && profile.paused) || profile.folders.size() < 2)
+    if ((m_syncingMode == Automatic && profile.paused) || profile.folders.size() < 2)
         return;
 
     // Checks for changed case of folders
@@ -1598,7 +1568,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
             bool success;
 
-            if (deletionMode == MoveToTrash)
+            if (m_deletionMode == MoveToTrash)
             {
                 // Used to make sure that moveToTrash function really moved a folder
                 // to the trash as it can return true even though it failed to do so
@@ -1606,7 +1576,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
                 success = QFile::moveToTrash(folderPath) && !pathInTrash.isEmpty();
             }
-            else if (deletionMode == Versioning)
+            else if (m_deletionMode == Versioning)
             {
                 QString newLocation(timeStampFolder);
                 newLocation.append(*it);
@@ -1646,7 +1616,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
             bool success;
 
-            if (deletionMode == MoveToTrash)
+            if (m_deletionMode == MoveToTrash)
             {
                 // Used to make sure that moveToTrash function really moved a folder
                 // to the trash as it can return true even though it failed to do so
@@ -1654,7 +1624,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
                 success = QFile::moveToTrash(filePath, &pathInTrash) && !pathInTrash.isEmpty();
             }
-            else if (deletionMode == Versioning)
+            else if (m_deletionMode == Versioning)
             {
                 QString newLocation(timeStampFolder);
                 newLocation.append(*it);
@@ -1698,11 +1668,11 @@ void SyncManager::syncFiles(SyncProfile &profile)
             // Removes a file with the same filename first if exists
             if (fileInfo.exists() && fileInfo.isFile())
             {
-                if (deletionMode == MoveToTrash)
+                if (m_deletionMode == MoveToTrash)
                 {
                     QFile::moveToTrash(folderPath);
                 }
-                else if (deletionMode == Versioning)
+                else if (m_deletionMode == Versioning)
                 {
                     QString newLocation(timeStampFolder);
                     newLocation.append(*it);
@@ -1790,11 +1760,11 @@ void SyncManager::syncFiles(SyncProfile &profile)
             // Removes a file with the same filename first if it exists
             if (destination.exists())
             {
-                if (deletionMode == MoveToTrash)
+                if (m_deletionMode == MoveToTrash)
                 {
                     QFile::moveToTrash(filePath);
                 }
-                else if (deletionMode == Versioning)
+                else if (m_deletionMode == Versioning)
                 {
                     QString newLocation(timeStampFolder);
                     newLocation.append(it.value().first.first);
