@@ -816,6 +816,17 @@ MainWindow::switchDeletionMode
 */
 void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
 {
+    if (mode == SyncManager::DeletePermanently && mode != manager.deletionMode())
+    {
+        auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
+
+        if (QMessageBox::warning(nullptr, QString("Switch deletion mode to delete files permanently"),
+                                          QString("Are you sure? Beware: this could lead to data loss!"), buttons, QMessageBox::Yes) == QMessageBox::No)
+        {
+            mode = manager.deletionMode();
+        }
+    }
+
     manager.setDeletionMode(mode);
     moveToTrashAction->setChecked(false);
     versioningAction->setChecked(false);
