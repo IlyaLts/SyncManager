@@ -147,8 +147,9 @@ private:
     UnhidableMenu *syncingTimeMenu;
     UnhidableMenu *deletionModeMenu;
 
-    bool showInTray;
     QTimer updateTimer;
+    bool showInTray;
+    bool appInitiated = false;
 };
 
 #endif // MAINWINDOW_H

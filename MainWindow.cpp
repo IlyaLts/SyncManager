@@ -273,6 +273,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
     switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", manager.MoveToTrash).toInt()));
     updateStatus();
+    appInitiated = true;
 }
 
 /*
@@ -816,7 +817,7 @@ MainWindow::switchDeletionMode
 */
 void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
 {
-    if (mode == SyncManager::DeletePermanently && mode != manager.deletionMode())
+    if (appInitiated && mode == SyncManager::DeletePermanently && mode != manager.deletionMode())
     {
         auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
 
@@ -839,8 +840,7 @@ void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
     else
         deletePermanentlyAction->setChecked(true);
 
-    saveSettings();
-}
+    saveSettings();}
 
 /*
 ===================
@@ -1280,6 +1280,9 @@ MainWindow::saveSettings
 */
 void MainWindow::saveSettings() const
 {
+    if (!appInitiated)
+        return;
+
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     QVariantList hSizes;
 
