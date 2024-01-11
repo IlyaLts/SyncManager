@@ -969,15 +969,17 @@ void SyncManager::checkForChanges(SyncProfile &profile)
         {
             for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
             {
-                // Only newly added folder can indicate that the case of filename was changed
+                // Only a newly added folder can indicate that the case of folder name was changed
                 if (fileIt->type != File::folder || !fileIt->newlyAdded || !fileIt->exists)
                     continue;
 
-                bool abort = false;
-                QByteArray fileName(fileIt->path);
-                fileName.remove(0, fileName.lastIndexOf("/") + 1);
+                // Skips if the folder is already moved especially when we have three sync folders or more
+                if (fileIt->toBeMoved)
+                    continue;
 
-                // Pre checks
+                // Aborts if the folder doesn't exist in any other sync folder
+                bool abort = false;
+
                 for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                 {
                     if (folderIt == otherFolderIt)
@@ -986,27 +988,8 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                     QString otherPath(otherFolderIt->path);
                     otherPath.append(fileIt->path);
                     QFileInfo otherFileInfo(otherPath);
-                    QByteArray otherCurrentlFilename;
 
-                    // Aborts if another sync folder doesn't contain a folder with the same case-insensitive path or the folder exists in another database
-                    if (!otherFileInfo.exists() || otherFolderIt->files.contains(fileIt.key()))
-                    {
-                        abort = true;
-                        break;
-                    }
-
-                    // Gets the current filename and path of a folder in another sync folder on a disk
-                    // The only way to find out this is to use QDirIterator
-                    QDirIterator otherDirIterator(otherFileInfo.absolutePath(), {otherFileInfo.fileName()}, QDir::Dirs);
-
-                    if (otherDirIterator.hasNext())
-                    {
-                        otherDirIterator.next();
-                        otherCurrentlFilename = otherDirIterator.fileName().toUtf8();
-                    }
-
-                    // Aborts if another sync folder contains a folder with the same case-sensitive filename
-                    if (otherCurrentlFilename.compare(fileName, Qt::CaseSensitive) == 0)
+                    if (!otherFileInfo.exists())
                     {
                         abort = true;
                         break;
@@ -1015,7 +998,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
                 if (abort) continue;
 
-                // Finally, adds to the folder renaming list
+                // Adds folders from other sync folders for renaming
                 for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                 {
                     if (folderIt == otherFolderIt)
@@ -1024,79 +1007,73 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                     QByteArray otherPath(otherFolderIt->path);
                     otherPath.append(fileIt->path);
                     QFileInfo otherFileInfo(otherPath);
-                    QByteArray otherCurrentlFilename;
+                    QByteArray otherCurrentFilename;
                     QByteArray otherCurrentPath;
 
-                    // Gets the current filename and path of a folder in another sync folder on a disk
+                    // Gets the current filename and path of the folder in another sync folder on a disk
                     // The only way to find out this is to use QDirIterator
                     QDirIterator otherDirIterator(otherFileInfo.absolutePath(), {otherFileInfo.fileName()}, QDir::Dirs);
 
                     if (otherDirIterator.hasNext())
                     {
                         otherDirIterator.next();
-                        otherCurrentlFilename = otherDirIterator.fileName().toUtf8();
+                        otherCurrentFilename = otherDirIterator.fileName().toUtf8();
                         otherCurrentPath = otherDirIterator.filePath().toUtf8();
                         otherCurrentPath.remove(0, otherFolderIt->path.size());
                     }
 
-                    QByteArray newPath(otherCurrentPath);
-                    newPath.chop(fileName.size());
-                    newPath.append(fileName);
+                    QByteArray fileName(fileIt->path);
+                    fileName.remove(0, fileName.lastIndexOf("/") + 1);
 
-                    // Both folders should have the same filename, but differ in case
-                    if (otherCurrentlFilename.compare(fileName, Qt::CaseInsensitive) == 0 && otherCurrentlFilename.compare(fileName, Qt::CaseSensitive) != 0)
+                    // Both folder names should differ in case
+                    if (otherCurrentFilename.compare(fileName, Qt::CaseSensitive) == 0)
+                        continue;
+
+                    hash64_t otherFileHash = hash64(otherCurrentPath);
+
+                    // Skips if the folder in another sync folder is already in the renaming list
+                    if (otherFolderIt->foldersToRename.contains(otherFileHash))
+                        continue;
+
+                    // Finally, adds the folder from another sync folder to the renaming list
+                    QPair<QByteArray, QByteArray> pair(fileIt->path, otherDirIterator.filePath().toUtf8());
+                    otherFolderIt->foldersToRename.insert(otherFileHash, pair);
+                    fileIt->moved = true;
+                    otherFolderIt->files[otherFileHash].toBeMoved = true;;
+
+                    // Marks all subdirectories of the renamed folder in our sync folder as moved
+                    QString folderPath(folderIt->path);
+                    folderPath.append(fileIt->path);
+                    QDirIterator dirIterator(folderPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+
+                    if (dirIterator.hasNext())
                     {
-                        hash64_t otherFileHash = hash64(otherCurrentPath);
+                        dirIterator.next();
+                        QByteArray path(dirIterator.filePath().toUtf8());
+                        path.remove(0, folderIt->path.size());
+                        hash64_t hash = hash64(path);
 
-                        // Skips adding if a folder was already moved. This fixes the case if we have three sync folders or more
-                        if (!fileIt->moved || !otherFolderIt->files.value(otherFileHash).moved)
-                        {
-                            QPair<QByteArray, QByteArray> pair(fileIt->path, otherDirIterator.filePath().toUtf8());
-                            otherFolderIt->foldersToRename.insert(otherFileHash, pair);
-                            fileIt->moved = true;
-                        }
+                        if (folderIt->files.contains(hash))
+                            folderIt->files[hash].moved = true;
+                    }
 
-                        // Marks all subdirectories of a renamed folder in our sync folder as moved
-                        QString folderPath(folderIt->path);
-                        folderPath.append(fileIt->path);
-                        QDirIterator dirIterator(folderPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+                    // Marks all subdirectories of the folder that doesn't exist anymore in our sync folder as moved using the path from another sync folder
+                    // ..
 
-                        if (dirIterator.hasNext())
-                        {
-                            dirIterator.next();
-                            QByteArray path(dirIterator.filePath().toUtf8());
-                            path.remove(0, folderIt->path.size());
-                            hash64_t hash = hash64(path);
+                    // Marks all subdirectories of the current folder in another sync folder as to be moved
+                    QByteArray oldPath(otherFolderIt->path);
+                    oldPath.append(otherCurrentPath);
+                    QDirIterator oldDirIterator(oldPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
-                            if (folderIt->files.contains(hash))
-                                folderIt->files[hash].moved = true;
-                        }
+                    if (oldDirIterator.hasNext())
+                    {
+                        oldDirIterator.next();
+                        QByteArray path(oldDirIterator.filePath().toUtf8());
+                        path.remove(0, otherFolderIt->path.size());
+                        hash64_t hash = hash64(path);
 
-                        // Marks all subdirectories of a folder that doesn't exist anymore in our sync folder as moved using the path from another sync folder
-                        if (otherFolderIt->files.contains(otherFileHash))
-                        {
-                            File &file = otherFolderIt->files[otherFileHash];
-
-                            file.moved = true;
-                            file.movedSource = true;
-                        }
-
-                        // Marks all subdirectories of a folder in another sync folder as moved
-                        QString oldPath(otherFolderIt->path);
-                        oldPath.append(otherCurrentPath);
-
-                        QDirIterator oldDirIterator(oldPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
-
-                        if (oldDirIterator.hasNext())
-                        {
-                            oldDirIterator.next();
-                            QByteArray path(oldDirIterator.filePath().toUtf8());
-                            path.remove(0, folderIt->path.size());
-                            hash64_t hash = hash64(path);
-
-                            if (folderIt->files.contains(hash))
-                                folderIt->files[hash].movedSource = true;
-                        }
+                        if (folderIt->files.contains(hash))
+                            folderIt->files[hash].toBeMoved = true;
                     }
                 }
             }
@@ -1226,7 +1203,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                         otherFolderIt->filesToMove.insert(matchedHash, QPair<QByteArray, QByteArray>(fileIt->path, from));
 
                         matchedFile->moved = true;
-                        matchedFile->movedSource = true;
+                        matchedFile->toBeMoved = true;
                     }
                 }
             }
@@ -1255,7 +1232,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
                 const File &file = folderIt->files.value(otherFileIt.key());
                 const File &otherFile = otherFileIt.value();
 
-                if (file.moved || otherFile.moved || otherFile.movedSource) continue;
+                if (file.moved || otherFile.moved || otherFile.toBeMoved) continue;
 
                 bool alreadyAdded = folderIt->filesToAdd.contains(otherFileIt.key());
                 bool hasNewer = alreadyAdded && folderIt->filesToAdd.value(otherFileIt.key()).second < otherFile.date;
@@ -1328,7 +1305,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
             if (folderIt->paused) break;
 
             // This file was moved and should be removed from the file datebase
-            if (fileIt.value().movedSource)
+            if (fileIt.value().toBeMoved)
             {
                 fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
                 continue;

@@ -63,7 +63,7 @@ struct File
     bool onRestore = false;
     bool newlyAdded = false;
     bool moved = false;
-    bool movedSource = false;
+    bool toBeMoved = false;
 };
 
 struct SyncFolder
