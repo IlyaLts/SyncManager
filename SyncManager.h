@@ -183,7 +183,12 @@ Q_SIGNALS:
 
 private:
 
+    void createParentFolders(SyncFolder &folder, QByteArray path);
     int getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList);
+    void checkForRenamedFolders(SyncProfile &profile);
+    void checkForMovedFiles(SyncProfile &profile);
+    void checkForAddedFiles(SyncProfile &profile);
+    void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);
     void syncFiles(SyncProfile &profile);
 
@@ -218,6 +223,7 @@ private:
 
     QMap<QString, QTimer *> m_notificationList;
     QSet<hash64_t> m_usedDevices;
+    QSet<QByteArray> foldersToUpdate;
 
     QString m_versionFolder;
     QString m_versionPattern;
