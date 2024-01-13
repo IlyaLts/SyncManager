@@ -988,7 +988,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
 ===================
 SyncManager::checkForRenamedFolders
 
-Detects only changes in the name case of folders
+Detects only changes in the case of folder names
 ===================
 */
 void SyncManager::checkForRenamedFolders(SyncProfile &profile)
@@ -1130,11 +1130,12 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
     {
         QHash<hash64_t, qint64> missingFiles;
 
-        // Finds files that don't exist in a sync folder anymore
+        // Finds files that don't exist in our sync folder anymore
         for (QHash<hash64_t, qint64>::iterator fileIt = folderIt->sizeList.begin(); fileIt != folderIt->sizeList.end(); ++fileIt)
             if (!folderIt->files.value(fileIt.key()).exists)
                 missingFiles.insert(fileIt.key(), fileIt.value());
 
+        // Finds files that are new in our sync folder
         for (QHash<hash64_t, File>::iterator newFileIt = folderIt->files.begin(); newFileIt != folderIt->files.end(); ++newFileIt)
         {
             bool abort = false;
@@ -1143,7 +1144,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             if (newFileIt->type != File::file || !newFileIt->newlyAdded || !newFileIt->exists)
                 continue;
 
-            // Other sync folders should not contain the newly added file
+            // Other sync folders should not contain a newly added file
             for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
                 if (folderIt != otherFolderIt && otherFolderIt->files.contains(newFileIt.key()))
                     abort = true;
@@ -1151,11 +1152,8 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             if (abort) continue;
 
             int matches = 0;
-            File *matchedFile;
-            hash64_t matchedHash;
-
-            hash64_t hash = hash64(newFileIt->path);
-            const File &file = folderIt->files.value(hash);
+            File *movedFile;
+            hash64_t movedFileHash;
 
             // Searches for potential matches
             for (QHash<hash64_t, qint64>::iterator missingFileIt = missingFiles.begin(); missingFileIt != missingFiles.end(); ++missingFileIt)
@@ -1164,44 +1162,50 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 if (missingFileIt.value() != newFileIt.value().size)
                     continue;
 
-                // A potential match should have the same modified date as the moved/renamed file
-                if (file.date == newFileIt->date)
+                // Compares the modified dates of possibly moved/renamed files with the date of a newly added file
+                if (folderIt->files.value(missingFileIt.key()).date == newFileIt->date)
                 {
                     matches++;
-                    matchedFile = &folderIt->files[missingFileIt.key()];
-                    matchedHash = missingFileIt.key();
+                    movedFile = &folderIt->files[missingFileIt.key()];
+                    movedFileHash = missingFileIt.key();
 
                     if (matches > 1) break;
                 }
             }
 
-            // Aborts if there are multiple matches, as it cannot definitively detect which specific file was moved/renamed
+            // Aborts if there are multiple matches, as it cannot definitively determine which specific file was moved/renamed
             if (matches != 1)
                 continue;
 
-            // Pre checks
+            // Additional checks
             for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
             {
-                if (folderIt == otherFolderIt || !otherFolderIt->files.contains(matchedHash))
+                if (folderIt == otherFolderIt || !otherFolderIt->files.contains(movedFileHash))
                     continue;
 
-                QString path(otherFolderIt->path);
-                path.append(newFileIt->path);
+                QString destPath(otherFolderIt->path);
+                destPath.append(newFileIt->path);
 
-                const File &otherFile = otherFolderIt->files.value(matchedHash);
+                const File &fileToBeMoved = otherFolderIt->files.value(movedFileHash);
+
+#ifdef Q_OS_LINUX
+                Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive;
+#else
+                Qt::CaseSensitivity caseSensitivity = Qt::CaseInsensitive;
+#endif
 
                 // Aborts if other sync folders have at least a file at the destination location
-                if ((QFileInfo::exists(path) && newFileIt->path.compare(otherFile.path, Qt::CaseInsensitive) != 0) || otherFolderIt->files.contains(newFileIt.key()))
+                if ((QFileInfo::exists(destPath) && newFileIt->path.compare(fileToBeMoved.path, caseSensitivity) != 0) || otherFolderIt->files.contains(newFileIt.key()))
                 {
                     abort = true;
                     break;
                 }
 
-                // Aborts the move operation if files have different sizes and dates
+                // Aborts the move of files that need to be moved if they have different sizes or dates between different sync folders
 #ifdef Q_OS_LINUX
-                if (otherFolderIt->sizeList.value(matchedHash) != folderIt->sizeList.value(matchedHash))
+                if (otherFolderIt->sizeList.value(movedFileHash) != folderIt->sizeList.value(movedFileHash))
 #else
-                if (otherFolderIt->sizeList.value(matchedHash) != folderIt->sizeList.value(matchedHash) || otherFile.date != newFileIt->date)
+                if (otherFolderIt->sizeList.value(movedFileHash) != folderIt->sizeList.value(movedFileHash) || fileToBeMoved.date != movedFile->date)
 #endif
                 {
                     abort = true;
@@ -1214,26 +1218,28 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             // Adds a moved/renamed file for moving
             for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
             {
-                if (folderIt == otherFolderIt || !otherFolderIt->files.contains(matchedHash))
+                if (folderIt == otherFolderIt || !otherFolderIt->files.contains(movedFileHash))
                     continue;
 
-                const File &otherFile = otherFolderIt->files.value(matchedHash);
+                const File &otherFile = otherFolderIt->files.value(movedFileHash);
 
                 if (!otherFile.exists)
                     continue;
 
-                // Marks a file as moved, that prevents it from being added to other sync folders
-                if (!otherFolderIt->files.contains(hash))
-                    otherFolderIt->files[hash].moved = true;
+                hash64_t newFileHash = hash64(newFileIt->path);
+
+                // Marks a file as moved, it prevents it from being added to other sync folders
+                if (!otherFolderIt->files.contains(newFileHash))
+                    otherFolderIt->files[newFileHash].moved = true;
 
                 QByteArray from(otherFolderIt->path);
                 from.append(otherFile.path);
 
-                otherFolderIt->files[matchedHash].moved = true;
-                otherFolderIt->filesToMove.insert(matchedHash, QPair<QByteArray, QByteArray>(newFileIt->path, from));
+                otherFolderIt->files[movedFileHash].moved = true;
+                otherFolderIt->filesToMove.insert(movedFileHash, QPair<QByteArray, QByteArray>(newFileIt->path, from));
 
-                matchedFile->moved = true;
-                matchedFile->toBeMoved = true;
+                movedFile->moved = true;
+                movedFile->toBeMoved = true;
             }
         }
     }
