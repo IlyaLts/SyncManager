@@ -993,6 +993,9 @@ Detects only changes in the name case of folders
 */
 void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 {
+    if (m_caseSensitiveSystem)
+        return;
+
     SET_TIME(startTime);
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
@@ -1818,14 +1821,18 @@ void SyncManager::syncFiles(SyncProfile &profile)
         }
 
         // Updates the modified date of the parent folders as adding/removing files and folders change their modified date
-        for (auto it = foldersToUpdate.begin(); it != foldersToUpdate.end(); it++)
+        for (auto folderIt = foldersToUpdate.begin(); folderIt != foldersToUpdate.end();)
         {
-            hash64_t folderHash = hash64(QByteArray(*it).remove(0, folder.path.size()));
+            hash64_t folderHash = hash64(QByteArray(*folderIt).remove(0, folder.path.size()));
 
             if (folder.files.contains(folderHash))
             {
-                folder.files[folderHash].date = QFileInfo(*it).lastModified();
-                it = foldersToUpdate.erase(static_cast<QSet<QByteArray>::const_iterator>(it));
+                folder.files[folderHash].date = QFileInfo(*folderIt).lastModified();
+                folderIt = foldersToUpdate.erase(static_cast<QSet<QByteArray>::const_iterator>(folderIt));
+            }
+            else
+            {
+                folderIt++;
             }
         }
     }
