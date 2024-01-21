@@ -78,7 +78,6 @@ struct SyncFolder
     QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToAdd;
     QHash<hash64_t, QByteArray> foldersToRemove;
     QHash<hash64_t, QByteArray> filesToRemove;
-    QHash<hash64_t, qint64> sizeList;
 
     QDateTime lastSyncDate;
     bool exists = true;
