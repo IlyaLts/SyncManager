@@ -309,6 +309,26 @@ void SyncManager::sync()
             file.path.clear();
     }
 
+    // locked flag reset after finishing files moving & renaming folder
+    bool shouldReset = true;
+
+    for (auto &folder : profile.folders)
+    {
+        if (!folder.filesToMove.empty() && !folder.foldersToRename.empty())
+        {
+            shouldReset = false;
+            break;
+        }
+    }
+
+    if (shouldReset)
+    {
+        for (auto &folder : profile.folders)
+            for (auto &file : folder.files)
+                file.locked = false;
+    }
+
+    // Last sync date update
     profile.lastSyncDate = QDateTime::currentDateTime();
 
     for (auto &folder : profile.folders)
@@ -825,7 +845,6 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         file.updated = (file.onRestore) ? file.updated : false;     // Keeps value if it was loaded from saved file data
         file.onRestore = false;
         file.newlyAdded = false;
-        file.moved = false;
     }
 
 #ifndef USE_STD_FILESYSTEM
@@ -975,7 +994,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 continue;
 
             // Skips if the folder is already scheduled to be moved, especially when there are three or more sync folders
-            if (renamedFolderIt->moved)
+            if (renamedFolderIt->locked)
                 continue;
 
             bool abort = false;
@@ -1040,10 +1059,10 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 QPair<QByteArray, QByteArray> pair(renamedFolderIt->path, otherFolderIterator.filePath().toUtf8());
                 otherFolderIt->foldersToRename.insert(otherFolderHash, pair);
 
-                renamedFolderIt->moved = true;
-                otherFolderIt->files[otherFolderHash].moved = true;
+                renamedFolderIt->locked = true;
+                otherFolderIt->files[otherFolderHash].locked = true;
 
-                // Marks all subdirectories of the renamed folder in our sync folder as moved
+                // Marks all subdirectories of the renamed folder in our sync folder as locked
                 QString folderPath(folderIt->path);
                 folderPath.append(renamedFolderIt->path);
                 QDirIterator dirIterator(folderPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
@@ -1057,7 +1076,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                     hash64_t hash = hash64(path);
 
                     if (folderIt->files.contains(hash))
-                        folderIt->files[hash].moved = true;
+                        folderIt->files[hash].locked = true;
                 }
 
                 // Marks all subdirectories of the folder that doesn't exist anymore in our sync folder as to be removed using the path from another sync folder
@@ -1077,7 +1096,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                         folderIt->files[hash].toBeRemoved = true;
                 }
 
-                // Marks all subdirectories of the current folder in another sync folder as to be moved
+                // Marks all subdirectories of the current folder in another sync folder as to be locked
                 QByteArray otherPathToRename(otherFolderIt->path);
                 otherPathToRename.append(otherCurrentFolderPath);
                 QDirIterator otherDirIterator(otherPathToRename, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
@@ -1091,7 +1110,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                     hash64_t hash = hash64(path);
 
                     if (folderIt->files.contains(hash))
-                        folderIt->files[hash].moved = true;
+                        folderIt->files[hash].locked = true;
                 }
             }
         }
@@ -1245,13 +1264,13 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
                 const File &fileToBeMoved = otherFolderIt->files.value(movedFileHash);
 
-                newFileIt.value()->moved = true;
+                newFileIt.value()->locked = true;
                 movedFile->toBeRemoved = true;
 
                 QByteArray pathToMove(otherFolderIt->path);
                 pathToMove.append(fileToBeMoved.path);
 
-                otherFolderIt->files[movedFileHash].moved = true;
+                otherFolderIt->files[movedFileHash].locked = true;
                 otherFolderIt->filesToMove.insert(movedFileHash, QPair<QByteArray, QByteArray>(newFileIt.value()->path, pathToMove));
 
             }
@@ -1288,7 +1307,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                 const File &file = folderIt->files.value(otherFileIt.key());
                 const File &otherFile = otherFileIt.value();
 
-                if (file.moved || file.toBeRemoved || otherFile.moved || otherFile.toBeRemoved)
+                if (file.locked || file.toBeRemoved || otherFile.locked || otherFile.toBeRemoved)
                     continue;
 
                 bool alreadyAdded = folderIt->filesToAdd.contains(otherFileIt.key());
@@ -1376,7 +1395,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                 continue;
             }
 
-            if (fileIt.value().moved)
+            if (fileIt.value().locked)
             {
                 ++fileIt;
                 continue;
@@ -1527,8 +1546,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
                 folder.files.insert(fileHash, File(folderIt.value().first, File::folder, QFileInfo(filePath).lastModified()));
                 folderIt = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(folderIt));
 
-                // Unsets moved flag from all subdirectories
-                QDirIterator dirIterator(filePath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+                // Unsets locked flag from all subdirectories
+                /*QDirIterator dirIterator(filePath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
                 if (dirIterator.hasNext())
                 {
@@ -1538,8 +1557,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
                     hash64_t hash = hash64(path);
 
                     if (folder.files.contains(hash))
-                        folder.files[hash].moved = false;
-                }
+                        folder.files[hash].locked = false;
+                }*/
             }
             else
             {

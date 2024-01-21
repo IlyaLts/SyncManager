@@ -62,7 +62,7 @@ struct File
     bool exists = false;
     bool onRestore = false;
     bool newlyAdded = false;
-    bool moved = false;
+    bool locked = false;
     bool toBeRemoved = false;
 };
 
