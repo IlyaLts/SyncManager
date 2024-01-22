@@ -128,7 +128,8 @@ SyncManager::~SyncManager
 */
 SyncManager::~SyncManager()
 {
-    if (m_rememberFiles) saveData();
+    if (m_rememberFiles)
+        saveData();
 }
 
 /*
@@ -138,27 +139,25 @@ SyncManager::addToQueue
 */
 void SyncManager::addToQueue(int profileNumber)
 {
-    if (m_profiles.isEmpty())
+    if (m_profiles.isEmpty() || m_queue.contains(profileNumber))
         return;
 
-    if (!m_queue.contains(profileNumber))
+    // Adds the passed profile number to the sync queue
+    if (profileNumber >= 0 && profileNumber < m_profiles.size())
     {
-        // Adds the passed profile number to the sync queue
-        if (profileNumber >= 0 && profileNumber < m_profiles.size())
+        if ((!m_profiles[profileNumber].paused || m_syncingMode != Automatic) && !m_profiles[profileNumber].toBeRemoved)
         {
-            if ((!m_profiles[profileNumber].paused || m_syncingMode != Automatic) && !m_profiles[profileNumber].toBeRemoved)
-
             m_queue.enqueue(profileNumber);
         }
-        // If a profile number is not passed, adds all remaining profiles to the sync queue
-        else
+    }
+    // If a profile number is not passed, adds all remaining profiles to the sync queue
+    else
+    {
+        for (int i = 0; i < m_profiles.size(); i++)
         {
-            for (int i = 0; i < m_profiles.size(); i++)
+            if ((!m_profiles[i].paused || m_syncingMode != Automatic) && !m_profiles[i].toBeRemoved && !m_queue.contains(i))
             {
-                if ((!m_profiles[i].paused || m_syncingMode != Automatic) && !m_profiles[i].toBeRemoved && !m_queue.contains(i))
-                {
-                    m_queue.enqueue(i);
-                }
+                m_queue.enqueue(i);
             }
         }
     }
@@ -392,28 +391,28 @@ void SyncManager::updateStatus()
         profile.syncing = false;
         int existingFolders = 0;
 
+        if (profile.toBeRemoved)
+            continue;
+
         m_existingProfiles++;
 
         for (auto &folder : profile.folders)
         {
             folder.syncing = false;
 
-            if ((!m_queue.isEmpty() && m_queue.head() != i ) || profile.toBeRemoved)
+            if ((!m_queue.isEmpty() && m_queue.head() != i ) || folder.toBeRemoved)
                 continue;
 
-            if (!folder.toBeRemoved)
+            if (folder.exists)
             {
-                if (folder.exists)
-                {
-                    existingFolders++;
+                existingFolders++;
 
-                    if (existingFolders >= 2)
-                        m_issue = false;
-                }
-                else
-                {
-                    m_warning = true;
-                }
+                if (existingFolders >= 2)
+                    m_issue = false;
+            }
+            else
+            {
+                m_warning = true;
             }
 
             if (m_busy && folder.exists && !folder.paused && (!folder.foldersToRename.isEmpty() ||
@@ -507,7 +506,9 @@ void SyncManager::updateNextSyncingTime()
         }
     }
 
-    if (time < SYNC_MIN_DELAY) time = SYNC_MIN_DELAY;
+    if (time < SYNC_MIN_DELAY)
+        time = SYNC_MIN_DELAY;
+
     m_syncEvery = time;
 }
 
@@ -860,24 +861,30 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         QFileInfo fileInfo(dir.fileInfo());
         QByteArray filePath(fileInfo.filePath().toUtf8());
         filePath.remove(0, folder.path.size());
-        File::Type type = fileInfo.isDir() ? File::folder : File::file;
-        hash64_t fileHash = hash64(filePath);
+
+        bool shouldExclude = false;
 
         // Excludes unwanted files and folder from scanning
         for (auto &exclude : excludeList)
         {
             if (m_caseSensitiveSystem ? qstrncmp(exclude, filePath, exclude.length()) == 0 : qstrnicmp(exclude, filePath, exclude.length()) == 0)
             {
-                continue;
+                shouldExclude = true;
+                break;
             }
         }
+
+        if (shouldExclude)
+            continue;
+
+        File::Type type = fileInfo.isDir() ? File::folder : File::file;
+        hash64_t fileHash = hash64(filePath);
 
         // If a file is already in our database
         if (folder.files.contains(fileHash))
         {
             File &file = folder.files[fileHash];
             QDateTime fileDate(fileInfo.lastModified());
-            bool updated = file.updated;
 
             // Restores filepath
             if (file.path.isEmpty())
@@ -903,10 +910,10 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
             // Sets updated flag if the last modified date of a file differs with a new one
             if (type == File::folder)
             {
-                updated = (file.date < fileDate);
+                file.updated = (file.date < fileDate);
 
                 // Marks all parent folders as updated if the current folder was updated
-                if (updated)
+                if (file.updated)
                 {
                     QByteArray folderPath(fileInfo.filePath().toUtf8());
 
@@ -923,14 +930,13 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
             }
             else if (type == File::file && file.date != fileDate)
             {
-                updated = true;
+                file.updated = true;
             }
 
             file.date = fileDate;
             file.size = fileInfo.size();
             file.type = type;
             file.exists = true;
-            file.updated = updated;
         }
         else
         {
