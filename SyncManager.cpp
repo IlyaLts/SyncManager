@@ -308,7 +308,7 @@ void SyncManager::sync()
             file.path.clear();
     }
 
-    // locked flag reset after finishing files moving & renaming folder
+    // Resets locked flag after finishing files moving & folder renaming
     bool shouldReset = true;
 
     for (auto &folder : profile.folders)
@@ -820,7 +820,6 @@ void SyncManager::createParentFolders(SyncFolder &folder, QByteArray path)
 
             folder.files.insert(hash, File(shortPath, File::folder, QFileInfo(foldersToCreate.top()).lastModified()));
             folder.foldersToAdd.remove(hash);
-            foldersToUpdate.insert(foldersToCreate.top());
         }
 
         foldersToCreate.pop();
@@ -848,7 +847,6 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         file.newlyAdded = false;
     }
 
-#ifndef USE_STD_FILESYSTEM
     QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
     while (dir.hasNext())
@@ -907,35 +905,10 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
                 return -1;
             }
 
-            // Sets updated flag if the last modified date of a file differs with a new one
-            if (type == File::folder)
-            {
-                file.updated = (file.date < fileDate);
-
-                // Marks all parent folders as updated if the current folder was updated
-                if (file.updated)
-                {
-                    QByteArray folderPath(fileInfo.filePath().toUtf8());
-
-                    while (folderPath.remove(folderPath.lastIndexOf("/"), folderPath.length()).length() > folder.path.length())
-                    {
-                        hash64_t hash = hash64(QByteArray(folderPath).remove(0, folder.path.size()));
-
-                        if (folder.files.value(hash).updated)
-                            break;
-
-                        folder.files[hash].updated = true;
-                    }
-                }
-            }
-            else if (type == File::file && file.date != fileDate)
-            {
-                file.updated = true;
-            }
-
             file.date = fileDate;
             file.size = fileInfo.size();
             file.type = type;
+            file.updated = file.date != fileDate;
             file.exists = true;
         }
         else
@@ -951,26 +924,6 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         if (m_shouldQuit || folder.toBeRemoved)
             return -1;
     }
-#elif defined(USE_STD_FILESYSTEM)
-#error FIX: An update required
-    for (auto const &dir : std::filesystem::recursive_directory_iterator{std::filesystem::path{folder.path.toStdString()}})
-    {
-        if (folder.paused)
-            return -1;
-
-        QString filePath(dir.path().string().c_str());
-        filePath.remove(0, folder.path.size());
-        filePath.replace("\\", "/");
-
-        File::Type type = dir.is_directory() ? File::dir : File::file;
-        hash_t fileHash = hash64(filePath);
-
-        const_cast<File *>(folder.files.insert(fileHash, File(filePath, type, QDateTime(), false)).operator->())->path.squeeze();
-        totalNumOfFiles++;
-        if (shouldQuit || folder.toBeRemoved)
-            return -1;
-    }
-#endif
 
     m_usedDevices.remove(hash64(QStorageInfo(folder.path).device()));
 
@@ -1508,13 +1461,13 @@ void SyncManager::syncFiles(SyncProfile &profile)
         QString rootPath = QStorageInfo(folder.path).rootPath();
         bool shouldNotify = m_notificationList.contains(rootPath) ? !m_notificationList.value(rootPath)->isActive() : true;
 
-        QString timeStampFolder(folder.path);
-        timeStampFolder.remove(timeStampFolder.lastIndexOf("/", 1), timeStampFolder.size());
-        timeStampFolder.append("_");
-        timeStampFolder.append(m_versionFolder);
-        timeStampFolder.append("/");
-        timeStampFolder.append(QDateTime::currentDateTime().toString(m_versionPattern));
-        timeStampFolder.append("/");
+        QString versioningFolder(folder.path);
+        versioningFolder.remove(versioningFolder.lastIndexOf("/", 1), versioningFolder.size());
+        versioningFolder.append("_");
+        versioningFolder.append(m_versionFolder);
+        versioningFolder.append("/");
+        versioningFolder.append(QDateTime::currentDateTime().toString(m_versionPattern));
+        versioningFolder.append("/");
 
         // Sorts the folders for removal from the top to the bottom.
         // This ensures that the trash folder has the exact same folder structure as in the original destination.
@@ -1542,29 +1495,9 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
             if (QDir().rename(folderIt.value().second, filePath))
             {
-                QString parentFrom = QFileInfo(filePath).path();
-                QString parentTo = QFileInfo(folderIt.value().second).path();
-
-                if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom.toUtf8());
-                if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo.toUtf8());
-
                 folder.files.remove(hash64(QByteArray(folderIt.value().second).remove(0, folder.path.size())));
                 folder.files.insert(fileHash, File(folderIt.value().first, File::folder, QFileInfo(filePath).lastModified()));
                 folderIt = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(folderIt));
-
-                // Unsets locked flag from all subdirectories
-                /*QDirIterator dirIterator(filePath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
-
-                if (dirIterator.hasNext())
-                {
-                    dirIterator.next();
-                    QByteArray path(dirIterator.filePath().toUtf8());
-                    path.remove(0, folder.path.size());
-                    hash64_t hash = hash64(path);
-
-                    if (folder.files.contains(hash))
-                        folder.files[hash].locked = false;
-                }*/
             }
             else
             {
@@ -1593,12 +1526,6 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
             if (QFile::rename(fileIt.value().second, filePath))
             {
-                QString parentFrom = QFileInfo(filePath).path();
-                QString parentTo = QFileInfo(fileIt.value().second).path();
-
-                if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom.toUtf8());
-                if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo.toUtf8());
-
                 hash64_t oldHash = hash64(QByteArray(fileIt.value().second).remove(0, folder.path.size()));
 
                 folder.files.remove(oldHash);
@@ -1621,7 +1548,6 @@ void SyncManager::syncFiles(SyncProfile &profile)
             QString folderPath(folder.path);
             folderPath.append(*folderIt);
             hash64_t fileHash = hash64(folderIt->toUtf8());
-            QString parentPath = QFileInfo(folderPath).path();
 
             bool success;
 
@@ -1635,7 +1561,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
             }
             else if (m_deletionMode == Versioning)
             {
-                QString newLocation(timeStampFolder);
+                QString newLocation(versioningFolder);
                 newLocation.append(*folderIt);
 
                 createParentFolders(folder, QDir::cleanPath(newLocation).toUtf8());
@@ -1651,8 +1577,6 @@ void SyncManager::syncFiles(SyncProfile &profile)
                 folder.files.remove(fileHash);
                 folder.foldersToRemove.remove(fileHash);
                 folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(folderIt));
-
-                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath.toUtf8());
             }
             else
             {
@@ -1669,7 +1593,6 @@ void SyncManager::syncFiles(SyncProfile &profile)
             QString filePath(folder.path);
             filePath.append(*fileIt);
             hash64_t fileHash = hash64(*fileIt);
-            QString parentPath = QFileInfo(filePath).path();
 
             bool success;
 
@@ -1683,7 +1606,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
             }
             else if (m_deletionMode == Versioning)
             {
-                QString newLocation(timeStampFolder);
+                QString newLocation(versioningFolder);
                 newLocation.append(*fileIt);
 
                 createParentFolders(folder, QDir::cleanPath(newLocation).toUtf8());
@@ -1699,8 +1622,6 @@ void SyncManager::syncFiles(SyncProfile &profile)
                 folder.files.remove(fileHash);
 
                 fileIt = folder.filesToRemove.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(fileIt));
-
-                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath.toUtf8());
             }
             else
             {
@@ -1730,7 +1651,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
                 }
                 else if (m_deletionMode == Versioning)
                 {
-                    QString newLocation(timeStampFolder);
+                    QString newLocation(versioningFolder);
                     newLocation.append(*folderIt);
 
                     createParentFolders(folder, QDir::cleanPath(newLocation).toUtf8());
@@ -1746,9 +1667,6 @@ void SyncManager::syncFiles(SyncProfile &profile)
             {
                 folder.files.insert(fileHash, File(*folderIt, File::folder, fileInfo.lastModified()));
                 folderIt = folder.foldersToAdd.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(folderIt));
-
-                QString parentPath = fileInfo.path();
-                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath.toUtf8());
             }
             else
             {
@@ -1822,7 +1740,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
                 }
                 else if (m_deletionMode == Versioning)
                 {
-                    QString newLocation(timeStampFolder);
+                    QString newLocation(versioningFolder);
                     newLocation.append(fileIt.value().first.first);
 
                     createParentFolders(folder, QDir::cleanPath(newLocation).toUtf8());
@@ -1843,9 +1761,6 @@ void SyncManager::syncFiles(SyncProfile &profile)
                 auto it = folder.files.insert(fileHash, File(fileIt.value().first.first, File::file, QFileInfo(filePath).lastModified()));
                 it->size = QFileInfo(filePath).size();
                 fileIt = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(fileIt));
-
-                QString parentPath = destination.path();
-                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath.toUtf8());
             }
             else
             {
@@ -1861,22 +1776,6 @@ void SyncManager::syncFiles(SyncProfile &profile)
                 }
 
                 ++fileIt;
-            }
-        }
-
-        // Updates the modified date of the parent folders as adding/removing files and folders change their modified date
-        for (auto folderIt = foldersToUpdate.begin(); folderIt != foldersToUpdate.end();)
-        {
-            hash64_t folderHash = hash64(QByteArray(*folderIt).remove(0, folder.path.size()));
-
-            if (folder.files.contains(folderHash))
-            {
-                folder.files[folderHash].date = QFileInfo(*folderIt).lastModified();
-                folderIt = foldersToUpdate.erase(static_cast<QSet<QByteArray>::const_iterator>(folderIt));
-            }
-            else
-            {
-                folderIt++;
             }
         }
     }

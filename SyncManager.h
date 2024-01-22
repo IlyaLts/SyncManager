@@ -32,9 +32,6 @@
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_DELAY      300000
 
-// In a couple times slower than QDirIterator
-//#define USE_STD_FILESYSTEM
-
 using hash64_t = quint64;
 
 struct File
@@ -222,7 +219,6 @@ private:
 
     QMap<QString, QTimer *> m_notificationList;
     QSet<hash64_t> m_usedDevices;
-    QSet<QByteArray> foldersToUpdate;
 
     QString m_versionFolder;
     QString m_versionPattern;
