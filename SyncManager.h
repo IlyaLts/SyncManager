@@ -31,6 +31,7 @@
 #define DATA_FILENAME           "Data.dat"
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_DELAY      300000
+#define MOVED_FILES_MIN_SIZE    0
 
 using hash64_t = quint64;
 
@@ -158,6 +159,7 @@ public:
     inline int syncTimeMultiplier() const { return m_syncTimeMultiplier; }
     inline int syncEvery() const { return m_syncEvery; }
     inline int existingProfiles() const { return m_existingProfiles; }
+    inline int movedFileMinSize() const { return m_movedFileMinSize; }
     inline bool isCaseSensitiveSystem() const { return m_caseSensitiveSystem; }
     inline bool isQuitting() const { return m_shouldQuit; }
     inline bool isThereIssue() const { return m_issue; }
@@ -199,6 +201,7 @@ private:
     int m_syncTimeMultiplier = 1;
     int m_syncEvery = 0;
     int m_existingProfiles = 0;
+    int m_movedFileMinSize = 0;
 
 #if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     bool m_caseSensitiveSystem = false;

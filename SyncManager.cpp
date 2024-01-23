@@ -103,9 +103,10 @@ SyncManager::SyncManager()
     m_paused = settings.value(QLatin1String("Paused"), false).toBool();
     m_notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     m_rememberFiles = settings.value("RememberFiles", true).toBool();
-    m_detectMovedFiles = settings.value("DetectMovedFiles", true).toBool();
+    m_detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
     m_syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
     if (m_syncTimeMultiplier <= 0) m_syncTimeMultiplier = 1;
+    m_movedFileMinSize = settings.value("MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt();
 
     m_caseSensitiveSystem = settings.value("caseSensitiveSystem", m_caseSensitiveSystem).toBool();
     m_versionFolder = settings.value("VersionFolder", "[Deletions]").toString();
@@ -1092,12 +1093,12 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
         // Finds files that don't exist in our sync folder anymore
         for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
-            if (fileIt.value().type == File::file && !fileIt.value().exists)
+            if (fileIt.value().type == File::file && !fileIt.value().exists && fileIt->size >= m_movedFileMinSize)
                 missingFiles.insert(fileIt.key(), &fileIt.value());
 
         // Finds files that are new in our sync folder
         for (QHash<hash64_t, File>::iterator newFileIt = folderIt->files.begin(); newFileIt != folderIt->files.end(); ++newFileIt)
-            if (newFileIt->type == File::file && newFileIt->newlyAdded && newFileIt->exists)
+            if (newFileIt->type == File::file && newFileIt->newlyAdded && newFileIt->exists && newFileIt->size >= m_movedFileMinSize)
                 newFiles.insert(newFileIt.key(), &newFileIt.value());
 
         // Removes duplicates from the list of new files by file size and modified date
@@ -1191,9 +1192,11 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 if (missingFileIt.value()->size != newFileIt.value()->size)
                     continue;
 
+#ifndef Q_OS_LINUX
                 // Compares the modified dates of moved/renamed file with the date of a newly added file
                 if (missingFileIt.value()->date != newFileIt.value()->date)
                     continue;
+#endif
 
                 movedFile = &folderIt->files[missingFileIt.key()];
                 movedFileHash = missingFileIt.key();
