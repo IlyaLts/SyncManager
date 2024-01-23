@@ -434,7 +434,7 @@ void SyncManager::updateStatus()
         {
             if (folder.exists && !folder.paused)
             {
-                size = folder.foldersToRename.size();
+                size += folder.foldersToRename.size();
                 size += folder.filesToMove.size();
                 size += folder.foldersToAdd.size();
                 size += folder.filesToAdd.size();
