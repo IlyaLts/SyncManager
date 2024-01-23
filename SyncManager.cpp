@@ -1557,6 +1557,13 @@ void SyncManager::syncFiles(SyncProfile &profile)
             filePath.append(fileIt.value().first);
             hash64_t fileHash = hash64(fileIt.value().first);
 
+            // Removes from the "files to move" list if a file already exists at the destination location
+            if (QFileInfo::exists(filePath))
+            {
+                fileIt = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(fileIt));
+                continue;
+            }
+
             createParentFolders(folder, QDir::cleanPath(filePath).toUtf8());
 
             if (QFile::rename(fileIt.value().second, filePath))
