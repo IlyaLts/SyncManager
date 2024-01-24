@@ -1096,6 +1096,48 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             if (fileIt.value().type == File::file && !fileIt.value().exists && fileIt->size >= m_movedFileMinSize)
                 missingFiles.insert(fileIt.key(), &fileIt.value());
 
+        // Removes duplicates from the list of missing files by file size and modified date
+        for (QHash<hash64_t, File *>::iterator missedFileIt = missingFiles.begin(); missedFileIt != missingFiles.end();)
+        {
+            bool dup = false;
+
+            for (QHash<hash64_t, File *>::iterator anotherMissedFileIt = missingFiles.begin(); anotherMissedFileIt != missingFiles.end();)
+            {
+                bool anotherDup = true;
+
+                if (missedFileIt.key() == anotherMissedFileIt.key())
+                {
+                    ++anotherMissedFileIt;
+                    continue;
+                }
+
+                if (missedFileIt.value()->size != anotherMissedFileIt.value()->size)
+                    anotherDup = false;
+
+#ifndef Q_OS_LINUX
+                if (missedFileIt.value()->date != anotherMissedFileIt.value()->date)
+                    anotherDup = false;
+#endif
+
+                if (anotherDup)
+                {
+                    dup = true;
+                    anotherMissedFileIt = missingFiles.erase(static_cast<QHash<hash64_t, File *>::const_iterator>(anotherMissedFileIt));
+                    continue;
+                }
+
+                ++anotherMissedFileIt;
+            }
+
+            if (dup)
+                missedFileIt = missingFiles.erase(static_cast<QHash<hash64_t, File *>::const_iterator>(missedFileIt));
+            else
+                ++missedFileIt;
+        }
+
+        if (missingFiles.isEmpty())
+            continue;
+
         // Finds files that are new in our sync folder
         for (QHash<hash64_t, File>::iterator newFileIt = folderIt->files.begin(); newFileIt != folderIt->files.end(); ++newFileIt)
             if (newFileIt->type == File::file && newFileIt->newlyAdded && newFileIt->exists && newFileIt->size >= m_movedFileMinSize)
@@ -1138,45 +1180,6 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 newFileIt = newFiles.erase(static_cast<QHash<hash64_t, File *>::const_iterator>(newFileIt));
             else
                 ++newFileIt;
-        }
-
-        // Removes duplicates from the list of missing files by file size and modified date
-        for (QHash<hash64_t, File *>::iterator missedFileIt = missingFiles.begin(); missedFileIt != missingFiles.end();)
-        {
-            bool dup = false;
-
-            for (QHash<hash64_t, File *>::iterator anotherMissedFileIt = missingFiles.begin(); anotherMissedFileIt != missingFiles.end();)
-            {
-                bool anotherDup = true;
-
-                if (missedFileIt.key() == anotherMissedFileIt.key())
-                {
-                    ++anotherMissedFileIt;
-                    continue;
-                }
-
-                if (missedFileIt.value()->size != anotherMissedFileIt.value()->size)
-                    anotherDup = false;
-
-#ifndef Q_OS_LINUX
-                if (missedFileIt.value()->date != anotherMissedFileIt.value()->date)
-                    anotherDup = false;
-#endif
-
-                if (anotherDup)
-                {
-                    dup = true;
-                    anotherMissedFileIt = missingFiles.erase(static_cast<QHash<hash64_t, File *>::const_iterator>(anotherMissedFileIt));
-                    continue;
-                }
-
-                ++anotherMissedFileIt;
-            }
-
-            if (dup)
-                missedFileIt = missingFiles.erase(static_cast<QHash<hash64_t, File *>::const_iterator>(missedFileIt));
-            else
-                ++missedFileIt;
         }
 
         for (QHash<hash64_t, File *>::iterator newFileIt = newFiles.begin(); newFileIt != newFiles.end(); ++newFileIt)
