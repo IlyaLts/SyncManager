@@ -637,11 +637,11 @@ void SyncManager::restoreData()
 
         for (qsizetype j = 0; j < foldersSize; j++)
         {
-            qsizetype size;
             QByteArray folderPath;
+            qsizetype numOfFiles;
 
             stream >> folderPath;
-            stream >> size;
+            stream >> numOfFiles;
 
             QStringList folderPaths;
             bool restore = profileIndex >= 0;
@@ -656,7 +656,7 @@ void SyncManager::restoreData()
             restore = restore && folderIndex >= 0;
 
             // File data
-            for (qsizetype k = 0; k < size; k++)
+            for (qsizetype k = 0; k < numOfFiles; k++)
             {
                 hash64_t hash;
                 QDateTime date;
@@ -681,9 +681,9 @@ void SyncManager::restoreData()
             }
 
             // Folders to rename
-            stream >> size;
+            stream >> numOfFiles;
 
-            for (qsizetype k = 0; k < size; k++)
+            for (qsizetype k = 0; k < numOfFiles; k++)
             {
                 QByteArray to;
                 QByteArray from;
@@ -701,9 +701,9 @@ void SyncManager::restoreData()
             }
 
             // Files to move
-            stream >> size;
+            stream >> numOfFiles;
 
-            for (qsizetype k = 0; k < size; k++)
+            for (qsizetype k = 0; k < numOfFiles; k++)
             {
                 QByteArray to;
                 QByteArray from;
@@ -721,9 +721,9 @@ void SyncManager::restoreData()
             }
 
             // Folders to add
-            stream >> size;
+            stream >> numOfFiles;
 
-            for (qsizetype k = 0; k < size; k++)
+            for (qsizetype k = 0; k < numOfFiles; k++)
             {
                 QByteArray path;
                 stream >> path;
@@ -736,9 +736,9 @@ void SyncManager::restoreData()
             }
 
             // Files to add
-            stream >> size;
+            stream >> numOfFiles;
 
-            for (qsizetype k = 0; k < size; k++)
+            for (qsizetype k = 0; k < numOfFiles; k++)
             {
                 QByteArray to;
                 QByteArray from;
@@ -758,9 +758,9 @@ void SyncManager::restoreData()
             }
 
             // Folders to remove
-            stream >> size;
+            stream >> numOfFiles;
 
-            for (qsizetype k = 0; k < size; k++)
+            for (qsizetype k = 0; k < numOfFiles; k++)
             {
                 QByteArray path;
                 stream >> path;
@@ -773,9 +773,9 @@ void SyncManager::restoreData()
             }
 
             // Files to remove
-            stream >> size;
+            stream >> numOfFiles;
 
-            for (qsizetype k = 0; k < size; k++)
+            for (qsizetype k = 0; k < numOfFiles; k++)
             {
                 QByteArray path;
                 stream >> path;
@@ -910,7 +910,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         }
         else
         {
-            File *file = const_cast<File *>(folder.files.insert(fileHash, File(filePath, type, fileInfo.lastModified())).operator->());
+            File *file = folder.files.insert(fileHash, File(filePath, type, fileInfo.lastModified())).operator->();
             file->size = fileInfo.size();
             file->newlyAdded = true;
             file->path.squeeze();
@@ -1283,26 +1283,34 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 /*
 ===================
 SyncManager::checkForAddedFiles
+
+Checks for added/modified files and folders
 ===================
 */
 void SyncManager::checkForAddedFiles(SyncProfile &profile)
 {
     SET_TIME(startTime);
 
-    // Checks for added/modified files and folders
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        if (!folderIt->exists) continue;
+        if (!folderIt->exists)
+            continue;
 
         for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
         {
-            if (folderIt == otherFolderIt || !otherFolderIt->exists) continue;
-            if (folderIt->paused) break;
+            if (folderIt == otherFolderIt || !otherFolderIt->exists)
+                continue;
+
+            if (folderIt->paused)
+                break;
 
             for (QHash<hash64_t, File>::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
             {
-                if (otherFolderIt->paused) break;
-                if (!otherFileIt.value().exists) continue;
+                if (otherFolderIt->paused)
+                    break;
+
+                if (!otherFileIt.value().exists)
+                    continue;
 
                 const File &file = folderIt->files.value(otherFileIt.key());
                 const File &otherFile = otherFileIt.value();
@@ -1331,26 +1339,36 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                         folderIt->foldersToRemove.remove(otherFileIt.key());
                 }
 
+                // Checks for the newest version of a file in case if we have three folders or more
+                if (alreadyAdded && !hasNewer)
+                    continue;
+
                 if ((!folderIt->files.contains(otherFileIt.key()) ||
                 // Or if we have a newer version of a file from other folders
- #ifdef Q_OS_LINUX
                 ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists &&
+#ifdef Q_OS_LINUX
                  (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
- #else
-                ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists &&
+#else
                  (((!file.updated && otherFile.updated) || (file.updated == otherFile.updated && file.date < otherFile.date)))) ||
- #endif
+#endif
                 // Or if other folders has a new version of a file and our file was removed
-                (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(QByteArray(otherFile.path).indexOf('/', 0), 999999))).updated))) &&
-                // Checks for the newest version of a file in case if we have three folders or more
-                (!alreadyAdded || hasNewer) &&
-                // Checks whether we supposed to remove this file or not
-                ((otherFile.type == File::file && !otherFolderIt->filesToRemove.contains(otherFileIt.key())) ||
-                 (otherFile.type == File::folder && !otherFolderIt->foldersToRemove.contains(otherFileIt.key()))))
+                (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(otherFile.path.indexOf('/'), otherFile.path.size()))).updated))))
                 {
+                    // Aborts if a file is supposed to be removed
+                    if (otherFile.type == File::file)
+                    {
+                        if (otherFolderIt->filesToRemove.contains(otherFileIt.key()))
+                            continue;
+                    }
+                    else if (otherFile.type == File::folder)
+                    {
+                        if (otherFolderIt->foldersToRemove.contains(otherFileIt.key()))
+                            continue;
+                    }
+
                     if (otherFile.type == File::folder)
                     {
-                        const_cast<QByteArray *>(folderIt->foldersToAdd.insert(otherFileIt.key(), otherFile.path).operator->())->squeeze();
+                        folderIt->foldersToAdd.insert(otherFileIt.key(), otherFile.path)->squeeze();
                         folderIt->foldersToRemove.remove(otherFileIt.key());
                     }
                     else
@@ -1358,9 +1376,10 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                         QByteArray from(otherFolderIt->path);
                         from.append(otherFile.path);
                         QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(otherFile.path, from), otherFile.date);
-                        const auto &it = folderIt->filesToAdd.insert(otherFileIt.key(), pair);
-                        const_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.first.squeeze();
-                        const_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator &>(it).value().first.second.squeeze();
+
+                        QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator it = folderIt->filesToAdd.insert(otherFileIt.key(), pair);
+                        it->first.first.squeeze();
+                        it->first.second.squeeze();
                         folderIt->filesToRemove.remove(otherFileIt.key());
                     }
                 }
@@ -1382,88 +1401,99 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        if (!folderIt->exists) continue;
+        if (!folderIt->exists)
+            continue;
 
         for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
         {
-            if (folderIt->paused) break;
+            if (folderIt->paused)
+                break;
 
             // A file was moved and should be removed from a file datebase
-            if (fileIt.value().toBeRemoved)
+            if (fileIt->toBeRemoved)
             {
                 fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
                 continue;
             }
 
-            if (fileIt.value().locked)
+            if (fileIt->locked || fileIt->exists)
             {
                 ++fileIt;
                 continue;
             }
 
-            if (!fileIt.value().exists && !folderIt->filesToMove.contains(fileIt.key()) &&
-                !folderIt->foldersToAdd.contains(fileIt.key()) && !folderIt->filesToAdd.contains(fileIt.key()) &&
-               ((fileIt.value().type == File::file && !folderIt->filesToRemove.contains(fileIt.key())) ||
-               (fileIt.value().type == File::folder && !folderIt->foldersToRemove.contains(fileIt.key()))))
+            if (fileIt->type == File::file)
             {
-                // Aborts if a removed file still exists, but with a different case
-                if (!m_caseSensitiveSystem)
+                if (folderIt->filesToMove.contains(fileIt.key()) || folderIt->filesToAdd.contains(fileIt.key()) || folderIt->filesToRemove.contains(fileIt.key()))
                 {
-                    bool abort = false;
+                    ++fileIt;
+                    continue;
+                }
+            }
+            else if (fileIt->type == File::folder)
+            {
+                if (folderIt->foldersToRename.contains(fileIt.key()) || folderIt->foldersToAdd.contains(fileIt.key()) || folderIt->foldersToRemove.contains(fileIt.key()))
+                {
+                    ++fileIt;
+                    continue;
+                }
+            }
 
-                    // As a removed file doesn't have a file path anymore, we need to construct a file path using other files in other folders
-                    for (auto removeIt = profile.folders.begin(); removeIt != profile.folders.end(); ++removeIt)
+            // Aborts if a removed file still exists, but with a different case
+            if (!m_caseSensitiveSystem)
+            {
+                bool abort = false;
+
+                // As a removed file doesn't have a file path anymore, we need to construct a file path using other files in other folders
+                for (auto anotherFolderIt = profile.folders.begin(); anotherFolderIt != profile.folders.end(); ++anotherFolderIt)
+                {
+                    if (folderIt == anotherFolderIt || !anotherFolderIt->exists || anotherFolderIt->paused)
+                        continue;
+
+                    const File &fileToRemove = anotherFolderIt->files.value(fileIt.key());
+
+                    if (!fileToRemove.path.isEmpty())
                     {
-                        if (folderIt == removeIt || !removeIt->exists || removeIt->paused) continue;
+                        QString path(folderIt->path);
+                        path.append(fileToRemove.path);
 
-                        const File &fileToRemove = removeIt->files.value(fileIt.key());
-
-                        if (!fileToRemove.path.isEmpty())
+                        if (QFileInfo::exists(path))
                         {
-                            QString path(folderIt->path);
-                            path.append(fileToRemove.path);
-
-                            if (QFileInfo::exists(path))
-                            {
-                                abort = true;
-                                break;
-                            }
+                            abort = true;
+                            break;
                         }
                     }
-
-                    if (abort)
-                    {
-                        ++fileIt;
-                        continue;
-                    }
                 }
 
-                // Adds files from other folders for removal
-                for (auto removeIt = profile.folders.begin(); removeIt != profile.folders.end(); ++removeIt)
+                if (abort)
                 {
-                    if (folderIt == removeIt || !removeIt->exists || removeIt->paused) continue;
-
-                    const File &fileToRemove = removeIt->files.value(fileIt.key());
-
-                    if (fileToRemove.exists)
-                    {
-                        if (fileIt.value().type == File::folder)
-                            const_cast<QByteArray *>(removeIt->foldersToRemove.insert(fileIt.key(), fileToRemove.path).operator->())->squeeze();
-                        else
-                            const_cast<QByteArray *>(removeIt->filesToRemove.insert(fileIt.key(), fileToRemove.path).operator->())->squeeze();
-                    }
-                    else
-                    {
-                        removeIt->files.remove(fileIt.key());
-                    }
+                    ++fileIt;
+                    continue;
                 }
+            }
 
-                fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
-            }
-            else
+            // Adds files from other folders for removal
+            for (auto anotherFolderIt = profile.folders.begin(); anotherFolderIt != profile.folders.end(); ++anotherFolderIt)
             {
-                ++fileIt;
+                if (folderIt == anotherFolderIt || !anotherFolderIt->exists || anotherFolderIt->paused)
+                    continue;
+
+                const File &fileToRemove = anotherFolderIt->files.value(fileIt.key());
+
+                if (fileToRemove.exists)
+                {
+                    if (fileIt.value().type == File::folder)
+                        anotherFolderIt->foldersToRemove.insert(fileIt.key(), fileToRemove.path)->squeeze();
+                    else
+                        anotherFolderIt->filesToRemove.insert(fileIt.key(), fileToRemove.path)->squeeze();
+                }
+                else
+                {
+                    anotherFolderIt->files.remove(fileIt.key());
+                }
             }
+
+            fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
         }
     }
 
