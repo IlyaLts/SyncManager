@@ -1,0 +1,208 @@
+==========================
+1.5.6 - Jan 16, 2024
+==========================
+
+- Added saving settings on any setting change.
+- Added a warning dialog on switching to the permanent deletion mode.
+- Improved detection of moved or renamed files.
+- Improved detection of renamed folders.
+
+==========================
+1.5.5 - Dec 9, 2023
+==========================
+
+- Added last sync time info to projects.
+- Added additional error info for folders that don't exist.
+- Fixed the app being prevented from launching after crashing on Linux.
+- Fixed non-working moved files detection on Linux.
+
+==========================
+1.5.4 - Sep 27, 2023
+==========================
+
+- Changed the name of the versioning folder to "Deletions".
+- Changed the location of the versioning folder to be next to the sync folder.
+
+==========================
+1.5.3 - Aug 28, 2023
+==========================
+
+- Fixed unexpected app close when closing a message box if the main window is hidden.
+- Changed the increase sync time button to disabled on the maximum value.
+
+==========================
+1.5.2 - Aug 19, 2023
+==========================
+
+- Optimized performance of detection of renamed and moved files.
+- Added the remove icon for profiles whose folders don't exist.
+- Fixed some bugs for the detection of renamed and moved files.
+- Fixed incorrect folder list on adding when it contains a removed folder.
+- Fixed the issue where it was sometimes impossible to add similar folders to a profile.
+
+==========================
+1.5.1 - Aug 17, 2023
+==========================
+
+- Fixed a bug that sometimes caused losing files when renaming cases of folders.
+
+==========================
+1.5 - Aug 11, 2023
+==========================
+
+- Added file versioning.
+- Added detection of moved/renamed files.
+- Added detection of renamed folders that differ by case only.
+- Added an ability to change case-sensitive syncing via the settings file.
+- Fixed broken file scanning for more than one folder on a single device per profile.
+- Fixed undefined copying when two new files were added in two folders (one file for each folder) with the same filenames, but have different modified dates or have different cases.
+- Fixed the issue where it was sometimes impossible to add similar folders to a profile.
+
+==========================
+1.4 - Jul 6, 2023
+==========================
+
+- Added simultaneous file scanning on multiple devices, almost doubling the synchronization speed. (Depends on the number of various disk devices)
+- Added pause menus in manual mode.
+- Fixed the syncing button being enabled if all profiles are syncing.
+- Fixed the long syncing time of an empty folder if other folders have a large number of files.
+
+==========================
+1.3.2 - Jul 4, 2023
+==========================
+
+- Fixed wrong status for folders that are not syncing.
+
+==========================
+1.3.1 - Jul 3, 2023
+==========================
+
+- Added prevention of sync time multiplier from exceeding its maximum value.
+- Changed the format of sync time in the context menu
+- Fixed conflict issue where a file with the same name prevents folder syncing.
+- Stopped removing saved file data on startup if it is enabled.
+
+==========================
+1.3 - Jul 1, 2023
+==========================
+
+- Added the ability to sync a profile manually in automatic mode.
+- Added last synchronization info in tooltips.
+- Added saved data size info in the context menu.
+- Changed context menu unhiddable on triggering.
+- Fixed the issue where the app could not synchronize all profiles if at least one profile was already syncing.
+
+==========================
+1.2.6 - Jun 28, 2023
+==========================
+
+- Reduced memory usage by more than 40% on idle.
+- Added drag-and-drop support for folders.
+- Added prevention of adding duplicate folders.
+
+==========================
+1.2.5 - Jun 11, 2023
+==========================
+
+- Lowered CPU usage when idle.
+- Added confirmation dialog on removing a profile.
+- Fixed syncing mode not being properly set on startup when the wrong syncing mode number is loaded.
+
+==========================
+1.2.4 - Apr 18, 2023
+==========================
+
+- Fixed invalid saved file data when quitting two times in a row without syncing.
+
+==========================
+1.2.3 - Apr 14, 2023
+==========================
+
+- Reduced memory usage by up to 5% or even more if actively syncing.
+- Removed unnecessary deletion of folders on adding.
+- Added the issue icon for sync failure due to missing folders.
+- Added version info.
+
+==========================
+1.2.2 - Apr 5, 2023
+==========================
+
+- Reduced memory usage by up to 50% if loaded with saved file data.
+- Fixed syncing status not being shown on startup.
+
+==========================
+1.2.1 - Apr 4, 2023
+==========================
+
+- Disabled auto syncing on startup for manual mode.
+- Fixed wrong multiple synchronizations of the same file from multiple synchronization folders.
+- Fixed half-broken saving/restoring saved file data.
+- Fixed wrong syncing statuses for non-selected profiles on manual mode.
+
+==========================
+1.2 - Mar 28, 2023
+==========================
+
+- Set the "Remember Files" feature enabled by default.
+- Reduced saved file data disk space usage by up to 80%.
+
+==========================
+1.1.2 - Mar 23, 2023
+==========================
+
+- Replaced "Minimized on Startup" with the "Show in Tray" option.
+
+==========================
+1.1.1 - Feb 24, 2023
+==========================
+
+- Fixed synchronization of replaced files with folders or vice versa.
+
+==========================
+1.1 - Feb 17, 2023
+==========================
+
+- Reduced memory usage by 30%.
+
+==========================
+1.0.6 - Feb 16, 2023
+==========================
+
+- Reduced memory usage by 5%.
+
+==========================
+1.0.5 - Feb 7, 2023
+==========================
+
+- Fixed the case when SyncManager fails to move a file/folder to trash that is currently in use.
+
+==========================
+1.0.4 - Feb 1, 2023
+==========================
+
+- Fixed sync time multiplier not being saved properly.
+
+==========================
+1.0.3 - Dec 31, 2022
+==========================
+
+- Added an ability to increase/decrease syncing time.
+- Changed the next synchronization time based on previous synchronizations.
+
+==========================
+1.0.2 - Dec 15, 2022
+==========================
+
+- Added "Move Files and Folders to Trash" feature.
+
+==========================
+1.0.1 - Dec 12, 2022
+==========================
+
+- Bug fixes.
+
+==========================
+1.0 - Dec 11, 2022
+==========================
+
+- Initial release.
