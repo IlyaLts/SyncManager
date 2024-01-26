@@ -903,30 +903,23 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
                 return -1;
             }
 
-            // Sets updated flag if the last modified date of a file differs with a new one
-            if (type == File::folder)
-            {
-                file.updated = (file.date < fileDate);
-
-                // Marks all parent folders as updated if the current folder was updated
-                if (file.updated)
-                {
-                    QByteArray folderPath(fileInfo.filePath().toUtf8());
-
-                    while (folderPath.remove(folderPath.lastIndexOf("/"), folderPath.length()).length() > folder.path.length())
-                    {
-                        hash64_t hash = hash64(QByteArray(folderPath).remove(0, folder.path.size()));
-
-                        if (folder.files.value(hash).updated)
-                            break;
-
-                        folder.files[hash].updated = true;
-                    }
-                }
-            }
             if (file.date != fileDate)
-            {
                 file.updated = true;
+
+            // Marks all parent folders as updated if the current folder was updated
+            if (file.updated)
+            {
+                QByteArray folderPath(fileInfo.filePath().toUtf8());
+
+                while (folderPath.remove(folderPath.lastIndexOf("/"), folderPath.length()).length() > folder.path.length())
+                {
+                    hash64_t hash = hash64(QByteArray(folderPath).remove(0, folder.path.size()));
+
+                    if (folder.files.value(hash).updated)
+                        break;
+
+                    folder.files[hash].updated = true;
+                }
             }
 
             file.date = fileDate;
