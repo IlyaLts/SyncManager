@@ -817,6 +817,7 @@ void SyncManager::createParentFolders(SyncFolder &folder, QByteArray path)
 
             folder.files.insert(hash, File(shortPath, File::folder, QFileInfo(foldersToCreate.top()).lastModified()));
             folder.foldersToAdd.remove(hash);
+            foldersToUpdate.insert(foldersToCreate.top());
         }
 
         foldersToCreate.pop();
@@ -902,10 +903,35 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
                 return -1;
             }
 
+            // Sets updated flag if the last modified date of a file differs with a new one
+            if (type == File::folder)
+            {
+                file.updated = (file.date < fileDate);
+
+                // Marks all parent folders as updated if the current folder was updated
+                if (file.updated)
+                {
+                    QByteArray folderPath(fileInfo.filePath().toUtf8());
+
+                    while (folderPath.remove(folderPath.lastIndexOf("/"), folderPath.length()).length() > folder.path.length())
+                    {
+                        hash64_t hash = hash64(QByteArray(folderPath).remove(0, folder.path.size()));
+
+                        if (folder.files.value(hash).updated)
+                            break;
+
+                        folder.files[hash].updated = true;
+                    }
+                }
+            }
+            if (file.date != fileDate)
+            {
+                file.updated = true;
+            }
+
             file.date = fileDate;
             file.size = fileInfo.size();
             file.type = type;
-            file.updated = file.date != fileDate;
             file.exists = true;
         }
         else
@@ -1566,6 +1592,12 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
             if (QDir().rename(folderIt.value().second, filePath))
             {
+                QString parentFrom = QFileInfo(filePath).path();
+                QString parentTo = QFileInfo(folderIt.value().second).path();
+
+                if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom.toUtf8());
+                if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo.toUtf8());
+
                 folder.files.remove(hash64(QByteArray(folderIt.value().second).remove(0, folder.path.size())));
                 folder.files.insert(fileHash, File(folderIt.value().first, File::folder, QFileInfo(filePath).lastModified()));
                 folderIt = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(folderIt));
@@ -1604,6 +1636,12 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
             if (QFile::rename(fileIt.value().second, filePath))
             {
+                QString parentFrom = QFileInfo(filePath).path();
+                QString parentTo = QFileInfo(fileIt.value().second).path();
+
+                if (QFileInfo::exists(parentFrom)) foldersToUpdate.insert(parentFrom.toUtf8());
+                if (QFileInfo::exists(parentTo)) foldersToUpdate.insert(parentTo.toUtf8());
+
                 hash64_t oldHash = hash64(QByteArray(fileIt.value().second).remove(0, folder.path.size()));
 
                 folder.files.remove(oldHash);
@@ -1655,6 +1693,9 @@ void SyncManager::syncFiles(SyncProfile &profile)
                 folder.files.remove(fileHash);
                 folder.foldersToRemove.remove(fileHash);
                 folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(folderIt));
+
+                QString parentPath = QFileInfo(folderPath).path();
+                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath.toUtf8());
             }
             else
             {
@@ -1698,8 +1739,10 @@ void SyncManager::syncFiles(SyncProfile &profile)
             if (success || !QFile().exists(filePath))
             {
                 folder.files.remove(fileHash);
-
                 fileIt = folder.filesToRemove.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(fileIt));
+
+                QString parentPath = QFileInfo(filePath).path();
+                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath.toUtf8());
             }
             else
             {
@@ -1745,6 +1788,9 @@ void SyncManager::syncFiles(SyncProfile &profile)
             {
                 folder.files.insert(fileHash, File(*folderIt, File::folder, fileInfo.lastModified()));
                 folderIt = folder.foldersToAdd.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(folderIt));
+
+                QString parentPath = QFileInfo(folderPath).path();
+                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath.toUtf8());
             }
             else
             {
@@ -1839,6 +1885,9 @@ void SyncManager::syncFiles(SyncProfile &profile)
                 auto it = folder.files.insert(fileHash, File(fileIt.value().first.first, File::file, QFileInfo(filePath).lastModified()));
                 it->size = QFileInfo(filePath).size();
                 fileIt = folder.filesToAdd.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(fileIt));
+
+                QString parentPath = destination.path();
+                if (QFileInfo::exists(parentPath)) foldersToUpdate.insert(parentPath.toUtf8());
             }
             else
             {
@@ -1854,6 +1903,22 @@ void SyncManager::syncFiles(SyncProfile &profile)
                 }
 
                 ++fileIt;
+            }
+        }
+
+        // Updates the modified date of the parent folders as adding/removing files and folders change their modified date
+        for (auto folderIt = foldersToUpdate.begin(); folderIt != foldersToUpdate.end();)
+        {
+            hash64_t folderHash = hash64(QByteArray(*folderIt).remove(0, folder.path.size()));
+
+            if (folder.files.contains(folderHash))
+            {
+                folder.files[folderHash].date = QFileInfo(*folderIt).lastModified();
+                folderIt = foldersToUpdate.erase(static_cast<QSet<QByteArray>::const_iterator>(folderIt));
+            }
+            else
+            {
+                folderIt++;
             }
         }
     }

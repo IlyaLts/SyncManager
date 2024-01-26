@@ -222,6 +222,7 @@ private:
 
     QMap<QString, QTimer *> m_notificationList;
     QSet<hash64_t> m_usedDevices;
+    QSet<QByteArray> foldersToUpdate;
 
     QString m_versionFolder;
     QString m_versionPattern;
