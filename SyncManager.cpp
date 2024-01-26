@@ -1544,6 +1544,16 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
     checkForAddedFiles(profile);
     checkForRemovedFiles(profile);
+
+    // Resets file states, as they are not needed in the file database
+    for (auto &folder : profile.folders)
+    {
+        for (auto &file : folder.files)
+        {
+            file.updated = false;
+            file.newlyAdded = false;
+        }
+    }
 }
 
 /*
