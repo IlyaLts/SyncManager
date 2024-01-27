@@ -1580,7 +1580,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
         for (auto folderIt = folder.foldersToRename.begin(); folderIt != folder.foldersToRename.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (m_shouldQuit && m_rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles)
+                break;
 
             // Removes from the "files to move" list if the source file doesn't exist
             if (!QFileInfo::exists(folderIt.value().second))
@@ -1615,7 +1616,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
         for (auto fileIt = folder.filesToMove.begin(); fileIt != folder.filesToMove.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (m_shouldQuit && m_rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles)
+                break;
 
             // Removes from the "files to move" list if the source file doesn't exist
             if (!QFileInfo::exists(fileIt.value().second))
@@ -1631,8 +1633,12 @@ void SyncManager::syncFiles(SyncProfile &profile)
             // Removes from the "files to move" list if a file already exists at the destination location
             if (QFileInfo::exists(filePath))
             {
-                fileIt = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(fileIt));
-                continue;
+                // For case-insensitive systems, both paths should not be the same
+                if (m_caseSensitiveSystem || fileIt.value().second.compare(filePath.toUtf8(), Qt::CaseInsensitive) != 0)
+                {
+                    fileIt = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(fileIt));
+                    continue;
+                }
             }
 
             createParentFolders(folder, QDir::cleanPath(filePath).toUtf8());
@@ -1662,7 +1668,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
         for (auto folderIt = sortedFoldersToRemove.begin(); folderIt != sortedFoldersToRemove.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (m_shouldQuit && m_rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles)
+                break;
 
             QString folderPath(folder.path);
             folderPath.append(*folderIt);
@@ -1710,7 +1717,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
         for (auto fileIt = folder.filesToRemove.begin(); fileIt != folder.filesToRemove.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (m_shouldQuit && m_rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles)
+                break;
 
             QString filePath(folder.path);
             filePath.append(*fileIt);
@@ -1757,7 +1765,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
         for (auto folderIt = folder.foldersToAdd.begin(); folderIt != folder.foldersToAdd.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (m_shouldQuit && m_rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles)
+                break;
 
             QString folderPath(folder.path);
             folderPath.append(*folderIt);
@@ -1805,7 +1814,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
         for (auto fileIt = folder.filesToAdd.begin(); fileIt != folder.filesToAdd.end() && (!m_paused && !folder.paused);)
         {
             // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-            if (m_shouldQuit && m_rememberFiles) break;
+            if (m_shouldQuit && m_rememberFiles)
+                break;
 
             // Removes from the "files to add" list if the source file doesn't exist
             if (!QFileInfo::exists(fileIt.value().first.second) || fileIt.value().first.first.isEmpty() || fileIt.value().first.second.isEmpty())
