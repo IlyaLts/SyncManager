@@ -412,16 +412,19 @@ void SyncManager::updateStatus()
                 m_warning = true;
             }
 
-            if (m_busy && folder.exists && !folder.paused && (!folder.foldersToRename.isEmpty() ||
-                                                              !folder.filesToMove.isEmpty() ||
-                                                              !folder.foldersToAdd.isEmpty() ||
-                                                              !folder.filesToAdd.isEmpty() ||
-                                                              !folder.foldersToRemove.isEmpty() ||
-                                                              !folder.filesToRemove.isEmpty()))
+            if (m_busy && folder.exists && !folder.paused)
             {
-                m_syncing = true;
-                profile.syncing = true;
-                folder.syncing = true;
+                if (!folder.foldersToRename.isEmpty() ||
+                    !folder.filesToMove.isEmpty() ||
+                    !folder.foldersToAdd.isEmpty() ||
+                    !folder.filesToAdd.isEmpty() ||
+                    !folder.foldersToRemove.isEmpty() ||
+                    !folder.filesToRemove.isEmpty())
+                {
+                    m_syncing = true;
+                    profile.syncing = true;
+                    folder.syncing = true;
+                }
             }
         }
     }
@@ -1210,12 +1213,10 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             // Searches for a match between missed file and a newly added file
             for (QHash<hash64_t, File *>::iterator missingFileIt = missingFiles.begin(); missingFileIt != missingFiles.end(); ++missingFileIt)
             {
-                // Compares the sizes of moved/renamed file with the size of a newly added file
                 if (missingFileIt.value()->size != newFileIt.value()->size)
                     continue;
 
 #ifndef Q_OS_LINUX
-                // Compares the modified dates of moved/renamed file with the date of a newly added file
                 if (missingFileIt.value()->date != newFileIt.value()->date)
                     continue;
 #endif
@@ -1255,10 +1256,13 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
                 // Aborts if other sync folders have a file at the destination location
                 // Also, the both paths should differ, as in the case of changing case of parent folder name, the file still exists in the destination path
-                if (QFileInfo::exists(destPath) && newFileIt.value()->path.compare(fileToBeMoved.path, Qt::CaseInsensitive) != 0)
+                if (QFileInfo::exists(destPath))
                 {
-                    abort = true;
-                    break;
+                    if (m_caseSensitiveSystem || newFileIt.value()->path.compare(fileToBeMoved.path, Qt::CaseInsensitive) != 0)
+                    {
+                        abort = true;
+                        break;
+                    }
                 }
 
                 // Aborts if files that need to be moved have different sizes or dates between different sync folders
@@ -1435,7 +1439,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                 continue;
             }
 
-            if (fileIt->locked || fileIt->exists)
+            if (fileIt->exists || fileIt->locked)
             {
                 ++fileIt;
                 continue;
@@ -1538,7 +1542,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
     checkForAddedFiles(profile);
     checkForRemovedFiles(profile);
 
-    // Resets file states, as they are not needed in the file database
+    // Fixes double syncing of updated files on restart, as these states are no longer needed in the file database after syncing
     for (auto &folder : profile.folders)
     {
         for (auto &file : folder.files)
