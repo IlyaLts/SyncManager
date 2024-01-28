@@ -93,7 +93,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     showInTrayAction = new QAction("&Show in System Tray");
     disableNotificationAction = new QAction("&Disable Notifications", this);
     enableRememberFilesAction = new QAction("&Remember Files (Requires disk space)", this);
-    detectMovedFilesAction = new QAction("&Detect Renamed and Moved Files (Beta)", this);
+    detectMovedFilesAction = new QAction("&Detect Renamed and Moved Files", this);
     showAction = new QAction("&Show", this);
     quitAction = new QAction("&Quit", this);
     QAction *version = new QAction(QString("Version: %1").arg(SYNCMANAGER_VERSION), this);
@@ -263,7 +263,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             manager.profiles()[i].excludeList.append(exclude.toUtf8());
     }
 
-    if (manager.rememberFilesEnabled() && settings.value("AppVersion").toString().compare("1.5") >= 0)
+    if (manager.rememberFilesEnabled() && settings.value("AppVersion").toString().compare("1.6") >= 0)
         manager.restoreData();
     else
         QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
@@ -1305,6 +1305,7 @@ void MainWindow::saveSettings() const
     settings.setValue("RememberFiles", manager.rememberFilesEnabled());
     settings.setValue("DetectMovedFiles", manager.detectMovedFilesEnabled());
     settings.setValue("SyncTimeMultiplier", manager.syncTimeMultiplier());
+    settings.setValue("MovedFileMinSize", manager.movedFileMinSize());
     settings.setValue("caseSensitiveSystem", manager.isCaseSensitiveSystem());
     settings.setValue("VersionFolder", manager.versionFolder());
     settings.setValue("VersionPattern", manager.versionPattern());

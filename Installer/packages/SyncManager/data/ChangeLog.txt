@@ -1,4 +1,15 @@
 ==========================
+1.6 - Jan 29, 2024
+==========================
+
+- Fixed incorrect number of files to synchronize in status.
+- Fixed stuck files for moving when there are already files that exist.
+- Fixed the issue where it was impossible to remove a file after moving/renaming it.
+- Fixed double syncing of updated files on app restart.
+- Enhanced synchronize behavior to prioritize preservation of modified files in folders.
+- Improved performance of detection of moved/renamed files.
+
+==========================
 1.5.6 - Jan 16, 2024
 ==========================
 
@@ -78,7 +89,7 @@
 ==========================
 
 - Added prevention of sync time multiplier from exceeding its maximum value.
-- Changed the format of sync time in the context menu
+- Changed the format of sync time in the context menu.
 - Fixed conflict issue where a file with the same name prevents folder syncing.
 - Stopped removing saved file data on startup if it is enabled.
 
