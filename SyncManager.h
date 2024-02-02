@@ -72,8 +72,8 @@ struct SyncFolder
     QHash<hash64_t, File> files;
     QHash<hash64_t, QPair<QByteArray, QByteArray>> foldersToRename;
     QHash<hash64_t, QPair<QByteArray, QByteArray>> filesToMove;
-    QHash<hash64_t, QByteArray> foldersToAdd;
-    QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToAdd;
+    QHash<hash64_t, QByteArray> foldersToCreate;
+    QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToCopy;
     QHash<hash64_t, QByteArray> foldersToRemove;
     QHash<hash64_t, QByteArray> filesToRemove;
 
@@ -181,13 +181,20 @@ Q_SIGNALS:
 
 private:
 
-    void createParentFolders(SyncFolder &folder, QByteArray path);
     int getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList);
     void checkForRenamedFolders(SyncProfile &profile);
     void checkForMovedFiles(SyncProfile &profile);
     void checkForAddedFiles(SyncProfile &profile);
     void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);
+    bool removeFile(SyncFolder &folder, const QString &path, const QString &fullPath, const QString &versioningPath, File::Type type);
+    void renameFolders(SyncFolder &folder);
+    void moveFiles(SyncFolder &folder);
+    void createParentFolders(SyncFolder &folder, QByteArray path);
+    void removeFolders(SyncFolder &folder, const QString &versioningPath);
+    void removeFiles(SyncFolder &folder, const QString &versioningPath);
+    void createFolders(SyncFolder &folder, const QString &versioningPath);
+    void copyFiles(SyncFolder &folder, const QString &versioningPath);
     void syncFiles(SyncProfile &profile);
 
     SyncingMode m_syncingMode;
