@@ -345,6 +345,10 @@ void MainWindow::setLaunchOnStartup(bool enable)
 #ifdef Q_OS_WIN
         QFile::link(QCoreApplication::applicationFilePath(), path);
 #elif defined(Q_OS_LINUX)
+
+        // Creates autostart folder if it doesn't exist
+        QDir().mkdir(QFileInfo(path).path());
+
         QFile::remove(path);
         QFile shortcut(path);
         if (shortcut.open(QIODevice::WriteOnly))
@@ -352,7 +356,12 @@ void MainWindow::setLaunchOnStartup(bool enable)
             QTextStream stream(&shortcut);
             stream << "[Desktop Entry]\n";
             stream << "Type=Application\n";
-            stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager\n";
+
+            if (QFileInfo::exists(QFileInfo(QCoreApplication::applicationDirPath()).path() + "/SyncManager.sh"))
+                stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager.sh\n";
+            else
+                stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager\n";
+
             stream << "Hidden=false\n";
             stream << "NoDisplay=false\n";
             stream << "Terminal=false\n";
