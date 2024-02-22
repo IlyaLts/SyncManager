@@ -76,6 +76,7 @@ struct SyncFolder
     QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToCopy;
     QHash<hash64_t, QByteArray> foldersToRemove;
     QHash<hash64_t, QByteArray> filesToRemove;
+    QSet<QByteArray> foldersToUpdate;
 
     QDateTime lastSyncDate;
     bool exists = true;
@@ -229,7 +230,6 @@ private:
 
     QMap<QString, QTimer *> m_notificationList;
     QSet<hash64_t> m_usedDevices;
-    QSet<QByteArray> foldersToUpdate;
 
     QString m_versionFolder;
     QString m_versionPattern;
