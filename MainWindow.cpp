@@ -396,9 +396,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     else
     {
+        QString title("Quit");
+        QString text("Currently syncing. Are you sure you want to quit?");
         auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
 
-        if (manager.isBusy() && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::No)
+        if (manager.isBusy() && QMessageBox::warning(nullptr, title, text, buttons, QMessageBox::No) == QMessageBox::No)
         {
             event->ignore();
             return;
@@ -465,9 +467,11 @@ void MainWindow::removeProfile()
 {
     if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty()) return;
 
+    QString title("Remove profile");
+    QString text("Are you sure you want to remove profile?");
     auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
 
-    if (QMessageBox::question(nullptr, QString("Remove profile"), QString("Are you sure you want to remove profile?"), buttons, QMessageBox::Yes) == QMessageBox::No)
+    if (QMessageBox::question(nullptr, title, text, buttons, QMessageBox::Yes) == QMessageBox::No)
         return;
 
     for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
@@ -650,6 +654,16 @@ void MainWindow::removeFolder()
     {
         int profileRow = ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row();
 
+        if (manager.profiles()[profileRow].folders[index.row()].syncing)
+        {
+            QString title("Remove folder");
+            QString text("The folder is currently syncing. Are you sure you want to remove it?");
+            auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
+
+            if (QMessageBox::question(nullptr, title, text, buttons, QMessageBox::Yes) == QMessageBox::No)
+                return;
+        }
+
         manager.profiles()[profileRow].folders[index.row()].paused = true;
         manager.profiles()[profileRow].folders[index.row()].toBeRemoved = true;
         ui->folderListView->model()->removeRow(index.row());
@@ -746,10 +760,13 @@ MainWindow::quit
 */
 void MainWindow::quit()
 {
+    QString title("Quit");
+    QString text("Are you sure you want to quit?");
+    QString syncText("Currently syncing. Are you sure you want to quit?");
     auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
 
-    if ((!manager.isBusy() && QMessageBox::question(nullptr, QString("Quit"), QString("Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes) ||
-        (manager.isBusy() && QMessageBox::warning(nullptr, QString("Quit"), QString("Currently syncing. Are you sure you want to quit?"), buttons, QMessageBox::No) == QMessageBox::Yes))
+    if ((!manager.isBusy() && QMessageBox::question(nullptr, title, text, buttons, QMessageBox::No) == QMessageBox::Yes) ||
+        (manager.isBusy() && QMessageBox::warning(nullptr, title, syncText, buttons, QMessageBox::No) == QMessageBox::Yes))
     {
         manager.shouldQuit();
         qApp->quit();
@@ -828,10 +845,11 @@ void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
 {
     if (appInitiated && mode == SyncManager::DeletePermanently && mode != manager.deletionMode())
     {
+        QString title("Switch deletion mode to delete files permanently?");
+        QString text("Are you sure? Beware: this could lead to data loss!");
         auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
 
-        if (QMessageBox::warning(nullptr, QString("Switch deletion mode to delete files permanently?"),
-                                          QString("Are you sure? Beware: this could lead to data loss!"), buttons, QMessageBox::Yes) == QMessageBox::No)
+        if (QMessageBox::warning(nullptr, title, text, buttons, QMessageBox::Yes) == QMessageBox::No)
         {
             mode = manager.deletionMode();
         }
