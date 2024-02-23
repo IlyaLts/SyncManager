@@ -30,7 +30,6 @@
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
 #define UPDATE_DELAY            40
-#define TRAY_MESSAGE_TIME       1000
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -96,6 +95,7 @@ private Q_SLOTS:
     void showContextMenu(const QPoint &pos) const;
     void sync(int profileNumber = -1);
     void saveSettings() const;
+    void Notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
 
 private:
 

@@ -208,7 +208,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(&manager.syncTimer(), &QTimer::timeout, this, [this](){ if (manager.queue().isEmpty()) { manager.setSyncHidden(true); sync(); }});
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
-    connect(&manager, &SyncManager::warning, this, [this](QString title, QString message){ trayIcon->showMessage(title, message, QSystemTrayIcon::Critical, TRAY_MESSAGE_TIME); });
+    connect(&manager, &SyncManager::warning, this, [this](QString title, QString message){ Notify(title, message, QSystemTrayIcon::Critical); });
     connect(&manager, &SyncManager::profileSynced, this, [this](SyncProfile *profile){ updateLastSyncTime(profile); saveSettings(); });
 
     // Loads synchronization profiles
@@ -248,9 +248,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 manager.setPaused(false);
 
             folder.exists = QFileInfo::exists(folder.path);
-
-            if (manager.notificationsEnabled() && !folder.exists)
-                trayIcon->showMessage("Couldn't find folder", folder.path, QSystemTrayIcon::Warning, 1000);
         }
 
         // Loads last sync dates for all profiles
@@ -279,6 +276,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", manager.MoveToTrash).toInt()));
     updateStatus();
     appInitiated = true;
+
+    for (auto &profile : manager.profiles())
+        for (auto &folder : profile.folders)
+            if (!folder.exists)
+                Notify("Couldn't find folder", folder.path, QSystemTrayIcon::Warning);
 }
 
 /*
@@ -1386,4 +1388,28 @@ void MainWindow::saveSettings() const
 
         settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profile.lastSyncDate);
     }
+}
+
+/*
+===================
+MainWindow::Notify
+
+QSystemTrayIcon doesn't display messages when hidden.
+A quick workaround is to temporarily show the tray, display the message, and then re-hide it.
+===================
+*/
+void MainWindow::Notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon)
+{
+    if (!trayIcon->isSystemTrayAvailable() || !manager.notificationsEnabled())
+        return;
+
+    bool visible = trayIcon->isVisible();
+
+    if (!visible)
+        trayIcon->show();
+
+    trayIcon->showMessage(title, message, icon, std::numeric_limits<int>::max());
+
+    if (!visible)
+        trayIcon->hide();
 }
