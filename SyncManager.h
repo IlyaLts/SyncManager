@@ -182,6 +182,7 @@ Q_SIGNALS:
 
 private:
 
+    bool syncProfile(SyncProfile &profile);
     int getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList);
     void checkForRenamedFolders(SyncProfile &profile);
     void checkForMovedFiles(SyncProfile &profile);

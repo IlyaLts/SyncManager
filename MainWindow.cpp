@@ -57,7 +57,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->horizontalSplitter->setStretchFactor(0, 0);
     ui->horizontalSplitter->setStretchFactor(1, 1);
 
-    showInTray = settings.value("ShowInTray", true).toBool();
+    showInTray = settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool();
 
     profileModel = new DecoratedStringListModel;
     folderModel = new DecoratedStringListModel;
