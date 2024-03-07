@@ -46,7 +46,10 @@ int main(int argc, char *argv[])
     // Prevention of multiple instances
     if (!sharedMemory.create(1))
     {
-        // Fixes the app being prevented from launch after crashing on Linux
+        // If the app crashes on Linux, the shared memory segment survives the crash,
+        // preventing the app from further launching. To fix this we need to attach
+        // the process to the existing shared memory segment and then detach it immediately,
+        // This triggers the Linux kernel to release the shared memory segment, allowing the app to launch again.
         sharedMemory.attach();
         sharedMemory.detach();
 

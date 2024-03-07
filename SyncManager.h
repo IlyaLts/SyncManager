@@ -30,7 +30,7 @@
 
 #define DATA_FILENAME           "Data.dat"
 #define SYNC_MIN_DELAY          1000
-#define NOTIFICATION_DELAY      300000
+#define NOTIFICATION_COOLDOWN   300000
 #define MOVED_FILES_MIN_SIZE    0
 
 using hash64_t = quint64;
