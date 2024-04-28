@@ -1,4 +1,12 @@
 ==========================
+1.6.1 - Apr 28, 2024
+==========================
+
+- Added a confirmation dialog on removing a folder when syncing.
+- Fixed launch on startup on Linux.
+- Fixed tray messages not being displayed when tray icon is hidden/
+
+==========================
 1.6 - Jan 29, 2024
 ==========================
 

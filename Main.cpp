@@ -43,21 +43,18 @@ int main(int argc, char *argv[])
     QApplication::setStyle(QStyleFactory::create("Windows"));
 #endif
 
+    // If the app crashes on Linux, the shared memory segment survives the crash,
+    // preventing the app from further launching. To fix this we need to attach
+    // the process to the existing shared memory segment and then detach it immediately,
+    // This triggers the Linux kernel to release the shared memory segment, allowing the app to launch again.
+    sharedMemory.attach();
+    sharedMemory.detach();
+
     // Prevention of multiple instances
     if (!sharedMemory.create(1))
     {
-        // If the app crashes on Linux, the shared memory segment survives the crash,
-        // preventing the app from further launching. To fix this we need to attach
-        // the process to the existing shared memory segment and then detach it immediately,
-        // This triggers the Linux kernel to release the shared memory segment, allowing the app to launch again.
-        sharedMemory.attach();
-        sharedMemory.detach();
-
-        if (!sharedMemory.create(1))
-        {
-            QMessageBox::warning(NULL, "Couldn't launch!", "The app is already launched and cannot be launched as a second instance.");
-            return -1;
-        }
+        QMessageBox::warning(NULL, "Couldn't launch!", "The app is already launched and cannot be launched as a second instance.");
+        return -1;
     }
 
     if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
