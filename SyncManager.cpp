@@ -1715,7 +1715,7 @@ void SyncManager::removeFolders(SyncFolder &folder, const QString &versioningPat
     // This ensures that the trash folder has the exact same folder structure as in the original destination.
     QVector<QString> sortedFoldersToRemove;
     sortedFoldersToRemove.reserve(folder.foldersToRemove.size());
-    for (const auto &str : qAsConst(folder.foldersToRemove)) sortedFoldersToRemove.append(str);
+    for (const auto &str : std::as_const(folder.foldersToRemove)) sortedFoldersToRemove.append(str);
     std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const QString &a, const QString &b) -> bool { return a.size() < b.size(); });
 
     for (auto folderIt = sortedFoldersToRemove.begin(); folderIt != sortedFoldersToRemove.end() && (!m_paused && !folder.paused);)
