@@ -1,10 +1,17 @@
 ==========================
+1.6.2 - Jun 9, 2024
+==========================
+
+- Added the Windows 11 window style.
+- Updated Qt framework.
+
+==========================
 1.6.1 - Apr 28, 2024
 ==========================
 
 - Added a confirmation dialog on removing a folder when syncing.
 - Fixed launch on startup on Linux.
-- Fixed tray messages not being displayed when tray icon is hidden/
+- Fixed tray messages not being displayed when tray icon is hidden.
 
 ==========================
 1.6 - Jan 29, 2024

@@ -1,6 +1,6 @@
 /*
 ===============================================================================
-    Copyright (C) 2022-2023 Ilya Lyakhovets
+    Copyright (C) 2022-2024 Ilya Lyakhovets
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include <QTimer>
 #include <QMovie>
 
-#define SYNCMANAGER_VERSION     "1.6.1"
+#define SYNCMANAGER_VERSION     "1.6.2"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
 #define UPDATE_DELAY            40
