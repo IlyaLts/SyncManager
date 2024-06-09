@@ -1539,7 +1539,7 @@ bool SyncManager::removeFile(SyncFolder &folder, const QString &path, const QStr
 {
     if (m_deletionMode == MoveToTrash)
     {
-        // Used to make sure that moveToTrash function really moved a folder
+        // Used to make sure that moveToTrash function really moved a file/folder
         // to the trash as it can return true even though it failed to do so
         QString pathInTrash;
 

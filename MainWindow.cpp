@@ -64,6 +64,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->syncProfilesView->setModel(profileModel);
     ui->folderListView->setModel(folderModel);
 
+    if (QApplication::style()->name() == "windows11")
+    {
+        ui->syncProfilesView->setStyleSheet("QListView::item { height: 30px; }");
+        ui->folderListView->setStyleSheet("QListView::item { height: 30px; }");
+    }
+
     iconAdd.addFile(":/Images/IconAdd.png");
     iconDone.addFile(":/Images/IconDone.png");
     iconPause.addFile(":/Images/IconPause.png");
