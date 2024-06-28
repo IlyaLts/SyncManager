@@ -1510,11 +1510,10 @@ void SyncManager::checkForChanges(SyncProfile &profile)
     if ((m_syncingMode == Automatic && profile.paused) || profile.folders.size() < 2)
         return;
 
+    checkForRenamedFolders(profile);
+
     if (m_detectMovedFiles)
-    {
-        checkForRenamedFolders(profile);
         checkForMovedFiles(profile);
-    }
 
     checkForAddedFiles(profile);
     checkForRemovedFiles(profile);
