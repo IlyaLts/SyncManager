@@ -810,15 +810,28 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     // Optimizes memory usage
     for (auto &folder : profile.folders)
     {
+        for (QHash<hash64_t, File>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end();)
+        {
+            // If a file doesn't have a path for some reason, then that means that the file doesn't exist at all.
+            // So, it is better to remove it from the database to prevent further synchronization issues.
+            if (fileIt->path.isEmpty())
+            {
+                fileIt = folder.files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
+            }
+            // Otherwise, clears the path manually as we don't need it at the end of a synchronization session.
+            else
+            {
+                fileIt->path.clear();
+                ++fileIt;
+            }
+        }
+
         folder.files.squeeze();
         folder.filesToMove.squeeze();
         folder.foldersToCreate.squeeze();
         folder.filesToCopy.squeeze();
         folder.foldersToRemove.squeeze();
         folder.filesToRemove.squeeze();
-
-        for (auto &file : folder.files)
-            file.path.clear();
     }
 
     // Resets locked flag after finishing files moving & folder renaming
