@@ -98,13 +98,13 @@ removeDuplicateFiles
 Removes duplicates from the list of files by file size and modified date
 ===================
 */
-static void removeDuplicateFiles(QHash<hash64_t, File *> &files)
+static void removeDuplicateFiles(QHash<hash64_t, SyncFile *> &files)
 {
-    for (QHash<hash64_t, File *>::iterator fileIt = files.begin(); fileIt != files.end();)
+    for (QHash<hash64_t, SyncFile *>::iterator fileIt = files.begin(); fileIt != files.end();)
     {
         bool dup = false;
 
-        for (QHash<hash64_t, File *>::iterator anotherFileIt = files.begin(); anotherFileIt != files.end();)
+        for (QHash<hash64_t, SyncFile *>::iterator anotherFileIt = files.begin(); anotherFileIt != files.end();)
         {
             bool anotherDup = true;
 
@@ -125,7 +125,7 @@ static void removeDuplicateFiles(QHash<hash64_t, File *> &files)
             if (anotherDup)
             {
                 dup = true;
-                anotherFileIt = files.erase(static_cast<QHash<hash64_t, File *>::const_iterator>(anotherFileIt));
+                anotherFileIt = files.erase(static_cast<QHash<hash64_t, SyncFile *>::const_iterator>(anotherFileIt));
                 continue;
             }
 
@@ -133,7 +133,7 @@ static void removeDuplicateFiles(QHash<hash64_t, File *> &files)
         }
 
         if (dup)
-            fileIt = files.erase(static_cast<QHash<hash64_t, File *>::const_iterator>(fileIt));
+            fileIt = files.erase(static_cast<QHash<hash64_t, SyncFile *>::const_iterator>(fileIt));
         else
             ++fileIt;
     }
@@ -550,7 +550,7 @@ void SyncManager::restoreData()
                 hash64_t hash;
                 QDateTime date;
                 qint64 size;
-                File::Type type;
+                SyncFile::Type type;
                 bool updated;
                 bool exists;
 
@@ -563,7 +563,7 @@ void SyncManager::restoreData()
 
                 if (restore)
                 {
-                    const auto it = m_profiles[profileIndex].folders[folderIndex].files.insert(hash, File(QByteArray(), type, date, updated, exists, true));
+                    const auto it = m_profiles[profileIndex].folders[folderIndex].files.insert(hash, SyncFile(QByteArray(), type, date, updated, exists, true));
                     it->size = size;
                     it->path.squeeze();
                 }
@@ -730,8 +730,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
             while (!futureList.isEmpty())
             {
-                int i = 0;
-
                 for (auto futureIt = futureList.begin(); futureIt != futureList.end();)
                 {
                     if (!m_usedDevices.contains(futureIt->first))
@@ -750,8 +748,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
                     {
                         futureIt++;
                     }
-
-                    i++;
                 }
 
                 if (m_shouldQuit)
@@ -810,13 +806,13 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     // Optimizes memory usage
     for (auto &folder : profile.folders)
     {
-        for (QHash<hash64_t, File>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end();)
+        for (QHash<hash64_t, SyncFile>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end();)
         {
             // If a file doesn't have a path for some reason, then that means that the file doesn't exist at all.
             // So, it is better to remove it from the database to prevent further synchronization issues.
             if (fileIt->path.isEmpty())
             {
-                fileIt = folder.files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
+                fileIt = folder.files.erase(static_cast<QHash<quint64, SyncFile>::const_iterator>(fileIt));
             }
             // Otherwise, clears the path manually as we don't need it at the end of a synchronization session.
             else
@@ -850,7 +846,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     {
         for (auto &folder : profile.folders)
             for (auto &file : folder.files)
-                file.locked = false;
+                file.lockedFlag = SyncFile::Unlocked;
     }
 
     // Last sync date update
@@ -918,13 +914,13 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         if (shouldExclude)
             continue;
 
-        File::Type type = fileInfo.isDir() ? File::folder : File::file;
+        SyncFile::Type type = fileInfo.isDir() ? SyncFile::Folder : SyncFile::File;
         hash64_t fileHash = hash64(filePath);
 
         // If a file is already in our database
         if (folder.files.contains(fileHash))
         {
-            File &file = folder.files[fileHash];
+            SyncFile &file = folder.files[fileHash];
             QDateTime fileDate(fileInfo.lastModified());
 
             // Restores filepath
@@ -974,7 +970,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         }
         else
         {
-            File *file = folder.files.insert(fileHash, File(filePath, type, fileInfo.lastModified())).operator->();
+            SyncFile *file = folder.files.insert(fileHash, SyncFile(filePath, type, fileInfo.lastModified())).operator->();
             file->size = fileInfo.size();
             file->newlyAdded = true;
             file->path.squeeze();
@@ -1010,14 +1006,14 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
         if (folderIt->paused || folderIt->toBeRemoved)
             continue;
 
-        for (QHash<hash64_t, File>::iterator renamedFolderIt = folderIt->files.begin(); renamedFolderIt != folderIt->files.end(); ++renamedFolderIt)
+        for (QHash<hash64_t, SyncFile>::iterator renamedFolderIt = folderIt->files.begin(); renamedFolderIt != folderIt->files.end(); ++renamedFolderIt)
         {
             // Only a newly added folder can indicate that the case of folder name was changed
-            if (renamedFolderIt->type != File::folder || !renamedFolderIt->newlyAdded || !renamedFolderIt->exists)
+            if (renamedFolderIt->type != SyncFile::Folder || !renamedFolderIt->newlyAdded || !renamedFolderIt->exists)
                 continue;
 
             // Skips if the folder is already scheduled to be moved, especially when there are three or more sync folders
-            if (renamedFolderIt->locked)
+            if (renamedFolderIt->lockedFlag == SyncFile::Locked)
                 continue;
 
             bool abort = false;
@@ -1044,6 +1040,8 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 
             if (abort) continue;
 
+            if (abort)
+                continue;
             // Adds folders from other sync folders for renaming
             for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
             {
@@ -1088,8 +1086,8 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 QPair<QByteArray, QByteArray> pair(renamedFolderIt->path, otherFolderIterator.filePath().toUtf8());
                 otherFolderIt->foldersToRename.insert(otherFolderHash, pair);
 
-                renamedFolderIt->locked = true;
-                otherFolderIt->files[otherFolderHash].locked = true;
+                renamedFolderIt->lockedFlag = SyncFile::Locked;
+                otherFolderIt->files[otherFolderHash].lockedFlag = SyncFile::Locked;
 
                 // Marks all subdirectories of the renamed folder in our sync folder as locked
                 QString folderPath(folderIt->path);
@@ -1105,7 +1103,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                     hash64_t hash = hash64(path);
 
                     if (folderIt->files.contains(hash))
-                        folderIt->files[hash].locked = true;
+                        folderIt->files[hash].lockedFlag = SyncFile::LockedInternal;
                 }
 
                 // Marks all subdirectories of the folder that doesn't exist anymore in our sync folder as to be removed using the path from another sync folder
@@ -1139,7 +1137,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                     hash64_t hash = hash64(path);
 
                     if (folderIt->files.contains(hash))
-                        folderIt->files[hash].locked = true;
+                        folderIt->files[hash].lockedFlag = SyncFile::LockedInternal;
                 }
             }
         }
@@ -1164,12 +1162,12 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
         if (folderIt->paused || folderIt->toBeRemoved)
             continue;
 
-        QHash<hash64_t, File *> missingFiles;
-        QHash<hash64_t, File *> newFiles;
+        QHash<hash64_t, SyncFile *> missingFiles;
+        QHash<hash64_t, SyncFile *> newFiles;
 
         // Finds files that don't exist in our sync folder anymore
-        for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
-            if (fileIt.value().type == File::file && !fileIt.value().exists && fileIt->size >= m_movedFileMinSize)
+        for (QHash<hash64_t, SyncFile>::iterator fileIt = folderIt->files.begin(); fileIt != folderIt->files.end(); ++fileIt)
+            if (fileIt.value().type == SyncFile::File && !fileIt.value().exists && fileIt->size >= m_movedFileMinSize)
                 missingFiles.insert(fileIt.key(), &fileIt.value());
 
         removeDuplicateFiles(missingFiles);
@@ -1178,20 +1176,20 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             continue;
 
         // Finds files that are new in our sync folder
-        for (QHash<hash64_t, File>::iterator newFileIt = folderIt->files.begin(); newFileIt != folderIt->files.end(); ++newFileIt)
-            if (newFileIt->type == File::file && newFileIt->newlyAdded && newFileIt->exists && newFileIt->size >= m_movedFileMinSize)
+        for (QHash<hash64_t, SyncFile>::iterator newFileIt = folderIt->files.begin(); newFileIt != folderIt->files.end(); ++newFileIt)
+            if (newFileIt->type == SyncFile::File && newFileIt->newlyAdded && newFileIt->exists && newFileIt->size >= m_movedFileMinSize)
                 newFiles.insert(newFileIt.key(), &newFileIt.value());
 
         removeDuplicateFiles(newFiles);
 
-        for (QHash<hash64_t, File *>::iterator newFileIt = newFiles.begin(); newFileIt != newFiles.end(); ++newFileIt)
+        for (QHash<hash64_t, SyncFile *>::iterator newFileIt = newFiles.begin(); newFileIt != newFiles.end(); ++newFileIt)
         {
             bool abort = false;
-            File *movedFile = nullptr;
+            SyncFile *movedFile = nullptr;
             hash64_t movedFileHash;
 
             // Searches for a match between missed file and a newly added file
-            for (QHash<hash64_t, File *>::iterator missingFileIt = missingFiles.begin(); missingFileIt != missingFiles.end(); ++missingFileIt)
+            for (QHash<hash64_t, SyncFile *>::iterator missingFileIt = missingFiles.begin(); missingFileIt != missingFiles.end(); ++missingFileIt)
             {
                 if (missingFileIt.value()->size != newFileIt.value()->size)
                     continue;
@@ -1218,7 +1216,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 if (otherFolderIt->paused || otherFolderIt->toBeRemoved)
                     continue;
 
-                const File &fileToBeMoved = otherFolderIt->files.value(movedFileHash);
+                const SyncFile &fileToBeMoved = otherFolderIt->files.value(movedFileHash);
 
                 // Aborts if a file that needs to be moved doesn't exists in any sync folder
                 if (!fileToBeMoved.exists)
@@ -1260,7 +1258,8 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 }
             }
 
-            if (abort) continue;
+            if (abort)
+                continue;
 
             // Adds a moved/renamed file for moving
             for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
@@ -1271,15 +1270,15 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 if (otherFolderIt->paused || otherFolderIt->toBeRemoved)
                     continue;
 
-                const File &fileToBeMoved = otherFolderIt->files.value(movedFileHash);
+                const SyncFile &fileToBeMoved = otherFolderIt->files.value(movedFileHash);
 
-                newFileIt.value()->locked = true;
+                newFileIt.value()->lockedFlag = SyncFile::Locked;
                 movedFile->toBeRemoved = true;
 
                 QByteArray pathToMove(otherFolderIt->path);
                 pathToMove.append(fileToBeMoved.path);
 
-                otherFolderIt->files[movedFileHash].locked = true;
+                otherFolderIt->files[movedFileHash].lockedFlag = SyncFile::Locked;
                 otherFolderIt->filesToMove.insert(movedFileHash, QPair<QByteArray, QByteArray>(newFileIt.value()->path, pathToMove));
 
             }
@@ -1313,7 +1312,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
             if (folderIt->paused || folderIt->toBeRemoved)
                 break;
 
-            for (QHash<hash64_t, File>::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
+            for (QHash<hash64_t, SyncFile>::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
             {
                 if (otherFolderIt->paused || otherFolderIt->toBeRemoved)
                     break;
@@ -1321,17 +1320,17 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                 if (!otherFileIt.value().exists)
                     continue;
 
-                const File &file = folderIt->files.value(otherFileIt.key());
-                const File &otherFile = otherFileIt.value();
+                const SyncFile &file = folderIt->files.value(otherFileIt.key());
+                const SyncFile &otherFile = otherFileIt.value();
 
-                if (file.locked || file.toBeRemoved || otherFile.locked || otherFile.toBeRemoved)
+                if (file.lockedFlag != SyncFile::Unlocked || file.toBeRemoved || otherFile.lockedFlag != SyncFile::Unlocked || otherFile.toBeRemoved)
                     continue;
 
                 bool alreadyAdded = folderIt->filesToCopy.contains(otherFileIt.key());
                 bool hasNewer = alreadyAdded && folderIt->filesToCopy.value(otherFileIt.key()).second < otherFile.date;
 
                 // Removes a file path from the "to remove" list if a file was updated
-                if (otherFile.type == File::file)
+                if (otherFile.type == SyncFile::File)
                 {
                     if (otherFile.updated)
                         otherFolderIt->filesToRemove.remove(otherFileIt.key());
@@ -1339,7 +1338,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                     if (file.updated || (otherFile.exists && folderIt->filesToRemove.contains(otherFileIt.key()) && !otherFolderIt->filesToRemove.contains(otherFileIt.key())))
                         folderIt->filesToRemove.remove(otherFileIt.key());
                 }
-                else if (otherFile.type == File::folder)
+                else if (otherFile.type == SyncFile::Folder)
                 {
                     if (otherFile.updated)
                         otherFolderIt->foldersToRemove.remove(otherFileIt.key());
@@ -1354,7 +1353,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
 
                 if ((!folderIt->files.contains(otherFileIt.key()) ||
                 // Or if we have a newer version of a file from other folders
-                ((file.type == File::file || file.type != otherFile.type) && file.exists && otherFile.exists &&
+                ((file.type == SyncFile::File || file.type != otherFile.type) && file.exists && otherFile.exists &&
 #ifdef Q_OS_LINUX
                  (((!file.updated && otherFile.updated) || (file.updated && otherFile.updated && file.date < otherFile.date)))) ||
 #else
@@ -1364,18 +1363,18 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                 (!file.exists && (otherFile.updated || otherFolderIt->files.value(hash64(QByteArray(otherFile.path).remove(otherFile.path.indexOf('/'), otherFile.path.size()))).updated))))
                 {
                     // Aborts if a file is supposed to be removed
-                    if (otherFile.type == File::file)
+                    if (otherFile.type == SyncFile::File)
                     {
                         if (otherFolderIt->filesToRemove.contains(otherFileIt.key()))
                             continue;
                     }
-                    else if (otherFile.type == File::folder)
+                    else if (otherFile.type == SyncFile::Folder)
                     {
                         if (otherFolderIt->foldersToRemove.contains(otherFileIt.key()))
                             continue;
                     }
 
-                    if (otherFile.type == File::folder)
+                    if (otherFile.type == SyncFile::Folder)
                     {
                         folderIt->foldersToCreate.insert(otherFileIt.key(), otherFile.path)->squeeze();
                         folderIt->foldersToRemove.remove(otherFileIt.key());
@@ -1413,7 +1412,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
         if (!folderIt->exists)
             continue;
 
-        for (QHash<hash64_t, File>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
+        for (QHash<hash64_t, SyncFile>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
         {
             if (folderIt->paused || folderIt->toBeRemoved)
                 break;
@@ -1421,17 +1420,17 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
             // A file was moved and should be removed from a file datebase
             if (fileIt->toBeRemoved)
             {
-                fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
+                fileIt = folderIt->files.erase(static_cast<QHash<quint64, SyncFile>::const_iterator>(fileIt));
                 continue;
             }
 
-            if (fileIt->exists || fileIt->locked)
+            if (fileIt->exists || fileIt->lockedFlag != SyncFile::Unlocked)
             {
                 ++fileIt;
                 continue;
             }
 
-            if (fileIt->type == File::file)
+            if (fileIt->type == SyncFile::File)
             {
                 if (folderIt->filesToMove.contains(fileIt.key()) ||
                     folderIt->filesToCopy.contains(fileIt.key()) ||
@@ -1441,7 +1440,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                     continue;
                 }
             }
-            else if (fileIt->type == File::folder)
+            else if (fileIt->type == SyncFile::Folder)
             {
                 if (folderIt->foldersToRename.contains(fileIt.key()) ||
                     folderIt->foldersToCreate.contains(fileIt.key()) ||
@@ -1463,7 +1462,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                     if (folderIt == anotherFolderIt || !anotherFolderIt->exists || anotherFolderIt->paused || anotherFolderIt->toBeRemoved)
                         continue;
 
-                    const File &fileToRemove = anotherFolderIt->files.value(fileIt.key());
+                    const SyncFile &fileToRemove = anotherFolderIt->files.value(fileIt.key());
 
                     if (!fileToRemove.path.isEmpty())
                     {
@@ -1491,11 +1490,11 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                 if (folderIt == anotherFolderIt || !anotherFolderIt->exists || anotherFolderIt->paused || anotherFolderIt->toBeRemoved)
                     continue;
 
-                const File &fileToRemove = anotherFolderIt->files.value(fileIt.key());
+                const SyncFile &fileToRemove = anotherFolderIt->files.value(fileIt.key());
 
                 if (fileToRemove.exists)
                 {
-                    if (fileIt.value().type == File::folder)
+                    if (fileIt.value().type == SyncFile::Folder)
                         anotherFolderIt->foldersToRemove.insert(fileIt.key(), fileToRemove.path)->squeeze();
                     else
                         anotherFolderIt->filesToRemove.insert(fileIt.key(), fileToRemove.path)->squeeze();
@@ -1506,7 +1505,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                 }
             }
 
-            fileIt = folderIt->files.erase(static_cast<QHash<quint64, File>::const_iterator>(fileIt));
+            fileIt = folderIt->files.erase(static_cast<QHash<quint64, SyncFile>::const_iterator>(fileIt));
         }
     }
 
@@ -1547,7 +1546,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 SyncManager::removeFile
 ===================
 */
-bool SyncManager::removeFile(SyncFolder &folder, const QString &path, const QString &fullPath, const QString &versioningPath, File::Type type)
+bool SyncManager::removeFile(SyncFolder &folder, const QString &path, const QString &fullPath, const QString &versioningPath, SyncFile::Type type)
 {
     if (m_deletionMode == MoveToTrash)
     {
@@ -1567,7 +1566,7 @@ bool SyncManager::removeFile(SyncFolder &folder, const QString &path, const QStr
     }
     else
     {
-        if (type == File::folder)
+        if (type == SyncFile::Folder)
             return QDir(fullPath).removeRecursively() || !QFileInfo::exists(fullPath);
         else
             return QFile::remove(fullPath) || !QFileInfo::exists(fullPath);
@@ -1599,7 +1598,7 @@ void SyncManager::createParentFolders(SyncFolder &folder, QByteArray path)
             shortPath.remove(0, folder.path.size());
             hash64_t hash = hash64(shortPath);
 
-            folder.files.insert(hash, File(shortPath, File::folder, QFileInfo(foldersToCreate.top()).lastModified()));
+            folder.files.insert(hash, SyncFile(shortPath, SyncFile::Folder, QFileInfo(foldersToCreate.top()).lastModified()));
             folder.foldersToCreate.remove(hash);
             folder.foldersToUpdate.insert(foldersToCreate.top());
         }
@@ -1644,7 +1643,7 @@ void SyncManager::renameFolders(SyncFolder &folder)
                 folder.foldersToUpdate.insert(parentTo.toUtf8());
 
             folder.files.remove(hash64(QByteArray(folderIt.value().second).remove(0, folder.path.size())));
-            folder.files.insert(fileHash, File(folderIt.value().first, File::folder, QFileInfo(filePath).lastModified()));
+            folder.files.insert(fileHash, SyncFile(folderIt.value().first, SyncFile::Folder, QFileInfo(filePath).lastModified()));
             folderIt = folder.foldersToRename.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(folderIt));
         }
         else
@@ -1705,7 +1704,7 @@ void SyncManager::moveFiles(SyncFolder &folder)
             hash64_t oldHash = hash64(QByteArray(fileIt.value().second).remove(0, folder.path.size()));
 
             folder.files.remove(oldHash);
-            auto it = folder.files.insert(fileHash, File(fileIt.value().first, File::file, QFileInfo(filePath).lastModified()));
+            auto it = folder.files.insert(fileHash, SyncFile(fileIt.value().first, SyncFile::File, QFileInfo(filePath).lastModified()));
             it->size = QFileInfo(filePath).size();
             fileIt = folder.filesToMove.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QByteArray>>::const_iterator>(fileIt));
         }
@@ -1740,7 +1739,7 @@ void SyncManager::removeFolders(SyncFolder &folder, const QString &versioningPat
         folderPath.append(*folderIt);
         hash64_t fileHash = hash64(folderIt->toUtf8());
 
-        if (removeFile(folder, *folderIt, folderPath, versioningPath, File::folder) || !QDir().exists(folderPath))
+        if (removeFile(folder, *folderIt, folderPath, versioningPath, SyncFile::Folder) || !QDir().exists(folderPath))
         {
             folder.files.remove(fileHash);
             folder.foldersToRemove.remove(fileHash);
@@ -1775,7 +1774,7 @@ void SyncManager::removeFiles(SyncFolder &folder, const QString &versioningPath)
         filePath.append(*fileIt);
         hash64_t fileHash = hash64(*fileIt);
 
-        if (removeFile(folder, *fileIt, filePath, versioningPath, File::file) || !QFile().exists(filePath))
+        if (removeFile(folder, *fileIt, filePath, versioningPath, SyncFile::File) || !QFile().exists(filePath))
         {
             folder.files.remove(fileHash);
             fileIt = folder.filesToRemove.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(fileIt));
@@ -1814,11 +1813,11 @@ void SyncManager::createFolders(SyncFolder &folder, const QString &versioningPat
 
         // Removes a file with the same filename first if exists
         if (fileInfo.exists() && fileInfo.isFile())
-            removeFile(folder, *folderIt, folderPath, versioningPath, File::file);
+            removeFile(folder, *folderIt, folderPath, versioningPath, SyncFile::File);
 
         if (QDir().mkdir(folderPath) || fileInfo.exists())
         {
-            folder.files.insert(fileHash, File(*folderIt, File::folder, fileInfo.lastModified()));
+            folder.files.insert(fileHash, SyncFile(*folderIt, SyncFile::Folder, fileInfo.lastModified()));
             folderIt = folder.foldersToCreate.erase(static_cast<QHash<hash64_t, QByteArray>::const_iterator>(folderIt));
 
             QString parentPath = QFileInfo(folderPath).path();
@@ -1859,11 +1858,11 @@ void SyncManager::copyFiles(SyncFolder &folder, const QString &versioningPath)
         QString filePath(folder.path);
         filePath.append(fileIt.value().first.first);
         hash64_t fileHash = hash64(fileIt.value().first.first);
-        const File &file = folder.files.value(fileHash);
+        const SyncFile &file = folder.files.value(fileHash);
         QFileInfo destination(filePath);
 
         // Destination file is a newly added file
-        if (file.type == File::unknown && destination.exists())
+        if (file.type == SyncFile::Unknown && destination.exists())
         {
             QFileInfo origin(fileIt.value().first.second);
 
@@ -1907,7 +1906,7 @@ void SyncManager::copyFiles(SyncFolder &folder, const QString &versioningPath)
         if (QFile::copy(fileIt.value().first.second, filePath))
         {
             // Do not touch QFileInfo(filePath).lastModified()), as we want to get the latest modified date
-            auto it = folder.files.insert(fileHash, File(fileIt.value().first.first, File::file, QFileInfo(filePath).lastModified()));
+            auto it = folder.files.insert(fileHash, SyncFile(fileIt.value().first.first, SyncFile::File, QFileInfo(filePath).lastModified()));
             it->size = QFileInfo(filePath).size();
             fileIt = folder.filesToCopy.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(fileIt));
 

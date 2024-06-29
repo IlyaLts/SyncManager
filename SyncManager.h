@@ -35,32 +35,39 @@
 
 using hash64_t = quint64;
 
-struct File
+struct SyncFile
 {
     enum Type : qint8
     {
-        unknown,
-        file,
-        folder
+        Unknown,
+        File,
+        Folder
     };
 
-    File(){}
-    File(QByteArray path, Type type, QDateTime time, bool updated = false, bool exists = true, bool onRestore = false) : path(path),
-                                                                                                                         date(time),
-                                                                                                                         type(type),
-                                                                                                                         updated(updated),
-                                                                                                                         exists(exists),
-                                                                                                                         onRestore(onRestore){}
+    enum LockedFlag : qint8
+    {
+        Unlocked,           // Files can be copied or deleted.
+        Locked,             // Files are scheduled for renaming or moving, and must not be copied or deleted.
+        LockedInternal      // The same as Locked, but for internal subfolders in a case-insensitive renamed folder.
+    };
+
+    SyncFile(){}
+    SyncFile(QByteArray path, Type type, QDateTime time, bool updated = false, bool exists = true, bool onRestore = false) : path(path),
+                                                                                                                             date(time),
+                                                                                                                             type(type),
+                                                                                                                             updated(updated),
+                                                                                                                             exists(exists),
+                                                                                                                             onRestore(onRestore){}
 
     QByteArray path;
     QDateTime date;
     qint64 size = 0;
-    Type type = unknown;
+    Type type = Unknown;
+    LockedFlag lockedFlag = Unlocked;
     bool updated = false;
     bool exists = false;
     bool onRestore = false;
     bool newlyAdded = false;
-    bool locked = false;
     bool toBeRemoved = false;
 };
 
@@ -69,7 +76,7 @@ struct SyncFolder
     explicit SyncFolder(bool paused) : paused(paused){}
 
     QByteArray path;
-    QHash<hash64_t, File> files;
+    QHash<hash64_t, SyncFile> files;
     QHash<hash64_t, QPair<QByteArray, QByteArray>> foldersToRename;
     QHash<hash64_t, QPair<QByteArray, QByteArray>> filesToMove;
     QHash<hash64_t, QByteArray> foldersToCreate;
@@ -189,7 +196,7 @@ private:
     void checkForAddedFiles(SyncProfile &profile);
     void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);
-    bool removeFile(SyncFolder &folder, const QString &path, const QString &fullPath, const QString &versioningPath, File::Type type);
+    bool removeFile(SyncFolder &folder, const QString &path, const QString &fullPath, const QString &versioningPath, SyncFile::Type type);
     void renameFolders(SyncFolder &folder);
     void moveFiles(SyncFolder &folder);
     void createParentFolders(SyncFolder &folder, QByteArray path);
