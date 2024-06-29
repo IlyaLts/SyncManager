@@ -1,4 +1,12 @@
 ==========================
+1.6.3 - Jun 29, 2024
+==========================
+
+- Bug fixes.
+- Changed checking for case-insensitive renamed folders enabled by default.
+- Improved detection of case-insensitive renames of folders.
+
+==========================
 1.6.2 - Jun 9, 2024
 ==========================
 

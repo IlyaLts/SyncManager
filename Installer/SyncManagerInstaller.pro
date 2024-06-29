@@ -13,6 +13,7 @@ QMAKE_EXTRA_COMPILERS += installer
 
 DISTFILES += \
     config/ControlScript.qs \
+    packages/SyncManager/data/ChangeLog.txt \
     packages/SyncManager/meta/InstallScript.qs \
     packages/SyncManager/meta/package.xml
 
