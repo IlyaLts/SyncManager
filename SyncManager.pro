@@ -9,20 +9,28 @@ CONFIG += c++20
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    Common.cpp \
     DecoratedStringListModel.cpp \
     FolderListView.cpp \
     Main.cpp \
     MainWindow.cpp \
     RemovableListView.cpp \
+    SyncFile.cpp \
+    SyncFolder.cpp \
     SyncManager.cpp \
+    SyncProfile.cpp \
     UnhidableMenu.cpp
 
 HEADERS += \
+    Common.h \
     DecoratedStringListModel.h \
     FolderListView.h \
     MainWindow.h \
     RemovableListView.h \
+    SyncFile.h \
+    SyncFolder.h \
     SyncManager.h \
+    SyncProfile.h \
     UnhidableMenu.h
 
 FORMS += \

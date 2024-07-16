@@ -23,89 +23,18 @@
 #include <QList>
 #include <QSet>
 #include <QMap>
-#include <QHash>
 #include <QQueue>
 #include <QTimer>
 #include <QDateTime>
+
+#include "SyncFile.h"
+#include "SyncFolder.h"
+#include "SyncProfile.h"
 
 #define DATA_FILENAME           "Data.dat"
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_COOLDOWN   300000
 #define MOVED_FILES_MIN_SIZE    0
-
-using hash64_t = quint64;
-
-struct SyncFile
-{
-    enum Type : qint8
-    {
-        Unknown,
-        File,
-        Folder
-    };
-
-    enum LockedFlag : qint8
-    {
-        Unlocked,           // Files can be copied or deleted.
-        Locked,             // Files are scheduled for renaming or moving, and must not be copied or deleted.
-        LockedInternal      // The same as Locked, but for internal subfolders in a case-insensitive renamed folder.
-    };
-
-    SyncFile(){}
-    SyncFile(QByteArray path, Type type, QDateTime time, bool updated = false, bool exists = true, bool onRestore = false) : path(path),
-                                                                                                                             date(time),
-                                                                                                                             type(type),
-                                                                                                                             updated(updated),
-                                                                                                                             exists(exists),
-                                                                                                                             onRestore(onRestore){}
-
-    QByteArray path;
-    QDateTime date;
-    qint64 size = 0;
-    Type type = Unknown;
-    LockedFlag lockedFlag = Unlocked;
-    bool updated = false;
-    bool exists = false;
-    bool onRestore = false;
-    bool newlyAdded = false;
-    bool toBeRemoved = false;
-};
-
-struct SyncFolder
-{
-    explicit SyncFolder(bool paused) : paused(paused){}
-
-    QByteArray path;
-    QHash<hash64_t, SyncFile> files;
-    QHash<hash64_t, QPair<QByteArray, QByteArray>> foldersToRename;
-    QHash<hash64_t, QPair<QByteArray, QByteArray>> filesToMove;
-    QHash<hash64_t, QByteArray> foldersToCreate;
-    QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToCopy;
-    QHash<hash64_t, QByteArray> foldersToRemove;
-    QHash<hash64_t, QByteArray> filesToRemove;
-    QSet<QByteArray> foldersToUpdate;
-
-    QDateTime lastSyncDate;
-    bool exists = true;
-    bool syncing = false;
-    bool paused = false;
-    bool toBeRemoved = false;
-};
-
-struct SyncProfile
-{
-    explicit SyncProfile(bool paused) : paused(paused){}
-
-    QList<SyncFolder> folders;
-    QList<QByteArray> excludeList;
-
-    bool syncing = false;
-    bool paused = false;
-    bool toBeRemoved = false;
-    quint64 syncTime = 0;
-    QDateTime lastSyncDate;
-    QString name;
-};
 
 /*
 ===========================================================
