@@ -260,19 +260,8 @@ void SyncManager::updateNextSyncingTime()
 
     // Counts the total syncing time of profiles with at least two active folders
     for (const auto &profile : m_profiles)
-    {
-        if (profile.paused)
-            continue;
-
-        int activeFolders = 0;
-
-        for (const auto &folder : profile.folders)
-            if (folder.isActive())
-                activeFolders++;
-
-        if (activeFolders >= 2)
+        if (profile.isActive())
             time += profile.syncTime;
-    }
 
     // Multiplies sync time by 2
     for (int i = 0; i < m_syncTimeMultiplier - 1; i++)
@@ -589,20 +578,14 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
     if (!m_paused)
     {
-        int activeFolders = 0;
         QElapsedTimer timer;
         timer.start();
 
         // Counts active folders in a profile
         for (auto &folder : profile.folders)
-        {
             folder.exists = QFileInfo::exists(folder.path);
 
-            if (folder.isActive())
-                activeFolders++;
-        }
-
-        if (activeFolders >= 2)
+        if (profile.isActive())
         {
 #ifdef DEBUG
             qDebug("=======================================");
@@ -1370,7 +1353,7 @@ SyncManager::checkForChanges
 */
 void SyncManager::checkForChanges(SyncProfile &profile)
 {
-    if ((m_syncingMode == Automatic && profile.paused) || profile.folders.size() < 2)
+    if (!profile.isActive())
         return;
 
     checkForRenamedFolders(profile);

@@ -76,7 +76,7 @@ hash64_t hash64(const QByteArray &str)
 ===================
 removeDuplicateFiles
 
-Removes duplicates from the list of files by file size and modified date
+Removes duplicates from the list of files based on file size and modification time
 ===================
 */
 void removeDuplicateFiles(QHash<hash64_t, SyncFile *> &files)
@@ -124,8 +124,10 @@ void removeDuplicateFiles(QHash<hash64_t, SyncFile *> &files)
 ===================
 GetCurrentFileInfo
 
-Gets the current file info of a file in a sync folder on a disk.
-The only way to find out this is to use QDirIterator.
+Gets the current file information for a file with the correct case in a synchronized folder.
+
+QFileInfo and QFile return a predetermined filename based on the argument provided during construction,
+instead of the actual current filename on the disk. So, the only way to get the current filename is to use QDirIterator.
 ===================
 */
 QFileInfo GetCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters)

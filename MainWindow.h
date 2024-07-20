@@ -95,7 +95,7 @@ private Q_SLOTS:
     void showContextMenu(const QPoint &pos) const;
     void sync(int profileNumber = -1);
     void saveSettings() const;
-    void Notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
+    void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
 
 private:
 

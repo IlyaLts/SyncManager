@@ -18,3 +18,19 @@
 */
 
 #include "SyncProfile.h"
+
+/*
+===================
+SyncProfile::isActive
+===================
+*/
+bool SyncProfile::isActive() const
+{
+    int activeFolders = 0;
+
+    for (auto &folder : folders)
+        if (folder.isActive())
+            activeFolders++;
+
+    return !paused && !toBeRemoved && activeFolders >= 2;
+}

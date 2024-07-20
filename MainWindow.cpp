@@ -214,7 +214,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(&manager.syncTimer(), &QTimer::timeout, this, [this](){ if (manager.queue().isEmpty()) { manager.setSyncHidden(true); sync(); }});
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
-    connect(&manager, &SyncManager::warning, this, [this](QString title, QString message){ Notify(title, message, QSystemTrayIcon::Critical); });
+    connect(&manager, &SyncManager::warning, this, [this](QString title, QString message){ notify(title, message, QSystemTrayIcon::Critical); });
     connect(&manager, &SyncManager::profileSynced, this, [this](SyncProfile *profile){ updateLastSyncTime(profile); saveSettings(); });
 
     // Loads synchronization profiles
@@ -286,7 +286,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     for (auto &profile : manager.profiles())
         for (auto &folder : profile.folders)
             if (!folder.exists)
-                Notify("Couldn't find folder", folder.path, QSystemTrayIcon::Warning);
+                notify("Couldn't find folder", folder.path, QSystemTrayIcon::Warning);
 }
 
 /*
@@ -1398,13 +1398,13 @@ void MainWindow::saveSettings() const
 
 /*
 ===================
-MainWindow::Notify
+MainWindow::notify
 
 QSystemTrayIcon doesn't display messages when hidden.
 A quick workaround is to temporarily show the tray, display the message, and then re-hide it.
 ===================
 */
-void MainWindow::Notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon)
+void MainWindow::notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon)
 {
     if (!trayIcon->isSystemTrayAvailable() || !manager.notificationsEnabled())
         return;

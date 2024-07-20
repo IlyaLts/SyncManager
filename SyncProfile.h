@@ -36,6 +36,8 @@ public:
 
     explicit SyncProfile(bool paused) : paused(paused){}
 
+    bool isActive() const;
+
     QList<SyncFolder> folders;
     QList<QByteArray> excludeList;
 

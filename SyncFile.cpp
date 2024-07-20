@@ -24,23 +24,25 @@
 SyncFile::isOlder
 ===================
 */
-bool SyncFile::isOlder(const SyncFile &otherFile) const
+bool SyncFile::isOlder(const SyncFile &other) const
 {
     // Has the file type or if both file types are different
-    if (type != SyncFile::File && type == otherFile.type)
+    if (type != SyncFile::File && type == other.type)
         return false;
 
-    if (!exists || !otherFile.exists)
+    if (!exists || !other.exists)
         return false;
 
-    if (!updated && otherFile.updated)
+    if (!updated && other.updated)
         return true;
 
 #ifdef Q_OS_LINUX
-    if (updated && otherFile.updated && date < otherFile.date)
+    // Linux doesn't preserve the original modification date, so the updated flags on both files should be mandatory
+    if (updated && other.updated && date < other.date)
         return true;
 #else
-    if (updated == otherFile.updated && date < otherFile.date)
+    // Checking the updated flags on both files allows detection of a newly added file with an older modification date
+    if (updated == other.updated && date < other.date)
         return true;
 #endif
 
