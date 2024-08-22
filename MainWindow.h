@@ -41,8 +41,6 @@ class QItemSelection;
 class QMimeData;
 class UnhidableMenu;
 
-extern QTranslator translator;
-
 /*
 ===========================================================
 
@@ -168,7 +166,6 @@ private:
     UnhidableMenu *languageMenu;
 
     QLocale::Language language;
-    QLocale locale;
     QTimer updateTimer;
     bool showInTray;
     bool appInitiated = false;

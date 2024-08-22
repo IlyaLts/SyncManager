@@ -152,10 +152,6 @@
             <translation>क्या आप सुनिश्चित हैं? सावधानी: इससे डेटा हानि हो सकती है!</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>हर बार सिंक्रोनाइज करें: </translation>
-        </message>
-        <message>
             <source>%1 days</source>
             <translation>%1 दिन</translation>
         </message>

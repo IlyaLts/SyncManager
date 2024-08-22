@@ -152,10 +152,6 @@
             <translation>Вы уверены? Внимание: это может привести к потере данных!</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>Синхронизировать каждые: </translation>
-        </message>
-        <message>
             <source>%1 days</source>
             <translation>%1 дней</translation>
         </message>

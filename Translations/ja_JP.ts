@@ -152,10 +152,6 @@
             <translation>確かにしてください。注意: これによりデータが失われる可能性があります!</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>毎回同期: </translation>
-        </message>
-        <message>
             <source>%1 days</source>
             <translation>%1 日間</translation>
         </message>

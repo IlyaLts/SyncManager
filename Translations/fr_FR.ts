@@ -5,7 +5,7 @@
         <name>MainWindow</name>
         <message>
             <source>Couldn't launch!</source>
-            <translation>Impossible de lancer !</translation>
+            <translation>Impossible de lancer!</translation>
         </message>
         <message>
             <source>The app is already launched and cannot be launched as a second instance.</source>
@@ -150,10 +150,6 @@
         <message>
             <source>Are you sure? Beware: this could lead to data loss!</source>
             <translation>Êtes-vous sûr ? Attention : cela pourrait entraîner une perte de données !</translation>
-        </message>
-        <message>
-            <source>Synchronize Every: </source>
-            <translation>Synchroniser toutes les : </translation>
         </message>
         <message>
             <source>%1 days</source>

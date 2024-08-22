@@ -152,10 +152,6 @@
             <translation>Are you sure? Beware: this could lead to data loss!</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>Synchronize Every: </translation>
-        </message>
-        <message>
             <source>%1 days</source>
             <translation>%1 days</translation>
         </message>

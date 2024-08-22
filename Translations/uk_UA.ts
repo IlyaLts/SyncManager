@@ -152,10 +152,6 @@
             <translation>Ви впевнені? Обережно: це може призвести до втрати даних!</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>Синхронізувати кожні: </translation>
-        </message>
-        <message>
             <source>%1 days</source>
             <translation>%1 днів</translation>
         </message>

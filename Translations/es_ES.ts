@@ -152,10 +152,6 @@
             <translation>¿Estás seguro? Ten cuidado: esto podría provocar pérdida de datos!</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>Sincronizar cada: </translation>
-        </message>
-        <message>
             <source>%1 days</source>
             <translation>%1 días</translation>
         </message>

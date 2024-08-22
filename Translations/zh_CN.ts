@@ -152,10 +152,6 @@
             <translation>你确定吗？注意：这可能导致数据丢失！</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>每隔： </translation>
-        </message>
-        <message>
             <source>%1 days</source>
             <translation>%1 天</translation>
         </message>

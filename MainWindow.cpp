@@ -22,6 +22,7 @@
 #include "DecoratedStringListModel.h"
 #include "UnhidableMenu.h"
 #include "FolderListView.h"
+#include "Common.h"
 #include <QStringListModel>
 #include <QSettings>
 #include <QCloseEvent>
@@ -34,8 +35,6 @@
 #include <QMenuBar>
 #include <QTimer>
 #include <QtConcurrent/QtConcurrent>
-
-QTranslator translator;
 
 /*
 ===================
@@ -1000,84 +999,32 @@ void MainWindow::switchLanguage(QLocale::Language language)
     spanishAction->setChecked(false);
     ukrainianAction->setChecked(false);
 
-    QCoreApplication::removeTranslator(&translator);
-    bool result;
+    setTranslator(language);
 
     if (language == QLocale::Chinese)
-    {
         chineseAction->setChecked(true);
-        result = translator.load(":/i18n/zh_CN.qm");
-        locale = QLocale(QLocale::Chinese, QLocale::China);
-    }
     else if (language == QLocale::French)
-    {
         frenchAction->setChecked(true);
-        result = translator.load(":/i18n/fr_FR.qm");
-        locale = QLocale(QLocale::French, QLocale::France);
-    }
     else if (language == QLocale::German)
-    {
         germanAction->setChecked(true);
-        result = translator.load(":/i18n/de_DE.qm");
-        locale = QLocale(QLocale::German, QLocale::Germany);
-    }
     else if (language == QLocale::Hindi)
-    {
         hindiAction->setChecked(true);
-        result = translator.load(":/i18n/hi_IN.qm");
-        locale = QLocale(QLocale::Hindi, QLocale::India);
-    }
     else if (language == QLocale::Italian)
-    {
         italianAction->setChecked(true);
-        result = translator.load(":/i18n/it_IT.qm");
-        locale = QLocale(QLocale::Italian, QLocale::Italy);
-    }
     else if (language == QLocale::Japanese)
-    {
         japaneseAction->setChecked(true);
-        result = translator.load(":/i18n/ja_JP.qm");
-        locale = QLocale(QLocale::Japanese, QLocale::Japan);
-    }
     else if (language == QLocale::Portuguese)
-    {
         portugueseAction->setChecked(true);
-        result = translator.load(":/i18n/pt_PT.qm");
-        locale = QLocale(QLocale::Portuguese, QLocale::Portugal);
-    }
     else if (language == QLocale::Russian)
-    {
         russianAction->setChecked(true);
-        result = translator.load(":/i18n/ru_RU.qm");
-        locale = QLocale(QLocale::Russian, QLocale::Russia);
-    }
     else if (language == QLocale::Spanish)
-    {
         spanishAction->setChecked(true);
-        result = translator.load(":/i18n/es_ES.qm");
-        locale = QLocale(QLocale::Spanish, QLocale::Spain);
-    }
     else if (language == QLocale::Ukrainian)
-    {
         ukrainianAction->setChecked(true);
-        result = translator.load(":/i18n/uk_UA.qm");
-        locale = QLocale(QLocale::Ukrainian, QLocale::Ukraine);
-    }
     else
-    {
         englishAction->setChecked(true);
-        result = translator.load(":/i18n/en_US.qm");
-        locale = QLocale(QLocale::English, QLocale::UnitedStates);
-    }
-
-    if (!result)
-    {
-        qWarning("Unable to load %s", qPrintable(QDir::toNativeSeparators("qmlFile")));
-        return;
-    }
 
     this->language = language;
-    QCoreApplication::installTranslator(&translator);
     retranslate();
 }
 
@@ -1169,6 +1116,8 @@ MainWindow::updateLastSyncTime
 */
 void MainWindow::updateLastSyncTime(SyncProfile *profile)
 {
+    QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
+
     for (int i = 0; i < profileModel->rowCount(); i++)
     {
         if (profileModel->index(i, 0).data(Qt::DisplayRole).toString() == profile->name)
@@ -1185,7 +1134,7 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             }
             else if (!manager.profiles()[i].lastSyncDate.isNull())
             {
-                QString lastSync = QString(tr("Last synchronization: %1.")).arg(locale.toString(profile->lastSyncDate, QLocale::NarrowFormat));
+                QString lastSync = QString(tr("Last synchronization: %1.")).arg(currentLocale.toString(profile->lastSyncDate, dateFormat));
                 profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
             }
             else
@@ -1203,7 +1152,7 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
                     }
                     else if (!folder.lastSyncDate.isNull())
                     {
-                        QString lastSync = QString("Last synchronization: %1.").arg(locale.toString(folder.lastSyncDate, QLocale::NarrowFormat));
+                        QString lastSync = QString("Last synchronization: %1.").arg(currentLocale.toString(folder.lastSyncDate, dateFormat));
                         folderModel->setData(folderModel->index(j, 0), lastSync, Qt::ToolTipRole);
                     }
                     else
@@ -1646,11 +1595,7 @@ bool MainWindow::questionBox(QMessageBox::Icon icon, const QString &title, const
 
     messageBox.addButton(yes, QMessageBox::YesRole);
     messageBox.addButton(no, QMessageBox::NoRole);
-
-    if (button == QMessageBox::Yes)
-        messageBox.setDefaultButton(yes);
-    else
-        messageBox.setDefaultButton(no);
+    messageBox.setDefaultButton(button == QMessageBox::Yes ? yes : no);
 
     messageBox.exec();
     return messageBox.clickedButton() == yes;

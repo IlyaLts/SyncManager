@@ -24,6 +24,11 @@
 #include <QDirIterator>
 #include "Common.h"
 #include "SyncFile.h"
+#include <QTranslator>
+#include <QApplication>
+
+QTranslator currentTranslator;
+QLocale currentLocale;
 
 #ifdef DEBUG
 std::chrono::high_resolution_clock::time_point startTime;
@@ -141,4 +146,79 @@ QFileInfo GetCurrentFileInfo(const QString &path, const QStringList &nameFilters
     }
 
     return QFileInfo();
+}
+
+/*
+===================
+setTranslator
+===================
+*/
+void setTranslator(QLocale::Language language)
+{
+    QCoreApplication::removeTranslator(&currentTranslator);
+    bool result;
+
+    if (language == QLocale::Chinese)
+    {
+        result = currentTranslator.load(":/i18n/zh_CN.qm");
+        currentLocale = QLocale(QLocale::Chinese, QLocale::China);
+    }
+    else if (language == QLocale::French)
+    {
+        result = currentTranslator.load(":/i18n/fr_FR.qm");
+        currentLocale = QLocale(QLocale::French, QLocale::France);
+    }
+    else if (language == QLocale::German)
+    {
+        result = currentTranslator.load(":/i18n/de_DE.qm");
+        currentLocale = QLocale(QLocale::German, QLocale::Germany);
+    }
+    else if (language == QLocale::Hindi)
+    {
+        result = currentTranslator.load(":/i18n/hi_IN.qm");
+        currentLocale = QLocale(QLocale::Hindi, QLocale::India);
+    }
+    else if (language == QLocale::Italian)
+    {
+        result = currentTranslator.load(":/i18n/it_IT.qm");
+        currentLocale = QLocale(QLocale::Italian, QLocale::Italy);
+    }
+    else if (language == QLocale::Japanese)
+    {
+        result = currentTranslator.load(":/i18n/ja_JP.qm");
+        currentLocale = QLocale(QLocale::Japanese, QLocale::Japan);
+    }
+    else if (language == QLocale::Portuguese)
+    {
+        result = currentTranslator.load(":/i18n/pt_PT.qm");
+        currentLocale = QLocale(QLocale::Portuguese, QLocale::Portugal);
+    }
+    else if (language == QLocale::Russian)
+    {
+        result = currentTranslator.load(":/i18n/ru_RU.qm");
+        currentLocale = QLocale(QLocale::Russian, QLocale::Russia);
+    }
+    else if (language == QLocale::Spanish)
+    {
+        result = currentTranslator.load(":/i18n/es_ES.qm");
+        currentLocale = QLocale(QLocale::Spanish, QLocale::Spain);
+    }
+    else if (language == QLocale::Ukrainian)
+    {
+        result = currentTranslator.load(":/i18n/uk_UA.qm");
+        currentLocale = QLocale(QLocale::Ukrainian, QLocale::Ukraine);
+    }
+    else
+    {
+        result = currentTranslator.load(":/i18n/en_US.qm");
+        currentLocale = QLocale(QLocale::English, QLocale::UnitedStates);
+    }
+
+    if (!result)
+    {
+        qWarning("Unable to load %s language", qPrintable(QLocale::languageToString(language)));
+        return;
+    }
+
+    QCoreApplication::installTranslator(&currentTranslator);
 }

@@ -24,10 +24,14 @@
 #include <QHash>
 #include <QDir>
 
+class QTranslator;
 class QByteArray;
 class SyncFile;
 
 using hash64_t = quint64;
+
+extern QTranslator currentTranslator;
+extern QLocale currentLocale;
 
 #ifdef DEBUG
 #include <chrono>
@@ -49,5 +53,6 @@ extern std::chrono::high_resolution_clock::time_point startTime;
 hash64_t hash64(const QByteArray &str);
 void removeDuplicateFiles(QHash<hash64_t, SyncFile *> &files);
 QFileInfo GetCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters = QDir::NoFilter);
+void setTranslator(QLocale::Language language);
 
 #endif // COMMON_H
