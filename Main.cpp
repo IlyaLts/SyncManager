@@ -27,6 +27,8 @@
 #include <QMessageBox>
 #include <QFile>
 
+#include <QTranslator>
+
 /*
 ===================
 main
@@ -50,10 +52,15 @@ int main(int argc, char *argv[])
     sharedMemory.attach();
     sharedMemory.detach();
 
+    if (translator.load(":/i18n/en_US.qm"))
+        QCoreApplication::installTranslator(&translator);
+    else
+        qWarning("Unable to load %s", qPrintable(QDir::toNativeSeparators("qmlFile")));
+
     // Prevention of multiple instances
     if (!sharedMemory.create(1))
     {
-        QMessageBox::warning(NULL, "Couldn't launch!", "The app is already launched and cannot be launched as a second instance.");
+        QMessageBox::warning(NULL, app.translate("MainWindow", "Couldn't launch!"), app.tr("The app is already launched and cannot be launched as a second instance."));
         return -1;
     }
 

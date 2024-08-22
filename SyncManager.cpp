@@ -1756,7 +1756,7 @@ void SyncManager::copyFiles(SyncFolder &folder, const QString &versioningPath)
 
                 shouldNotify = false;
                 m_notificationList.value(rootPath)->start(NOTIFICATION_COOLDOWN);
-                emit warning(QString("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "");
+                emit warning(QString(tr("Not enough disk space on %1 (%2)")).arg(QStorageInfo(folder.path).displayName(), rootPath), "");
             }
 
             ++fileIt;

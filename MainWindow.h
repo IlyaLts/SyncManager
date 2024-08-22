@@ -25,6 +25,7 @@
 #include <QSystemTrayIcon>
 #include <QTimer>
 #include <QMovie>
+#include <QMessageBox>
 
 #define SYNCMANAGER_VERSION     "1.6.3"
 #define SETTINGS_FILENAME       "Settings.ini"
@@ -39,6 +40,8 @@ class DecoratedStringListModel;
 class QItemSelection;
 class QMimeData;
 class UnhidableMenu;
+
+extern QTranslator translator;
 
 /*
 ===========================================================
@@ -83,6 +86,7 @@ private Q_SLOTS:
     void switchDeletionMode(SyncManager::DeletionMode mode);
     void increaseSyncTime();
     void decreaseSyncTime();
+    void switchLanguage(QLocale::Language language);
     void toggleLaunchOnStartup();
     void toggleShowInTray();
     void toggleNotification();
@@ -98,6 +102,9 @@ private Q_SLOTS:
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
 
 private:
+
+    void retranslate();
+    bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton button = QMessageBox::Yes);
 
     SyncManager manager;
 
@@ -132,6 +139,17 @@ private:
     QAction *moveToTrashAction;
     QAction *versioningAction;
     QAction *deletePermanentlyAction;
+    QAction *chineseAction;
+    QAction *englishAction;
+    QAction *frenchAction;
+    QAction *germanAction;
+    QAction *hindiAction;
+    QAction *italianAction;
+    QAction *japaneseAction;
+    QAction *portugueseAction;
+    QAction *russianAction;
+    QAction *spanishAction;
+    QAction *ukrainianAction;
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
     QAction *disableNotificationAction;
@@ -139,6 +157,7 @@ private:
     QAction *detectMovedFilesAction;
     QAction *showAction;
     QAction *quitAction;
+    QAction *version;
 
     QSystemTrayIcon *trayIcon;
     QMenu *trayIconMenu;
@@ -146,7 +165,10 @@ private:
     UnhidableMenu *syncingModeMenu;
     UnhidableMenu *syncingTimeMenu;
     UnhidableMenu *deletionModeMenu;
+    UnhidableMenu *languageMenu;
 
+    QLocale::Language language;
+    QLocale locale;
     QTimer updateTimer;
     bool showInTray;
     bool appInitiated = false;

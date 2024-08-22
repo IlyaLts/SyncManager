@@ -27,12 +27,15 @@
 #include <QCloseEvent>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QStandardPaths>
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QMenuBar>
 #include <QTimer>
 #include <QtConcurrent/QtConcurrent>
+
+QTranslator translator;
 
 /*
 ===================
@@ -45,7 +48,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     ui->setupUi(this);
     ui->centralWidget->setLayout(ui->mainLayout);
-    setWindowTitle(QString("Sync Manager"));
+    setWindowTitle("Sync Manager");
     setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
     resize(QSize(settings.value("Width", 500).toInt(), settings.value("Height", 300).toInt()));
     setWindowState(settings.value("Fullscreen", false).toBool() ? Qt::WindowMaximized : Qt::WindowActive);
@@ -85,35 +88,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     trayIconWarning.addFile(":/Images/TrayIconWarning.png");
     animSync.setFileName(":/Images/AnimSync.gif");
 
-    syncNowAction = new QAction(iconSync, "&Sync Now", this);
-    pauseSyncingAction = new QAction(iconPause, "&Pause Syncing", this);
-    automaticAction = new QAction("&Automatic", this);
-    manualAction = new QAction("&Manual", this);
-    increaseSyncTimeAction = new QAction("&Increase", this);
-    syncingTimeAction = new QAction("Synchronize Every:", this);
-    decreaseSyncTimeAction = new QAction("&Decrease", this);
-    moveToTrashAction = new QAction("&Move Files to Trash", this);
-    versioningAction = new QAction("&Versioning", this);
-    deletePermanentlyAction = new QAction("&Delete Files Permanently", this);
-    launchOnStartupAction = new QAction("&Launch on Startup", this);
-    showInTrayAction = new QAction("&Show in System Tray");
-    disableNotificationAction = new QAction("&Disable Notifications", this);
-    enableRememberFilesAction = new QAction("&Remember Files (Requires disk space)", this);
-    detectMovedFilesAction = new QAction("&Detect Renamed and Moved Files", this);
-    showAction = new QAction("&Show", this);
-    quitAction = new QAction("&Quit", this);
-    QAction *version = new QAction(QString("Version: %1").arg(SYNCMANAGER_VERSION), this);
-
-    // Adds file data size info to the context menu
-    if (int size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME).size())
-    {
-        if (size < 1024)
-            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 bytes)").arg(size));
-        else if ((size / 1024) < 1024)
-            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 KB)").arg(size / 1024));
-        else
-            enableRememberFilesAction->setText(QString("&Remember Files (Requires ~%1 MB)").arg(size / 1024 / 1024));
-    }
+    syncNowAction = new QAction(iconSync, tr("&Sync Now"), this);
+    pauseSyncingAction = new QAction(iconPause, tr("&Pause Syncing"), this);
+    automaticAction = new QAction(tr("&Automatic"), this);
+    manualAction = new QAction(tr("&Manual"), this);
+    increaseSyncTimeAction = new QAction(tr("&Increase"), this);
+    syncingTimeAction = new QAction(tr("Synchronize Every:"), this);
+    decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
+    moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
+    chineseAction = new QAction(tr("&Chinese"), this);
+    englishAction = new QAction(tr("&English"), this);
+    frenchAction = new QAction(tr("&French"), this);
+    germanAction = new QAction(tr("&German"), this);
+    hindiAction = new QAction(tr("&Hindi"), this);
+    italianAction = new QAction(tr("&Italian"), this);
+    japaneseAction = new QAction(tr("&Japanese"), this);
+    portugueseAction = new QAction(tr("&Portuguese"), this);
+    russianAction = new QAction(tr("&Russian"), this);
+    spanishAction = new QAction(tr("&Spanish"), this);
+    ukrainianAction = new QAction(tr("&Ukrainian"), this);
+    versioningAction = new QAction(tr("&Versioning"), this);
+    deletePermanentlyAction = new QAction(tr("&Delete Files Permanently"), this);
+    launchOnStartupAction = new QAction(tr("&Launch on Startup"), this);
+    showInTrayAction = new QAction(tr("&Show in System Tray"));
+    disableNotificationAction = new QAction(tr("&Disable Notifications"), this);
+    enableRememberFilesAction = new QAction(tr("&Remember Files (Requires disk space)"), this);
+    detectMovedFilesAction = new QAction(tr("&Detect Renamed and Moved Files"), this);
+    showAction = new QAction(tr("&Show"), this);
+    quitAction = new QAction(tr("&Quit"), this);
+    version = new QAction(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION), this);
 
     syncingTimeAction->setDisabled(true);
     decreaseSyncTimeAction->setDisabled(manager.syncTimeMultiplier() <= 1);
@@ -124,6 +127,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     deletePermanentlyAction->setCheckable(true);
     moveToTrashAction->setCheckable(true);
     versioningAction->setCheckable(true);
+    chineseAction->setCheckable(true);
+    englishAction->setCheckable(true);
+    frenchAction->setCheckable(true);
+    germanAction->setCheckable(true);
+    hindiAction->setCheckable(true);
+    italianAction->setCheckable(true);
+    japaneseAction->setCheckable(true);
+    portugueseAction->setCheckable(true);
+    russianAction->setCheckable(true);
+    spanishAction->setCheckable(true);
+    ukrainianAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
@@ -141,25 +155,39 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop"));
 #endif
 
-    syncingModeMenu = new UnhidableMenu("&Syncing Mode", this);
+    syncingModeMenu = new UnhidableMenu(tr("&Syncing Mode"), this);
     syncingModeMenu->addAction(automaticAction);
     syncingModeMenu->addAction(manualAction);
 
-    syncingTimeMenu = new UnhidableMenu("&Syncing Time", this);
+    syncingTimeMenu = new UnhidableMenu(tr("&Syncing Time"), this);
     syncingTimeMenu->addAction(increaseSyncTimeAction);
     syncingTimeMenu->addAction(syncingTimeAction);
     syncingTimeMenu->addAction(decreaseSyncTimeAction);
 
-    deletionModeMenu = new UnhidableMenu("&Deletion Mode", this);
+    deletionModeMenu = new UnhidableMenu(tr("&Deletion Mode"), this);
     deletionModeMenu->addAction(moveToTrashAction);
     deletionModeMenu->addAction(versioningAction);
     deletionModeMenu->addAction(deletePermanentlyAction);
 
-    settingsMenu = new UnhidableMenu("&Settings", this);
+    languageMenu = new UnhidableMenu(tr("&Language"), this);
+    languageMenu->addAction(chineseAction);
+    languageMenu->addAction(englishAction);
+    languageMenu->addAction(frenchAction);
+    languageMenu->addAction(germanAction);
+    languageMenu->addAction(hindiAction);
+    languageMenu->addAction(italianAction);
+    languageMenu->addAction(japaneseAction);
+    languageMenu->addAction(portugueseAction);
+    languageMenu->addAction(russianAction);
+    languageMenu->addAction(spanishAction);
+    languageMenu->addAction(ukrainianAction);
+
+    settingsMenu = new UnhidableMenu(tr("&Settings"), this);
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(syncingModeMenu);
     settingsMenu->addMenu(syncingTimeMenu);
     settingsMenu->addMenu(deletionModeMenu);
+    settingsMenu->addMenu(languageMenu);
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(showInTrayAction);
     settingsMenu->addAction(disableNotificationAction);
@@ -181,13 +209,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     trayIconMenu->addAction(quitAction);
 
     trayIcon = new QSystemTrayIcon(this);
-    trayIcon->setContextMenu(trayIconMenu);
     trayIcon->setToolTip("Sync Manager");
+    trayIcon->setContextMenu(trayIconMenu);
     trayIcon->setIcon(trayIconDone);
 
     this->menuBar()->addAction(syncNowAction);
     this->menuBar()->addAction(pauseSyncingAction);
     this->menuBar()->addMenu(settingsMenu);
+
+    QLocale::Language systemLanguage = QLocale::system().language();
+
+    retranslate();
+    language = static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt());
+    switchLanguage(language);
 
     connect(ui->syncProfilesView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(profileClicked(QItemSelection,QItemSelection)));
     connect(ui->syncProfilesView->model(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)), SLOT(profileNameChanged(QModelIndex)));
@@ -203,6 +237,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.DeletePermanently));
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
+
+    connect(chineseAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Chinese));
+    connect(englishAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::English));
+    connect(frenchAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::French));
+    connect(germanAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::German));
+    connect(hindiAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Hindi));
+    connect(italianAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Italian));
+    connect(japaneseAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Japanese));
+    connect(portugueseAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Portuguese));
+    connect(russianAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Russian));
+    connect(spanishAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Spanish));
+    connect(ukrainianAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Ukrainian));
+
     connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
     connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
     connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
@@ -286,7 +333,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     for (auto &profile : manager.profiles())
         for (auto &folder : profile.folders)
             if (!folder.exists)
-                notify("Couldn't find folder", folder.path, QSystemTrayIcon::Warning);
+                notify(tr("Couldn't find folder"), folder.path, QSystemTrayIcon::Warning);
 }
 
 /*
@@ -409,11 +456,10 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     else
     {
-        QString title("Quit");
-        QString text("Currently syncing. Are you sure you want to quit?");
-        auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
+        QString title(tr("Quit"));
+        QString text(tr("Currently syncing. Are you sure you want to quit?"));
 
-        if (manager.isBusy() && QMessageBox::warning(nullptr, title, text, buttons, QMessageBox::No) == QMessageBox::No)
+        if (manager.isBusy() && !questionBox(QMessageBox::Warning, title, text))
         {
             event->ignore();
             return;
@@ -442,14 +488,17 @@ MainWindow::addProfile
 */
 void MainWindow::addProfile()
 {
-    QString newName("New profile");
+    QString newName(tr("New profile"));
     QStringList profileNames;
 
     for (auto &profile : manager.profiles())
         profileNames.append(profile.name);
 
     for (int i = 2; profileNames.contains(newName); i++)
-        newName = QString("New profile (%1)").arg(i);
+    {
+        newName = QString(tr(" (%1)")).arg(i);
+        newName.insert(0, tr("New profile"));
+    }
 
     manager.profiles().append(SyncProfile(manager.isPaused()));
     manager.profiles().last().name = newName;
@@ -481,11 +530,10 @@ void MainWindow::removeProfile()
     if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
         return;
 
-    QString title("Remove profile");
-    QString text("Are you sure you want to remove profile?");
-    auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
+    QString title(tr("Remove profile"));
+    QString text(tr("Are you sure you want to remove profile?"));
 
-    if (QMessageBox::question(nullptr, title, text, buttons, QMessageBox::Yes) == QMessageBox::No)
+    if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes))
         return;
 
     for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
@@ -616,7 +664,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
     }
     else
     {
-        QString folderPath = QFileDialog::getExistingDirectory(this, "Browse For Folder", QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
+        QString folderPath = QFileDialog::getExistingDirectory(this, tr("Browse For Folder"), QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
 
         if (folderPath.isEmpty())
             return;
@@ -680,11 +728,10 @@ void MainWindow::removeFolder()
 
         if (manager.profiles()[profileRow].folders[index.row()].syncing)
         {
-            QString title("Remove folder");
-            QString text("The folder is currently syncing. Are you sure you want to remove it?");
-            auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
+            QString title(tr("Remove folder"));
+            QString text(tr("The folder is currently syncing. Are you sure you want to remove it?"));
 
-            if (QMessageBox::question(nullptr, title, text, buttons, QMessageBox::Yes) == QMessageBox::No)
+            if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes))
                 return;
         }
 
@@ -785,13 +832,12 @@ MainWindow::quit
 */
 void MainWindow::quit()
 {
-    QString title("Quit");
-    QString text("Are you sure you want to quit?");
-    QString syncText("Currently syncing. Are you sure you want to quit?");
-    auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
+    QString title(tr("Quit"));
+    QString text(tr("Are you sure you want to quit?"));
+    QString syncText(tr("Currently syncing. Are you sure you want to quit?"));
 
-    if ((!manager.isBusy() && QMessageBox::question(nullptr, title, text, buttons, QMessageBox::No) == QMessageBox::Yes) ||
-        (manager.isBusy() && QMessageBox::warning(nullptr, title, syncText, buttons, QMessageBox::No) == QMessageBox::Yes))
+    if ((!manager.isBusy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No)) ||
+        (manager.isBusy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No)))
     {
         manager.shouldQuit();
         qApp->quit();
@@ -870,11 +916,10 @@ void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
 {
     if (appInitiated && mode == SyncManager::DeletePermanently && mode != manager.deletionMode())
     {
-        QString title("Switch deletion mode to delete files permanently?");
-        QString text("Are you sure? Beware: this could lead to data loss!");
-        auto buttons = QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No);
+        QString title(tr("Switch deletion mode to delete files permanently?"));
+        QString text(tr("Are you sure? Beware: this could lead to data loss!"));
 
-        if (QMessageBox::warning(nullptr, title, text, buttons, QMessageBox::Yes) == QMessageBox::No)
+        if (!questionBox(QMessageBox::Warning, title, text, QMessageBox::Yes))
             mode = manager.deletionMode();
     }
 
@@ -934,6 +979,106 @@ void MainWindow::decreaseSyncTime()
         decreaseSyncTimeAction->setDisabled(true);
 
     saveSettings();
+}
+
+/*
+===================
+MainWindow::switchLanguage
+===================
+*/
+void MainWindow::switchLanguage(QLocale::Language language)
+{
+    chineseAction->setChecked(false);
+    englishAction->setChecked(false);
+    frenchAction->setChecked(false);
+    germanAction->setChecked(false);
+    hindiAction->setChecked(false);
+    italianAction->setChecked(false);
+    japaneseAction->setChecked(false);
+    portugueseAction->setChecked(false);
+    russianAction->setChecked(false);
+    spanishAction->setChecked(false);
+    ukrainianAction->setChecked(false);
+
+    QCoreApplication::removeTranslator(&translator);
+    bool result;
+
+    if (language == QLocale::Chinese)
+    {
+        chineseAction->setChecked(true);
+        result = translator.load(":/i18n/zh_CN.qm");
+        locale = QLocale(QLocale::Chinese, QLocale::China);
+    }
+    else if (language == QLocale::French)
+    {
+        frenchAction->setChecked(true);
+        result = translator.load(":/i18n/fr_FR.qm");
+        locale = QLocale(QLocale::French, QLocale::France);
+    }
+    else if (language == QLocale::German)
+    {
+        germanAction->setChecked(true);
+        result = translator.load(":/i18n/de_DE.qm");
+        locale = QLocale(QLocale::German, QLocale::Germany);
+    }
+    else if (language == QLocale::Hindi)
+    {
+        hindiAction->setChecked(true);
+        result = translator.load(":/i18n/hi_IN.qm");
+        locale = QLocale(QLocale::Hindi, QLocale::India);
+    }
+    else if (language == QLocale::Italian)
+    {
+        italianAction->setChecked(true);
+        result = translator.load(":/i18n/it_IT.qm");
+        locale = QLocale(QLocale::Italian, QLocale::Italy);
+    }
+    else if (language == QLocale::Japanese)
+    {
+        japaneseAction->setChecked(true);
+        result = translator.load(":/i18n/ja_JP.qm");
+        locale = QLocale(QLocale::Japanese, QLocale::Japan);
+    }
+    else if (language == QLocale::Portuguese)
+    {
+        portugueseAction->setChecked(true);
+        result = translator.load(":/i18n/pt_PT.qm");
+        locale = QLocale(QLocale::Portuguese, QLocale::Portugal);
+    }
+    else if (language == QLocale::Russian)
+    {
+        russianAction->setChecked(true);
+        result = translator.load(":/i18n/ru_RU.qm");
+        locale = QLocale(QLocale::Russian, QLocale::Russia);
+    }
+    else if (language == QLocale::Spanish)
+    {
+        spanishAction->setChecked(true);
+        result = translator.load(":/i18n/es_ES.qm");
+        locale = QLocale(QLocale::Spanish, QLocale::Spain);
+    }
+    else if (language == QLocale::Ukrainian)
+    {
+        ukrainianAction->setChecked(true);
+        result = translator.load(":/i18n/uk_UA.qm");
+        locale = QLocale(QLocale::Ukrainian, QLocale::Ukraine);
+    }
+    else
+    {
+        englishAction->setChecked(true);
+        result = translator.load(":/i18n/en_US.qm");
+        locale = QLocale(QLocale::English, QLocale::UnitedStates);
+    }
+
+    if (!result)
+    {
+        qWarning("Unable to load %s", qPrintable(QDir::toNativeSeparators("qmlFile")));
+        return;
+    }
+
+    this->language = language;
+    QCoreApplication::installTranslator(&translator);
+    retranslate();
 }
 
 /*
@@ -1003,16 +1148,16 @@ void MainWindow::updateSyncTime()
     int hours = (manager.syncEvery() / 1000 / 60 / 60) % 24;
     int days = (manager.syncEvery() / 1000 / 60 / 60 / 24);
 
-    QString str("Synchronize Every: ");
+    QString str(tr("Synchronize Every: "));
 
     if (days)
-        str.append(QString("%1 days").arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
+        str.append(QString(tr("%1 days")).arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
     else if (hours)
-        str.append(QString("%1 hours").arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
+        str.append(QString(tr("%1 hours")).arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
     else if (minutes)
-        str.append(QString("%1 minutes").arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
+        str.append(QString(tr("%1 minutes")).arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
     else if (seconds)
-        str.append(QString("%1 seconds").arg(seconds));
+        str.append(QString(tr("%1 seconds")).arg(seconds));
 
     syncingTimeAction->setText(str);
 }
@@ -1036,16 +1181,16 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
 
             if (!hasFolders)
             {
-                profileModel->setData(profileModel->index(i, 0), "The profile has no folders available.", Qt::ToolTipRole);
+                profileModel->setData(profileModel->index(i, 0), tr("The profile has no folders available."), Qt::ToolTipRole);
             }
             else if (!manager.profiles()[i].lastSyncDate.isNull())
             {
-                QString lastSync = QString("Last synchronization: %1.").arg(profile->lastSyncDate.toString());
+                QString lastSync = QString(tr("Last synchronization: %1.")).arg(locale.toString(profile->lastSyncDate, QLocale::NarrowFormat));
                 profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
             }
             else
             {
-                profileModel->setData(profileModel->index(i, 0), "Haven't been synchronized yet.", Qt::ToolTipRole);
+                profileModel->setData(profileModel->index(i, 0), tr("Haven't been synchronized yet."), Qt::ToolTipRole);
             }
 
             if (ui->syncProfilesView->selectionModel()->selectedIndexes().contains(profileModel->index(i, 0)))
@@ -1054,16 +1199,16 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
                 {
                     if (!folder.exists)
                     {
-                        folderModel->setData(folderModel->index(j, 0), "The folder is currently unavailable.", Qt::ToolTipRole);
+                        folderModel->setData(folderModel->index(j, 0), tr("The folder is currently unavailable."), Qt::ToolTipRole);
                     }
                     else if (!folder.lastSyncDate.isNull())
                     {
-                        QString lastSync = QString("Last synchronization: %1.").arg(folder.lastSyncDate.toString());
+                        QString lastSync = QString("Last synchronization: %1.").arg(locale.toString(folder.lastSyncDate, QLocale::NarrowFormat));
                         folderModel->setData(folderModel->index(j, 0), lastSync, Qt::ToolTipRole);
                     }
                     else
                     {
-                        folderModel->setData(folderModel->index(j, 0), "Haven't been synchronized yet.", Qt::ToolTipRole);
+                        folderModel->setData(folderModel->index(j, 0), tr("Haven't been synchronized yet."), Qt::ToolTipRole);
                     }
 
                     j++;
@@ -1176,7 +1321,7 @@ void MainWindow::updateStatus()
         if (pauseSyncingAction->icon().cacheKey() != iconResume.cacheKey())
             pauseSyncingAction->setIcon(iconResume);
 
-        pauseSyncingAction->setText("&Resume Syncing");
+        pauseSyncingAction->setText(tr("&Resume Syncing"));
     }
     else
     {
@@ -1211,7 +1356,7 @@ void MainWindow::updateStatus()
         if (pauseSyncingAction->icon().cacheKey() != iconPause.cacheKey())
             pauseSyncingAction->setIcon(iconPause);
 
-        pauseSyncingAction->setText("&Pause Syncing");
+        pauseSyncingAction->setText(tr("&Pause Syncing"));
     }
 
     syncNowAction->setEnabled(manager.queue().size() != manager.existingProfiles());
@@ -1223,8 +1368,8 @@ void MainWindow::updateStatus()
     }
     else
     {
-        trayIcon->setToolTip(QString("Sync Manager - %1 files to synchronize").arg(manager.filesToSync()));
-        setWindowTitle(QString("Sync Manager - %1 files to synchronize").arg(manager.filesToSync()));
+        trayIcon->setToolTip(QString(tr("Sync Manager - %1 files to synchronize")).arg(manager.filesToSync()));
+        setWindowTitle(QString(tr("Sync Manager - %1 files to synchronize")).arg(manager.filesToSync()));
     }
 }
 
@@ -1258,7 +1403,7 @@ void MainWindow::showContextMenu(const QPoint &pos) const
     // Profiles
     if (ui->syncProfilesView->hasFocus())
     {
-        menu.addAction(iconAdd, "&Add a new profile", this, SLOT(addProfile()));
+        menu.addAction(iconAdd, tr("&Add a new profile"), this, SLOT(addProfile()));
 
         if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
         {
@@ -1266,15 +1411,15 @@ void MainWindow::showContextMenu(const QPoint &pos) const
 
             if (manager.profiles()[row].paused)
             {
-                menu.addAction(iconResume, "&Resume syncing profile", this, SLOT(pauseSelected()));
+                menu.addAction(iconResume, tr("&Resume syncing profile"), this, SLOT(pauseSelected()));
             }
             else
             {
-                menu.addAction(iconPause, "&Pause syncing profile", this, SLOT(pauseSelected()));
-                menu.addAction(iconSync, "&Synchronize profile", this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(manager.queue().contains(row));
+                menu.addAction(iconPause, tr("&Pause syncing profile"), this, SLOT(pauseSelected()));
+                menu.addAction(iconSync, tr("&Synchronize profile"), this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), row))->setDisabled(manager.queue().contains(row));
             }
 
-            menu.addAction(iconRemove, "&Remove profile", this, SLOT(removeProfile()));
+            menu.addAction(iconRemove, tr("&Remove profile"), this, SLOT(removeProfile()));
         }
 
         menu.popup(ui->syncProfilesView->mapToGlobal(pos));
@@ -1285,16 +1430,16 @@ void MainWindow::showContextMenu(const QPoint &pos) const
         if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
             return;
 
-        menu.addAction(iconAdd, "&Add a new folder", this, SLOT(addFolder()));
+        menu.addAction(iconAdd, tr("&Add a new folder"), this, SLOT(addFolder()));
 
         if (!ui->folderListView->selectionModel()->selectedIndexes().isEmpty())
         {
             if (manager.profiles()[ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row()].folders[ui->folderListView->selectionModel()->selectedIndexes()[0].row()].paused)
-                menu.addAction(iconResume, "&Resume syncing folder", this, SLOT(pauseSelected()));
+                menu.addAction(iconResume, tr("&Resume syncing folder"), this, SLOT(pauseSelected()));
             else
-                menu.addAction(iconPause, "&Pause syncing folder", this, SLOT(pauseSelected()));
+                menu.addAction(iconPause, tr("&Pause syncing folder"), this, SLOT(pauseSelected()));
 
-            menu.addAction(iconRemove, "&Remove folder", this, SLOT(removeFolder()));
+            menu.addAction(iconRemove, tr("&Remove folder"), this, SLOT(removeFolder()));
         }
 
         menu.popup(ui->folderListView->mapToGlobal(pos));
@@ -1368,6 +1513,7 @@ void MainWindow::saveSettings() const
     settings.setValue("Paused", manager.isPaused());
     settings.setValue("SyncingMode", manager.syncingMode());
     settings.setValue("DeletionMode", manager.deletionMode());
+    settings.setValue("Language", language);
     settings.setValue("Notifications", manager.notificationsEnabled());
     settings.setValue("RememberFiles", manager.rememberFilesEnabled());
     settings.setValue("DetectMovedFiles", manager.detectMovedFilesEnabled());
@@ -1418,4 +1564,94 @@ void MainWindow::notify(const QString &title, const QString &message, QSystemTra
 
     if (!visible)
         trayIcon->hide();
+}
+
+/*
+===================
+MainWindow::retranslate
+===================
+*/
+void MainWindow::retranslate()
+{
+    syncNowAction->setText(tr("&Sync Now"));
+    pauseSyncingAction->setText(tr("&Pause Syncing"));
+    automaticAction->setText(tr("&Automatic"));
+    manualAction->setText(tr("&Manual"));
+    increaseSyncTimeAction->setText(tr("&Increase"));
+    syncingTimeAction->setText(tr("Synchronize Every:"));
+    decreaseSyncTimeAction->setText(tr("&Decrease"));
+    moveToTrashAction->setText(tr("&Move Files to Trash"));
+    chineseAction->setText(tr("&Chinese"));
+    englishAction->setText(tr("&English"));
+    frenchAction->setText(tr("&French"));
+    germanAction->setText(tr("&German"));
+    hindiAction->setText(tr("&Hindi"));
+    italianAction->setText(tr("&Italian"));
+    japaneseAction->setText(tr("&Japanese"));
+    portugueseAction->setText(tr("&Portuguese"));
+    russianAction->setText(tr("&Russian"));
+    spanishAction->setText(tr("&Spanish"));
+    ukrainianAction->setText(tr("&Ukrainian"));
+    versioningAction->setText(tr("&Versioning"));
+    deletePermanentlyAction->setText(tr("&Delete Files Permanently"));
+    launchOnStartupAction->setText(tr("&Launch on Startup"));
+    showInTrayAction->setText(tr("&Show in System Tray"));
+    disableNotificationAction->setText(tr("&Disable Notifications"));
+    enableRememberFilesAction->setText(tr("&Remember Files (Requires disk space)"));
+    detectMovedFilesAction->setText(tr("&Detect Renamed and Moved Files"));
+    showAction->setText(tr("&Show"));
+    quitAction->setText(tr("&Quit"));
+    version->setText(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION));
+
+    syncingModeMenu->setTitle(tr("&Syncing Mode"));
+    syncingTimeMenu->setTitle(tr("&Syncing Time"));
+    deletionModeMenu->setTitle(tr("&Deletion Mode"));
+    languageMenu->setTitle(tr("&Language"));
+    settingsMenu->setTitle(tr("&Settings"));
+
+    syncNowAction->setToolTip(tr("&Sync Now"));
+    pauseSyncingAction->setToolTip(tr("&Pause Syncing"));
+    settingsMenu->setToolTip(tr("&Settings"));
+    ui->SyncLabel->setText(tr("Synchronization profiles:"));
+    ui->foldersLabel->setText(tr("Folders to synchronize:"));
+
+    // Adds file data size info to the context menu
+    if (int size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME).size())
+    {
+        if (size < 1024)
+            enableRememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 bytes)")).arg(size));
+        else if ((size / 1024) < 1024)
+            enableRememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 KB)")).arg(size / 1024));
+        else
+            enableRememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 MB)")).arg(size / 1024 / 1024));
+    }
+
+    updateStatus();
+
+    for (auto &profile : manager.profiles())
+        updateLastSyncTime(&profile);
+}
+
+/*
+===================
+MainWindow::questionBox
+===================
+*/
+bool MainWindow::questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton button)
+{
+    QMessageBox messageBox(icon, title, text, QMessageBox::NoButton, this);
+
+    QPushButton *yes = new QPushButton(tr("&Yes"), this);
+    QPushButton *no = new QPushButton(tr("&No"), this);
+
+    messageBox.addButton(yes, QMessageBox::YesRole);
+    messageBox.addButton(no, QMessageBox::NoRole);
+
+    if (button == QMessageBox::Yes)
+        messageBox.setDefaultButton(yes);
+    else
+        messageBox.setDefaultButton(no);
+
+    messageBox.exec();
+    return messageBox.clickedButton() == yes;
 }
