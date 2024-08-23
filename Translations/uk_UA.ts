@@ -40,10 +40,6 @@
             <translation>&amp;Синхронізувати зараз</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;Призупинити синхронізацію</translation>
-        </message>
-        <message>
             <source>&amp;Automatic</source>
             <translation>&amp;Автоматичний</translation>
         </message>
@@ -90,6 +86,10 @@
         <message>
             <source>&amp;Remember Files (Requires disk space)</source>
             <translation>&amp;Запам'ятати файли (Потрібно місце на диску)</translation>
+        </message>
+        <message>
+            <source>&amp;Save File Data Locally</source>
+            <translation>&amp;Зберегти дані файлу локально</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>

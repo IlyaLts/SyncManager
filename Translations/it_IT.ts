@@ -40,10 +40,6 @@
             <translation>&amp;Sincronizza ora</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;Pausa sincronizzazione</translation>
-        </message>
-        <message>
             <source>&amp;Automatic</source>
             <translation>&amp;Automatico</translation>
         </message>
@@ -90,6 +86,10 @@
         <message>
             <source>&amp;Remember Files (Requires disk space)</source>
             <translation>&amp;Ricorda file (richiede spazio su disco)</translation>
+        </message>
+        <message>
+            <source>&amp;Save File Data Locally</source>
+            <translation>&amp;Salva dati file localmente</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>

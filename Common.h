@@ -23,6 +23,7 @@
 #include <QtTypes>
 #include <QHash>
 #include <QDir>
+#include <QMessageBox>
 
 class QTranslator;
 class QByteArray;
@@ -54,5 +55,6 @@ hash64_t hash64(const QByteArray &str);
 void removeDuplicateFiles(QHash<hash64_t, SyncFile *> &files);
 QFileInfo GetCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters = QDir::NoFilter);
 void setTranslator(QLocale::Language language);
+bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent = nullptr);
 
 #endif // COMMON_H

@@ -40,10 +40,6 @@
             <translation>&amp;立即同步</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;暂停同步</translation>
-        </message>
-        <message>
             <source>&amp;Automatic</source>
             <translation>&amp;自动</translation>
         </message>
@@ -90,6 +86,10 @@
         <message>
             <source>&amp;Remember Files (Requires disk space)</source>
             <translation>&amp;记住文件（需要磁盘空间）</translation>
+        </message>
+        <message>
+            <source>&amp;Save File Data Locally</source>
+            <translation>&amp;本地保存文件数据</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>

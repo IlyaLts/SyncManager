@@ -26,6 +26,8 @@
 #include "SyncFile.h"
 #include <QTranslator>
 #include <QApplication>
+#include <QMessageBox>
+#include <QPushButton>
 
 QTranslator currentTranslator;
 QLocale currentLocale;
@@ -221,4 +223,24 @@ void setTranslator(QLocale::Language language)
     }
 
     QCoreApplication::installTranslator(&currentTranslator);
+}
+
+/*
+===================
+questionBox
+===================
+*/
+bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent)
+{
+    QMessageBox messageBox(icon, title, text, QMessageBox::NoButton, parent);
+
+    QPushButton *yes = new QPushButton(qApp->translate("MainWindow", "&Yes"), parent);
+    QPushButton *no = new QPushButton(qApp->translate("MainWindow", "&No"), parent);
+
+    messageBox.addButton(yes, QMessageBox::YesRole);
+    messageBox.addButton(no, QMessageBox::NoRole);
+    messageBox.setDefaultButton(defaultButton == QMessageBox::Yes ? yes : no);
+
+    messageBox.exec();
+    return messageBox.clickedButton() == yes;
 }

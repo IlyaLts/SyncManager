@@ -40,10 +40,6 @@
             <translation>&amp;今すぐ同期</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;同期を一時停止</translation>
-        </message>
-        <message>
             <source>&amp;Automatic</source>
             <translation>&amp;自動</translation>
         </message>
@@ -90,6 +86,10 @@
         <message>
             <source>&amp;Remember Files (Requires disk space)</source>
             <translation>&amp;ファイルを記憶する（ディスクスペースが必要）</translation>
+        </message>
+        <message>
+            <source>&amp;Save File Data Locally</source>
+            <translation>&amp;ファイルデータをローカルに保存する</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>

@@ -27,8 +27,6 @@
 #include <QSettings>
 #include <QCloseEvent>
 #include <QFileDialog>
-#include <QMessageBox>
-#include <QPushButton>
 #include <QStandardPaths>
 #include <QSystemTrayIcon>
 #include <QMenu>
@@ -111,7 +109,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     launchOnStartupAction = new QAction(tr("&Launch on Startup"), this);
     showInTrayAction = new QAction(tr("&Show in System Tray"));
     disableNotificationAction = new QAction(tr("&Disable Notifications"), this);
-    enableRememberFilesAction = new QAction(tr("&Remember Files (Requires disk space)"), this);
+    rememberFilesAction = new QAction(tr("&Remember Files (Requires disk space)"), this);
+    saveFileDataLocallyAction = new QAction(tr("&Save File Data Locally") +  " (Beta)", this);
     detectMovedFilesAction = new QAction(tr("&Detect Renamed and Moved Files"), this);
     showAction = new QAction(tr("&Show"), this);
     quitAction = new QAction(tr("&Quit"), this);
@@ -140,12 +139,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     launchOnStartupAction->setCheckable(true);
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
-    enableRememberFilesAction->setCheckable(true);
+    rememberFilesAction->setCheckable(true);
+    saveFileDataLocallyAction->setCheckable(true);
     detectMovedFilesAction->setCheckable(true);
 
     showInTrayAction->setChecked(showInTray);
     disableNotificationAction->setChecked(!manager.notificationsEnabled());
-    enableRememberFilesAction->setChecked(manager.rememberFilesEnabled());
+    rememberFilesAction->setChecked(manager.rememberFilesEnabled());
+    saveFileDataLocallyAction->setChecked(manager.saveDataLocallyEnabled());
     detectMovedFilesAction->setChecked(manager.detectMovedFilesEnabled());
 
 #ifdef Q_OS_WIN
@@ -190,7 +191,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(showInTrayAction);
     settingsMenu->addAction(disableNotificationAction);
-    settingsMenu->addAction(enableRememberFilesAction);
+    settingsMenu->addAction(rememberFilesAction);
+    settingsMenu->addAction(saveFileDataLocallyAction);
     settingsMenu->addAction(detectMovedFilesAction);
     settingsMenu->addSeparator();
     settingsMenu->addAction(version);
@@ -252,7 +254,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
     connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
     connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
-    connect(enableRememberFilesAction, &QAction::triggered, this, &MainWindow::toggleRememberFiles);
+    connect(rememberFilesAction, &QAction::triggered, this, &MainWindow::toggleRememberFiles);
+    connect(saveFileDataLocallyAction, &QAction::triggered, this, &MainWindow::toggleSaveFileDataLocally);
     connect(detectMovedFilesAction, &QAction::triggered, this, &MainWindow::toggleDetectMoved);
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
@@ -318,9 +321,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
 
     if (manager.rememberFilesEnabled() && settings.value("AppVersion").toString().compare("1.6") >= 0)
-        manager.restoreData();
+    {
+        if (manager.saveDataLocallyEnabled())
+            manager.restoreDataLocally();
+        else
+            manager.restoreData();
+    }
     else
+    {
         QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
+
+        for (auto &profile : manager.profiles())
+            for (auto &folder : profile.folders)
+                QDir(folder.path + HIDDEN_PATH).removeRecursively();
+    }
 
     updateTimer.setSingleShot(true);
 
@@ -458,7 +472,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         QString title(tr("Quit"));
         QString text(tr("Currently syncing. Are you sure you want to quit?"));
 
-        if (manager.isBusy() && !questionBox(QMessageBox::Warning, title, text))
+        if (manager.isBusy() && !questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
         {
             event->ignore();
             return;
@@ -532,7 +546,7 @@ void MainWindow::removeProfile()
     QString title(tr("Remove profile"));
     QString text(tr("Are you sure you want to remove profile?"));
 
-    if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes))
+    if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
         return;
 
     for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
@@ -730,7 +744,7 @@ void MainWindow::removeFolder()
             QString title(tr("Remove folder"));
             QString text(tr("The folder is currently syncing. Are you sure you want to remove it?"));
 
-            if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes))
+            if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
                 return;
         }
 
@@ -835,8 +849,8 @@ void MainWindow::quit()
     QString text(tr("Are you sure you want to quit?"));
     QString syncText(tr("Currently syncing. Are you sure you want to quit?"));
 
-    if ((!manager.isBusy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No)) ||
-        (manager.isBusy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No)))
+    if ((!manager.isBusy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No, this)) ||
+        (manager.isBusy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, this)))
     {
         manager.shouldQuit();
         qApp->quit();
@@ -918,7 +932,7 @@ void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
         QString title(tr("Switch deletion mode to delete files permanently?"));
         QString text(tr("Are you sure? Beware: this could lead to data loss!"));
 
-        if (!questionBox(QMessageBox::Warning, title, text, QMessageBox::Yes))
+        if (!questionBox(QMessageBox::Warning, title, text, QMessageBox::Yes, this))
             mode = manager.deletionMode();
     }
 
@@ -1069,6 +1083,18 @@ MainWindow::enableRememberFiles
 void MainWindow::toggleRememberFiles()
 {
     manager.enableRememberFiles(!manager.rememberFilesEnabled());
+    saveFileDataLocallyAction->setVisible(manager.rememberFilesEnabled());
+    saveSettings();
+}
+
+/*
+===================
+MainWindow::enableRememberFiles
+===================
+*/
+void MainWindow::toggleSaveFileDataLocally()
+{
+    manager.enableSaveDataLocally(!manager.saveDataLocallyEnabled());
     saveSettings();
 }
 
@@ -1465,6 +1491,7 @@ void MainWindow::saveSettings() const
     settings.setValue("Language", language);
     settings.setValue("Notifications", manager.notificationsEnabled());
     settings.setValue("RememberFiles", manager.rememberFilesEnabled());
+    settings.setValue("SaveDataLocally", manager.saveDataLocallyEnabled());
     settings.setValue("DetectMovedFiles", manager.detectMovedFilesEnabled());
     settings.setValue("SyncTimeMultiplier", manager.syncTimeMultiplier());
     settings.setValue("MovedFileMinSize", manager.movedFileMinSize());
@@ -1515,11 +1542,6 @@ void MainWindow::notify(const QString &title, const QString &message, QSystemTra
         trayIcon->hide();
 }
 
-/*
-===================
-MainWindow::retranslate
-===================
-*/
 void MainWindow::retranslate()
 {
     syncNowAction->setText(tr("&Sync Now"));
@@ -1546,7 +1568,8 @@ void MainWindow::retranslate()
     launchOnStartupAction->setText(tr("&Launch on Startup"));
     showInTrayAction->setText(tr("&Show in System Tray"));
     disableNotificationAction->setText(tr("&Disable Notifications"));
-    enableRememberFilesAction->setText(tr("&Remember Files (Requires disk space)"));
+    rememberFilesAction->setText(tr("&Remember Files (Requires disk space)"));
+    saveFileDataLocallyAction->setText(tr("&Save File Data Locally") +  " (Beta)");
     detectMovedFilesAction->setText(tr("&Detect Renamed and Moved Files"));
     showAction->setText(tr("&Show"));
     quitAction->setText(tr("&Quit"));
@@ -1560,7 +1583,6 @@ void MainWindow::retranslate()
 
     syncNowAction->setToolTip(tr("&Sync Now"));
     pauseSyncingAction->setToolTip(tr("&Pause Syncing"));
-    settingsMenu->setToolTip(tr("&Settings"));
     ui->SyncLabel->setText(tr("Synchronization profiles:"));
     ui->foldersLabel->setText(tr("Folders to synchronize:"));
 
@@ -1568,35 +1590,15 @@ void MainWindow::retranslate()
     if (int size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME).size())
     {
         if (size < 1024)
-            enableRememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 bytes)")).arg(size));
+            rememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 bytes)")).arg(size));
         else if ((size / 1024) < 1024)
-            enableRememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 KB)")).arg(size / 1024));
+            rememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 KB)")).arg(size / 1024));
         else
-            enableRememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 MB)")).arg(size / 1024 / 1024));
+            rememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 MB)")).arg(size / 1024 / 1024));
     }
 
     updateStatus();
 
     for (auto &profile : manager.profiles())
         updateLastSyncTime(&profile);
-}
-
-/*
-===================
-MainWindow::questionBox
-===================
-*/
-bool MainWindow::questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton button)
-{
-    QMessageBox messageBox(icon, title, text, QMessageBox::NoButton, this);
-
-    QPushButton *yes = new QPushButton(tr("&Yes"), this);
-    QPushButton *no = new QPushButton(tr("&No"), this);
-
-    messageBox.addButton(yes, QMessageBox::YesRole);
-    messageBox.addButton(no, QMessageBox::NoRole);
-    messageBox.setDefaultButton(button == QMessageBox::Yes ? yes : no);
-
-    messageBox.exec();
-    return messageBox.clickedButton() == yes;
 }

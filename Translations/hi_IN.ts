@@ -40,10 +40,6 @@
             <translation>&amp;अब सिंक्रोनाइज करें</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;सिंक्रोनाइजेशन रोकें</translation>
-        </message>
-        <message>
             <source>&amp;Automatic</source>
             <translation>&amp;स्वचालित</translation>
         </message>
@@ -90,6 +86,10 @@
         <message>
             <source>&amp;Remember Files (Requires disk space)</source>
             <translation>&amp;फ़ाइलों को याद रखें (डिस्क स्पेस की आवश्यकता होती है)</translation>
+        </message>
+        <message>
+            <source>&amp;Save File Data Locally</source>
+            <translation>&amp;फ़ाइल डेटा को स्थानीय रूप से सहेजें</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>

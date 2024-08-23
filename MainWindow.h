@@ -25,7 +25,6 @@
 #include <QSystemTrayIcon>
 #include <QTimer>
 #include <QMovie>
-#include <QMessageBox>
 
 #define SYNCMANAGER_VERSION     "1.6.3"
 #define SETTINGS_FILENAME       "Settings.ini"
@@ -89,6 +88,7 @@ private Q_SLOTS:
     void toggleShowInTray();
     void toggleNotification();
     void toggleRememberFiles();
+    void toggleSaveFileDataLocally();
     void toggleDetectMoved();
     void updateSyncTime();
     void updateLastSyncTime(SyncProfile *profile);
@@ -102,7 +102,6 @@ private Q_SLOTS:
 private:
 
     void retranslate();
-    bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton button = QMessageBox::Yes);
 
     SyncManager manager;
 
@@ -151,7 +150,8 @@ private:
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
     QAction *disableNotificationAction;
-    QAction *enableRememberFilesAction;
+    QAction *rememberFilesAction;
+    QAction *saveFileDataLocallyAction;
     QAction *detectMovedFilesAction;
     QAction *showAction;
     QAction *quitAction;
