@@ -78,6 +78,7 @@ public:
     void loadFileDataInternally();
     void loadFileDataLocally();
     void removeFileData();
+    void removeFileData(const SyncFolder &folder);
 
     inline void setSyncingMode(SyncingMode mode) { m_syncingMode = mode; }
     inline void setDeletionMode(DeletionMode mode) { m_deletionMode = mode; }

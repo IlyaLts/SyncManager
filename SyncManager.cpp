@@ -455,7 +455,17 @@ void SyncManager::removeFileData()
 
     for (auto &profile : m_profiles)
         for (auto &folder : profile.folders)
-            QDir(folder.path + DATA_FOLDER_PATH).removeRecursively();
+            removeFileData(folder);
+}
+
+/*
+===================
+SyncManager::removeFileData
+===================
+*/
+void SyncManager::removeFileData(const SyncFolder &folder)
+{
+    QDir(folder.path + DATA_FOLDER_PATH).removeRecursively();
 }
 
 /*

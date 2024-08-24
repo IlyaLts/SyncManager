@@ -547,21 +547,24 @@ void MainWindow::removeProfile()
 
     for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
     {
+        SyncProfile &profile = manager.profiles()[index.row()];
+
         ui->syncProfilesView->model()->removeRow(index.row());
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-        settings.remove(manager.profiles()[index.row()].name + QLatin1String("_profile"));
+        settings.remove(profile.name + QLatin1String("_profile"));
 
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-        profilesData.remove(manager.profiles()[index.row()].name);
+        profilesData.remove(profile.name);
 
-        manager.profiles()[index.row()].paused = true;
-        manager.profiles()[index.row()].toBeRemoved = true;
+        profile.paused = true;
+        profile.toBeRemoved = true;
 
-        for (auto &folder : manager.profiles()[index.row()].folders)
+        for (auto &folder : profile.folders)
         {
             folder.paused = true;
             folder.toBeRemoved = true;
+            manager.removeFileData(folder);
         }
 
         if (!manager.isBusy())
@@ -734,8 +737,9 @@ void MainWindow::removeFolder()
     for (auto &index : ui->folderListView->selectionModel()->selectedIndexes())
     {
         int profileRow = ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row();
+        SyncFolder &folder = manager.profiles()[profileRow].folders[index.row()];
 
-        if (manager.profiles()[profileRow].folders[index.row()].syncing)
+        if (folder.syncing)
         {
             QString title(tr("Remove folder"));
             QString text(tr("The folder is currently syncing. Are you sure you want to remove it?"));
@@ -744,12 +748,14 @@ void MainWindow::removeFolder()
                 return;
         }
 
-        manager.profiles()[profileRow].folders[index.row()].paused = true;
-        manager.profiles()[profileRow].folders[index.row()].toBeRemoved = true;
+        folder.paused = true;
+        folder.toBeRemoved = true;
         ui->folderListView->model()->removeRow(index.row());
 
+        manager.removeFileData(folder);
+
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-        settings.remove(manager.profiles()[profileRow].name + QLatin1String("_profile/") + manager.profiles()[profileRow].folders[index.row()].path + QLatin1String("_Paused"));
+        settings.remove(manager.profiles()[profileRow].name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"));
 
         if (!manager.isBusy())
             manager.profiles()[profileRow].folders.remove(index.row());
@@ -807,7 +813,10 @@ void MainWindow::pauseSelected()
             int profileRow = ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row();
 
             for (auto &index : ui->folderListView->selectionModel()->selectedIndexes())
-                manager.profiles()[profileRow].folders[index.row()].paused = !manager.profiles()[profileRow].folders[index.row()].paused;
+            {
+                SyncFolder &folder = manager.profiles()[profileRow].folders[index.row()];
+                folder.paused = !folder.paused;
+            }
 
             manager.profiles()[profileRow].paused = true;
 
@@ -820,10 +829,12 @@ void MainWindow::pauseSelected()
         {
             for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
             {
-                manager.profiles()[index.row()].paused = !manager.profiles()[index.row()].paused;
+                SyncProfile &profile = manager.profiles()[index.row()];
 
-                for (auto &folder : manager.profiles()[index.row()].folders)
-                    folder.paused = manager.profiles()[index.row()].paused;
+                profile.paused = !profile.paused;
+
+                for (auto &folder : profile.folders)
+                    folder.paused = profile.paused;
             }
         }
 
