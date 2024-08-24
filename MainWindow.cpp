@@ -320,20 +320,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             manager.profiles()[i].excludeList.append(exclude.toUtf8());
     }
 
-    if (manager.rememberFilesEnabled() && settings.value("AppVersion").toString().compare("1.6") >= 0)
+    if (manager.rememberFilesEnabled() && settings.value("AppVersion").toString().compare("1.7") >= 0)
     {
         if (manager.saveDataLocallyEnabled())
-            manager.restoreDataLocally();
+            manager.loadFileDataLocally();
         else
-            manager.restoreData();
+            manager.loadFileDataInternally();
     }
     else
     {
-        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
-
-        for (auto &profile : manager.profiles())
-            for (auto &folder : profile.folders)
-                QDir(folder.path + HIDDEN_PATH).removeRecursively();
+        manager.removeFileData();
     }
 
     updateTimer.setSingleShot(true);
@@ -1542,6 +1538,11 @@ void MainWindow::notify(const QString &title, const QString &message, QSystemTra
         trayIcon->hide();
 }
 
+/*
+===================
+MainWindow::retranslate
+===================
+*/
 void MainWindow::retranslate()
 {
     syncNowAction->setText(tr("&Sync Now"));
@@ -1587,7 +1588,7 @@ void MainWindow::retranslate()
     ui->foldersLabel->setText(tr("Folders to synchronize:"));
 
     // Adds file data size info to the context menu
-    if (int size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME).size())
+    if (int size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME).size())
     {
         if (size < 1024)
             rememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 bytes)")).arg(size));

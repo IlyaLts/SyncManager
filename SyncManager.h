@@ -31,8 +31,7 @@
 #include "SyncFolder.h"
 #include "SyncProfile.h"
 
-#define DATA_FILENAME           "Data.dat"
-#define HIDDEN_PATH             ".SyncManager"
+#define DATA_FOLDER_PATH        ".SyncManager"
 #define DATABASE_FILENAME       "db"
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_COOLDOWN   300000
@@ -74,10 +73,11 @@ public:
     void updateStatus();
     void updateNextSyncingTime();
 
-    void saveData() const;
-    void saveDataLocally() const;
-    void restoreData();
-    void restoreDataLocally();
+    void saveFileDataInternally() const;
+    void saveFileDataLocally() const;
+    void loadFileDataInternally();
+    void loadFileDataLocally();
+    void removeFileData();
 
     inline void setSyncingMode(SyncingMode mode) { m_syncingMode = mode; }
     inline void setDeletionMode(DeletionMode mode) { m_deletionMode = mode; }
@@ -124,6 +124,8 @@ Q_SIGNALS:
 
 private:
 
+    void saveToFileData(const SyncFolder &folder, QDataStream &stream) const;
+    void loadFromFileData(SyncFolder &folder, QDataStream &stream, bool dry = false);
     bool syncProfile(SyncProfile &profile);
     int getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList);
     void checkForRenamedFolders(SyncProfile &profile);

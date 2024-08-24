@@ -72,19 +72,12 @@ SyncManager::~SyncManager()
 {
     if (m_rememberFiles)
     {
-        if (m_saveDataLocally)
-        {
-            QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
-            saveDataLocally();
-        }
-        else
-        {
-            for (auto &profile : m_profiles)
-                for (auto &folder : profile.folders)
-                    QDir(folder.path + HIDDEN_PATH).removeRecursively();
+        removeFileData();
 
-            saveData();
-        }
+        if (m_saveDataLocally)
+            saveFileDataLocally();
+        else
+            saveFileDataInternally();
     }
 }
 
@@ -300,12 +293,12 @@ void SyncManager::updateNextSyncingTime()
 
 /*
 ===================
-SyncManager::saveData
+SyncManager::saveFileDataInternally
 ===================
 */
-void SyncManager::saveData() const
+void SyncManager::saveFileDataInternally() const
 {
-    QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
+    QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME);
     if (!data.open(QIODevice::WriteOnly))
         return;
 
@@ -332,62 +325,7 @@ void SyncManager::saveData() const
 
             // File data
             stream << folder.path;
-            stream << folder.files.size();
-
-            for (auto fileIt = folder.files.begin(); fileIt != folder.files.end(); fileIt++)
-            {
-                stream << fileIt.key();
-                stream << fileIt->date;
-                stream << fileIt->size;
-                stream << fileIt->type;
-                stream << fileIt->updated;
-                stream << fileIt->exists;
-            }
-
-            // Folders to rename
-            stream << folder.foldersToRename.size();
-
-            for (const auto &fileIt : folder.foldersToRename)
-            {
-                stream << fileIt.first;
-                stream << fileIt.second;
-            }
-
-            // Files to move
-            stream << folder.filesToMove.size();
-
-            for (const auto &fileIt : folder.filesToMove)
-            {
-                stream << fileIt.first;
-                stream << fileIt.second;
-            }
-
-            // Folders to create
-            stream << folder.foldersToCreate.size();
-
-            for (const auto &path : folder.foldersToCreate)
-                stream << path;
-
-            // Files to create
-            stream << folder.filesToCopy.size();
-
-            for (const auto &fileIt : folder.filesToCopy)
-            {
-                stream << fileIt.first;
-                stream << fileIt.second;
-            }
-
-            // Folders to remove
-            stream << folder.foldersToRemove.size();
-
-            for (const auto &path : folder.foldersToRemove)
-                stream << path;
-
-            // Files to remove
-            stream << folder.filesToRemove.size();
-
-            for (const auto &path : folder.filesToRemove)
-                stream << path;
+            saveToFileData(folder, stream);
         }
 
         i++;
@@ -396,10 +334,10 @@ void SyncManager::saveData() const
 
 /*
 ===================
-SyncManager::saveDataLocally
+SyncManager::saveFileDataLocally
 ===================
 */
-void SyncManager::saveDataLocally() const
+void SyncManager::saveFileDataLocally() const
 {
     for (auto &profile : m_profiles)
     {
@@ -411,92 +349,35 @@ void SyncManager::saveDataLocally() const
             if (folder.toBeRemoved)
                 continue;
 
-            QDir().mkdir(folder.path + HIDDEN_PATH);
+            QDir().mkdir(folder.path + DATA_FOLDER_PATH);
 
-            if (!QDir(folder.path + HIDDEN_PATH).exists())
+            if (!QDir(folder.path + DATA_FOLDER_PATH).exists())
                 continue;
 
-            QFile data(folder.path + HIDDEN_PATH + "/" + DATABASE_FILENAME);
+            QFile data(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
             if (!data.open(QIODevice::WriteOnly))
                 continue;
 
-// Set the file attribute to hidden on Windows
+// Sets the file attribute to hidden on Windows
 #ifdef Q_OS_WIN
-            SetFileAttributesW(QString(folder.path + HIDDEN_PATH).toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
-            SetFileAttributesW(QString(folder.path + HIDDEN_PATH + "/" + DATABASE_FILENAME).toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
+            SetFileAttributesW(QString(folder.path + DATA_FOLDER_PATH).toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
+            SetFileAttributesW(QString(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME).toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
 #endif
 
             QDataStream stream(&data);
-
-            // File data
-            stream << folder.files.size();
-
-            for (auto fileIt = folder.files.begin(); fileIt != folder.files.end(); fileIt++)
-            {
-                stream << fileIt.key();
-                stream << fileIt->date;
-                stream << fileIt->size;
-                stream << fileIt->type;
-                stream << fileIt->updated;
-                stream << fileIt->exists;
-            }
-
-            // Folders to rename
-            stream << folder.foldersToRename.size();
-
-            for (const auto &fileIt : folder.foldersToRename)
-            {
-                stream << fileIt.first;
-                stream << fileIt.second;
-            }
-
-            // Files to move
-            stream << folder.filesToMove.size();
-
-            for (const auto &fileIt : folder.filesToMove)
-            {
-                stream << fileIt.first;
-                stream << fileIt.second;
-            }
-
-            // Folders to create
-            stream << folder.foldersToCreate.size();
-
-            for (const auto &path : folder.foldersToCreate)
-                stream << path;
-
-            // Files to create
-            stream << folder.filesToCopy.size();
-
-            for (const auto &fileIt : folder.filesToCopy)
-            {
-                stream << fileIt.first;
-                stream << fileIt.second;
-            }
-
-            // Folders to remove
-            stream << folder.foldersToRemove.size();
-
-            for (const auto &path : folder.foldersToRemove)
-                stream << path;
-
-            // Files to remove
-            stream << folder.filesToRemove.size();
-
-            for (const auto &path : folder.filesToRemove)
-                stream << path;
+            saveToFileData(folder, stream);
         }
     }
 }
 
 /*
 ===================
-SyncManager::restoreData
+SyncManager::loadFileDataInternally
 ===================
 */
-void SyncManager::restoreData()
+void SyncManager::loadFileDataInternally()
 {
-    QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATA_FILENAME);
+    QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME);
     if (!data.open(QIODevice::ReadOnly))
         return;
 
@@ -523,288 +404,265 @@ void SyncManager::restoreData()
         for (qsizetype j = 0; j < foldersSize; j++)
         {
             QByteArray folderPath;
-            qsizetype numOfFiles;
-
             stream >> folderPath;
-            stream >> numOfFiles;
 
             QStringList folderPaths;
-            bool restore = profileIndex >= 0;
+            bool folderExists = profileIndex >= 0;
 
-            if (restore)
+            if (folderExists)
             {
                 for (auto &folder : m_profiles[profileIndex].folders)
                     folderPaths.append(folder.path);
             }
 
             int folderIndex = folderPaths.indexOf(folderPath);
-            restore = restore && folderIndex >= 0;
+            folderExists = folderExists && folderIndex >= 0;
 
-            // File data
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                hash64_t hash;
-                QDateTime date;
-                qint64 size;
-                SyncFile::Type type;
-                bool updated;
-                bool exists;
-
-                stream >> hash;
-                stream >> date;
-                stream >> size;
-                stream >> type;
-                stream >> updated;
-                stream >> exists;
-
-                if (restore)
-                {
-                    const auto it = m_profiles[profileIndex].folders[folderIndex].files.insert(hash, SyncFile(QByteArray(), type, date, updated, exists, true));
-                    it->size = size;
-                    it->path.squeeze();
-                }
-            }
-
-            // Folders to rename
-            stream >> numOfFiles;
-
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray to;
-                QByteArray from;
-
-                stream >> to;
-                stream >> from;
-
-                if (restore)
-                {
-                    QPair<QByteArray, QByteArray> pair(to, from);
-                    const auto it = m_profiles[profileIndex].folders[folderIndex].foldersToRename.insert(hash64(to), pair);
-                    it.value().first.squeeze();
-                    it.value().second.squeeze();
-                }
-            }
-
-            // Files to move
-            stream >> numOfFiles;
-
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray to;
-                QByteArray from;
-
-                stream >> to;
-                stream >> from;
-
-                if (restore)
-                {
-                    QPair<QByteArray, QByteArray> pair(to, from);
-                    const auto it = m_profiles[profileIndex].folders[folderIndex].filesToMove.insert(hash64(to), pair);
-                    it.value().first.squeeze();
-                    it.value().second.squeeze();
-                }
-            }
-
-            // Folders to create
-            stream >> numOfFiles;
-
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray path;
-                stream >> path;
-
-                if (restore)
-                {
-                    const auto it = m_profiles[profileIndex].folders[folderIndex].foldersToCreate.insert(hash64(path), path);
-                    it->squeeze();
-                }
-            }
-
-            // Files to copy
-            stream >> numOfFiles;
-
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray to;
-                QByteArray from;
-                QDateTime time;
-
-                stream >> to;
-                stream >> from;
-                stream >> time;
-
-                if (restore)
-                {
-                    QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(to, from), time);
-                    const auto it = m_profiles[profileIndex].folders[folderIndex].filesToCopy.insert(hash64(to), pair);
-                    it.value().first.first.squeeze();
-                    it.value().first.second.squeeze();
-                }
-            }
-
-            // Folders to remove
-            stream >> numOfFiles;
-
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray path;
-                stream >> path;
-
-                if (restore)
-                {
-                    const auto it = m_profiles[profileIndex].folders[folderIndex].foldersToRemove.insert(hash64(path), path);
-                    it->squeeze();
-                }
-            }
-
-            // Files to remove
-            stream >> numOfFiles;
-
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray path;
-                stream >> path;
-
-                if (restore)
-                {
-                    const auto it = m_profiles[profileIndex].folders[folderIndex].filesToRemove.insert(hash64(path), path);
-                    it->squeeze();
-                }
-            }
+            loadFromFileData(m_profiles[profileIndex].folders[folderIndex], stream, !folderExists);
         }
     }
 }
 
 /*
 ===================
-SyncManager::restoreDataLocally
+SyncManager::loadFileDataLocally
 ===================
 */
-void SyncManager::restoreDataLocally()
+void SyncManager::loadFileDataLocally()
 {
     for (auto &profile : m_profiles)
     {
         for (auto &folder : profile.folders)
         {
-            QFile data(folder.path + HIDDEN_PATH + "/" + DATABASE_FILENAME);
+            QFile data(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
             if (!data.open(QIODevice::ReadOnly))
                 continue;
 
             QDataStream stream(&data);
+            loadFromFileData(folder, stream, false);
+        }
+    }
+}
 
-            qsizetype numOfFiles;
-            stream >> numOfFiles;
+/*
+===================
+SyncManager::removeFileData
+===================
+*/
+void SyncManager::removeFileData()
+{
+    QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME);
 
-            // File data
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                hash64_t hash;
-                QDateTime date;
-                qint64 size;
-                SyncFile::Type type;
-                bool updated;
-                bool exists;
+    for (auto &profile : m_profiles)
+        for (auto &folder : profile.folders)
+            QDir(folder.path + DATA_FOLDER_PATH).removeRecursively();
+}
 
-                stream >> hash;
-                stream >> date;
-                stream >> size;
-                stream >> type;
-                stream >> updated;
-                stream >> exists;
+/*
+===================
+SyncManager::saveToFileData
+===================
+*/
+void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) const
+{
+    // File data
+    stream << folder.files.size();
 
-                const auto it = folder.files.insert(hash, SyncFile(QByteArray(), type, date, updated, exists, true));
-                it->size = size;
-                it->path.squeeze();
-            }
+    for (auto fileIt = folder.files.begin(); fileIt != folder.files.end(); fileIt++)
+    {
+        stream << fileIt.key();
+        stream << fileIt->date;
+        stream << fileIt->size;
+        stream << fileIt->type;
+        stream << fileIt->updated;
+        stream << fileIt->exists;
+    }
 
-            // Folders to rename
-            stream >> numOfFiles;
+    // Folders to rename
+    stream << folder.foldersToRename.size();
 
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray to;
-                QByteArray from;
+    for (const auto &fileIt : folder.foldersToRename)
+    {
+        stream << fileIt.first;
+        stream << fileIt.second;
+    }
 
-                stream >> to;
-                stream >> from;
+    // Files to move
+    stream << folder.filesToMove.size();
 
-                QPair<QByteArray, QByteArray> pair(to, from);
-                const auto it = folder.foldersToRename.insert(hash64(to), pair);
-                it.value().first.squeeze();
-                it.value().second.squeeze();
-            }
+    for (const auto &fileIt : folder.filesToMove)
+    {
+        stream << fileIt.first;
+        stream << fileIt.second;
+    }
 
-            // Files to move
-            stream >> numOfFiles;
+    // Folders to create
+    stream << folder.foldersToCreate.size();
 
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray to;
-                QByteArray from;
+    for (const auto &path : folder.foldersToCreate)
+        stream << path;
 
-                stream >> to;
-                stream >> from;
+    // Files to create
+    stream << folder.filesToCopy.size();
 
-                QPair<QByteArray, QByteArray> pair(to, from);
-                const auto it = folder.filesToMove.insert(hash64(to), pair);
-                it.value().first.squeeze();
-                it.value().second.squeeze();
-            }
+    for (const auto &fileIt : folder.filesToCopy)
+    {
+        stream << fileIt.first;
+        stream << fileIt.second;
+    }
 
-            // Folders to create
-            stream >> numOfFiles;
+    // Folders to remove
+    stream << folder.foldersToRemove.size();
 
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray path;
-                stream >> path;
+    for (const auto &path : folder.foldersToRemove)
+        stream << path;
 
-                const auto it = folder.foldersToCreate.insert(hash64(path), path);
-                it->squeeze();
-            }
+    // Files to remove
+    stream << folder.filesToRemove.size();
 
-            // Files to copy
-            stream >> numOfFiles;
+    for (const auto &path : folder.filesToRemove)
+        stream << path;
+}
 
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray to;
-                QByteArray from;
-                QDateTime time;
+/*
+===================
+SyncManager::loadFromFileData
+===================
+*/
+void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool dry)
+{
+    qsizetype numOfFiles;
+    stream >> numOfFiles;
 
-                stream >> to;
-                stream >> from;
-                stream >> time;
+    // File data
+    for (qsizetype k = 0; k < numOfFiles; k++)
+    {
+        hash64_t hash;
+        QDateTime date;
+        qint64 size;
+        SyncFile::Type type;
+        bool updated;
+        bool exists;
 
-                QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(to, from), time);
-                const auto it = folder.filesToCopy.insert(hash64(to), pair);
-                it.value().first.first.squeeze();
-                it.value().first.second.squeeze();
-            }
+        stream >> hash;
+        stream >> date;
+        stream >> size;
+        stream >> type;
+        stream >> updated;
+        stream >> exists;
 
-            // Folders to remove
-            stream >> numOfFiles;
+        if (!dry)
+        {
+            const auto it = folder.files.insert(hash, SyncFile(QByteArray(), type, date, updated, exists, true));
+            it->size = size;
+            it->path.squeeze();
+        }
+    }
 
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray path;
-                stream >> path;
+    // Folders to rename
+    stream >> numOfFiles;
 
-                const auto it = folder.foldersToRemove.insert(hash64(path), path);
-                it->squeeze();
-            }
+    for (qsizetype k = 0; k < numOfFiles; k++)
+    {
+        QByteArray to;
+        QByteArray from;
 
-            // Files to remove
-            stream >> numOfFiles;
+        stream >> to;
+        stream >> from;
 
-            for (qsizetype k = 0; k < numOfFiles; k++)
-            {
-                QByteArray path;
-                stream >> path;
+        if (!dry)
+        {
+            QPair<QByteArray, QByteArray> pair(to, from);
+            const auto it = folder.foldersToRename.insert(hash64(to), pair);
+            it.value().first.squeeze();
+            it.value().second.squeeze();
+        }
+    }
 
-                const auto it = folder.filesToRemove.insert(hash64(path), path);
-                it->squeeze();
-            }
+    // Files to move
+    stream >> numOfFiles;
+
+    for (qsizetype k = 0; k < numOfFiles; k++)
+    {
+        QByteArray to;
+        QByteArray from;
+
+        stream >> to;
+        stream >> from;
+
+        if (!dry)
+        {
+            QPair<QByteArray, QByteArray> pair(to, from);
+            const auto it = folder.filesToMove.insert(hash64(to), pair);
+            it.value().first.squeeze();
+            it.value().second.squeeze();
+        }
+    }
+
+    // Folders to create
+    stream >> numOfFiles;
+
+    for (qsizetype k = 0; k < numOfFiles; k++)
+    {
+        QByteArray path;
+        stream >> path;
+
+        if (!dry)
+        {
+            const auto it = folder.foldersToCreate.insert(hash64(path), path);
+            it->squeeze();
+        }
+    }
+
+    // Files to copy
+    stream >> numOfFiles;
+
+    for (qsizetype k = 0; k < numOfFiles; k++)
+    {
+        QByteArray to;
+        QByteArray from;
+        QDateTime time;
+
+        stream >> to;
+        stream >> from;
+        stream >> time;
+
+        if (!dry)
+        {
+            QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(to, from), time);
+            const auto it = folder.filesToCopy.insert(hash64(to), pair);
+            it.value().first.first.squeeze();
+            it.value().first.second.squeeze();
+        }
+    }
+
+    // Folders to remove
+    stream >> numOfFiles;
+
+    for (qsizetype k = 0; k < numOfFiles; k++)
+    {
+        QByteArray path;
+        stream >> path;
+
+        if (!dry)
+        {
+            const auto it = folder.foldersToRemove.insert(hash64(path), path);
+            it->squeeze();
+        }
+    }
+
+    // Files to remove
+    stream >> numOfFiles;
+
+    for (qsizetype k = 0; k < numOfFiles; k++)
+    {
+        QByteArray path;
+        stream >> path;
+
+        if (!dry)
+        {
+            const auto it = folder.filesToRemove.insert(hash64(path), path);
+            it->squeeze();
         }
     }
 }
@@ -999,7 +857,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         // Skips database files
         if (fileInfo.isHidden())
         {
-            if (fileInfo.fileName().compare(HIDDEN_PATH, Qt::CaseInsensitive) == 0)
+            if (fileInfo.fileName().compare(DATA_FOLDER_PATH, Qt::CaseInsensitive) == 0)
                 continue;
 
             if (fileInfo.fileName().compare(DATABASE_FILENAME, Qt::CaseInsensitive) == 0)
