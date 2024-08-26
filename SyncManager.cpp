@@ -555,7 +555,7 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
         QDateTime date;
         qint64 size;
         SyncFile::Type type;
-        SyncFile::Flags flags;
+        qint8 flags;
 
 #ifdef Q_OS_WIN
         qint32 attr;
