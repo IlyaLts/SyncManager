@@ -88,6 +88,10 @@
             <translation>&amp;Dateien merken (erfordert Speicherplatz)</translation>
         </message>
         <message>
+            <source>&amp;Ignore Hidden Files</source>
+            <translation>&amp;Versteckte Dateien ignorieren</translation>
+        </message>
+        <message>
             <source>&amp;Save File Data Locally</source>
             <translation>&amp;Dateidaten lokal speichern</translation>
         </message>

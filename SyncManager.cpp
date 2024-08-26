@@ -46,6 +46,7 @@ SyncManager::SyncManager()
     m_paused = settings.value(QLatin1String("Paused"), false).toBool();
     m_notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     m_rememberFiles = settings.value("RememberFiles", true).toBool();
+    m_ignoreHiddenFiles = settings.value("IgnoreHiddenFiles", true).toBool();
     m_saveDataLocally = settings.value("SaveDataLocally", false).toBool();
     m_detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
     m_syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
@@ -883,6 +884,9 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         dir.next();
 
         QFileInfo fileInfo(dir.fileInfo());
+
+        if (ignoreHiddenFilesEnabled() && fileInfo.isHidden())
+            continue;
 
         // Skips database files
         if (fileInfo.isHidden())

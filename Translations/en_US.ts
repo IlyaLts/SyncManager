@@ -88,6 +88,10 @@
             <translation>&amp;Remember Files (Requires disk space)</translation>
         </message>
         <message>
+            <source>&amp;Ignore Hidden Files</source>
+            <translation>&amp;Ignore Hidden Files</translation>
+        </message>
+        <message>
             <source>&amp;Save File Data Locally</source>
             <translation>&amp;Save File Data Locally</translation>
         </message>

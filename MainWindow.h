@@ -88,6 +88,7 @@ private Q_SLOTS:
     void toggleShowInTray();
     void toggleNotification();
     void toggleRememberFiles();
+    void toggleIgnoreHiddenFiles();
     void toggleSaveFileDataLocally();
     void toggleDetectMoved();
     void updateSyncTime();
@@ -151,6 +152,9 @@ private:
     QAction *showInTrayAction;
     QAction *disableNotificationAction;
     QAction *rememberFilesAction;
+#ifdef Q_OS_WIN
+    QAction *ignoreHiddenFilesAction;
+#endif
     QAction *saveFileDataLocallyAction;
     QAction *detectMovedFilesAction;
     QAction *showAction;

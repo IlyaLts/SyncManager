@@ -88,6 +88,10 @@
             <translation>&amp;ファイルを記憶する（ディスクスペースが必要）</translation>
         </message>
         <message>
+            <source>&amp;Ignore Hidden Files</source>
+            <translation>&amp;隠しファイルを無視する</translation>
+        </message>
+        <message>
             <source>&amp;Save File Data Locally</source>
             <translation>&amp;ファイルデータをローカルに保存する</translation>
         </message>

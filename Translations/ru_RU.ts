@@ -88,6 +88,10 @@
             <translation>&amp;Запоминать файлы (Требуется место на диске)</translation>
         </message>
         <message>
+            <source>&amp;Ignore Hidden Files</source>
+            <translation>&amp;Игнорировать скрытые файлы</translation>
+        </message>
+        <message>
             <source>&amp;Save File Data Locally</source>
             <translation>&amp;Сохранять данные файла локально</translation>
         </message>

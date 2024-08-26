@@ -88,6 +88,10 @@
             <translation>&amp;फ़ाइलों को याद रखें (डिस्क स्पेस की आवश्यकता होती है)</translation>
         </message>
         <message>
+            <source>&amp;Ignore Hidden Files</source>
+            <translation>&amp;छुपे हुए फ़ाइलों को अनदेखा करें</translation>
+        </message>
+        <message>
             <source>&amp;Save File Data Locally</source>
             <translation>&amp;फ़ाइल डेटा को स्थानीय रूप से सहेजें</translation>
         </message>

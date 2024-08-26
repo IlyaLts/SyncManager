@@ -95,6 +95,7 @@ public:
     inline void setSyncHidden(bool hidden) { m_syncHidden = hidden; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }
     inline void enableRememberFiles(bool enable) { m_rememberFiles = enable; }
+    inline void enableIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
     inline void enableSaveDataLocally(bool enable) { m_saveDataLocally = enable; }
     inline void enableDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
 
@@ -113,6 +114,7 @@ public:
     inline bool isSyncHidden() const { return m_syncHidden; }
     inline bool notificationsEnabled() const { return m_notifications; }
     inline bool rememberFilesEnabled() const { return m_rememberFiles; }
+    inline bool ignoreHiddenFilesEnabled() const { return m_ignoreHiddenFiles; }
     inline bool saveDataLocallyEnabled() const { return m_saveDataLocally; }
     inline bool detectMovedFilesEnabled() const { return m_detectMovedFiles; }
     inline const QString &versionFolder() const { return m_versionFolder; }
@@ -173,6 +175,7 @@ private:
     bool m_syncHidden = false;
     bool m_notifications = true;
     bool m_rememberFiles = false;
+    bool m_ignoreHiddenFiles = false;
     bool m_saveDataLocally = false;
     bool m_detectMovedFiles = false;
 

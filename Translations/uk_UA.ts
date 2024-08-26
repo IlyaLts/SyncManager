@@ -88,6 +88,10 @@
             <translation>&amp;Запам'ятати файли (Потрібно місце на диску)</translation>
         </message>
         <message>
+            <source>&amp;Ignore Hidden Files</source>
+            <translation>&amp;Ігнорувати приховані файли</translation>
+        </message>
+        <message>
             <source>&amp;Save File Data Locally</source>
             <translation>&amp;Зберегти дані файлу локально</translation>
         </message>

@@ -110,7 +110,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     showInTrayAction = new QAction(tr("&Show in System Tray"));
     disableNotificationAction = new QAction(tr("&Disable Notifications"), this);
     rememberFilesAction = new QAction(tr("&Remember Files (Requires disk space)"), this);
-    saveFileDataLocallyAction = new QAction(tr("&Save File Data Locally") +  " (Beta)", this);
+    ignoreHiddenFilesAction = new QAction(tr("&Ignore Hidden Files"), this);
+    saveFileDataLocallyAction = new QAction(tr("&Save File Data Locally"), this);
     detectMovedFilesAction = new QAction(tr("&Detect Renamed and Moved Files"), this);
     showAction = new QAction(tr("&Show"), this);
     quitAction = new QAction(tr("&Quit"), this);
@@ -140,12 +141,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
     rememberFilesAction->setCheckable(true);
+    ignoreHiddenFilesAction->setCheckable(true);
     saveFileDataLocallyAction->setCheckable(true);
     detectMovedFilesAction->setCheckable(true);
 
     showInTrayAction->setChecked(showInTray);
     disableNotificationAction->setChecked(!manager.notificationsEnabled());
     rememberFilesAction->setChecked(manager.rememberFilesEnabled());
+    ignoreHiddenFilesAction->setChecked(manager.ignoreHiddenFilesEnabled());
     saveFileDataLocallyAction->setChecked(manager.saveDataLocallyEnabled());
     detectMovedFilesAction->setChecked(manager.detectMovedFilesEnabled());
 
@@ -192,6 +195,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     settingsMenu->addAction(showInTrayAction);
     settingsMenu->addAction(disableNotificationAction);
     settingsMenu->addAction(rememberFilesAction);
+    settingsMenu->addAction(ignoreHiddenFilesAction);
     settingsMenu->addAction(saveFileDataLocallyAction);
     settingsMenu->addAction(detectMovedFilesAction);
     settingsMenu->addSeparator();
@@ -255,6 +259,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
     connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
     connect(rememberFilesAction, &QAction::triggered, this, &MainWindow::toggleRememberFiles);
+    connect(ignoreHiddenFilesAction, &QAction::triggered, this, &MainWindow::toggleIgnoreHiddenFiles);
     connect(saveFileDataLocallyAction, &QAction::triggered, this, &MainWindow::toggleSaveFileDataLocally);
     connect(detectMovedFilesAction, &QAction::triggered, this, &MainWindow::toggleDetectMoved);
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
@@ -1096,6 +1101,17 @@ void MainWindow::toggleRememberFiles()
 
 /*
 ===================
+MainWindow::toggleIgnoreHiddenFiles
+===================
+*/
+void MainWindow::toggleIgnoreHiddenFiles()
+{
+    manager.enableIgnoreHiddenFiles(!manager.ignoreHiddenFilesEnabled());
+    saveSettings();
+}
+
+/*
+===================
 MainWindow::enableRememberFiles
 ===================
 */
@@ -1498,6 +1514,7 @@ void MainWindow::saveSettings() const
     settings.setValue("Language", language);
     settings.setValue("Notifications", manager.notificationsEnabled());
     settings.setValue("RememberFiles", manager.rememberFilesEnabled());
+    settings.setValue("IgnoreHiddenFiles", manager.ignoreHiddenFilesEnabled());
     settings.setValue("SaveDataLocally", manager.saveDataLocallyEnabled());
     settings.setValue("DetectMovedFiles", manager.detectMovedFilesEnabled());
     settings.setValue("SyncTimeMultiplier", manager.syncTimeMultiplier());
@@ -1581,7 +1598,8 @@ void MainWindow::retranslate()
     showInTrayAction->setText(tr("&Show in System Tray"));
     disableNotificationAction->setText(tr("&Disable Notifications"));
     rememberFilesAction->setText(tr("&Remember Files (Requires disk space)"));
-    saveFileDataLocallyAction->setText(tr("&Save File Data Locally") +  " (Beta)");
+    ignoreHiddenFilesAction->setText(tr("&Ignore Hidden Files"));
+    saveFileDataLocallyAction->setText(tr("&Save File Data Locally"));
     detectMovedFilesAction->setText(tr("&Detect Renamed and Moved Files"));
     showAction->setText(tr("&Show"));
     quitAction->setText(tr("&Quit"));

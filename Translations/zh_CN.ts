@@ -88,6 +88,10 @@
             <translation>&amp;记住文件（需要磁盘空间）</translation>
         </message>
         <message>
+            <source>&amp;Ignore Hidden Files</source>
+            <translation>&amp;忽略隐藏文件</translation>
+        </message>
+        <message>
             <source>&amp;Save File Data Locally</source>
             <translation>&amp;本地保存文件数据</translation>
         </message>
