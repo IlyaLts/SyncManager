@@ -222,12 +222,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->menuBar()->addAction(pauseSyncingAction);
     this->menuBar()->addMenu(settingsMenu);
 
-    QLocale::Language systemLanguage = QLocale::system().language();
-
-    retranslate();
-    language = static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt());
-    switchLanguage(language);
-
     connect(ui->syncProfilesView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(profileClicked(QItemSelection,QItemSelection)));
     connect(ui->syncProfilesView->model(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)), SLOT(profileNameChanged(QModelIndex)));
     connect(ui->syncProfilesView, SIGNAL(deletePressed()), SLOT(removeProfile()));
@@ -336,6 +330,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     {
         manager.removeFileData();
     }
+
+    QLocale::Language systemLanguage = QLocale::system().language();
+
+    retranslate();
+    language = static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt());
+    switchLanguage(language);
 
     updateTimer.setSingleShot(true);
 
@@ -1616,8 +1616,21 @@ void MainWindow::retranslate()
     ui->SyncLabel->setText(tr("Synchronization profiles:"));
     ui->foldersLabel->setText(tr("Folders to synchronize:"));
 
+    int size = 0;
+
+    if (manager.saveDataLocallyEnabled())
+    {
+        for (auto &profile : manager.profiles())
+            for (auto &folder : profile.folders)
+                size += QFileInfo(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME).size();
+    }
+    else
+    {
+        size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME).size();
+    }
+
     // Adds file data size info to the context menu
-    if (int size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME).size())
+    if (size)
     {
         if (size < 1024)
             rememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 bytes)")).arg(size));
