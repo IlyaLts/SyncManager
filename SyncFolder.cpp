@@ -58,7 +58,7 @@ SyncFolder::isTopFolderUpdated
 */
 bool SyncFolder::isTopFolderUpdated(const SyncFile &file) const
 {
-    return files.value(hash64(QByteArray(file.path).remove(file.path.indexOf('/'), file.path.size()))).updated;
+    return files.value(hash64(QByteArray(file.path).remove(file.path.indexOf('/'), file.path.size()))).updated();
 }
 
 /*

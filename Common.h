@@ -53,8 +53,14 @@ extern std::chrono::high_resolution_clock::time_point startTime;
 
 hash64_t hash64(const QByteArray &str);
 void removeDuplicateFiles(QHash<hash64_t, SyncFile *> &files);
-QFileInfo GetCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters = QDir::NoFilter);
+QFileInfo getCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters = QDir::NoFilter);
 void setTranslator(QLocale::Language language);
 bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent = nullptr);
+
+#ifdef Q_OS_WIN
+qint32 getFileAttributes(const QString &path);
+void setFileAttribute(const QString &path, qint32 attr);
+void setHiddenFileAttribute(const QString &path, bool hidden);
+#endif
 
 #endif // COMMON_H

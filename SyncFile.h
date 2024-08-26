@@ -49,26 +49,47 @@ public:
         LockedInternal      // The same as Locked, but for internal subfolders in a case-insensitive renamed folder.
     };
 
+    enum Flags
+    {
+        Updated = 0x1,
+        Exists = 0x2,
+        OnRestore = 0x4,
+        NewlyAdded = 0x8,
+        ToBeRemoved = 0x10,
+        AttrUpdated = 0x20
+    };
+
     SyncFile(){}
-    SyncFile(QByteArray path, Type type, QDateTime time, bool updated = false, bool exists = true, bool onRestore = false) : path(path),
-                                                                                                                             date(time),
-                                                                                                                             type(type),
-                                                                                                                             updated(updated),
-                                                                                                                             exists(exists),
-                                                                                                                             onRestore(onRestore){}
+    SyncFile(QByteArray path, Type type, QDateTime time, qint8 flags = Exists) : path(path), date(time), type(type), flags(flags){}
 
     bool isOlder(const SyncFile &otherFile) const;
+
+    void setUpdated(bool value) { flags = value ? (flags | Updated) : (flags & ~Updated); }
+    void setExists(bool value) { flags = value ? (flags | Exists) : (flags & ~Exists); }
+    void setOnRestore(bool value) { flags = value ? (flags | OnRestore) : (flags & ~OnRestore); }
+    void setNewlyAdded(bool value) { flags = value ? (flags | NewlyAdded) : (flags & ~NewlyAdded); }
+    void setToBeRemoved(bool value) { flags = value ? (flags | ToBeRemoved) : (flags & ~ToBeRemoved); }
+    void setAttrUpdated(bool value) { flags = value ? (flags | AttrUpdated) : (flags & ~AttrUpdated); }
+
+    inline bool updated() const { return flags & Updated; }
+    inline bool exists() const { return flags & Exists; }
+    inline bool onRestore() const { return flags & OnRestore; }
+    inline bool newlyAdded() const { return flags & NewlyAdded; }
+    inline bool toBeRemoved() const { return flags & ToBeRemoved; }
+    inline bool attrUpdated() const { return flags & AttrUpdated; }
 
     QByteArray path;
     QDateTime date;
     qint64 size = 0;
     Type type = Unknown;
     LockedFlag lockedFlag = Unlocked;
-    bool updated = false;
-    bool exists = false;
-    bool onRestore = false;
-    bool newlyAdded = false;
-    bool toBeRemoved = false;
+    qint8 flags = 0;
+
+#ifdef Q_OS_WIN
+    qint32 attr = 0;
+#else
+    qint32 reserved = 0;
+#endif
 };
 
 #endif // SYNCFILE_H

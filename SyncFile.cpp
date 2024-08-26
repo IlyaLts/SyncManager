@@ -30,10 +30,10 @@ bool SyncFile::isOlder(const SyncFile &other) const
     if (type != SyncFile::File && type == other.type)
         return false;
 
-    if (!exists || !other.exists)
+    if (!exists() || !other.exists())
         return false;
 
-    if (!updated && other.updated)
+    if (!updated() && other.updated())
         return true;
 
 #ifdef Q_OS_LINUX
@@ -42,7 +42,7 @@ bool SyncFile::isOlder(const SyncFile &other) const
         return true;
 #else
     // Checking the updated flags on both files allows detection of a newly added file with an older modification date
-    if (updated == other.updated && date < other.date)
+    if (updated() == other.updated() && date < other.date)
         return true;
 #endif
 

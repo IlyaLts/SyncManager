@@ -129,6 +129,7 @@ private:
     void loadFromFileData(SyncFolder &folder, QDataStream &stream, bool dry = false);
     bool syncProfile(SyncProfile &profile);
     int getListOfFiles(SyncFolder &folder, const QList<QByteArray> &excludeList);
+    void synchronizeFileAttributes(SyncProfile &profile);
     void checkForRenamedFolders(SyncProfile &profile);
     void checkForMovedFiles(SyncProfile &profile);
     void checkForAddedFiles(SyncProfile &profile);

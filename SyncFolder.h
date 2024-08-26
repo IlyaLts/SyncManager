@@ -46,7 +46,7 @@ public:
     QHash<hash64_t, SyncFile> files;
     QHash<hash64_t, QPair<QByteArray, QByteArray>> foldersToRename;
     QHash<hash64_t, QPair<QByteArray, QByteArray>> filesToMove;
-    QHash<hash64_t, QByteArray> foldersToCreate;
+    QHash<hash64_t, QPair<QByteArray, qint32>> foldersToCreate;
     QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToCopy;
     QHash<hash64_t, QByteArray> foldersToRemove;
     QHash<hash64_t, QByteArray> filesToRemove;

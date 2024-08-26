@@ -28,6 +28,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QPushButton>
+#include <fileapi.h>
 
 QTranslator currentTranslator;
 QLocale currentLocale;
@@ -129,7 +130,7 @@ void removeDuplicateFiles(QHash<hash64_t, SyncFile *> &files)
 
 /*
 ===================
-GetCurrentFileInfo
+getCurrentFileInfo
 
 Gets the current file information for a file with the correct case in a synchronized folder.
 
@@ -137,7 +138,7 @@ QFileInfo and QFile return a predetermined filename based on the argument provid
 instead of the actual current filename on the disk. So, the only way to get the current filename is to use QDirIterator.
 ===================
 */
-QFileInfo GetCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters)
+QFileInfo getCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters)
 {
     QDirIterator iterator(path, nameFilters, filters);
 
@@ -244,3 +245,39 @@ bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &te
     messageBox.exec();
     return messageBox.clickedButton() == yes;
 }
+
+#ifdef Q_OS_WIN
+
+/*
+===================
+getFileAttributes
+===================
+*/
+qint32 getFileAttributes(const QString &path)
+{
+    return GetFileAttributesW(path.toStdWString().c_str());
+}
+
+/*
+===================
+setFileAttribute
+===================
+*/
+void setFileAttribute(const QString &path, qint32 attr)
+{
+    SetFileAttributesW(path.toStdWString().c_str(), attr);
+}
+
+/*
+===================
+setHiddenFileAttribute
+===================
+*/
+void setHiddenFileAttribute(const QString &path, bool hidden)
+{
+    long attr = GetFileAttributesW(path.toStdWString().c_str());
+    SetFileAttributesW(path.toStdWString().c_str(), hidden ? attr | FILE_ATTRIBUTE_HIDDEN : attr & ~FILE_ATTRIBUTE_HIDDEN);
+}
+
+#endif
+
