@@ -1,4 +1,13 @@
 ==========================
+1.7 - Aug 26, 2024
+==========================
+
+- Added de, es, fr, hi, it, ja, pt, ru, uk, zh language support.
+- Added a feature to save file data locally in synchronization folders.
+- Added a feature to ignore hidden files.
+- Added file attributes synchronization support for windows.
+
+==========================
 1.6.3 - Jun 29, 2024
 ==========================
 
