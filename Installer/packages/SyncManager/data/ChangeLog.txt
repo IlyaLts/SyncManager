@@ -1,4 +1,11 @@
 ==========================
+1.7.1 - Aug 27, 2024
+==========================
+
+- Fixed incorrect database size in menu when saving database locally.
+- Fixed broken loading of file data from database.
+
+==========================
 1.7 - Aug 26, 2024
 ==========================
 
