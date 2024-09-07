@@ -20,7 +20,10 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-//#include <QtTypes>
+#ifdef Q_OS_WIN
+#include <QtTypes>
+#endif
+
 #include <QHash>
 #include <QDir>
 #include <QMessageBox>
@@ -57,8 +60,14 @@ QFileInfo getCurrentFileInfo(const QString &path, const QStringList &nameFilters
 void setTranslator(QLocale::Language language);
 bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent = nullptr);
 
+#ifdef Q_OS_WIN
 qint32 getFileAttributes(const QString &path);
 void setFileAttribute(const QString &path, qint32 attr);
+#else
+quint32 getFileAttributes(const QString &path);
+void setFileAttribute(const QString &path, quint32 attr);
+#endif
+
 void setHiddenFileAttribute(const QString &path, bool hidden);
 
 #endif // COMMON_H

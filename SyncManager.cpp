@@ -303,6 +303,7 @@ void SyncManager::saveFileDataInternally() const
         return;
 
     QDataStream stream(&data);
+
     stream << m_profiles.size();
 
     QStringList profileNames;
@@ -484,12 +485,7 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
         stream << fileIt->size;
         stream << fileIt->type;
         stream << fileIt->flags;
-
-#ifdef Q_OS_WIN
         stream << fileIt->attr;
-#else
-        stream << fileIt->attr;
-#endif
     }
 
     // Folders to rename
@@ -560,7 +556,7 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
 #ifdef Q_OS_WIN
         qint32 attr;
 #else
-        qint32 reserved;
+        quint32 attr;
 #endif
 
         stream >> hash;
@@ -568,22 +564,14 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
         stream >> size;
         stream >> type;
         stream >> flags;
-
-#ifdef Q_OS_WIN
         stream >> attr;
-#else
-        stream >> reserved;
-#endif
 
         if (!dry)
         {
             const auto it = folder.files.insert(hash, SyncFile(QByteArray(), type, date, flags | SyncFile::OnRestore));
             it->size = size;
             it->path.squeeze();
-
-#ifdef Q_OS_WIN
             it->attr = attr;
-#endif
         }
     }
 
@@ -950,10 +938,8 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
             if (file.date != fileDate)
                 file.setUpdated(true);
 
-#ifdef Q_OS_WIN
             if (file.attr != getFileAttributes(fullFilePath))
                 file.setAttrUpdated(true);
-#endif
 
             // Marks all parent folders as updated if the current folder was updated
             if (file.updated())
@@ -1001,7 +987,6 @@ SyncManager::synchronizeFileAttributes
 */
 void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
 {
-#ifdef Q_OS_WIN
     SET_TIME(startTime);
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
@@ -1047,9 +1032,6 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
     }
 
     TIMESTAMP(startTime, "Synchronized file attributes.");
-#else
-    Q_UNUSED(profile)
-#endif
 }
 
 /*

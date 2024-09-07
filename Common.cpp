@@ -31,6 +31,8 @@
 
 #ifdef Q_OS_WIN
 #include <fileapi.h>
+#else
+#include <sys/stat.h>
 #endif
 
 QTranslator currentTranslator;
@@ -254,30 +256,36 @@ bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &te
 getFileAttributes
 ===================
 */
+#ifdef Q_OS_WIN
 qint32 getFileAttributes(const QString &path)
 {
-#ifdef Q_OS_WIN
     return GetFileAttributesW(path.toStdWString().c_str());
-#else
-    Q_UNUSED(path)
-    return 0;
-#endif
 }
+#else
+quint32 getFileAttributes(const QString &path)
+{
+    struct stat buf;
+    stat(path.toLatin1(), &buf);
+    return buf.st_mode;
+}
+#endif
 
 /*
 ===================
 setFileAttribute
 ===================
 */
+#ifdef Q_OS_WIN
 void setFileAttribute(const QString &path, qint32 attr)
 {
-#ifdef Q_OS_WIN
     SetFileAttributesW(path.toStdWString().c_str(), attr);
-#else
-    Q_UNUSED(path)
-    Q_UNUSED(attr)
-#endif
 }
+#else
+void setFileAttribute(const QString &path, quint32 attr)
+{
+    chmod(path.toLatin1(), attr);
+}
+#endif
 
 /*
 ===================

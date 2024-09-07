@@ -20,7 +20,10 @@
 #ifndef SYNCFILE_H
 #define SYNCFILE_H
 
-//#include <QtTypes>
+#ifdef Q_OS_WIN
+#include <QtTypes>
+#endif
+
 #include <QByteArray>
 #include <QDateTime>
 
@@ -88,7 +91,7 @@ public:
 #ifdef Q_OS_WIN
     qint32 attr = 0;
 #else
-    qint32 attr = 0;
+    quint32 attr = 0;
 #endif
 };
 
