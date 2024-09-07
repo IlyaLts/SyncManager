@@ -28,7 +28,10 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QPushButton>
+
+#ifdef Q_OS_WIN
 #include <fileapi.h>
+#endif
 
 QTranslator currentTranslator;
 QLocale currentLocale;
@@ -246,8 +249,6 @@ bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &te
     return messageBox.clickedButton() == yes;
 }
 
-#ifdef Q_OS_WIN
-
 /*
 ===================
 getFileAttributes
@@ -255,7 +256,12 @@ getFileAttributes
 */
 qint32 getFileAttributes(const QString &path)
 {
+#ifdef Q_OS_WIN
     return GetFileAttributesW(path.toStdWString().c_str());
+#else
+    Q_UNUSED(path)
+    return 0;
+#endif
 }
 
 /*
@@ -265,7 +271,12 @@ setFileAttribute
 */
 void setFileAttribute(const QString &path, qint32 attr)
 {
+#ifdef Q_OS_WIN
     SetFileAttributesW(path.toStdWString().c_str(), attr);
+#else
+    Q_UNUSED(path)
+    Q_UNUSED(attr)
+#endif
 }
 
 /*
@@ -275,9 +286,11 @@ setHiddenFileAttribute
 */
 void setHiddenFileAttribute(const QString &path, bool hidden)
 {
+#ifdef Q_OS_WIN
     long attr = GetFileAttributesW(path.toStdWString().c_str());
     SetFileAttributesW(path.toStdWString().c_str(), hidden ? attr | FILE_ATTRIBUTE_HIDDEN : attr & ~FILE_ATTRIBUTE_HIDDEN);
-}
-
+#else
+    Q_UNUSED(path)
+    Q_UNUSED(hidden)
 #endif
-
+}

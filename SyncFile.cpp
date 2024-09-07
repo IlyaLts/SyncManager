@@ -38,7 +38,7 @@ bool SyncFile::isOlder(const SyncFile &other) const
 
 #ifdef Q_OS_LINUX
     // Linux doesn't preserve the original modification date, so the updated flags on both files should be mandatory
-    if (updated && other.updated && date < other.date)
+    if (updated() && other.updated() && date < other.date)
         return true;
 #else
     // Checking the updated flags on both files allows detection of a newly added file with an older modification date

@@ -488,7 +488,7 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 #ifdef Q_OS_WIN
         stream << fileIt->attr;
 #else
-        stream << fileIt->reserved;
+        stream << fileIt->attr;
 #endif
     }
 
@@ -640,7 +640,7 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
 
         if (!dry)
         {
-            const auto it = folder.foldersToCreate.insert(hash64(path), QPair(path, attr));
+            const auto it = folder.foldersToCreate.insert(hash64(path), QPair<QByteArray, qint32>(path, attr));
             it->first.squeeze();
         }
     }
@@ -1047,6 +1047,8 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
     }
 
     TIMESTAMP(startTime, "Synchronized file attributes.");
+#else
+    Q_UNUSED(profile)
 #endif
 }
 
@@ -1425,7 +1427,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
 
                     if (otherFile.type == SyncFile::Folder)
                     {
-                        folderIt->foldersToCreate.insert(otherFileIt.key(), QPair(otherFile.path, otherFile.attr))->first.squeeze();
+                        folderIt->foldersToCreate.insert(otherFileIt.key(), QPair<QByteArray, qint32>(otherFile.path, otherFile.attr))->first.squeeze();
                         folderIt->foldersToRemove.remove(otherFileIt.key());
                     }
                     else
