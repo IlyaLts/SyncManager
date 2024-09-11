@@ -20,10 +20,6 @@
 #ifndef SYNCFILE_H
 #define SYNCFILE_H
 
-#ifdef Q_OS_WIN
-#include <QtTypes>
-#endif
-
 #include <QByteArray>
 #include <QDateTime>
 

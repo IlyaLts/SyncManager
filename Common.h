@@ -20,10 +20,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#ifdef Q_OS_WIN
-#include <QtTypes>
-#endif
-
 #include <QHash>
 #include <QDir>
 #include <QMessageBox>

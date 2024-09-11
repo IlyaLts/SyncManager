@@ -1552,7 +1552,6 @@ void SyncManager::checkForChanges(SyncProfile &profile)
     if (!profile.isActive())
         return;
 
-    synchronizeFileAttributes(profile);
     checkForRenamedFolders(profile);
 
     if (m_detectMovedFiles)
@@ -1987,6 +1986,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
         versioningPath.append(QDateTime::currentDateTime().toString(m_versionPattern));
         versioningPath.append("/");
 
+        synchronizeFileAttributes(profile);
         renameFolders(folder);
         moveFiles(folder);
         removeFolders(folder, versioningPath);

@@ -22,13 +22,13 @@ In cases where conflicts arise, SyncManager resolves them according to the follo
 - **Folder content changes take precedence:** If a folder has had new files added or existing files removed in one location, and the same folder has been deleted in another location, SyncManager will synchronize the folder with the updated content, effectively ignoring the deletion. Single changes to existing files within the folder do not trigger this precedence. 
 #### 4. Synchronization Execution
 Based on the changes detected, SyncManager performs the following synchronization operations in the following order:
+1. **Synchronizes file attributes:** Updates file attributes to match the source location.
 1. **Renames case-changed folders:** Renames folders that have undergone case-only changes.
 1. **Renames and moves files:** Renames and relocates files to their new destinations.
 1. **Removes deleted folders:** Deletes folders that have been removed from the source location.
 1. **Removes deleted files:** Deletes files that have been removed from the source location.
 1. **Creates new folders:** Creates new folders that have been added to the source location.
 1. **Copies new or modified files:** Copies new or modified files from the source location to the target location.
-1. **Synchronizes file attributes:** Updates file attributes to match the source location.
 
 # Building
 Requires Qt 6 or newer. Buildable with Qt Creator.
