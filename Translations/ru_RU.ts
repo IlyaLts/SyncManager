@@ -84,16 +84,8 @@
             <translation>&amp;Отключить уведомления</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires disk space)</source>
-            <translation>&amp;Запоминать файлы (Требуется место на диске)</translation>
-        </message>
-        <message>
             <source>&amp;Ignore Hidden Files</source>
             <translation>&amp;Игнорировать скрытые файлы</translation>
-        </message>
-        <message>
-            <source>&amp;Save File Data Locally</source>
-            <translation>&amp;Сохранять данные файла локально</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>
@@ -112,16 +104,20 @@
             <translation>Версия: %1</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 bytes)</source>
-            <translation>&amp;Запоминать файлы (Требуется ~%1 байт)</translation>
+            <source>&amp;Save Files Data (Requires disk space)</source>
+            <translation>&amp;Сохранить данные файлов (Требуется место на диске)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 KB)</source>
-            <translation>&amp;Запоминать файлы (Требуется ~%1 КБ)</translation>
+            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
+            <translation>&amp;Сохранить данные файлов (Требуется ~%1 байт)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 MB)</source>
-            <translation>&amp;Запоминать файлы (Требуется ~%1 МБ)</translation>
+            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
+            <translation>&amp;Сохранить данные файлов (Требуется ~%1 КБ)</translation>
+        </message>
+        <message>
+            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
+            <translation>&amp;Сохранить данные файлов (Требуется ~%1 МБ)</translation>
         </message>
         <message>
             <source>Couldn't find folder</source>
@@ -258,6 +254,22 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;Язык</translation>
+        </message>
+        <message>
+            <source>&amp;Database</source>
+            <translation>&amp;База данных</translation>
+        </message>
+        <message>
+            <source>&amp;Database Location</source>
+            <translation>&amp;Расположение базы данных</translation>
+        </message>
+        <message>
+            <source>&amp;Locally (On the local machine)</source>
+            <translation>&amp;Локально (На локальном компьютере)</translation>
+        </message>
+        <message>
+            <source>&amp;Decentralized (Inside synchronization folders)</source>
+            <translation>&amp;Децентрализованно (Внутри папок синхронизации)</translation>
         </message>
     </context>
 </TS>

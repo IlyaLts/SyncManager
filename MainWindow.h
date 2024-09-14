@@ -87,9 +87,9 @@ private Q_SLOTS:
     void toggleLaunchOnStartup();
     void toggleShowInTray();
     void toggleNotification();
-    void toggleRememberFiles();
+    void toggleSaveDatabase();
+    void setDatabaseLocation(bool location);
     void toggleIgnoreHiddenFiles();
-    void toggleSaveFileDataLocally();
     void toggleDetectMoved();
     void updateSyncTime();
     void updateLastSyncTime(SyncProfile *profile);
@@ -137,6 +137,9 @@ private:
     QAction *moveToTrashAction;
     QAction *versioningAction;
     QAction *deletePermanentlyAction;
+    QAction *saveDatabaseAction;
+    QAction *saveDatabaseLocallyAction;
+    QAction *saveDatabaseDecentralizedAction;
     QAction *chineseAction;
     QAction *englishAction;
     QAction *frenchAction;
@@ -151,9 +154,7 @@ private:
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
     QAction *disableNotificationAction;
-    QAction *rememberFilesAction;
     QAction *ignoreHiddenFilesAction;
-    QAction *saveFileDataLocallyAction;
     QAction *detectMovedFilesAction;
     QAction *showAction;
     QAction *quitAction;
@@ -166,6 +167,8 @@ private:
     UnhidableMenu *syncingTimeMenu;
     UnhidableMenu *deletionModeMenu;
     UnhidableMenu *languageMenu;
+    UnhidableMenu *databaseMenu;
+    UnhidableMenu *databaseLocationMenu;
 
     QLocale::Language language;
     QTimer updateTimer;

@@ -84,16 +84,8 @@
             <translation>&amp;禁用通知</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires disk space)</source>
-            <translation>&amp;记住文件（需要磁盘空间）</translation>
-        </message>
-        <message>
             <source>&amp;Ignore Hidden Files</source>
             <translation>&amp;忽略隐藏文件</translation>
-        </message>
-        <message>
-            <source>&amp;Save File Data Locally</source>
-            <translation>&amp;本地保存文件数据</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>
@@ -112,16 +104,20 @@
             <translation>版本：%1</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 bytes)</source>
-            <translation>&amp;记住文件（需要约%1字节）</translation>
+            <source>&amp;Save Files Data (Requires disk space)</source>
+            <translation>&amp;保存文件数据 （需要磁盘空间）</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 KB)</source>
-            <translation>&amp;记住文件（需要约%1 KB）</translation>
+            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
+            <translation>&amp;保存文件数据 （需要~%1 字节）</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 MB)</source>
-            <translation>&amp;记住文件（需要约%1 MB）</translation>
+            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
+            <translation>&amp;保存文件数据 （需要~%1 KB）</translation>
+        </message>
+        <message>
+            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
+            <translation>&amp;保存文件数据 （需要约 %1 MB）</translation>
         </message>
         <message>
             <source>Couldn't find folder</source>
@@ -258,6 +254,22 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;語言</translation>
+        </message>
+        <message>
+            <source>&amp;Database</source>
+            <translation>&amp;数据库</translation>
+        </message>
+        <message>
+            <source>&amp;Database Location</source>
+            <translation>&amp;数据库位置</translation>
+        </message>
+        <message>
+            <source>&amp;Locally (On the local machine)</source>
+            <translation>&amp;本地 （在本地机器上）</translation>
+        </message>
+        <message>
+            <source>&amp;Decentralized (Inside synchronization folders)</source>
+            <translation>&amp;去中心化 （同步文件夹内）</translation>
         </message>
     </context>
 </TS>

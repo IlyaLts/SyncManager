@@ -84,16 +84,8 @@
             <translation>&amp;Benachrichtigungen deaktivieren</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires disk space)</source>
-            <translation>&amp;Dateien merken (erfordert Speicherplatz)</translation>
-        </message>
-        <message>
             <source>&amp;Ignore Hidden Files</source>
             <translation>&amp;Versteckte Dateien ignorieren</translation>
-        </message>
-        <message>
-            <source>&amp;Save File Data Locally</source>
-            <translation>&amp;Dateidaten lokal speichern</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>
@@ -112,17 +104,21 @@
             <translation>Version: %1</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 bytes)</source>
-            <translation>&amp;Dateien merken (erfordert ~%1 Byte)</translation>
-        </message>
-        <message>
-            <source>&amp;Remember Files (Requires ~%1 KB)</source>
-            <translation>&amp;Dateien merken (erfordert ~%1 KB)</translation>
-        </message>
-        <message>
-            <source>&amp;Remember Files (Requires ~%1 MB)</source>
-            <translation>&amp;Dateien merken (erfordert ~%1 MB)</translation>
-        </message>
+             <source>&amp;Save Files Data (Requires disk space)</source>
+             <translation>&amp;Dateidaten speichern (Benötigt Speicherplatz)</translation>
+         </message>
+         <message>
+             <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
+             <translation>&amp;Dateidaten speichern (Benötigt ~%1 Byte)</translation>
+         </message>
+         <message>
+             <source>&amp;Save Files Data (Requires ~%1 KB)</source>
+             <translation>&amp;Dateidaten speichern (Benötigt ~%1 KB)</translation>
+         </message>
+         <message>
+             <source>&amp;Save Files Data (Requires ~%1 MB)</source>
+             <translation>&amp;Dateidaten speichern (Benötigt ~%1 MB)</translation>
+         </message>
         <message>
             <source>Couldn't find folder</source>
             <translation>Konnte Ordner nicht finden</translation>
@@ -258,6 +254,22 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;Sprache</translation>
+        </message>
+        <message>
+            <source>&amp;Database</source>
+            <translation>&amp;Datenbank</translation>
+        </message>
+        <message>
+            <source>&amp;Database Location</source>
+            <translation>&amp;Datenbank-Speicherort</translation>
+        </message>
+        <message>
+            <source>&amp;Locally (On the local machine)</source>
+            <translation>&amp;Lokal (Auf dem lokalen Computer)</translation>
+        </message>
+        <message>
+            <source>&amp;Decentralized (Inside synchronization folders)</source>
+            <translation>&amp;Dezentral (Innerhalb von Synchronisierungsordnern)</translation>
         </message>
     </context>
 </TS>

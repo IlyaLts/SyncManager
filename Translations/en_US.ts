@@ -84,16 +84,8 @@
             <translation>&amp;Disable Notifications</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires disk space)</source>
-            <translation>&amp;Remember Files (Requires disk space)</translation>
-        </message>
-        <message>
             <source>&amp;Ignore Hidden Files</source>
             <translation>&amp;Ignore Hidden Files</translation>
-        </message>
-        <message>
-            <source>&amp;Save File Data Locally</source>
-            <translation>&amp;Save File Data Locally</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>
@@ -112,16 +104,20 @@
             <translation>Version: %1</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 bytes)</source>
-            <translation>&amp;Remember Files (Requires ~%1 bytes)</translation>
+            <source>&amp;Save Files Data (Requires disk space)</source>
+            <translation>&amp;Save Files Data (Requires disk space)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 KB)</source>
-            <translation>&amp;Remember Files (Requires ~%1 KB)</translation>
+            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
+            <translation>&amp;Save Files Data (Requires ~%1 bytes)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 MB)</source>
-            <translation>&amp;Remember Files (Requires ~%1 MB)</translation>
+            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
+            <translation>&amp;Save Files Data (Requires ~%1 KB)</translation>
+        </message>
+        <message>
+            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
+            <translation>&amp;Save Files Data (Requires ~%1 MB)</translation>
         </message>
         <message>
             <source>Couldn't find folder</source>
@@ -258,6 +254,22 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;Language</translation>
+        </message>
+        <message>
+            <source>&amp;Database</source>
+            <translation>&amp;Database</translation>
+        </message>
+        <message>
+            <source>&amp;Database Location</source>
+            <translation>&amp;Database Location</translation>
+        </message>
+        <message>
+            <source>&amp;Locally (On the local machine)</source>
+            <translation>&amp;Locally (On the local machine)</translation>
+        </message>
+        <message>
+            <source>&amp;Decentralized (Inside synchronization folders)</source>
+            <translation>&amp;Decentralized (Inside synchronization folders)</translation>
         </message>
     </context>
 </TS>

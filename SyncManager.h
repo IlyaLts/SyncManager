@@ -94,9 +94,9 @@ public:
     inline void setPaused(bool paused) { m_paused = paused; }
     inline void setSyncHidden(bool hidden) { m_syncHidden = hidden; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }
-    inline void enableRememberFiles(bool enable) { m_rememberFiles = enable; }
+    inline void enableDatabaseSaving(bool enable) { m_saveDatabase = enable; }
     inline void enableIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
-    inline void enableSaveDataLocally(bool enable) { m_saveDataLocally = enable; }
+    inline void setDatabaseLocation(bool location) { m_databaseLocation = location; }
     inline void enableDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
 
     inline int filesToSync() const { return m_filesToSync; }
@@ -113,9 +113,9 @@ public:
     inline bool isSyncing() const { return m_syncing; }
     inline bool isSyncHidden() const { return m_syncHidden; }
     inline bool notificationsEnabled() const { return m_notifications; }
-    inline bool rememberFilesEnabled() const { return m_rememberFiles; }
+    inline bool saveDatabaseEnabled() const { return m_saveDatabase; }
     inline bool ignoreHiddenFilesEnabled() const { return m_ignoreHiddenFiles; }
-    inline bool saveDataLocallyEnabled() const { return m_saveDataLocally; }
+    inline bool databaseLocation() const { return m_databaseLocation; }
     inline bool detectMovedFilesEnabled() const { return m_detectMovedFiles; }
     inline const QString &versionFolder() const { return m_versionFolder; }
     inline const QString &versionPattern() const { return m_versionPattern; }
@@ -174,9 +174,9 @@ private:
     bool m_syncing = false;
     bool m_syncHidden = false;
     bool m_notifications = true;
-    bool m_rememberFiles = false;
+    bool m_saveDatabase = false;
     bool m_ignoreHiddenFiles = false;
-    bool m_saveDataLocally = false;
+    bool m_databaseLocation = false;
     bool m_detectMovedFiles = false;
 
     QMap<QString, QTimer *> m_notificationList;

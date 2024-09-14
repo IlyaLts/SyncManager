@@ -84,16 +84,8 @@
             <translation>&amp;Відключити сповіщення</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires disk space)</source>
-            <translation>&amp;Запам'ятати файли (Потрібно місце на диску)</translation>
-        </message>
-        <message>
             <source>&amp;Ignore Hidden Files</source>
             <translation>&amp;Ігнорувати приховані файли</translation>
-        </message>
-        <message>
-            <source>&amp;Save File Data Locally</source>
-            <translation>&amp;Зберегти дані файлу локально</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>
@@ -112,16 +104,20 @@
             <translation>Версія: %1</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 bytes)</source>
-            <translation>&amp;Запам'ятати файли (Потрібно ~%1 байт)</translation>
+            <source>&amp;Save Files Data  (Requires disk space)</source>
+            <translation>&amp;Зберегти дані файлів (Потребує місця на диску)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 KB)</source>
-            <translation>&amp;Запам'ятати файли (Потрібно ~%1 КБ)</translation>
+            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
+            <translation>&amp;Зберегти дані файлів (Потребує ~%1 байт)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 MB)</source>
-            <translation>&amp;Запам'ятати файли (Потрібно ~%1 МБ)</translation>
+            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
+            <translation>&amp;Зберегти дані файлів (Потребує ~%1 КБ)</translation>
+        </message>
+        <message>
+            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
+            <translation>&amp;Зберегти дані файлів (Потребує ~%1 МБ)</translation>
         </message>
         <message>
             <source>Couldn't find folder</source>
@@ -258,6 +254,22 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;Мова</translation>
+        </message>
+        <message>
+            <source>&amp;Database</source>
+            <translation>&amp;База даних</translation>
+        </message>
+        <message>
+            <source>&amp;Database Location</source>
+            <translation>&amp;Розташування бази даних</translation>
+        </message>
+        <message>
+            <source>&amp;Locally (On the local machine)</source>
+            <translation>&amp;Локально (На локальному комп'ютері)</translation>
+        </message>
+        <message>
+            <source>&amp;Decentralized (Inside synchronization folders)</source>
+            <translation>&amp;Децентралізовано (Всередині папок синхронізації)</translation>
         </message>
     </context>
 </TS>

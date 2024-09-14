@@ -84,16 +84,8 @@
             <translation>&amp;नोटिफिकेशन अक्षम करें</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires disk space)</source>
-            <translation>&amp;फ़ाइलों को याद रखें (डिस्क स्पेस की आवश्यकता होती है)</translation>
-        </message>
-        <message>
             <source>&amp;Ignore Hidden Files</source>
             <translation>&amp;छुपे हुए फ़ाइलों को अनदेखा करें</translation>
-        </message>
-        <message>
-            <source>&amp;Save File Data Locally</source>
-            <translation>&amp;फ़ाइल डेटा को स्थानीय रूप से सहेजें</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>
@@ -112,16 +104,20 @@
             <translation>संस्करण: %1</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 bytes)</source>
-            <translation>&amp;फ़ाइलों को याद रखें (आवश्यकता होती है ~%1 बाइट्स)</translation>
+            <source>&amp;Save Files Data  (Requires disk space)</source>
+            <translation>&amp;फ़ाइल डेटा सहेजें (डिस्क स्पेस की आवश्यकता है)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 KB)</source>
-            <translation>&amp;फ़ाइलों को याद रखें (आवश्यकता होती है ~%1 केबी)</translation>
+            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
+            <translation>&amp;फ़ाइल डेटा सहेजें (~%1 बाइट्स की आवश्यकता है)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 MB)</source>
-            <translation>&amp;फ़ाइलों को याद रखें (आवश्यकता होती है ~%1 एमबी)</translation>
+            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
+            <translation>&amp;फ़ाइल डेटा सहेजें (~%1 केबी की आवश्यकता है)</translation>
+        </message>
+        <message>
+            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
+            <translation>&amp;फ़ाइल डेटा सहेजें (~%1 एमबी की आवश्यकता है)</translation>
         </message>
         <message>
             <source>Couldn't find folder</source>
@@ -258,6 +254,22 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;भाषा</translation>
+        </message>
+        <message>
+            <source>&amp;Database</source>
+            <translation>&amp;डेटाबेस</translation>
+        </message>
+        <message>
+            <source>&amp;Database Location</source>
+            <translation>&amp;डेटाबेस स्थान</translation>
+        </message>
+        <message>
+            <source>&amp;Locally (On the local machine)</source>
+            <translation>&amp;स्थानीय रूप से (स्थानीय मशीन पर)</translation>
+        </message>
+        <message>
+            <source>&amp;Decentralized (Inside synchronization folders)</source>
+            <translation>&amp;विकेंद्रित (सिंक्रनाइज़ेशन फ़ोल्डर्स के अंदर)</translation>
         </message>
     </context>
 </TS>

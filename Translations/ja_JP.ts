@@ -84,16 +84,8 @@
             <translation>&amp;通知を無効にする</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires disk space)</source>
-            <translation>&amp;ファイルを記憶する（ディスクスペースが必要）</translation>
-        </message>
-        <message>
             <source>&amp;Ignore Hidden Files</source>
             <translation>&amp;隠しファイルを無視する</translation>
-        </message>
-        <message>
-            <source>&amp;Save File Data Locally</source>
-            <translation>&amp;ファイルデータをローカルに保存する</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>
@@ -112,16 +104,20 @@
             <translation>バージョン: %1</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 bytes)</source>
-            <translation>&amp;ファイルを記憶する（約%1バイトが必要）</translation>
+            <source>&amp;Save Files Data (Requires disk space)</source>
+            <translation>&amp;ファイルデータを保存する (ディスクスペースが必要です)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 KB)</source>
-            <translation>&amp;ファイルを記憶する（約%1KBが必要）</translation>
+            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
+            <translation>&amp;ファイルデータを保存する (~%1 バイトが必要です)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 MB)</source>
-            <translation>&amp;ファイルを記憶する（約%1MBが必要）</translation>
+            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
+            <translation>&amp;ファイルデータを保存する (~%1 KB が必要です)</translation>
+        </message>
+        <message>
+            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
+            <translation>&amp;ファイルデータを保存する (~%1 MB が必要です)</translation>
         </message>
         <message>
             <source>Couldn't find folder</source>
@@ -258,6 +254,22 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;言語</translation>
+        </message>
+        <message>
+            <source>&amp;Database</source>
+            <translation>&amp;データベース</translation>
+        </message>
+        <message>
+            <source>&amp;Database Location</source>
+            <translation>&amp;データベースの場所</translation>
+        </message>
+        <message>
+            <source>&amp;Locally (On the local machine)</source>
+            <translation>&amp;ローカルに (ローカルマシン上)</translation>
+        </message>
+        <message>
+            <source>&amp;Decentralized (Inside synchronization folders)</source>
+            <translation>&amp;分散化 (同期フォルダ内)</translation>
         </message>
     </context>
 </TS>

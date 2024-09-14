@@ -43,11 +43,15 @@ SyncManager::SyncManager()
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
 
+    // TODO: Remove that sometime later
+    bool oldSaveDatabase = !settings.contains("SaveDatabase") && settings.value("RememberFiles", true).toBool();
+    bool oldSaveDataLocation = !settings.contains("DatabaseLocation") && settings.value("SaveDataLocally", true).toBool();
+
     m_paused = settings.value(QLatin1String("Paused"), false).toBool();
     m_notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
-    m_rememberFiles = settings.value("RememberFiles", true).toBool();
+    m_saveDatabase = settings.value("SaveDatabase", true).toBool() || oldSaveDatabase;
     m_ignoreHiddenFiles = settings.value("IgnoreHiddenFiles", true).toBool();
-    m_saveDataLocally = settings.value("SaveDataLocally", false).toBool();
+    m_databaseLocation = settings.value("DatabaseLocation", false).toBool() || oldSaveDataLocation;
     m_detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
     m_syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
     if (m_syncTimeMultiplier <= 0) m_syncTimeMultiplier = 1;
@@ -70,11 +74,11 @@ SyncManager::~SyncManager
 */
 SyncManager::~SyncManager()
 {
-    if (m_rememberFiles)
+    if (m_saveDatabase)
     {
         removeFileData();
 
-        if (m_saveDataLocally)
+        if (m_databaseLocation)
             saveFileDataLocally();
         else
             saveFileDataInternally();
@@ -1648,7 +1652,7 @@ void SyncManager::renameFolders(SyncFolder &folder)
     for (auto folderIt = folder.foldersToRename.begin(); folderIt != folder.foldersToRename.end() && (!m_paused && folder.isActive());)
     {
         // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_rememberFiles)
+        if (m_shouldQuit && m_saveDatabase)
             break;
 
         // Removes from the "folders to rename" list if the source file doesn't exist
@@ -1694,7 +1698,7 @@ void SyncManager::moveFiles(SyncFolder &folder)
     for (auto fileIt = folder.filesToMove.begin(); fileIt != folder.filesToMove.end() && (!m_paused && folder.isActive());)
     {
         // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_rememberFiles)
+        if (m_shouldQuit && m_saveDatabase)
             break;
 
         // Removes from the "files to move" list if the source file doesn't exist
@@ -1763,7 +1767,7 @@ void SyncManager::removeFolders(SyncFolder &folder, const QString &versioningPat
     for (auto folderIt = sortedFoldersToRemove.begin(); folderIt != sortedFoldersToRemove.end() && (!m_paused && folder.isActive());)
     {
         // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_rememberFiles)
+        if (m_shouldQuit && m_saveDatabase)
             break;
 
         QString folderPath(folder.path);
@@ -1798,7 +1802,7 @@ void SyncManager::removeFiles(SyncFolder &folder, const QString &versioningPath)
     for (auto fileIt = folder.filesToRemove.begin(); fileIt != folder.filesToRemove.end() && (!m_paused && folder.isActive());)
     {
         // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_rememberFiles)
+        if (m_shouldQuit && m_saveDatabase)
             break;
 
         QString filePath(folder.path);
@@ -1832,7 +1836,7 @@ void SyncManager::createFolders(SyncFolder &folder, const QString &versioningPat
     for (auto folderIt = folder.foldersToCreate.begin(); folderIt != folder.foldersToCreate.end() && (!m_paused && folder.isActive());)
     {
         // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_rememberFiles)
+        if (m_shouldQuit && m_saveDatabase)
             break;
 
         QString folderPath(folder.path);
@@ -1878,7 +1882,7 @@ void SyncManager::copyFiles(SyncFolder &folder, const QString &versioningPath)
     for (auto fileIt = folder.filesToCopy.begin(); fileIt != folder.filesToCopy.end() && (!m_paused && folder.isActive());)
     {
         // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_rememberFiles)
+        if (m_shouldQuit && m_saveDatabase)
             break;
 
         // Removes from the "files to copy" list if the source file doesn't exist

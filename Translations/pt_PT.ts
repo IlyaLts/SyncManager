@@ -84,16 +84,8 @@
             <translation>&amp;Desativar notificações</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires disk space)</source>
-            <translation>&amp;Lembrar arquivos (Requer espaço em disco)</translation>
-        </message>
-        <message>
             <source>&amp;Ignore Hidden Files</source>
             <translation>&amp;Ignorar arquivos ocultos</translation>
-        </message>
-        <message>
-            <source>&amp;Save File Data Locally</source>
-            <translation>&amp;Salvar dados do arquivo localmente</translation>
         </message>
         <message>
             <source>&amp;Detect Renamed and Moved Files</source>
@@ -112,16 +104,20 @@
             <translation>Versão: %1</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 bytes)</source>
-            <translation>&amp;Lembrar Arquivos (Requer ~%1 bytes)</translation>
+            <source>&amp;Save Files Data (Requires disk space)</source>
+            <translation>&amp;Salvar dados de arquivos (Requer espaço em disco)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 KB)</source>
-            <translation>&amp;Lembrar Arquivos (Requer ~%1 KB)</translation>
+            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
+            <translation>&amp;Salvar dados de arquivos (Requer ~%1 bytes)</translation>
         </message>
         <message>
-            <source>&amp;Remember Files (Requires ~%1 MB)</source>
-            <translation>&amp;Lembrar Arquivos (Requer ~%1 MB)</translation>
+            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
+            <translation>&amp;Salvar dados de arquivos (Requer ~%1 KB)</translation>
+        </message>
+        <message>
+            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
+            <translation>&amp;Salvar dados de arquivos (Requer ~%1 MB)</translation>
         </message>
         <message>
             <source>Couldn't find folder</source>
@@ -258,6 +254,22 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;Língua</translation>
+        </message>
+        <message>
+            <source>&amp;Database</source>
+            <translation>&amp;Banco de dados</translation>
+        </message>
+        <message>
+            <source>&amp;Database Location</source>
+            <translation>&amp;Localização do banco de dados</translation>
+        </message>
+        <message>
+            <source>&amp;Locally (On the local machine)</source>
+            <translation>&amp;Localmente (Na máquina local)</translation>
+        </message>
+        <message>
+            <source>&amp;Decentralized (Inside synchronization folders)</source>
+            <translation>&amp;Descentralizado (Dentro das pastas de sincronização)</translation>
         </message>
     </context>
 </TS>

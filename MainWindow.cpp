@@ -93,6 +93,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     syncingTimeAction = new QAction(tr("Synchronize Every:"), this);
     decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
     moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
+    saveDatabaseAction = new QAction(tr("&Save Files Data (Requires disk space)"), this);
+    saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
+    saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
     chineseAction = new QAction(tr("&Chinese"), this);
     englishAction = new QAction(tr("&English"), this);
     frenchAction = new QAction(tr("&French"), this);
@@ -109,9 +112,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     launchOnStartupAction = new QAction(tr("&Launch on Startup"), this);
     showInTrayAction = new QAction(tr("&Show in System Tray"));
     disableNotificationAction = new QAction(tr("&Disable Notifications"), this);
-    rememberFilesAction = new QAction(tr("&Remember Files (Requires disk space)"), this);
     ignoreHiddenFilesAction = new QAction(tr("&Ignore Hidden Files"), this);
-    saveFileDataLocallyAction = new QAction(tr("&Save File Data Locally"), this);
     detectMovedFilesAction = new QAction(tr("&Detect Renamed and Moved Files"), this);
     showAction = new QAction(tr("&Show"), this);
     quitAction = new QAction(tr("&Quit"), this);
@@ -126,6 +127,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     deletePermanentlyAction->setCheckable(true);
     moveToTrashAction->setCheckable(true);
     versioningAction->setCheckable(true);
+    saveDatabaseAction->setCheckable(true);
+    saveDatabaseLocallyAction->setCheckable(true);
+    saveDatabaseDecentralizedAction->setCheckable(true);
     chineseAction->setCheckable(true);
     englishAction->setCheckable(true);
     frenchAction->setCheckable(true);
@@ -140,17 +144,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     launchOnStartupAction->setCheckable(true);
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
-    rememberFilesAction->setCheckable(true);
     ignoreHiddenFilesAction->setCheckable(true);
-    saveFileDataLocallyAction->setCheckable(true);
     detectMovedFilesAction->setCheckable(true);
-
-    showInTrayAction->setChecked(showInTray);
-    disableNotificationAction->setChecked(!manager.notificationsEnabled());
-    rememberFilesAction->setChecked(manager.rememberFilesEnabled());
-    ignoreHiddenFilesAction->setChecked(manager.ignoreHiddenFilesEnabled());
-    saveFileDataLocallyAction->setChecked(manager.saveDataLocallyEnabled());
-    detectMovedFilesAction->setChecked(manager.detectMovedFilesEnabled());
 
 #ifdef Q_OS_WIN
     launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
@@ -185,18 +180,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     languageMenu->addAction(spanishAction);
     languageMenu->addAction(ukrainianAction);
 
+    databaseLocationMenu = new UnhidableMenu(tr("&Database Location"), this);
+    databaseLocationMenu->addAction(saveDatabaseLocallyAction);
+    databaseLocationMenu->addAction(saveDatabaseDecentralizedAction);
+
+    databaseMenu = new UnhidableMenu(tr("&Database"), this);
+    databaseMenu->addAction(saveDatabaseAction);
+    databaseMenu->addMenu(databaseLocationMenu);
+
     settingsMenu = new UnhidableMenu(tr("&Settings"), this);
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(syncingModeMenu);
     settingsMenu->addMenu(syncingTimeMenu);
     settingsMenu->addMenu(deletionModeMenu);
+    settingsMenu->addMenu(databaseMenu);
     settingsMenu->addMenu(languageMenu);
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(showInTrayAction);
     settingsMenu->addAction(disableNotificationAction);
-    settingsMenu->addAction(rememberFilesAction);
     settingsMenu->addAction(ignoreHiddenFilesAction);
-    settingsMenu->addAction(saveFileDataLocallyAction);
     settingsMenu->addAction(detectMovedFilesAction);
     settingsMenu->addSeparator();
     settingsMenu->addAction(version);
@@ -236,6 +238,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.DeletePermanently));
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
+    connect(saveDatabaseAction, &QAction::triggered, this, &MainWindow::toggleSaveDatabase);
+    connect(saveDatabaseLocallyAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, false));
+    connect(saveDatabaseDecentralizedAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, true));
 
     connect(chineseAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Chinese));
     connect(englishAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::English));
@@ -252,9 +257,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
     connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
     connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
-    connect(rememberFilesAction, &QAction::triggered, this, &MainWindow::toggleRememberFiles);
     connect(ignoreHiddenFilesAction, &QAction::triggered, this, &MainWindow::toggleIgnoreHiddenFiles);
-    connect(saveFileDataLocallyAction, &QAction::triggered, this, &MainWindow::toggleSaveFileDataLocally);
     connect(detectMovedFilesAction, &QAction::triggered, this, &MainWindow::toggleDetectMoved);
     connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
@@ -319,9 +322,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             manager.profiles()[i].excludeList.append(exclude.toUtf8());
     }
 
-    if (manager.rememberFilesEnabled() && settings.value("AppVersion").toString().compare("1.7") >= 0)
+    if (manager.saveDatabaseEnabled() && settings.value("AppVersion").toString().compare("1.7") >= 0)
     {
-        if (manager.saveDataLocallyEnabled())
+        if (manager.databaseLocation())
             manager.loadFileDataLocally();
         else
             manager.loadFileDataInternally();
@@ -339,8 +342,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     updateTimer.setSingleShot(true);
 
+    saveDatabaseAction->setChecked(manager.saveDatabaseEnabled());
+    databaseLocationMenu->setEnabled(manager.saveDatabaseEnabled());
+    showInTrayAction->setChecked(showInTray);
+    disableNotificationAction->setChecked(!manager.notificationsEnabled());
+    ignoreHiddenFilesAction->setChecked(manager.ignoreHiddenFilesEnabled());
+    detectMovedFilesAction->setChecked(manager.detectMovedFilesEnabled());
+
     switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
     switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", manager.MoveToTrash).toInt()));
+    setDatabaseLocation(manager.databaseLocation());
     updateStatus();
     appInitiated = true;
 
@@ -908,22 +919,18 @@ MainWindow::switchSyncingMode
 void MainWindow::switchSyncingMode(SyncManager::SyncingMode mode)
 {
     manager.setSyncingMode(mode);
-    automaticAction->setChecked(false);
-    manualAction->setChecked(false);
+    automaticAction->setChecked(mode == SyncManager::Automatic);
+    manualAction->setChecked(mode == SyncManager::Manual);
+    pauseSyncingAction->setVisible(mode == SyncManager::Automatic);
+    syncingTimeMenu->menuAction()->setVisible(mode == SyncManager::Automatic);
 
     if (mode == SyncManager::Manual)
     {
-        pauseSyncingAction->setVisible(false);
-        manualAction->setChecked(true);
-        syncingTimeMenu->menuAction()->setVisible(false);
         manager.syncTimer().stop();
     }
     // Otherwise, automatic
     else
     {
-        pauseSyncingAction->setVisible(true);
-        automaticAction->setChecked(true);
-        syncingTimeMenu->menuAction()->setVisible(true);
         manager.updateNextSyncingTime();
         manager.updateTimer();
     }
@@ -1013,43 +1020,19 @@ MainWindow::switchLanguage
 */
 void MainWindow::switchLanguage(QLocale::Language language)
 {
-    chineseAction->setChecked(false);
-    englishAction->setChecked(false);
-    frenchAction->setChecked(false);
-    germanAction->setChecked(false);
-    hindiAction->setChecked(false);
-    italianAction->setChecked(false);
-    japaneseAction->setChecked(false);
-    portugueseAction->setChecked(false);
-    russianAction->setChecked(false);
-    spanishAction->setChecked(false);
-    ukrainianAction->setChecked(false);
+    chineseAction->setChecked(language == QLocale::Chinese);
+    englishAction->setChecked(language == QLocale::English);
+    frenchAction->setChecked(language == QLocale::French);
+    germanAction->setChecked(language == QLocale::German);
+    hindiAction->setChecked(language == QLocale::Hindi);
+    italianAction->setChecked(language == QLocale::Italian);
+    japaneseAction->setChecked(language == QLocale::Japanese);
+    portugueseAction->setChecked(language == QLocale::Portuguese);
+    russianAction->setChecked(language == QLocale::Russian);
+    spanishAction->setChecked(language == QLocale::Spanish);
+    ukrainianAction->setChecked(language == QLocale::Ukrainian);
 
     setTranslator(language);
-
-    if (language == QLocale::Chinese)
-        chineseAction->setChecked(true);
-    else if (language == QLocale::French)
-        frenchAction->setChecked(true);
-    else if (language == QLocale::German)
-        germanAction->setChecked(true);
-    else if (language == QLocale::Hindi)
-        hindiAction->setChecked(true);
-    else if (language == QLocale::Italian)
-        italianAction->setChecked(true);
-    else if (language == QLocale::Japanese)
-        japaneseAction->setChecked(true);
-    else if (language == QLocale::Portuguese)
-        portugueseAction->setChecked(true);
-    else if (language == QLocale::Russian)
-        russianAction->setChecked(true);
-    else if (language == QLocale::Spanish)
-        spanishAction->setChecked(true);
-    else if (language == QLocale::Ukrainian)
-        ukrainianAction->setChecked(true);
-    else
-        englishAction->setChecked(true);
-
     this->language = language;
     retranslate();
 }
@@ -1089,13 +1072,26 @@ void MainWindow::toggleNotification()
 
 /*
 ===================
-MainWindow::enableRememberFiles
+MainWindow::setDatabaseLocation
 ===================
 */
-void MainWindow::toggleRememberFiles()
+void MainWindow::toggleSaveDatabase()
 {
-    manager.enableRememberFiles(!manager.rememberFilesEnabled());
-    saveFileDataLocallyAction->setVisible(manager.rememberFilesEnabled());
+    manager.enableDatabaseSaving(!manager.saveDatabaseEnabled());
+    databaseLocationMenu->setEnabled(manager.saveDatabaseEnabled());
+    saveSettings();
+}
+
+/*
+===================
+MainWindow::setDatabaseLocation
+===================
+*/
+void MainWindow::setDatabaseLocation(bool location)
+{
+    saveDatabaseLocallyAction->setChecked(location == false);
+    saveDatabaseDecentralizedAction->setChecked(location == true);
+    manager.setDatabaseLocation(location);
     saveSettings();
 }
 
@@ -1107,17 +1103,6 @@ MainWindow::toggleIgnoreHiddenFiles
 void MainWindow::toggleIgnoreHiddenFiles()
 {
     manager.enableIgnoreHiddenFiles(!manager.ignoreHiddenFilesEnabled());
-    saveSettings();
-}
-
-/*
-===================
-MainWindow::enableRememberFiles
-===================
-*/
-void MainWindow::toggleSaveFileDataLocally()
-{
-    manager.enableSaveDataLocally(!manager.saveDataLocallyEnabled());
     saveSettings();
 }
 
@@ -1511,11 +1496,11 @@ void MainWindow::saveSettings() const
     settings.setValue("Paused", manager.isPaused());
     settings.setValue("SyncingMode", manager.syncingMode());
     settings.setValue("DeletionMode", manager.deletionMode());
+    settings.setValue("SaveDatabase", manager.saveDatabaseEnabled());
+    settings.setValue("DatabaseLocation", manager.databaseLocation());
     settings.setValue("Language", language);
     settings.setValue("Notifications", manager.notificationsEnabled());
-    settings.setValue("RememberFiles", manager.rememberFilesEnabled());
     settings.setValue("IgnoreHiddenFiles", manager.ignoreHiddenFilesEnabled());
-    settings.setValue("SaveDataLocally", manager.saveDataLocallyEnabled());
     settings.setValue("DetectMovedFiles", manager.detectMovedFilesEnabled());
     settings.setValue("SyncTimeMultiplier", manager.syncTimeMultiplier());
     settings.setValue("MovedFileMinSize", manager.movedFileMinSize());
@@ -1581,6 +1566,9 @@ void MainWindow::retranslate()
     syncingTimeAction->setText(tr("Synchronize Every:"));
     decreaseSyncTimeAction->setText(tr("&Decrease"));
     moveToTrashAction->setText(tr("&Move Files to Trash"));
+    saveDatabaseAction->setText(tr("&Save Files Data  (Requires disk space)"));
+    saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
+    saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
     chineseAction->setText(tr("&Chinese"));
     englishAction->setText(tr("&English"));
     frenchAction->setText(tr("&French"));
@@ -1597,9 +1585,7 @@ void MainWindow::retranslate()
     launchOnStartupAction->setText(tr("&Launch on Startup"));
     showInTrayAction->setText(tr("&Show in System Tray"));
     disableNotificationAction->setText(tr("&Disable Notifications"));
-    rememberFilesAction->setText(tr("&Remember Files (Requires disk space)"));
     ignoreHiddenFilesAction->setText(tr("&Ignore Hidden Files"));
-    saveFileDataLocallyAction->setText(tr("&Save File Data Locally"));
     detectMovedFilesAction->setText(tr("&Detect Renamed and Moved Files"));
     showAction->setText(tr("&Show"));
     quitAction->setText(tr("&Quit"));
@@ -1608,6 +1594,8 @@ void MainWindow::retranslate()
     syncingModeMenu->setTitle(tr("&Syncing Mode"));
     syncingTimeMenu->setTitle(tr("&Syncing Time"));
     deletionModeMenu->setTitle(tr("&Deletion Mode"));
+    databaseMenu->setTitle(tr("&Database"));
+    databaseLocationMenu->setTitle(tr("&Database Location"));
     languageMenu->setTitle(tr("&Language"));
     settingsMenu->setTitle(tr("&Settings"));
 
@@ -1618,7 +1606,7 @@ void MainWindow::retranslate()
 
     int size = 0;
 
-    if (manager.saveDataLocallyEnabled())
+    if (manager.databaseLocation())
     {
         for (auto &profile : manager.profiles())
             for (auto &folder : profile.folders)
@@ -1633,11 +1621,11 @@ void MainWindow::retranslate()
     if (size)
     {
         if (size < 1024)
-            rememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 bytes)")).arg(size));
+            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 bytes)")).arg(size));
         else if ((size / 1024) < 1024)
-            rememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 KB)")).arg(size / 1024));
+            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 KB)")).arg(size / 1024));
         else
-            rememberFilesAction->setText(QString(tr("&Remember Files (Requires ~%1 MB)")).arg(size / 1024 / 1024));
+            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 MB)")).arg(size / 1024 / 1024));
     }
 
     updateStatus();
