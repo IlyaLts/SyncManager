@@ -956,16 +956,9 @@ void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
     }
 
     manager.setDeletionMode(mode);
-    moveToTrashAction->setChecked(false);
-    versioningAction->setChecked(false);
-    deletePermanentlyAction->setChecked(false);
-
-    if (mode == SyncManager::MoveToTrash)
-        moveToTrashAction->setChecked(true);
-    else if (mode == SyncManager::Versioning)
-        versioningAction->setChecked(true);
-    else
-        deletePermanentlyAction->setChecked(true);
+    moveToTrashAction->setChecked(mode == SyncManager::MoveToTrash);
+    versioningAction->setChecked(mode == SyncManager::Versioning);
+    deletePermanentlyAction->setChecked(mode == SyncManager::DeletePermanently);
 
     saveSettings();
 }
