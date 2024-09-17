@@ -14,6 +14,7 @@ SOURCES += \
     FolderListView.cpp \
     Main.cpp \
     MainWindow.cpp \
+    MenuProxyStyle.cpp \
     RemovableListView.cpp \
     SyncFile.cpp \
     SyncFolder.cpp \
@@ -26,6 +27,7 @@ HEADERS += \
     DecoratedStringListModel.h \
     FolderListView.h \
     MainWindow.h \
+    MenuProxyStyle.h \
     RemovableListView.h \
     SyncFile.h \
     SyncFolder.h \

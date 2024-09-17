@@ -22,6 +22,7 @@
 #include "DecoratedStringListModel.h"
 #include "UnhidableMenu.h"
 #include "FolderListView.h"
+#include "MenuProxyStyle.h"
 #include "Common.h"
 #include <QStringListModel>
 #include <QSettings>
@@ -223,6 +224,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->menuBar()->addAction(syncNowAction);
     this->menuBar()->addAction(pauseSyncingAction);
     this->menuBar()->addMenu(settingsMenu);
+    this->menuBar()->setStyle(new MenuProxyStyle);
 
     connect(ui->syncProfilesView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(profileClicked(QItemSelection,QItemSelection)));
     connect(ui->syncProfilesView->model(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)), SLOT(profileNameChanged(QModelIndex)));
