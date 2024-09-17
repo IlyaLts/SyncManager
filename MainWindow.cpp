@@ -299,6 +299,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         if (!manager.profiles()[i].paused)
             manager.setPaused(false);
 
+        // Loads last sync dates for all profiles
+        manager.profiles()[i].lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate")).toDateTime();
+        manager.profiles()[i].syncTime = settings.value(manager.profiles()[i].name + QLatin1String("_profile/") + QLatin1String("SyncTime"), 0).toULongLong();
+
         for (auto &folder : manager.profiles()[i].folders)
         {
             folder.paused = settings.value(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), false).toBool();
@@ -307,13 +311,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 manager.setPaused(false);
 
             folder.exists = QFileInfo::exists(folder.path);
-        }
-
-        // Loads last sync dates for all profiles
-        manager.profiles()[i].lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + QLatin1String("LastSyncDate")).toDateTime();
-
-        for (auto &folder : manager.profiles()[i].folders)
-        {
             folder.lastSyncDate = settings.value(profileNames[i] + QLatin1String("_profile/") + folder.path + QLatin1String("_LastSyncDate")).toDateTime();
         }
 
@@ -354,6 +351,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
     switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", manager.MoveToTrash).toInt()));
     setDatabaseLocation(manager.databaseLocation());
+    updateSyncTime();
     updateStatus();
     appInitiated = true;
 
@@ -1506,19 +1504,21 @@ void MainWindow::saveSettings() const
     // Saves profiles/folders pause states and last sync dates
     for (auto &profile : manager.profiles())
     {
-        if (!profile.toBeRemoved)
-            settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("Paused"), profile.paused);
+        if (profile.toBeRemoved)
+            continue;
 
         for (auto &folder : profile.folders)
         {
-            if (!folder.toBeRemoved)
-            {
-                settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_LastSyncDate"), profile.lastSyncDate);
-                settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
-            }
+            if (folder.toBeRemoved)
+                continue;
+
+            settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_LastSyncDate"), profile.lastSyncDate);
+            settings.setValue(profile.name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
         }
 
+        settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("Paused"), profile.paused);
         settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profile.lastSyncDate);
+        settings.setValue(profile.name + QLatin1String("_profile/") + QLatin1String("SyncTime"), profile.syncTime);
     }
 }
 
