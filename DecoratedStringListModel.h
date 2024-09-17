@@ -41,8 +41,6 @@ public:
 private:
 
     QMap<int, QVariant> rowIcons;
-    QMap<int, QColor> rowColors;
-    QMap<int, QColor> textColors;
     QMap<int, QString> toolTips;
 };
 
