@@ -1,4 +1,14 @@
 ==========================
+1.7.2 - Sep 18, 2024
+==========================
+
+- Added file attribution synchronization support on Linux.
+- Fixed incorrect color of items in profile/folder list fields when using dark mode.
+- Changed profile sync time to be savable and loadable from settings. This prevents Sync Manager from synchronizing files on startup if the sync time is not zero.
+- Increased the size of menu icons for better visibility.
+- Reorganized database related setting menus.
+
+==========================
 1.7.1 - Aug 27, 2024
 ==========================
 
