@@ -9,16 +9,16 @@ Here's a step-by-step overview of how it works:
 #### 1. File and Folder Discovery
 SyncManager starts by scanning the designated source and target locations for files and folders. This includes recursively traversing through subfolders to ensure all files are accounted for.
 #### 2. Change Detection
-SyncManager uses sophisticated algorithms to detect changes between the current and previous states to determine which files and folders must be synchronized in the following order:
-1. **File attribute changes:** Changes to file attributes.
-1. **Case-changed folders:** Folders that have been renamed solely by changing the case of the folder name (e.g., "MyFolder" to "myfolder").
-1. **Moved or renamed files:** Files that have been moved or renamed, including case changes (e.g., "FILE.txt" to "file.txt").
-1. **New additions and changes:** New files and folders that have been added to the source or target location, as well as existing files that have been modified in some way.
-1. **Deleted files and folders:** Files and folders that have been removed from the source or target location.
+SyncManager uses sophisticated algorithms to detect changes since the last synchronization to determine which files and folders must be synchronized in the following order:
+1. **File attribute changes**
+1. **Case-changed folders** - *(e.g., "MyFolder" to "myfolder"*)
+1. **Moved or renamed files** - *(Including case changes (e.g., "FILE.txt" to "file.txt")*)
+1. **New additions and file changes**
+1. **Deleted files and folders**
 #### 3. Detection of Case-Changed Folders
-Since SyncManager doesn't store the original path of files, it relies on a comparison-based approach to detect case changes in folder names. It compares the current filename of a folder in one location with the corresponding filename in the other location, checking for differences in case naming. If a difference is found, SyncManager assumes the case of the folder was changed and renames the folder accordingly in the other location.
+Since SyncManager doesn't store the original path of files, it relies on a comparison-based approach to detect case changes in folder names. It compares the current filename of a new folder in one location with the corresponding folder's filenames in other locations if it exists, checking for differences in case naming. If a difference is found, SyncManager assumes the case of the folder was changed and renames the folder accordingly in other locations.
 #### 4. Detection of Moved and Renamed Files
-SyncManager searches for matches between removed files and new files based on their modified date and size. If a match is found, the file is considered to be the same, and SyncManager renames or moves the corresponding file in the target location to match the new location in the source. In cases where there are multiple matches with the same modified date and size, SyncManager falls back to the standard synchronization method, copying files from one location to another.
+SyncManager searches for matches between removed files and new files based on their modified date and size. If a match is found, the file is considered to be the same, and SyncManager renames or moves the corresponding file in other locations to match the new location in the source. In cases where there are multiple matches with the same modified date and size, SyncManager falls back to the standard synchronization method, copying files from one location to other locations.
 #### 5. Conflict Resolution
 In cases where conflicts arise, SyncManager resolves them according to the following rules:
 - **Latest modification date wins:** If a file has been modified in both locations, SyncManager will synchronize the file with the latest modification date.
@@ -26,13 +26,13 @@ In cases where conflicts arise, SyncManager resolves them according to the follo
 - **Folder content changes take precedence:** If a folder has had new files added or existing files removed in one location, and the same folder has been deleted in another location, SyncManager will synchronize the folder with the updated content, effectively ignoring the deletion. Single changes to existing files within the folder do not trigger this precedence.
 #### 6. Synchronization Execution
 Based on the changes detected, SyncManager performs the following synchronization operations in the following order:
-1. **Synchronizes file attributes:** Updates file attributes to match the source location.
-1. **Renames case-changed folders:** Renames folders that have undergone case-only changes.
-1. **Renames and moves files:** Renames and relocates files to their new destinations.
-1. **Removes deleted folders:** Deletes folders that have been removed from the source location.
-1. **Removes deleted files:** Deletes files that have been removed from the source location.
-1. **Creates new folders:** Creates new folders that have been added to the source location.
-1. **Copies new or modified files:** Copies new or modified files from the source location to the target location.
+1. **Synchronizes file attributes**
+1. **Renames case-changed folders**
+1. **Renames and moves files**
+1. **Removes deleted folders**
+1. **Removes deleted files**
+1. **Creates new folders**
+1. **Copies new or modified files**
 
 # Building
 Requires Qt 6 or newer. Buildable with Qt Creator.
