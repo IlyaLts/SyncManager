@@ -87,12 +87,12 @@ hash64_t hash64(const QByteArray &str)
 
 /*
 ===================
-removeDuplicateFiles
+removeSimilarFiles
 
 Removes duplicates from the list of files based on file size and modification time
 ===================
 */
-void removeDuplicateFiles(QHash<hash64_t, SyncFile *> &files)
+void removeSimilarFiles(QHash<hash64_t, SyncFile *> &files)
 {
     for (QHash<hash64_t, SyncFile *>::iterator fileIt = files.begin(); fileIt != files.end();)
     {
@@ -256,36 +256,32 @@ bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &te
 getFileAttributes
 ===================
 */
+
+Attributes getFileAttributes(const QString &path)
+{
 #ifdef Q_OS_WIN
-qint32 getFileAttributes(const QString &path)
-{
     return GetFileAttributesW(path.toStdWString().c_str());
-}
 #else
-quint32 getFileAttributes(const QString &path)
-{
     struct stat buf;
     stat(path.toLatin1(), &buf);
     return buf.st_mode;
-}
 #endif
+}
 
 /*
 ===================
 setFileAttribute
 ===================
 */
+void setFileAttribute(const QString &path, Attributes attr)
+{
 #ifdef Q_OS_WIN
-void setFileAttribute(const QString &path, qint32 attr)
-{
     SetFileAttributesW(path.toStdWString().c_str(), attr);
-}
 #else
-void setFileAttribute(const QString &path, quint32 attr)
-{
     chmod(path.toLatin1(), attr);
-}
 #endif
+}
+
 
 /*
 ===================

@@ -30,6 +30,12 @@ class SyncFile;
 
 using hash64_t = quint64;
 
+#ifdef Q_OS_WIN
+using Attributes = qint32;
+#else
+using Attributes = quint32;
+#endif
+
 extern QTranslator currentTranslator;
 extern QLocale currentLocale;
 
@@ -51,19 +57,13 @@ extern std::chrono::high_resolution_clock::time_point startTime;
 #endif // DEBUG
 
 hash64_t hash64(const QByteArray &str);
-void removeDuplicateFiles(QHash<hash64_t, SyncFile *> &files);
+void removeSimilarFiles(QHash<hash64_t, SyncFile *> &files);
 QFileInfo getCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters = QDir::NoFilter);
 void setTranslator(QLocale::Language language);
 bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent = nullptr);
 
-#ifdef Q_OS_WIN
-qint32 getFileAttributes(const QString &path);
-void setFileAttribute(const QString &path, qint32 attr);
-#else
-quint32 getFileAttributes(const QString &path);
-void setFileAttribute(const QString &path, quint32 attr);
-#endif
-
+Attributes getFileAttributes(const QString &path);
+void setFileAttribute(const QString &path, Attributes attr);
 void setHiddenFileAttribute(const QString &path, bool hidden);
 
 #endif // COMMON_H

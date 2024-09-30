@@ -22,6 +22,7 @@
 
 #include <QByteArray>
 #include <QDateTime>
+#include "Common.h"
 
 /*
 ===========================================================
@@ -55,7 +56,7 @@ public:
         OnRestore = 0x4,
         NewlyAdded = 0x8,
         ToBeRemoved = 0x10,
-        AttrUpdated = 0x20
+        AttributesUpdated = 0x20
     };
 
     SyncFile(){}
@@ -68,14 +69,14 @@ public:
     void setOnRestore(bool value) { flags = value ? (flags | OnRestore) : (flags & ~OnRestore); }
     void setNewlyAdded(bool value) { flags = value ? (flags | NewlyAdded) : (flags & ~NewlyAdded); }
     void setToBeRemoved(bool value) { flags = value ? (flags | ToBeRemoved) : (flags & ~ToBeRemoved); }
-    void setAttrUpdated(bool value) { flags = value ? (flags | AttrUpdated) : (flags & ~AttrUpdated); }
+    void setAttributesUpdated(bool value) { flags = value ? (flags | AttributesUpdated) : (flags & ~AttributesUpdated); }
 
     inline bool updated() const { return flags & Updated; }
     inline bool exists() const { return flags & Exists; }
     inline bool onRestore() const { return flags & OnRestore; }
     inline bool newlyAdded() const { return flags & NewlyAdded; }
     inline bool toBeRemoved() const { return flags & ToBeRemoved; }
-    inline bool attrUpdated() const { return flags & AttrUpdated; }
+    inline bool attributesUpdated() const { return flags & AttributesUpdated; }
 
     QByteArray path;
     QDateTime date;
@@ -83,12 +84,7 @@ public:
     Type type = Unknown;
     LockedFlag lockedFlag = Unlocked;
     qint8 flags = 0;
-
-#ifdef Q_OS_WIN
-    qint32 attr = 0;
-#else
-    quint32 attr = 0;
-#endif
+    Attributes attributes = 0;
 };
 
 #endif // SYNCFILE_H
