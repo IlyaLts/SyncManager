@@ -592,7 +592,7 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
 
         if (!dry)
         {
-            QPair<QByteArray, QPair<QByteArray, Attributes>> pair(to, QPair(from, attributes));
+            QPair<QByteArray, QPair<QByteArray, Attributes>> pair(to, QPair<QByteArray, Attributes>(from, attributes));
             const auto it = folder.foldersToRename.insert(hash64(to), pair);
             it.value().first.squeeze();
             it.value().second.first.squeeze();
@@ -614,7 +614,7 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
 
         if (!dry)
         {
-            QPair<QByteArray, QPair<QByteArray, Attributes>> pair(to, QPair(from, attributes));
+            QPair<QByteArray, QPair<QByteArray, Attributes>> pair(to, QPair<QByteArray, Attributes>(from, attributes));
             const auto it = folder.filesToMove.insert(hash64(to), pair);
             it.value().first.squeeze();
             it.value().second.first.squeeze();
@@ -1135,7 +1135,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 folderPath.append(renamedFolderIt->path);
 
                 // Finally, adds the folder from another sync folder to the renaming list
-                QPair<QByteArray, QPair<QByteArray, Attributes>> pair(renamedFolderIt->path, QPair(otherFolder.filePath().toUtf8(), getFileAttributes(folderPath)));
+                QPair<QByteArray, QPair<QByteArray, Attributes>> pair(renamedFolderIt->path, QPair<QByteArray, Attributes>(otherFolder.filePath().toUtf8(), getFileAttributes(folderPath)));
                 otherFolderIt->foldersToRename.insert(otherFolderHash, pair);
 
                 renamedFolderIt->lockedFlag = SyncFile::Locked;
@@ -1332,7 +1332,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 pathToNewFile.append(newFileIt.value()->path);
 
                 otherFolderIt->files[movedFileHash].lockedFlag = SyncFile::Locked;
-                otherFolderIt->filesToMove.insert(movedFileHash, QPair<QByteArray, QPair<QByteArray, Attributes>>(newFileIt.value()->path, QPair(pathToMove, getFileAttributes(pathToNewFile))));
+                otherFolderIt->filesToMove.insert(movedFileHash, QPair<QByteArray, QPair<QByteArray, Attributes>>(newFileIt.value()->path, QPair<QByteArray, Attributes>(pathToMove, getFileAttributes(pathToNewFile))));
 
             }
         }
@@ -1865,7 +1865,7 @@ void SyncManager::createFolders(SyncFolder &folder, const QString &versioningPat
         {
             auto newFolderIt = folder.files.insert(fileHash, SyncFile(folderIt->first, SyncFile::Folder, fileInfo.lastModified()));
             newFolderIt->attributes = folderIt->second;
-            folderIt = folder.foldersToCreate.erase(static_cast<QHash<hash64_t, QPair<QByteArray, qint32>>::const_iterator>(folderIt));
+            folderIt = folder.foldersToCreate.erase(static_cast<QHash<hash64_t, QPair<QByteArray, Attributes>>::const_iterator>(folderIt));
             setFileAttribute(folderPath, newFolderIt->attributes);
 
             QString parentPath = QFileInfo(folderPath).path();
