@@ -38,11 +38,6 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     QSharedMemory sharedMemory("SyncManagerRunning");
 
-    // Default style (Fusion) is too buggy
-#ifdef Q_OS_LINUX
-    QApplication::setStyle(QStyleFactory::create("Windows"));
-#endif
-
     // If the app crashes on Linux, the shared memory segment survives the crash,
     // preventing the app from further launching. To fix this we need to attach
     // the process to the existing shared memory segment and then detach it immediately,
