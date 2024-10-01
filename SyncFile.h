@@ -24,6 +24,10 @@
 #include <QDateTime>
 #include "Common.h"
 
+#ifndef Q_OS_WIN
+#define PRESERVE_MODIFICATION_DATE_ON_LINUX
+#endif
+
 /*
 ===========================================================
 

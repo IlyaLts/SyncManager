@@ -66,4 +66,8 @@ Attributes getFileAttributes(const QString &path);
 void setFileAttribute(const QString &path, Attributes attr);
 void setHiddenFileAttribute(const QString &path, bool hidden);
 
+#ifndef Q_OS_WIN
+void setFileModificationTime(const QString &path, const QDateTime &dateTime);
+#endif
+
 #endif // COMMON_H

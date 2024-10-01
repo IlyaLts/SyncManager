@@ -1,4 +1,4 @@
-/*
+﻿/*
 ===============================================================================
     Copyright (C) 2022-2024 Ilya Lyakhovets
 
@@ -33,6 +33,8 @@
 #include <fileapi.h>
 #else
 #include <sys/stat.h>
+#include <utime.h>
+#include <sys/time.h>
 #endif
 
 QTranslator currentTranslator;
@@ -291,3 +293,31 @@ void setHiddenFileAttribute(const QString &path, bool hidden)
     Q_UNUSED(hidden)
 #endif
 }
+
+#ifndef Q_OS_WIN
+/*
+===================
+setFileModificationTime
+
+Sets modification time with precision of 1 millisecond, which is the max precision of QDateTime
+===================
+*/
+void setFileModificationTime(const QString &path, const QDateTime &dateTime)
+{
+    struct stat statbuf;
+    timeval times[2];
+
+    if (stat(path.toStdString().c_str(), &statbuf) == -1)
+        return;
+
+    // New access time:
+    times[0].tv_sec = statbuf.st_atime;
+    times[0].tv_usec = 0;
+
+    // New modification time:
+    times[1].tv_sec = dateTime.toSecsSinceEpoch();
+    times[1].tv_usec = dateTime.toMSecsSinceEpoch() % dateTime.toSecsSinceEpoch() * 1000;
+
+    utimes(path.toStdString().c_str(), reinterpret_cast<struct timeval *>(&times));
+}
+#endif

@@ -1244,7 +1244,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 if (missingFileIt.value()->size != newFileIt.value()->size)
                     continue;
 
-#ifndef Q_OS_LINUX
+#if defined(Q_OS_WIN) || defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
                 if (missingFileIt.value()->date != newFileIt.value()->date)
                     continue;
 #endif
@@ -1297,7 +1297,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 }
 
                 // Aborts if files that need to be moved have different sizes or dates between different sync folders
-#ifdef Q_OS_LINUX
+#if !defined(Q_OS_WIN) && !defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
                 if (otherFolderIt->files.value(movedFileHash).size != folderIt->files.value(movedFileHash).size)
 #else
                 if (otherFolderIt->files.value(movedFileHash).size != folderIt->files.value(movedFileHash).size || fileToBeMoved.date != movedFile->date)
@@ -1334,6 +1334,9 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 otherFolderIt->files[movedFileHash].lockedFlag = SyncFile::Locked;
                 otherFolderIt->filesToMove.insert(movedFileHash, QPair<QByteArray, QPair<QByteArray, Attributes>>(newFileIt.value()->path, QPair<QByteArray, Attributes>(pathToMove, getFileAttributes(pathToNewFile))));
 
+#if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
+                setFileModificationTime(pathToMove, QFileInfo(pathToNewFile).lastModified());
+#endif
             }
         }
     }
@@ -1951,6 +1954,10 @@ void SyncManager::copyFiles(SyncFolder &folder, const QString &versioningPath)
         if (QFile::copy(fileIt.value().first.second, filePath))
         {
             QFileInfo fileInfo(filePath);
+
+#if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
+            setFileModificationTime(filePath, QFileInfo(fileIt.value().first.second).lastModified());
+#endif
 
             // Do not touch QFileInfo(filePath).lastModified()), as we want to get the latest modified date
             auto it = folder.files.insert(fileHash, SyncFile(fileIt.value().first.first, SyncFile::File, fileInfo.lastModified()));
