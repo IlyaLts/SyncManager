@@ -321,7 +321,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             manager.profiles()[i].excludeList.append(exclude.toUtf8());
     }
 
-    if (manager.saveDatabaseEnabled() && settings.value("AppVersion").toString().compare("1.7") >= 0)
+    if (manager.saveDatabaseEnabled() && settings.value("AppVersion").toString().compare("1.7.3") >= 0)
     {
         if (manager.databaseLocation())
             manager.loadFileDataLocally();

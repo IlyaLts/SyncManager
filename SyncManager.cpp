@@ -654,10 +654,10 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
 
         if (!dry)
         {
-            QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(to, from), time);
+            QPair<QByteArray, QPair<QByteArray, QDateTime>> pair(to, QPair<QByteArray, QDateTime>(from, time));
             const auto it = folder.filesToCopy.insert(hash64(to), pair);
-            it.value().first.first.squeeze();
-            it.value().first.second.squeeze();
+            it.value().first.squeeze();
+            it.value().second.first.squeeze();
         }
     }
 
@@ -1335,7 +1335,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 otherFolderIt->filesToMove.insert(movedFileHash, QPair<QByteArray, QPair<QByteArray, Attributes>>(newFileIt.value()->path, QPair<QByteArray, Attributes>(pathToMove, getFileAttributes(pathToNewFile))));
 
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
-                setFileModificationTime(pathToMove, QFileInfo(pathToNewFile).lastModified());
+                setFileModificationDate(pathToMove, QFileInfo(pathToNewFile).lastModified());
 #endif
             }
         }
@@ -1380,7 +1380,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                     continue;
 
                 bool alreadyAdded = folderIt->filesToCopy.contains(otherFileIt.key());
-                bool hasNewer = alreadyAdded && folderIt->filesToCopy.value(otherFileIt.key()).second < otherFile.date;
+                bool hasNewer = alreadyAdded && folderIt->filesToCopy.value(otherFileIt.key()).second.second < otherFile.date;
 
                 // Removes a file path from the "to remove" list if a file was updated
                 if (otherFile.type == SyncFile::File)
@@ -1429,11 +1429,11 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                     {
                         QByteArray from(otherFolderIt->path);
                         from.append(otherFile.path);
-                        QPair<QPair<QByteArray, QByteArray>, QDateTime> pair(QPair<QByteArray, QByteArray>(otherFile.path, from), otherFile.date);
+                        QPair<QByteArray, QPair<QByteArray, QDateTime>> pair(otherFile.path, QPair<QByteArray, QDateTime>(from, otherFile.date));
 
-                        QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::iterator it = folderIt->filesToCopy.insert(otherFileIt.key(), pair);
-                        it->first.first.squeeze();
-                        it->first.second.squeeze();
+                        QHash<hash64_t, QPair<QByteArray, QPair<QByteArray, QDateTime>>>::iterator it = folderIt->filesToCopy.insert(otherFileIt.key(), pair);
+                        it->first.squeeze();
+                        it->second.first.squeeze();
                         folderIt->filesToRemove.remove(otherFileIt.key());
                     }
                 }
@@ -1900,27 +1900,27 @@ void SyncManager::copyFiles(SyncFolder &folder, const QString &versioningPath)
             break;
 
         // Removes from the "files to copy" list if the source file doesn't exist
-        if (!QFileInfo::exists(fileIt.value().first.second) || fileIt.value().first.first.isEmpty() || fileIt.value().first.second.isEmpty())
+        if (!QFileInfo::exists(fileIt.value().second.first) || fileIt.value().first.isEmpty() || fileIt.value().second.first.isEmpty())
         {
-            fileIt = folder.filesToCopy.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(fileIt));
+            fileIt = folder.filesToCopy.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QPair<QByteArray, QDateTime>>>::const_iterator>(fileIt));
             continue;
         }
 
         QString filePath(folder.path);
-        filePath.append(fileIt.value().first.first);
-        hash64_t fileHash = hash64(fileIt.value().first.first);
+        filePath.append(fileIt.value().first);
+        hash64_t fileHash = hash64(fileIt.value().first);
         const SyncFile &file = folder.files.value(fileHash);
         QFileInfo destination(filePath);
 
         // Destination file is a newly added file
         if (file.type == SyncFile::Unknown && destination.exists())
         {
-            QFileInfo origin(fileIt.value().first.second);
+            QFileInfo origin(fileIt.value().second.first);
 
             // Aborts the copy operation if the origin file is older than the destination file
             if (destination.lastModified() > origin.lastModified())
             {
-                fileIt = folder.filesToCopy.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(fileIt));
+                fileIt = folder.filesToCopy.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QPair<QByteArray, QDateTime>>>::const_iterator>(fileIt));
                 continue;
             }
 
@@ -1932,13 +1932,13 @@ void SyncManager::copyFiles(SyncFolder &folder, const QString &versioningPath)
 
                 if (!originFilename.isEmpty())
                 {
-                    QByteArray fileName = fileIt.value().first.second;
+                    QByteArray fileName = fileIt.value().second.first;
                     fileName.remove(0, fileName.lastIndexOf("/") + 1);
 
                     // Aborts the copy operation if the origin path and the path on a disk have different cases
                     if (originFilename.compare(fileName, Qt::CaseSensitive) != 0)
                     {
-                        fileIt = folder.filesToCopy.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(fileIt));
+                        fileIt = folder.filesToCopy.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QPair<QByteArray, QDateTime>>>::const_iterator>(fileIt));
                         continue;
                     }
                 }
@@ -1949,21 +1949,21 @@ void SyncManager::copyFiles(SyncFolder &folder, const QString &versioningPath)
 
         // Removes a file with the same filename first if exists
         if (destination.exists())
-            removeFile(folder, fileIt.value().first.first, filePath, versioningPath, file.type);
+            removeFile(folder, fileIt.value().first, filePath, versioningPath, file.type);
 
-        if (QFile::copy(fileIt.value().first.second, filePath))
+        if (QFile::copy(fileIt.value().second.first, filePath))
         {
             QFileInfo fileInfo(filePath);
 
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
-            setFileModificationTime(filePath, QFileInfo(fileIt.value().first.second).lastModified());
+            setFileModificationDate(filePath, QFileInfo(fileIt.value().first.second).lastModified());
 #endif
 
             // Do not touch QFileInfo(filePath).lastModified()), as we want to get the latest modified date
-            auto it = folder.files.insert(fileHash, SyncFile(fileIt.value().first.first, SyncFile::File, fileInfo.lastModified()));
+            auto it = folder.files.insert(fileHash, SyncFile(fileIt.value().first, SyncFile::File, fileInfo.lastModified()));
             it->size = fileInfo.size();
             it->attributes = getFileAttributes(filePath);
-            fileIt = folder.filesToCopy.erase(static_cast<QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>>::const_iterator>(fileIt));
+            fileIt = folder.filesToCopy.erase(static_cast<QHash<hash64_t, QPair<QByteArray, QPair<QByteArray, QDateTime>>>::const_iterator>(fileIt));
 
             QString parentPath = destination.path();
 
@@ -1973,7 +1973,7 @@ void SyncManager::copyFiles(SyncFolder &folder, const QString &versioningPath)
         else
         {
             // Not enough disk space notification
-            if (m_notifications && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(fileIt.value().first.second).size())
+            if (m_notifications && shouldNotify && QStorageInfo(folder.path).bytesAvailable() < QFile(fileIt.value().second.first).size())
             {
                 if (!m_notificationList.contains(rootPath))
                     m_notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);

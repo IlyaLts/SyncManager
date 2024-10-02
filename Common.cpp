@@ -297,12 +297,12 @@ void setHiddenFileAttribute(const QString &path, bool hidden)
 #ifndef Q_OS_WIN
 /*
 ===================
-setFileModificationTime
+setFileModificationDate
 
-Sets modification time with precision of 1 millisecond, which is the max precision of QDateTime
+Sets the modification date with a precision of 1 millisecond, which is the maximum precision of QDateTime
 ===================
 */
-void setFileModificationTime(const QString &path, const QDateTime &dateTime)
+void setFileModificationDate(const QString &path, const QDateTime &dateTime)
 {
     struct stat statbuf;
     timeval times[2];

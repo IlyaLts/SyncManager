@@ -48,7 +48,7 @@ public:
     QHash<hash64_t, QPair<QByteArray, QPair<QByteArray, Attributes>>> foldersToRename;
     QHash<hash64_t, QPair<QByteArray,  QPair<QByteArray, Attributes>>> filesToMove;
     QHash<hash64_t, QPair<QByteArray, Attributes>> foldersToCreate;
-    QHash<hash64_t, QPair<QPair<QByteArray, QByteArray>, QDateTime>> filesToCopy;
+    QHash<hash64_t, QPair<QByteArray, QPair<QByteArray, QDateTime>>> filesToCopy;
     QHash<hash64_t, QByteArray> foldersToRemove;
     QHash<hash64_t, QByteArray> filesToRemove;
     QSet<QByteArray> foldersToUpdate;

@@ -36,10 +36,6 @@ bool SyncFile::isOlder(const SyncFile &other) const
     if (!updated() && other.updated())
         return true;
 
-    if (updated() == other.updated() && date < other.date)
-        qDebug("ASSERT %ld < %ld", date.toMSecsSinceEpoch(), other.date.toMSecsSinceEpoch());
-
-
 #if defined(Q_OS_WIN) || defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
     // Checking the updated flags on both files allows detection of a newly added file with an older modification date
     if (updated() == other.updated() && date < other.date)
