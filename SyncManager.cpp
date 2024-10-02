@@ -516,16 +516,20 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
     // Folders to create
     stream << folder.foldersToCreate.size();
 
-    for (const auto &path : folder.foldersToCreate)
-        stream << path;
+    for (const auto &fileIt : folder.foldersToCreate)
+    {
+        stream << fileIt.first;
+        stream << fileIt.second;
+    }
 
-    // Files to create
+    // Files to copy
     stream << folder.filesToCopy.size();
 
     for (const auto &fileIt : folder.filesToCopy)
     {
         stream << fileIt.first;
-        stream << fileIt.second;
+        stream << fileIt.second.first;
+        stream << fileIt.second.second;
     }
 
     // Folders to remove
