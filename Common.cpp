@@ -304,6 +304,14 @@ Sets the modification date with a precision of 1 millisecond, which is the maxim
 */
 void setFileModificationDate(const QString &path, const QDateTime &dateTime)
 {
+#if 1
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+        return;
+
+    file.setFileTime(dateTime, QFileDevice::FileModificationTime);
+    file.close();
+#else
     struct stat statbuf;
     timeval times[2];
 
@@ -319,5 +327,6 @@ void setFileModificationDate(const QString &path, const QDateTime &dateTime)
     times[1].tv_usec = dateTime.toMSecsSinceEpoch() % dateTime.toSecsSinceEpoch() * 1000;
 
     utimes(path.toStdString().c_str(), reinterpret_cast<struct timeval *>(&times));
+#endif
 }
 #endif

@@ -1956,7 +1956,7 @@ void SyncManager::copyFiles(SyncFolder &folder, const QString &versioningPath)
             QFileInfo fileInfo(filePath);
 
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
-            setFileModificationDate(filePath, QFileInfo(fileIt.value().first.second).lastModified());
+            setFileModificationDate(filePath, fileIt.value().second.second);
 #endif
 
             // Do not touch QFileInfo(filePath).lastModified()), as we want to get the latest modified date
