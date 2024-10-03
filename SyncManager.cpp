@@ -812,8 +812,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
                 return false;
         }
 
-        if (m_syncing)
-            syncFiles(profile);
+        syncFiles(profile);
     }
 
     for (auto &folder : profile.folders)
@@ -1569,7 +1568,6 @@ void SyncManager::checkForChanges(SyncProfile &profile)
     if (!profile.isActive())
         return;
 
-    synchronizeFileAttributes(profile);
     checkForRenamedFolders(profile);
 
     if (m_detectMovedFiles)
@@ -1585,7 +1583,6 @@ void SyncManager::checkForChanges(SyncProfile &profile)
         {
             file.setUpdated(false);
             file.setNewlyAdded(false);
-            file.setAttributesUpdated(false);
         }
     }
 }
@@ -1999,6 +1996,8 @@ SyncManager::syncFiles
 */
 void SyncManager::syncFiles(SyncProfile &profile)
 {
+    synchronizeFileAttributes(profile);
+
     for (auto &folder : profile.folders)
     {
         if (!folder.isActive())
@@ -2030,4 +2029,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
             folderIt = folder.foldersToUpdate.erase(static_cast<QSet<QByteArray>::const_iterator>(folderIt));
         }
     }
+
+    for (auto &folder : profile.folders)
+        for (auto &file : folder.files)
+            file.setAttributesUpdated(false);
 }
