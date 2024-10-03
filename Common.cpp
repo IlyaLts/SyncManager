@@ -108,7 +108,7 @@ void removeSimilarFiles(QHash<hash64_t, SyncFile *> &files)
                 continue;
             }
 
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
             if (fileIt.value()->date != anotherFileIt.value()->date)
             {
                 ++anotherFileIt;

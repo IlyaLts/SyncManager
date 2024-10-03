@@ -18,6 +18,7 @@
 */
 
 #include "SyncFile.h"
+#include "Common.h"
 
 /*
 ===================

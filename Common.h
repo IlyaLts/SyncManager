@@ -24,6 +24,10 @@
 #include <QDir>
 #include <QMessageBox>
 
+#ifndef Q_OS_WIN
+#define PRESERVE_MODIFICATION_DATE_ON_LINUX
+#endif
+
 class QTranslator;
 class QByteArray;
 class SyncFile;
