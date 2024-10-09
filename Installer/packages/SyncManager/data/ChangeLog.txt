@@ -1,4 +1,13 @@
 ==========================
+1.7.3 - Oct 9, 2024
+==========================
+- Add attribute synchronization when moving or renaming files.
+- Changed the default window style to Qt's default style (Fusion) on Linux.
+- Chaned file synchronization to preserve modification date and use it for file comparisons on Linux.
+- Fixed incorrect file data saving for files that should be copied.
+- Fixed broken attribute synchronization when no file changes found.
+
+==========================
 1.7.2 - Sep 18, 2024
 ==========================
 
