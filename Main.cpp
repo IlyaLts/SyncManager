@@ -45,6 +45,13 @@ int main(int argc, char *argv[])
     sharedMemory.attach();
     sharedMemory.detach();
 
+    if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
+    {
+        QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat).clear();
+        QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
+        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME);
+    }
+
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     QLocale::Language systemLanguage = QLocale::system().language();
     setTranslator(static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt()));
@@ -56,13 +63,6 @@ int main(int argc, char *argv[])
         QString text = app.translate("MainWindow", "The app is already launched and cannot be launched as a second instance.");
         QMessageBox::warning(NULL, title, text);
         return -1;
-    }
-
-    if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
-    {
-        QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat).clear();
-        QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
-        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME);
     }
 
     MainWindow window;

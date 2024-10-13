@@ -69,6 +69,7 @@ protected:
 
 private Q_SLOTS:
 
+    void setupMenus();
     void addProfile();
     void removeProfile();
     void profileClicked(const QItemSelection &selected, const QItemSelection &deselected);
@@ -97,6 +98,7 @@ private Q_SLOTS:
     bool updateApp();
     void showContextMenu(const QPoint &pos) const;
     void sync(int profileNumber = -1);
+    void readSettings();
     void saveSettings() const;
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
 
@@ -174,6 +176,7 @@ private:
     QTimer updateTimer;
     bool showInTray;
     bool appInitiated = false;
+    bool fileDataOutdated = false;
 };
 
 #endif // MAINWINDOW_H

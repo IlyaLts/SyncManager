@@ -387,11 +387,10 @@ void SyncManager::loadFileDataInternally()
         return;
 
     QDataStream stream(&data);
-
-    qsizetype profilesSize;
-    stream >> profilesSize;
-
     QStringList profileNames;
+    qsizetype profilesSize;
+
+    stream >> profilesSize;
 
     for (auto &profile : m_profiles)
         profileNames.append(profile.name);
