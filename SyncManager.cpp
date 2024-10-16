@@ -484,12 +484,23 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     for (auto fileIt = folder.files.begin(); fileIt != folder.files.end(); fileIt++)
     {
-        stream << fileIt.key();
-        stream << fileIt->date;
-        stream << fileIt->size;
-        stream << fileIt->type;
-        stream << fileIt->flags;
-        stream << fileIt->attributes;
+        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(SyncFile::Type) + sizeof(qint8) + sizeof(Attributes);
+        char buf[bufSize];
+        char *p = buf;
+
+        *reinterpret_cast<hash64_t *>(p) = fileIt.key();
+        p += sizeof(hash64_t);
+        qstrncpy(p, reinterpret_cast<char *>(const_cast<QDateTime *>(&fileIt->date)), sizeof(QDateTime));
+        p += sizeof(QDateTime);
+        *reinterpret_cast<qint64 *>(p) = fileIt->size;
+        p += sizeof(qint64);
+        *reinterpret_cast<SyncFile::Type *>(p) = fileIt->type;
+        p += sizeof(SyncFile::Type);
+        *reinterpret_cast<qint8 *>(p) = fileIt->flags;
+        p += sizeof(qint8);
+        *reinterpret_cast<Attributes *>(p) = fileIt->attributes;
+
+        stream.writeRawData(&buf[0], bufSize);
     }
 
     // Folders to rename
@@ -497,9 +508,17 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     for (const auto &fileIt : folder.foldersToRename)
     {
-        stream << fileIt.first;
-        stream << fileIt.second.first;
-        stream << fileIt.second.second;
+        const size_t bufSize = sizeof(QByteArray) * 2 + sizeof(Attributes);
+        char buf[bufSize];
+        char *p = buf;
+
+        *reinterpret_cast<QByteArray *>(p) = fileIt.first;
+        p += sizeof(QByteArray);
+        *reinterpret_cast<QByteArray *>(p) = fileIt.second.first;
+        p += sizeof(QByteArray);
+        *reinterpret_cast<Attributes *>(p) = fileIt.second.second;
+
+        stream.writeRawData(&buf[0], bufSize);
     }
 
     // Files to move
@@ -507,9 +526,17 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     for (const auto &fileIt : folder.filesToMove)
     {
-        stream << fileIt.first;
-        stream << fileIt.second.first;
-        stream << fileIt.second.second;
+        const size_t bufSize = sizeof(QByteArray) * 2 + sizeof(Attributes);
+        char buf[bufSize];
+        char *p = buf;
+
+        *reinterpret_cast<QByteArray *>(p) = fileIt.first;
+        p += sizeof(QByteArray);
+        *reinterpret_cast<QByteArray *>(p) = fileIt.second.first;
+        p += sizeof(QByteArray);
+        *reinterpret_cast<Attributes *>(p) = fileIt.second.second;
+
+        stream.writeRawData(&buf[0], bufSize);
     }
 
     // Folders to create
@@ -517,8 +544,15 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     for (const auto &fileIt : folder.foldersToCreate)
     {
-        stream << fileIt.first;
-        stream << fileIt.second;
+        const size_t bufSize = sizeof(QByteArray) + sizeof(Attributes);
+        char buf[bufSize];
+        char *p = buf;
+
+        *reinterpret_cast<QByteArray *>(p) = fileIt.first;
+        p += sizeof(QByteArray);
+        *reinterpret_cast<Attributes *>(p) = fileIt.second;
+
+        stream.writeRawData(&buf[0], bufSize);
     }
 
     // Files to copy
@@ -526,22 +560,30 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     for (const auto &fileIt : folder.filesToCopy)
     {
-        stream << fileIt.first;
-        stream << fileIt.second.first;
-        stream << fileIt.second.second;
+        const size_t bufSize = sizeof(QByteArray) * 2 + sizeof(QDateTime);
+        char buf[bufSize];
+        char *p = buf;
+
+        *reinterpret_cast<QByteArray *>(p) = fileIt.first;
+        p += sizeof(QByteArray);
+        *reinterpret_cast<QByteArray *>(p) = fileIt.second.first;
+        p += sizeof(QByteArray);
+        *reinterpret_cast<QDateTime *>(p) = fileIt.second.second;
+
+        stream.writeRawData(&buf[0], bufSize);
     }
 
     // Folders to remove
     stream << folder.foldersToRemove.size();
 
     for (const auto &path : folder.foldersToRemove)
-        stream << path;
+        stream.writeRawData(reinterpret_cast<char *>(const_cast<QByteArray *>(&path)), sizeof(path));
 
     // Files to remove
     stream << folder.filesToRemove.size();
 
     for (const auto &path : folder.filesToRemove)
-        stream << path;
+        stream.writeRawData(reinterpret_cast<char *>(const_cast<QByteArray *>(&path)), sizeof(path));
 }
 
 /*
@@ -551,28 +593,44 @@ SyncManager::loadFromFileData
 */
 void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool dry)
 {
+    SET_TIME(startTime);
+
     qsizetype numOfFiles;
     stream >> numOfFiles;
+
+    if (!dry)
+        folder.files.reserve(numOfFiles);
 
     // File data
     for (qsizetype k = 0; k < numOfFiles; k++)
     {
-        hash64_t hash;
-        QDateTime date;
-        qint64 size;
-        SyncFile::Type type;
-        qint8 flags;
-        Attributes attributes;
+        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(SyncFile::Type) + sizeof(qint8) + sizeof(Attributes);
+        char buf[bufSize];
 
-        stream >> hash;
-        stream >> date;
-        stream >> size;
-        stream >> type;
-        stream >> flags;
-        stream >> attributes;
+        stream.readRawData(&buf[0], bufSize);
 
         if (!dry)
         {
+            char *p = buf;
+            hash64_t hash;
+            QDateTime date;
+            qint64 size;
+            SyncFile::Type type;
+            qint8 flags;
+            Attributes attributes;
+
+            hash = *reinterpret_cast<hash64_t *>(p);
+            p += sizeof(hash64_t);
+            date = *reinterpret_cast<QDateTime *>(p);
+            p += sizeof(QDateTime);
+            size = *reinterpret_cast<qint64 *>(p);
+            p += sizeof(qint64);
+            type = *reinterpret_cast<SyncFile::Type *>(p);
+            p += sizeof(SyncFile::Type);
+            flags = *reinterpret_cast<qint8 *>(p);
+            p += sizeof(qint8);
+            attributes = *reinterpret_cast<Attributes *>(p);
+
             const auto it = folder.files.insert(hash, SyncFile(QByteArray(), type, date, flags | SyncFile::OnRestore));
             it->size = size;
             it->path.squeeze();
@@ -583,18 +641,29 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
     // Folders to rename
     stream >> numOfFiles;
 
+    if (!dry)
+        folder.foldersToRename.reserve(numOfFiles);
+
     for (qsizetype k = 0; k < numOfFiles; k++)
     {
-        QByteArray to;
-        QByteArray from;
-        Attributes attributes;
+        const size_t bufSize = sizeof(QByteArray) * 2 + sizeof(Attributes);
+        char buf[bufSize];
 
-        stream >> to;
-        stream >> from;
-        stream >> attributes;
+        stream.readRawData(&buf[0], bufSize);
 
         if (!dry)
         {
+            char *p = buf;
+            QByteArray to;
+            QByteArray from;
+            Attributes attributes;
+
+            to = *reinterpret_cast<QByteArray *>(p);
+            p += sizeof(QByteArray);
+            from = *reinterpret_cast<QByteArray *>(p);
+            p += sizeof(QByteArray);
+            attributes = *reinterpret_cast<Attributes *>(p);
+
             QPair<QByteArray, QPair<QByteArray, Attributes>> pair(to, QPair<QByteArray, Attributes>(from, attributes));
             const auto it = folder.foldersToRename.insert(hash64(to), pair);
             it.value().first.squeeze();
@@ -605,18 +674,29 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
     // Files to move
     stream >> numOfFiles;
 
+    if (!dry)
+        folder.filesToMove.reserve(numOfFiles);
+
     for (qsizetype k = 0; k < numOfFiles; k++)
     {
-        QByteArray to;
-        QByteArray from;
-        Attributes attributes;
+        const size_t bufSize = sizeof(QByteArray) * 2 + sizeof(Attributes);
+        char buf[bufSize];
 
-        stream >> to;
-        stream >> from;
-        stream >> attributes;
+        stream.readRawData(&buf[0], bufSize);
 
         if (!dry)
         {
+            char *p = buf;
+            QByteArray to;
+            QByteArray from;
+            Attributes attributes;
+
+            to = *reinterpret_cast<QByteArray *>(p);
+            p += sizeof(QByteArray);
+            from = *reinterpret_cast<QByteArray *>(p);
+            p += sizeof(QByteArray);
+            attributes = *reinterpret_cast<Attributes *>(p);
+
             QPair<QByteArray, QPair<QByteArray, Attributes>> pair(to, QPair<QByteArray, Attributes>(from, attributes));
             const auto it = folder.filesToMove.insert(hash64(to), pair);
             it.value().first.squeeze();
@@ -627,17 +707,27 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
     // Folders to create
     stream >> numOfFiles;
 
+    if (!dry)
+        folder.foldersToCreate.reserve(numOfFiles);
+
     for (qsizetype k = 0; k < numOfFiles; k++)
     {
-        QByteArray path;
-        qint32 attr;
+        const size_t bufSize = sizeof(QByteArray) + sizeof(Attributes);
+        char buf[bufSize];
 
-        stream >> path;
-        stream >> attr;
+        stream.readRawData(&buf[0], bufSize);
 
         if (!dry)
         {
-            const auto it = folder.foldersToCreate.insert(hash64(path), QPair<QByteArray, qint32>(path, attr));
+            char *p = buf;
+            QByteArray path;
+            Attributes attributes;
+
+            path = *reinterpret_cast<QByteArray *>(p);
+            p += sizeof(QByteArray);
+            attributes = *reinterpret_cast<Attributes *>(p);
+
+            const auto it = folder.foldersToCreate.insert(hash64(path), QPair<QByteArray, qint32>(path, attributes));
             it->first.squeeze();
         }
     }
@@ -645,18 +735,29 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
     // Files to copy
     stream >> numOfFiles;
 
+    if (!dry)
+        folder.filesToCopy.reserve(numOfFiles);
+
     for (qsizetype k = 0; k < numOfFiles; k++)
     {
-        QByteArray to;
-        QByteArray from;
-        QDateTime time;
+        const size_t bufSize = sizeof(QByteArray) * 2 + sizeof(QDateTime);
+        char buf[bufSize];
 
-        stream >> to;
-        stream >> from;
-        stream >> time;
+        stream.readRawData(&buf[0], bufSize);
 
         if (!dry)
         {
+            char *p = buf;
+            QByteArray to;
+            QByteArray from;
+            QDateTime time;
+
+            to = *reinterpret_cast<QByteArray *>(p);
+            p += sizeof(QByteArray);
+            from = *reinterpret_cast<QByteArray *>(p);
+            p += sizeof(QByteArray);
+            time = *reinterpret_cast<QDateTime *>(p);
+
             QPair<QByteArray, QPair<QByteArray, QDateTime>> pair(to, QPair<QByteArray, QDateTime>(from, time));
             const auto it = folder.filesToCopy.insert(hash64(to), pair);
             it.value().first.squeeze();
@@ -667,10 +768,13 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
     // Folders to remove
     stream >> numOfFiles;
 
+    if (!dry)
+        folder.foldersToRemove.reserve(numOfFiles);
+
     for (qsizetype k = 0; k < numOfFiles; k++)
     {
         QByteArray path;
-        stream >> path;
+        stream.readRawData(reinterpret_cast<char *>(&path), sizeof(path));
 
         if (!dry)
         {
@@ -682,10 +786,13 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
     // Files to remove
     stream >> numOfFiles;
 
+    if (!dry)
+        folder.filesToRemove.reserve(numOfFiles);
+
     for (qsizetype k = 0; k < numOfFiles; k++)
     {
         QByteArray path;
-        stream >> path;
+        stream.readRawData(reinterpret_cast<char *>(&path), sizeof(path));
 
         if (!dry)
         {
@@ -693,6 +800,8 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
             it->squeeze();
         }
     }
+
+    TIMESTAMP(startTime, "Loaded %s from file data", qUtf8Printable(folder.path));
 }
 
 /*
