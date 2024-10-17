@@ -801,6 +801,8 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream, bool
         }
     }
 
+    folder.optimize();
+
     TIMESTAMP(startTime, "Loaded %s from file data", qUtf8Printable(folder.path));
 }
 
@@ -924,7 +926,10 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     }
 
     for (auto &folder : profile.folders)
+    {
+        folder.clearUnnecessaryData();
         folder.optimize();
+    }
 
     // Resets locked flag after finishing files moving & folder renaming
     bool shouldReset = true;
@@ -1092,6 +1097,7 @@ int SyncManager::getListOfFiles(SyncFolder &folder, const QList<QByteArray> &exc
         totalNumOfFiles++;
     }
 
+    folder.optimize();
     m_usedDevices.remove(hash64(QStorageInfo(folder.path).device()));
 
     return totalNumOfFiles;

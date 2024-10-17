@@ -22,18 +22,18 @@
 
 /*
 ===================
-SyncFolder::optimize
+SyncFolder::clearUnnecessaryData
 ===================
 */
-void SyncFolder::optimize()
+void SyncFolder::clearUnnecessaryData()
 {
-    for (QHash<hash64_t, SyncFile>::iterator fileIt = files.begin(); fileIt != files.end();)
+    for (QHash<Hash_t, SyncFile>::iterator fileIt = files.begin(); fileIt != files.end();)
     {
         // If a file doesn't have a path for some reason, then that means that the file doesn't exist at all.
         // So, it is better to remove it from the database to prevent further synchronization issues.
         if (fileIt->path.isEmpty())
         {
-            fileIt = files.erase(static_cast<QHash<hash64_t, SyncFile>::const_iterator>(fileIt));
+            fileIt = files.erase(static_cast<QHash<Hash_t, SyncFile>::const_iterator>(fileIt));
         }
         // Otherwise, clears the path manually as we don't need it at the end of a synchronization session.
         else
@@ -42,7 +42,15 @@ void SyncFolder::optimize()
             ++fileIt;
         }
     }
+}
 
+/*
+===================
+SyncFolder::optimize
+===================
+*/
+void SyncFolder::optimize()
+{
     files.squeeze();
     filesToMove.squeeze();
     foldersToCreate.squeeze();
