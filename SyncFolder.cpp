@@ -27,13 +27,13 @@ SyncFolder::clearUnnecessaryData
 */
 void SyncFolder::clearUnnecessaryData()
 {
-    for (QHash<Hash_t, SyncFile>::iterator fileIt = files.begin(); fileIt != files.end();)
+    for (QHash<Hash, SyncFile>::iterator fileIt = files.begin(); fileIt != files.end();)
     {
         // If a file doesn't have a path for some reason, then that means that the file doesn't exist at all.
         // So, it is better to remove it from the database to prevent further synchronization issues.
         if (fileIt->path.isEmpty())
         {
-            fileIt = files.erase(static_cast<QHash<Hash_t, SyncFile>::const_iterator>(fileIt));
+            fileIt = files.erase(static_cast<QHash<Hash, SyncFile>::const_iterator>(fileIt));
         }
         // Otherwise, clears the path manually as we don't need it at the end of a synchronization session.
         else

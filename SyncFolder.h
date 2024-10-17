@@ -45,13 +45,13 @@ public:
     bool isActive() const;
 
     QByteArray path;
-    QHash<hash64_t, SyncFile> files;
-    QHash<hash64_t, QPair<QByteArray, QPair<QByteArray, Attributes>>> foldersToRename;
-    QHash<hash64_t, QPair<QByteArray,  QPair<QByteArray, Attributes>>> filesToMove;
-    QHash<hash64_t, QPair<QByteArray, Attributes>> foldersToCreate;
-    QHash<hash64_t, QPair<QByteArray, QPair<QByteArray, QDateTime>>> filesToCopy;
-    QHash<hash64_t, QByteArray> foldersToRemove;
-    QHash<hash64_t, QByteArray> filesToRemove;
+    QHash<Hash, SyncFile> files;
+    QHash<Hash, QPair<QByteArray, QPair<QByteArray, Attributes>>> foldersToRename;
+    QHash<Hash, QPair<QByteArray,  QPair<QByteArray, Attributes>>> filesToMove;
+    QHash<Hash, QPair<QByteArray, Attributes>> foldersToCreate;
+    QHash<Hash, QPair<QByteArray, QPair<QByteArray, QDateTime>>> filesToCopy;
+    QHash<Hash, QByteArray> foldersToRemove;
+    QHash<Hash, QByteArray> filesToRemove;
     QSet<QByteArray> foldersToUpdate;
 
     QDateTime lastSyncDate;

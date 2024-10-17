@@ -94,13 +94,13 @@ removeSimilarFiles
 Removes duplicates from the list of files based on file size and modification time (Windows)
 ===================
 */
-void removeSimilarFiles(QHash<hash64_t, SyncFile *> &files)
+void removeSimilarFiles(QHash<Hash, SyncFile *> &files)
 {
-    for (QHash<hash64_t, SyncFile *>::iterator fileIt = files.begin(); fileIt != files.end();)
+    for (QHash<Hash, SyncFile *>::iterator fileIt = files.begin(); fileIt != files.end();)
     {
         bool dup = false;
 
-        for (QHash<hash64_t, SyncFile *>::iterator anotherFileIt = ++QHash<hash64_t, SyncFile *>::iterator(fileIt); anotherFileIt != files.end();)
+        for (QHash<Hash, SyncFile *>::iterator anotherFileIt = ++QHash<Hash, SyncFile *>::iterator(fileIt); anotherFileIt != files.end();)
         {
             if (fileIt.value()->size != anotherFileIt.value()->size)
             {
@@ -117,12 +117,12 @@ void removeSimilarFiles(QHash<hash64_t, SyncFile *> &files)
 #endif
 
             dup = true;
-            anotherFileIt = files.erase(static_cast<QHash<hash64_t, SyncFile *>::const_iterator>(anotherFileIt));
+            anotherFileIt = files.erase(static_cast<QHash<Hash, SyncFile *>::const_iterator>(anotherFileIt));
             continue;
         }
 
         if (dup)
-            fileIt = files.erase(static_cast<QHash<hash64_t, SyncFile *>::const_iterator>(fileIt));
+            fileIt = files.erase(static_cast<QHash<Hash, SyncFile *>::const_iterator>(fileIt));
         else
             ++fileIt;
     }

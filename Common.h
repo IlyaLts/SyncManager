@@ -24,6 +24,8 @@
 #include <QDir>
 #include <QMessageBox>
 
+#define DISABLE_DOUBLE_HASHING
+
 #ifndef Q_OS_WIN
 #define PRESERVE_MODIFICATION_DATE_ON_LINUX
 #endif
@@ -33,6 +35,27 @@ class QByteArray;
 class SyncFile;
 
 using hash64_t = quint64;
+
+struct Hash
+{
+    Hash(){}
+    Hash(hash64_t hash) {data = hash;}
+    Hash(const Hash &other) {data = other.data;}
+
+    bool operator ==(const Hash &other) const {return data == other.data;}
+
+    hash64_t data;
+};
+
+Q_DECL_CONST_FUNCTION inline size_t qHash(const Hash &key, size_t seed = 0) noexcept
+{
+#ifdef DISABLE_DOUBLE_HASHING
+    Q_UNUSED(seed);
+    return key.data;
+#else
+    return qHash(key.data, seed);
+#endif
+}
 
 #ifdef Q_OS_WIN
 using Attributes = qint32;
@@ -61,7 +84,7 @@ extern std::chrono::high_resolution_clock::time_point startTime;
 #endif // DEBUG
 
 hash64_t hash64(const QByteArray &str);
-void removeSimilarFiles(QHash<hash64_t, SyncFile *> &files);
+void removeSimilarFiles(QHash<Hash, SyncFile *> &files);
 QFileInfo getCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters = QDir::NoFilter);
 void setTranslator(QLocale::Language language);
 bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent = nullptr);
