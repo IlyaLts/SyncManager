@@ -535,7 +535,6 @@ void MainWindow::removeProfile()
         {
             folder.paused = true;
             folder.toBeRemoved = true;
-            manager.removeFileData(folder);
         }
 
         if (!manager.isBusy())
@@ -722,8 +721,6 @@ void MainWindow::removeFolder()
         folder.paused = true;
         folder.toBeRemoved = true;
         ui->folderListView->model()->removeRow(index.row());
-
-        manager.removeFileData(folder);
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
         settings.remove(manager.profiles()[profileRow].name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"));
