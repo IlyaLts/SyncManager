@@ -1467,6 +1467,8 @@ void MainWindow::readSettings()
             manager.profiles()[i].excludeList.append(exclude.toUtf8());
     }
 
+    saveDatabaseAction->setChecked(manager.saveDatabaseEnabled());
+    databaseLocationMenu->setEnabled(manager.saveDatabaseEnabled());
     showInTrayAction->setChecked(showInTray);
     switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
     switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", manager.MoveToTrash).toInt()));
