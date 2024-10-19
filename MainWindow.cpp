@@ -1032,6 +1032,7 @@ MainWindow::setDatabaseLocation
 void MainWindow::toggleSaveDatabase()
 {
     manager.enableDatabaseSaving(!manager.saveDatabaseEnabled());
+    loadingPolicyMenu->setEnabled(manager.saveDatabaseEnabled());
     databaseLocationMenu->setEnabled(manager.saveDatabaseEnabled());
     saveSettings();
 }
