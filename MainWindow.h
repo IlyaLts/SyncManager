@@ -26,7 +26,7 @@
 #include <QTimer>
 #include <QMovie>
 
-#define SYNCMANAGER_VERSION     "1.7.3"
+#define SYNCMANAGER_VERSION     "1.8"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
 #define UPDATE_DELAY            40
@@ -89,7 +89,8 @@ private Q_SLOTS:
     void toggleShowInTray();
     void toggleNotification();
     void toggleSaveDatabase();
-    void setDatabaseLocation(bool location);
+    void setLoadingPolicy(SyncManager::LoadingPolicy policy);
+    void setDatabaseLocation(SyncManager::DatabaseLocation location);
     void toggleIgnoreHiddenFiles();
     void toggleDetectMoved();
     void updateSyncTime();
@@ -140,6 +141,8 @@ private:
     QAction *versioningAction;
     QAction *deletePermanentlyAction;
     QAction *saveDatabaseAction;
+    QAction *alwaysLoadedAction;
+    QAction *loadAsNeededAction;
     QAction *saveDatabaseLocallyAction;
     QAction *saveDatabaseDecentralizedAction;
     QAction *chineseAction;
@@ -170,6 +173,7 @@ private:
     UnhidableMenu *deletionModeMenu;
     UnhidableMenu *languageMenu;
     UnhidableMenu *databaseMenu;
+    UnhidableMenu *loadingPolicyMenu;
     UnhidableMenu *databaseLocationMenu;
 
     QLocale::Language language;

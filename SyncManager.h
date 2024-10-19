@@ -63,6 +63,18 @@ public:
         DeletePermanently
     };
 
+    enum LoadingPolicy
+    {
+        AlwaysLoaded,
+        LoadAsNeeded
+    };
+
+    enum DatabaseLocation
+    {
+        Locally,
+        Decentralized
+    };
+
     SyncManager();
     ~SyncManager();
 
@@ -73,10 +85,10 @@ public:
     void updateStatus();
     void updateNextSyncingTime();
 
-    void saveFileDataInternally() const;
     void saveFileDataLocally() const;
-    void loadFileDataInternally();
+    void saveFileDataDecentralised(const SyncProfile &profile) const;
     void loadFileDataLocally();
+    void loadFileDataDecentralised(SyncProfile &profile);
     void removeFileData();
     void removeFileData(const SyncFolder &folder);
 
@@ -96,7 +108,8 @@ public:
     inline void enableNotifications(bool enable) { m_notifications = enable; }
     inline void enableDatabaseSaving(bool enable) { m_saveDatabase = enable; }
     inline void enableIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
-    inline void setDatabaseLocation(bool location) { m_databaseLocation = location; }
+    void setLoadingPolicy(LoadingPolicy policy);
+    inline void setDatabaseLocation(DatabaseLocation location) { m_databaseLocation = location; }
     inline void enableDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
 
     inline int filesToSync() const { return m_filesToSync; }
@@ -114,8 +127,9 @@ public:
     inline bool isSyncHidden() const { return m_syncHidden; }
     inline bool notificationsEnabled() const { return m_notifications; }
     inline bool saveDatabaseEnabled() const { return m_saveDatabase; }
+    inline LoadingPolicy loadingPolicy() const { return m_loadingPolicy; }
+    inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
     inline bool ignoreHiddenFilesEnabled() const { return m_ignoreHiddenFiles; }
-    inline bool databaseLocation() const { return m_databaseLocation; }
     inline bool detectMovedFilesEnabled() const { return m_detectMovedFiles; }
     inline const QString &versionFolder() const { return m_versionFolder; }
     inline const QString &versionPattern() const { return m_versionPattern; }
@@ -175,8 +189,9 @@ private:
     bool m_syncHidden = false;
     bool m_notifications = true;
     bool m_saveDatabase = false;
+    LoadingPolicy m_loadingPolicy = LoadAsNeeded;
+    DatabaseLocation m_databaseLocation = Decentralized;
     bool m_ignoreHiddenFiles = false;
-    bool m_databaseLocation = false;
     bool m_detectMovedFiles = false;
 
     QMap<QString, QTimer *> m_notificationList;

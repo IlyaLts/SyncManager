@@ -39,8 +39,9 @@ public:
 
     explicit SyncFolder(bool paused) : paused(paused){}
 
-    void clearUnnecessaryData();
-    void optimize();
+    void clearData();
+    void clearFilePaths();
+    void optimizeMemoryUsage();
     bool isTopFolderUpdated(const SyncFile &file) const;
     bool isActive() const;
 

@@ -260,6 +260,18 @@
             <translation>&amp;数据库</translation>
         </message>
         <message>
+            <source>&amp;Database Loading Policy</source>
+            <translation>&amp;数据库加载策略</translation>
+        </message>
+        <message>
+            <source>&amp;Always Loaded (Loads on startup, stays in RAM)</source>
+            <translation>&amp;始终加载 (启动时加载，保持在RAM中)</translation>
+        </message>
+        <message>
+            <source>&amp;Load as Needed (Loads on sync, frees RAM on idle)</source>
+            <translation>&amp;按需加载 (同步时加载，空闲时释放RAM)</translation>
+        </message>
+        <message>
             <source>&amp;Database Location</source>
             <translation>&amp;数据库位置</translation>
         </message>

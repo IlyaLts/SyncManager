@@ -260,6 +260,18 @@
             <translation>&amp;データベース</translation>
         </message>
         <message>
+            <source>&amp;Database Loading Policy</source>
+            <translation>&amp;データベース読み込みポリシー</translation>
+        </message>
+        <message>
+            <source>&amp;Always Loaded (Loads on startup, stays in RAM)</source>
+            <translation>&amp;常にロード (起動時にロードされ、RAMに残る)</translation>
+        </message>
+        <message>
+            <source>&amp;Load as Needed (Loads on sync, frees RAM on idle)</source>
+            <translation>&amp;必要に応じてロード (同期時にロードされ、アイドル時にRAMを解放する)</translation>
+        </message>
+        <message>
             <source>&amp;Database Location</source>
             <translation>&amp;データベースの場所</translation>
         </message>

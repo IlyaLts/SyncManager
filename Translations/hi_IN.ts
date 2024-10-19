@@ -260,6 +260,18 @@
             <translation>&amp;डेटाबेस</translation>
         </message>
         <message>
+            <source>&amp;Database Loading Policy</source>
+            <translation>&amp;डेटाबेस लोडिंग नीति</translation>
+        </message>
+        <message>
+            <source>&amp;Always Loaded (Loads on startup, stays in RAM)</source>
+            <translation>&amp;हमेशा लोड किया गया (स्टार्टअप पर लोड होता है, रैम में रहता है)</translation>
+        </message>
+        <message>
+            <source>&amp;Load as Needed (Loads on sync, frees RAM on idle)</source>
+            <translation>&amp;आवश्यकतानुसार लोड करें (सिंक्रोनाइजेशन पर लोड होता है, निष्क्रिय होने पर रैम मुक्त करता है)</translation>
+        </message>
+        <message>
             <source>&amp;Database Location</source>
             <translation>&amp;डेटाबेस स्थान</translation>
         </message>

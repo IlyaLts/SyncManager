@@ -22,10 +22,27 @@
 
 /*
 ===================
-SyncFolder::clearUnnecessaryData
+SyncFolder::clearData
 ===================
 */
-void SyncFolder::clearUnnecessaryData()
+void SyncFolder::clearData()
+{
+    files.clear();
+    foldersToRename.clear();
+    filesToMove.clear();
+    foldersToCreate.clear();
+    filesToCopy.clear();
+    foldersToRemove.clear();
+    filesToRemove.clear();
+    foldersToUpdate.clear();
+}
+
+/*
+===================
+SyncFolder::clearFilePaths
+===================
+*/
+void SyncFolder::clearFilePaths()
 {
     for (QHash<Hash, SyncFile>::iterator fileIt = files.begin(); fileIt != files.end();)
     {
@@ -46,10 +63,10 @@ void SyncFolder::clearUnnecessaryData()
 
 /*
 ===================
-SyncFolder::optimize
+SyncFolder::optimizeMemoryUsage
 ===================
 */
-void SyncFolder::optimize()
+void SyncFolder::optimizeMemoryUsage()
 {
     files.squeeze();
     filesToMove.squeeze();

@@ -260,6 +260,18 @@
             <translation>&amp;База даних</translation>
         </message>
         <message>
+            <source>&amp;Database Loading Policy</source>
+            <translation>&amp;Політика завантаження бази даних</translation>
+        </message>
+        <message>
+            <source>&amp;Always Loaded (Loads on startup, stays in RAM)</source>
+            <translation>&amp;Завжди завантажений (Завантажується при запуску, залишається в ОЗП)</translation>
+        </message>
+        <message>
+            <source>&amp;Load as Needed (Loads on sync, frees RAM on idle)</source>
+            <translation>&amp;Завантажити за потребою (Завантажується при синхронізації, звільняє ОЗП в режимі очікування)</translation>
+        </message>
+        <message>
             <source>&amp;Database Location</source>
             <translation>&amp;Розташування бази даних</translation>
         </message>

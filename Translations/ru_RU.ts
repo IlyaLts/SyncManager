@@ -260,6 +260,18 @@
             <translation>&amp;База данных</translation>
         </message>
         <message>
+            <source>&amp;Database Loading Policy</source>
+            <translation>&amp;Политика загрузки базы данных</translation>
+        </message>
+        <message>
+            <source>&amp;Always Loaded (Loads on startup, stays in RAM)</source>
+            <translation>&amp;Всегда загружен (Загружается при запуске, остается в ОЗУ)</translation>
+        </message>
+        <message>
+            <source>&amp;Load as Needed (Loads on sync, frees RAM on idle)</source>
+            <translation>&amp;Загрузить по необходимости (Загружается при синхронизации, освобождает ОЗУ в режиме ожидания)</translation>
+        </message>
+        <message>
             <source>&amp;Database Location</source>
             <translation>&amp;Расположение базы данных</translation>
         </message>
