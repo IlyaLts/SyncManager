@@ -140,7 +140,7 @@ instead of the actual current filename on the disk. So, the only way to get the 
 */
 QFileInfo getCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters)
 {
-    QDirIterator iterator(path, nameFilters, filters);
+    QDirIterator iterator(path, nameFilters, filters | QDir::Hidden);
 
     if (iterator.hasNext())
     {
