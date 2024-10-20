@@ -1210,7 +1210,7 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
                 if (file.lockedFlag != SyncFile::Unlocked || file.toBeRemoved() || otherFile.lockedFlag != SyncFile::Unlocked || otherFile.toBeRemoved())
                     continue;
 
-                if (file.exists() && otherFile.exists() && file.type == otherFile.type && otherFile.attributesUpdated())
+                if (file.exists() && otherFile.exists() && file.hasOlderAttributes(otherFile))
                 {
                     SyncFile &folder = folderIt->files[otherFileIt.key()];
 

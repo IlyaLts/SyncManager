@@ -63,6 +63,7 @@ public:
     SyncFile(QByteArray path, Type type, QDateTime time, qint8 flags = Exists) : path(path), date(time), type(type), flags(flags){}
 
     bool isOlder(const SyncFile &otherFile) const;
+    bool hasOlderAttributes(const SyncFile &otherFile) const;
 
     void setUpdated(bool value) { flags = value ? (flags | Updated) : (flags & ~Updated); }
     void setExists(bool value) { flags = value ? (flags | Exists) : (flags & ~Exists); }

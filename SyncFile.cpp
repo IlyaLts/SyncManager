@@ -49,3 +49,22 @@ bool SyncFile::isOlder(const SyncFile &other) const
 #endif
     return false;
 }
+
+/*
+===================
+SyncFile::hasOlderAttributes
+===================
+*/
+bool SyncFile::hasOlderAttributes(const SyncFile &other) const
+{
+    if (type != other.type)
+        return false;
+
+    if (other.attributesUpdated())
+        return true;
+
+    if (attributes != other.attributes && !attributesUpdated() && !other.attributesUpdated())
+        return true;
+
+    return false;
+}
