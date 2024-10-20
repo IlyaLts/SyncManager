@@ -915,6 +915,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             {
                 for (auto futureIt = futureList.begin(); futureIt != futureList.end();)
                 {
+                    // ASSERT: "offsets[i] != SpanConstants::UnusedEntry" inside Node &at(size_t i) noexcept in qHash.h
                     if (!m_usedDevices.contains(futureIt->first.data))
                     {
                         m_usedDevices.insert(futureIt->first.data);

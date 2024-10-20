@@ -1417,6 +1417,7 @@ void MainWindow::sync(int profileNumber)
             action->setEnabled(false);
 
         loadingPolicyMenu->setEnabled(false);
+        databaseLocationMenu->setEnabled(false);
 
         QFuture<void> future = QtConcurrent::run([&]() { manager.sync(); });
 
@@ -1429,7 +1430,11 @@ void MainWindow::sync(int profileNumber)
         for (auto &action : deletionModeMenu->actions())
             action->setEnabled(true);
 
-        loadingPolicyMenu->setEnabled(true);
+        if (manager.saveDatabaseEnabled())
+        {
+            loadingPolicyMenu->setEnabled(true);
+            databaseLocationMenu->setEnabled(true);
+        }
 
         animSync.stop();
 
