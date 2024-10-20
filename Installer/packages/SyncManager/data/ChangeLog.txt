@@ -1,7 +1,15 @@
 ==========================
+1.8 - Oct 20, 2024
+==========================
+- Added an on-demand database loading policy for synchronization, which is now used by default. This policy loads the database only when necessary before synchronization, saves the updated database, and frees up RAM after synchronization, minimizing memory usage on idle as much as possible.
+- Improved database loading and saving performance by up to ~95%.
+- Fixed the issue where detection of renamed folders couldn't see hidden files, causing false detection.
+- Fixed the issue where attributes couldn't be synchronized for identical new files in both synchronization folders with differing attributes.
+
+==========================
 1.7.3 - Oct 9, 2024
 ==========================
-- Add attribute synchronization when moving or renaming files.
+- Added attribute synchronization when moving or renaming files.
 - Changed the default window style to Qt's default style (Fusion) on Linux.
 - Chaned file synchronization to preserve modification date and use it for file comparisons on Linux.
 - Fixed incorrect file data saving for files that should be copied.
