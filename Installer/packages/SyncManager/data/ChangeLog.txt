@@ -1,4 +1,9 @@
 ==========================
+1.8.1 - Oct 20, 2024
+==========================
+- Fixed some settings options not being checked on startup.
+
+==========================
 1.8 - Oct 20, 2024
 ==========================
 - Added an on-demand database loading policy for synchronization, which is now used by default. This policy loads the database only when necessary before synchronization, saves the updated database, and frees up RAM after synchronization, minimizing memory usage on idle as much as possible.
