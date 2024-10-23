@@ -1,4 +1,11 @@
 ==========================
+1.8.2 - Oct 23, 2024
+==========================
+- Fixed synchronize every menu when changing language.
+- Fixed disable notification menu incorrectly checked.
+- Fixed false detection of new files after Loading/saving database some profiles/folders are not active.
+
+==========================
 1.8.1 - Oct 20, 2024
 ==========================
 - Fixed some settings options not being checked on startup.
