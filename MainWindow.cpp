@@ -1683,6 +1683,7 @@ void MainWindow::retranslate()
     }
 
     updateStatus();
+    updateSyncTime();
 
     for (auto &profile : manager.profiles())
         updateLastSyncTime(&profile);
