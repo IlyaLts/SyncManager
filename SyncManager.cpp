@@ -354,7 +354,7 @@ void SyncManager::saveFileDataDecentralised(const SyncProfile &profile) const
 {
     for (auto &folder : profile.folders)
     {
-        if (folder.toBeRemoved)
+        if (!folder.isActive() || folder.toBeRemoved)
             continue;
 
         QDir().mkdir(folder.path + DATA_FOLDER_PATH);
@@ -437,6 +437,9 @@ void SyncManager::loadFileDataDecentralised(SyncProfile &profile)
 {
     for (auto &folder : profile.folders)
     {
+        if (!folder.isActive() || folder.toBeRemoved)
+            continue;
+
         QFile data(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
         if (!data.open(QIODevice::ReadOnly))
             continue;
@@ -872,14 +875,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     debugSetTime(syncTime);
 #endif
 
-    if (m_saveDatabase && m_loadingPolicy == SyncManager::LoadAsNeeded)
-    {
-        if (m_databaseLocation == Decentralized)
-            loadFileDataDecentralised(profile);
-        else
-            loadFileDataLocally();
-    }
-
     if (!m_paused)
     {
         QElapsedTimer timer;
@@ -896,6 +891,14 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             qDebug("Started syncing %s", qUtf8Printable(profile.name));
             qDebug("=======================================");
 #endif
+
+            if (m_saveDatabase && m_loadingPolicy == SyncManager::LoadAsNeeded)
+            {
+                if (m_databaseLocation == Decentralized)
+                    loadFileDataDecentralised(profile);
+                else
+                    loadFileDataLocally();
+            }
 
             // Gets lists of all files in folders
             SET_TIME(startTime);
@@ -983,9 +986,21 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
             if (m_shouldQuit)
                 return false;
-        }
 
-        syncFiles(profile);
+            syncFiles(profile);
+
+            if (m_saveDatabase && m_loadingPolicy == SyncManager::LoadAsNeeded)
+            {
+                if (m_databaseLocation == Decentralized)
+                    saveFileDataDecentralised(profile);
+                else
+                    saveFileDataLocally();
+
+                for (auto &profile : profiles())
+                    for (auto &folder : profile.folders)
+                        folder.clearData();
+            }
+        }
     }
 
     for (auto &folder : profile.folders)
@@ -1024,18 +1039,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
     updateStatus();
     updateNextSyncingTime();
-
-    if (m_saveDatabase && m_loadingPolicy == SyncManager::LoadAsNeeded)
-    {
-        if (m_databaseLocation == Decentralized)
-            saveFileDataDecentralised(profile);
-        else
-            saveFileDataLocally();
-
-		for (auto &profile : profiles())
-			for (auto &folder : profile.folders)
-				folder.clearData();
-    }
 
     TIMESTAMP(syncTime, "Syncing is complete.");
     return true;
