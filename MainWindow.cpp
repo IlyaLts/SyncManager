@@ -1508,7 +1508,7 @@ void MainWindow::readSettings()
     loadAsNeededAction->setChecked(manager.loadingPolicy() == true);
     databaseLocationMenu->setEnabled(manager.saveDatabaseEnabled());
     showInTrayAction->setChecked(showInTray);
-    disableNotificationAction->setChecked(manager.notificationsEnabled());
+    disableNotificationAction->setChecked(!manager.notificationsEnabled());
     ignoreHiddenFilesAction->setChecked(manager.ignoreHiddenFilesEnabled());
     detectMovedFilesAction->setChecked(manager.detectMovedFilesEnabled());
     switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
