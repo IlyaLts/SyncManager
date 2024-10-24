@@ -951,7 +951,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             if (countAverage)
                 profile.syncTime /= 2;
 
-#ifdef DEBUG
             int numOfFoldersToRename = 0;
             int numOfFilesToMove = 0;
             int numOfFoldersToCreate = 0;
@@ -971,6 +970,9 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
             if (numOfFoldersToRename || numOfFilesToMove || numOfFoldersToCreate || numOffilesToCopy || numOfFoldersToRemove || numOfFilesToRemove)
             {
+                m_databaseChanged = true;
+
+#ifdef DEBUG
                 qDebug("---------------------------------------");
                 if (numOfFoldersToRename)   qDebug("Folders to rename: %d", numOfFoldersToRename);
                 if (numOfFilesToMove)       qDebug("Files to move: %d", numOfFilesToMove);
@@ -979,8 +981,8 @@ bool SyncManager::syncProfile(SyncProfile &profile)
                 if (numOfFoldersToRemove)   qDebug("Folders to remove: %d", numOfFoldersToRemove);
                 if (numOfFilesToRemove)     qDebug("Files to remove: %d", numOfFilesToRemove);
                 qDebug("---------------------------------------");
-            }
 #endif
+            }
 
             updateStatus();
 
@@ -991,10 +993,13 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
             if (m_saveDatabase && m_loadingPolicy == SyncManager::LoadAsNeeded)
             {
-                if (m_databaseLocation == Decentralized)
-                    saveFileDataDecentralised(profile);
-                else
-                    saveFileDataLocally();
+                if (m_databaseChanged)
+                {
+                    if (m_databaseLocation == Decentralized)
+                        saveFileDataDecentralised(profile);
+                    else
+                        saveFileDataLocally();
+                }
 
                 for (auto &profile : profiles())
                     for (auto &folder : profile.folders)
@@ -1002,6 +1007,8 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             }
         }
     }
+
+    m_databaseChanged = false;
 
     for (auto &folder : profile.folders)
     {
@@ -1226,6 +1233,8 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
 
                     setFileAttribute(to, getFileAttributes(from));
                     folder.attributes = otherFile.attributes;
+
+                    m_databaseChanged = true;
                 }
 
             }

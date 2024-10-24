@@ -173,6 +173,7 @@ private:
     int m_syncEvery = 0;
     int m_existingProfiles = 0;
     int m_movedFileMinSize = 0;
+    bool m_databaseChanged = false;
 
 #if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     bool m_caseSensitiveSystem = false;
