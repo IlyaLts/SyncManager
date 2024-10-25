@@ -26,6 +26,8 @@
 #include "SyncFile.h"
 #include "Common.h"
 
+class SyncProfile;
+
 /*
 ===========================================================
 
@@ -40,9 +42,9 @@ public:
     explicit SyncFolder(bool paused) : paused(paused){}
 
     void clearData();
-    void clearFilePaths();
+    void removeInvalidFileData(SyncProfile &profile);
     void optimizeMemoryUsage();
-    bool isTopFolderUpdated(const SyncFile &file) const;
+    bool isTopFolderUpdated(SyncProfile &profile, hash64_t hash) const;
     bool isActive() const;
 
     QByteArray path;

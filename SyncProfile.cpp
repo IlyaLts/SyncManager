@@ -17,7 +17,43 @@
 ===============================================================================
 */
 
+#include <QMutex>
 #include "SyncProfile.h"
+#include "SyncFolder.h"
+
+/*
+===================
+SyncProfile::operator =
+===================
+*/
+void SyncProfile::operator =(const SyncProfile &other)
+{
+    folders = other.folders;
+    excludeList = other.excludeList;
+
+    syncing = other.syncing;
+    paused = other.paused;
+    toBeRemoved = other.toBeRemoved;
+    syncTime = other.syncTime;
+    lastSyncDate = other.lastSyncDate;
+    name = other.name;
+}
+
+/*
+===================
+SyncProfile::addFilePath
+===================
+*/
+void SyncProfile::addFilePath(hash64_t hash, const QByteArray &path)
+{
+    if (!filePaths.contains(Hash(hash)))
+    {
+        mutex.lock();
+        auto it = filePaths.insert(Hash(hash), path);
+        it->squeeze();
+        mutex.unlock();
+    }
+}
 
 /*
 ===================

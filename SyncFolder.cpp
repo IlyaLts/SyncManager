@@ -17,7 +17,9 @@
 ===============================================================================
 */
 
+#include <QMutex>
 #include "SyncFolder.h"
+#include "SyncProfile.h"
 #include "Common.h"
 
 /*
@@ -39,25 +41,20 @@ void SyncFolder::clearData()
 
 /*
 ===================
-SyncFolder::clearFilePaths
+SyncFolder::removeInvalidFileData
+
+If a file doesn't have a path for some reason, then that means that the file doesn't exist at all.
+So, it is better to remove it from the database to prevent further synchronization issues.
 ===================
 */
-void SyncFolder::clearFilePaths()
+void SyncFolder::removeInvalidFileData(SyncProfile &profile)
 {
     for (QHash<Hash, SyncFile>::iterator fileIt = files.begin(); fileIt != files.end();)
     {
-        // If a file doesn't have a path for some reason, then that means that the file doesn't exist at all.
-        // So, it is better to remove it from the database to prevent further synchronization issues.
-        if (fileIt->path.isEmpty())
-        {
+        if (!profile.hasFilePath(fileIt.key()))
             fileIt = files.erase(static_cast<QHash<Hash, SyncFile>::const_iterator>(fileIt));
-        }
-        // Otherwise, clears the path manually as we don't need it at the end of a synchronization session.
         else
-        {
-            fileIt->path.clear();
             ++fileIt;
-        }
     }
 }
 
@@ -81,9 +78,10 @@ void SyncFolder::optimizeMemoryUsage()
 SyncFolder::isTopFolderUpdated
 ===================
 */
-bool SyncFolder::isTopFolderUpdated(const SyncFile &file) const
+bool SyncFolder::isTopFolderUpdated(SyncProfile &profile, hash64_t hash) const
 {
-    return files.value(hash64(QByteArray(file.path).remove(file.path.indexOf('/'), file.path.size()))).updated();
+    QByteArray path = profile.getFilePath(hash);
+    return files.value(hash64(QByteArray(path).remove(path.indexOf('/'), path.size()))).updated();
 }
 
 /*

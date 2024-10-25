@@ -20,8 +20,11 @@
 #ifndef SYNCPROFILE_H
 #define SYNCPROFILE_H
 
+#include <QMutex>
 #include <QList>
-#include "SyncFolder.h"
+#include "Common.h"
+
+class SyncFolder;
 
 /*
 ===========================================================
@@ -35,7 +38,16 @@ class SyncProfile
 public:
 
     explicit SyncProfile(bool paused) : paused(paused){}
+    explicit SyncProfile(const SyncProfile &other) { *this = other; }
+    explicit SyncProfile(SyncProfile &&other) { *this = other; }
 
+    void operator =(const SyncProfile &other);
+
+    void addFilePath(hash64_t hash, const QByteArray &path);
+    inline void clearFilePaths() { filePaths.clear(); }
+
+    inline QByteArray getFilePath(Hash hash) { return filePaths.value(hash); }
+    inline bool hasFilePath(Hash hash) { return filePaths.contains(hash); }
     bool isActive() const;
 
     QList<SyncFolder> folders;
@@ -47,6 +59,11 @@ public:
     quint64 syncTime = 0;
     QDateTime lastSyncDate;
     QString name;
+
+private:
+
+    QHash<Hash, QByteArray> filePaths;
+    QMutex mutex;
 };
 
 #endif // SYNCPROFILE_H

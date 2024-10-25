@@ -60,7 +60,7 @@ public:
     };
 
     SyncFile(){}
-    SyncFile(QByteArray path, Type type, QDateTime time, qint8 flags = Exists) : path(path), date(time), type(type), flags(flags){}
+    SyncFile(Type type, QDateTime time, qint8 flags = Exists) : date(time), type(type), flags(flags){}
 
     bool isOlder(const SyncFile &otherFile) const;
     bool hasOlderAttributes(const SyncFile &otherFile) const;
@@ -79,7 +79,6 @@ public:
     inline bool toBeRemoved() const { return flags & ToBeRemoved; }
     inline bool attributesUpdated() const { return flags & AttributesUpdated; }
 
-    QByteArray path;
     QDateTime date;
     qint64 size = 0;
     Type type = Unknown;
