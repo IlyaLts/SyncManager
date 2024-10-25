@@ -63,12 +63,6 @@ public:
         DeletePermanently
     };
 
-    enum LoadingPolicy
-    {
-        AlwaysLoaded,
-        LoadAsNeeded
-    };
-
     enum DatabaseLocation
     {
         Locally,
@@ -108,7 +102,6 @@ public:
     inline void enableNotifications(bool enable) { m_notifications = enable; }
     inline void enableDatabaseSaving(bool enable) { m_saveDatabase = enable; }
     inline void enableIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
-    void setLoadingPolicy(LoadingPolicy policy);
     inline void setDatabaseLocation(DatabaseLocation location) { m_databaseLocation = location; }
     inline void enableDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
 
@@ -127,7 +120,6 @@ public:
     inline bool isSyncHidden() const { return m_syncHidden; }
     inline bool notificationsEnabled() const { return m_notifications; }
     inline bool saveDatabaseEnabled() const { return m_saveDatabase; }
-    inline LoadingPolicy loadingPolicy() const { return m_loadingPolicy; }
     inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
     inline bool ignoreHiddenFilesEnabled() const { return m_ignoreHiddenFiles; }
     inline bool detectMovedFilesEnabled() const { return m_detectMovedFiles; }
@@ -190,7 +182,6 @@ private:
     bool m_syncHidden = false;
     bool m_notifications = true;
     bool m_saveDatabase = false;
-    LoadingPolicy m_loadingPolicy = LoadAsNeeded;
     DatabaseLocation m_databaseLocation = Decentralized;
     bool m_ignoreHiddenFiles = false;
     bool m_detectMovedFiles = false;

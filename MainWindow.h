@@ -89,7 +89,6 @@ private Q_SLOTS:
     void toggleShowInTray();
     void toggleNotification();
     void toggleSaveDatabase();
-    void setLoadingPolicy(SyncManager::LoadingPolicy policy);
     void setDatabaseLocation(SyncManager::DatabaseLocation location);
     void toggleIgnoreHiddenFiles();
     void toggleDetectMoved();
@@ -141,8 +140,6 @@ private:
     QAction *versioningAction;
     QAction *deletePermanentlyAction;
     QAction *saveDatabaseAction;
-    QAction *alwaysLoadedAction;
-    QAction *loadAsNeededAction;
     QAction *saveDatabaseLocallyAction;
     QAction *saveDatabaseDecentralizedAction;
     QAction *chineseAction;
@@ -173,7 +170,6 @@ private:
     UnhidableMenu *deletionModeMenu;
     UnhidableMenu *languageMenu;
     UnhidableMenu *databaseMenu;
-    UnhidableMenu *loadingPolicyMenu;
     UnhidableMenu *databaseLocationMenu;
 
     QLocale::Language language;

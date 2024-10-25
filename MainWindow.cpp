@@ -90,15 +90,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
 
-    if (manager.saveDatabaseEnabled() && !fileDataOutdated)
-    {
-        if (manager.loadingPolicy() == SyncManager::AlwaysLoaded)
-            manager.setLoadingPolicy(SyncManager::AlwaysLoaded);
-    }
-    else
-    {
+    if (!manager.saveDatabaseEnabled() || fileDataOutdated)
         manager.removeFileData();
-    }
 
     setupMenus();
     readSettings();
@@ -293,8 +286,6 @@ void MainWindow::setupMenus()
     decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
     moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
     saveDatabaseAction = new QAction(tr("&Save Files Data (Requires disk space)"), this);
-    alwaysLoadedAction = new QAction(tr("&Always Loaded (Loads on startup, stays in RAM)"), this);
-    loadAsNeededAction = new QAction(tr("&Load as Needed (Loads on sync, frees RAM on idle)"), this);
     saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
     chineseAction = new QAction(tr("&Chinese"), this);
@@ -329,8 +320,6 @@ void MainWindow::setupMenus()
     moveToTrashAction->setCheckable(true);
     versioningAction->setCheckable(true);
     saveDatabaseAction->setCheckable(true);
-    alwaysLoadedAction->setCheckable(true);
-    loadAsNeededAction->setCheckable(true);
     saveDatabaseLocallyAction->setCheckable(true);
     saveDatabaseDecentralizedAction->setCheckable(true);
     chineseAction->setCheckable(true);
@@ -383,17 +372,12 @@ void MainWindow::setupMenus()
     languageMenu->addAction(spanishAction);
     languageMenu->addAction(ukrainianAction);
 
-    loadingPolicyMenu = new UnhidableMenu(tr("&Database Loading Policy"), this);
-    loadingPolicyMenu->addAction(alwaysLoadedAction);
-    loadingPolicyMenu->addAction(loadAsNeededAction);
-
     databaseLocationMenu = new UnhidableMenu(tr("&Database Location"), this);
     databaseLocationMenu->addAction(saveDatabaseLocallyAction);
     databaseLocationMenu->addAction(saveDatabaseDecentralizedAction);
 
     databaseMenu = new UnhidableMenu(tr("&Database"), this);
     databaseMenu->addAction(saveDatabaseAction);
-    databaseMenu->addMenu(loadingPolicyMenu);
     databaseMenu->addMenu(databaseLocationMenu);
 
     settingsMenu = new UnhidableMenu(tr("&Settings"), this);
@@ -443,8 +427,6 @@ void MainWindow::setupMenus()
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
     connect(saveDatabaseAction, &QAction::triggered, this, &MainWindow::toggleSaveDatabase);
-    connect(alwaysLoadedAction, &QAction::triggered, this, std::bind(&MainWindow::setLoadingPolicy, this, SyncManager::AlwaysLoaded));
-    connect(loadAsNeededAction, &QAction::triggered, this, std::bind(&MainWindow::setLoadingPolicy, this, SyncManager::LoadAsNeeded));
     connect(saveDatabaseLocallyAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Locally));
     connect(saveDatabaseDecentralizedAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Decentralized));
 
@@ -1035,21 +1017,7 @@ MainWindow::setDatabaseLocation
 void MainWindow::toggleSaveDatabase()
 {
     manager.enableDatabaseSaving(!manager.saveDatabaseEnabled());
-    loadingPolicyMenu->setEnabled(manager.saveDatabaseEnabled());
     databaseLocationMenu->setEnabled(manager.saveDatabaseEnabled());
-    saveSettings();
-}
-
-/*
-===================
-MainWindow::setLoadingPolicy
-===================
-*/
-void MainWindow::setLoadingPolicy(SyncManager::LoadingPolicy policy)
-{
-    alwaysLoadedAction->setChecked(policy == SyncManager::AlwaysLoaded);
-    loadAsNeededAction->setChecked(policy == SyncManager::LoadAsNeeded);
-    manager.setLoadingPolicy(policy);
     saveSettings();
 }
 
@@ -1419,7 +1387,6 @@ void MainWindow::sync(int profileNumber)
         for (auto &action : deletionModeMenu->actions())
             action->setEnabled(false);
 
-        loadingPolicyMenu->setEnabled(false);
         databaseLocationMenu->setEnabled(false);
 
         QFuture<void> future = QtConcurrent::run([&]() { manager.sync(); });
@@ -1434,10 +1401,7 @@ void MainWindow::sync(int profileNumber)
             action->setEnabled(true);
 
         if (manager.saveDatabaseEnabled())
-        {
-            loadingPolicyMenu->setEnabled(true);
             databaseLocationMenu->setEnabled(true);
-        }
 
         animSync.stop();
 
@@ -1503,9 +1467,6 @@ void MainWindow::readSettings()
     }
 
     saveDatabaseAction->setChecked(manager.saveDatabaseEnabled());
-    loadingPolicyMenu->setEnabled(manager.saveDatabaseEnabled());
-    alwaysLoadedAction->setChecked(manager.loadingPolicy() == false);
-    loadAsNeededAction->setChecked(manager.loadingPolicy() == true);
     databaseLocationMenu->setEnabled(manager.saveDatabaseEnabled());
     showInTrayAction->setChecked(showInTray);
     disableNotificationAction->setChecked(!manager.notificationsEnabled());
@@ -1545,7 +1506,6 @@ void MainWindow::saveSettings() const
     settings.setValue("SyncingMode", manager.syncingMode());
     settings.setValue("DeletionMode", manager.deletionMode());
     settings.setValue("SaveDatabase", manager.saveDatabaseEnabled());
-    settings.setValue("LoadingPolicy", manager.loadingPolicy());
     settings.setValue("DatabaseLocation", manager.databaseLocation());
     settings.setValue("Language", language);
     settings.setValue("Notifications", manager.notificationsEnabled());
@@ -1618,8 +1578,6 @@ void MainWindow::retranslate()
     decreaseSyncTimeAction->setText(tr("&Decrease"));
     moveToTrashAction->setText(tr("&Move Files to Trash"));
     saveDatabaseAction->setText(tr("&Save Files Data  (Requires disk space)"));
-    alwaysLoadedAction->setText(tr("&Always Loaded (Loads on startup, stays in RAM)"));
-    loadAsNeededAction->setText(tr("&Load as Needed (Loads on sync, frees RAM on idle)"));
     saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
     saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
     chineseAction->setText(tr("&Chinese"));
@@ -1648,7 +1606,6 @@ void MainWindow::retranslate()
     syncingTimeMenu->setTitle(tr("&Syncing Time"));
     deletionModeMenu->setTitle(tr("&Deletion Mode"));
     databaseMenu->setTitle(tr("&Database"));
-    loadingPolicyMenu->setTitle(tr("&Database Loading Policy"));
     databaseLocationMenu->setTitle(tr("&Database Location"));
     languageMenu->setTitle(tr("&Language"));
     settingsMenu->setTitle(tr("&Settings"));

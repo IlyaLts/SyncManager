@@ -260,18 +260,6 @@
             <translation>&amp;Database</translation>
         </message>
         <message>
-            <source>&amp;Database Loading Policy</source>
-            <translation>&amp;Criteri di caricamento del database</translation>
-        </message>
-        <message>
-            <source>&amp;Always Loaded (Loads on startup, stays in RAM)</source>
-            <translation>&amp;Sempre caricato (Carica all'avvio, rimane in RAM)</translation>
-        </message>
-        <message>
-            <source>&amp;Load as Needed (Loads on sync, frees RAM on idle)</source>
-            <translation>&amp;Caricare secondo necessità (Carica alla sincronizzazione, libera RAM inattiva)</translation>
-        </message>
-        <message>
             <source>&amp;Database Location</source>
             <translation>&amp;Posizione del database</translation>
         </message>

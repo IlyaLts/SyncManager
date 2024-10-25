@@ -260,18 +260,6 @@
             <translation>&amp;Database</translation>
         </message>
         <message>
-            <source>&amp;Database Loading Policy</source>
-            <translation>&amp;Database Loading Policy</translation>
-        </message>
-        <message>
-            <source>&amp;Always Loaded (Loads on startup, stays in RAM)</source>
-            <translation>&amp;Always Loaded (Loads on startup, stays in RAM)</translation>
-        </message>
-        <message>
-            <source>&amp;Load as Needed (Loads on sync, frees RAM on idle)</source>
-            <translation>&amp;Load as Needed (Loads on sync, frees RAM on idle)</translation>
-        </message>
-        <message>
             <source>&amp;Database Location</source>
             <translation>&amp;Database Location</translation>
         </message>

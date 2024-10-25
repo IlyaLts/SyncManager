@@ -48,7 +48,6 @@ SyncManager::SyncManager()
     m_notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     m_saveDatabase = settings.value("SaveDatabase", true).toBool();
     m_ignoreHiddenFiles = settings.value("IgnoreHiddenFiles", true).toBool();
-    m_loadingPolicy = static_cast<SyncManager::LoadingPolicy>(settings.value("LoadingPolicy", SyncManager::LoadAsNeeded).toInt());
     m_databaseLocation = static_cast<SyncManager::DatabaseLocation>(settings.value("DatabaseLocation", SyncManager::Decentralized).toInt());
     m_detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
     m_syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
@@ -72,7 +71,7 @@ SyncManager::~SyncManager
 */
 SyncManager::~SyncManager()
 {
-    if (m_saveDatabase && !m_loadingPolicy)
+    if (m_saveDatabase)
     {
         removeFileData();
 
@@ -475,62 +474,6 @@ void SyncManager::removeFileData(const SyncFolder &folder)
 
 /*
 ===================
-SyncManager::setLoadingPolicy
-===================
-*/
-void SyncManager::setLoadingPolicy(SyncManager::LoadingPolicy policy)
-{
-    if (!m_saveDatabase || (m_loadingPolicy == policy && m_loadingPolicy == LoadAsNeeded))
-        return;
-
-    m_loadingPolicy = policy;
-
-    if (policy == SyncManager::AlwaysLoaded)
-    {
-        for (auto &profile : m_profiles)
-            for (auto &folder : profile.folders)
-                folder.clearData();
-
-        if (databaseLocation() == SyncManager::Decentralized)
-        {
-            for (auto &profile : m_profiles)
-            {
-                if (profile.toBeRemoved)
-                    continue;
-
-                loadFileDataDecentralised(profile);
-            }
-        }
-        else
-        {
-            loadFileDataLocally();
-        }
-    }
-    else if (policy == SyncManager::LoadAsNeeded)
-    {
-        if (databaseLocation() == SyncManager::Decentralized)
-        {
-            for (auto &profile : m_profiles)
-            {
-                if (profile.toBeRemoved)
-                    continue;
-
-                saveFileDataDecentralised(profile);
-            }
-        }
-        else
-        {
-            saveFileDataLocally();
-        }
-
-        for (auto &profile : profiles())
-            for (auto &folder : profile.folders)
-                folder.clearData();
-    }
-}
-
-/*
-===================
 SyncManager::saveToFileData
 ===================
 */
@@ -891,7 +834,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             qDebug("=======================================");
 #endif
 
-            if (m_saveDatabase && m_loadingPolicy == SyncManager::LoadAsNeeded)
+            if (m_saveDatabase)
             {
                 if (m_databaseLocation == Decentralized)
                     loadFileDataDecentralised(profile);
@@ -990,7 +933,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
             syncFiles(profile);
 
-            if (m_saveDatabase && m_loadingPolicy == SyncManager::LoadAsNeeded)
+            if (m_saveDatabase)
             {
                 if (m_databaseChanged)
                 {
