@@ -860,7 +860,8 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             {
                 for (auto futureIt = futureList.begin(); futureIt != futureList.end();)
                 {
-                    // ASSERT: "offsets[i] != SpanConstants::UnusedEntry" inside Node &at(size_t i) noexcept in qHash.h
+                    usedDevicesMutex.lock();
+
                     if (!m_usedDevices.contains(futureIt->first.data))
                     {
                         m_usedDevices.insert(futureIt->first.data);
@@ -877,6 +878,8 @@ bool SyncManager::syncProfile(SyncProfile &profile)
                     {
                         futureIt++;
                     }
+
+                    usedDevicesMutex.unlock();
                 }
 
                 if (m_shouldQuit)
@@ -1122,7 +1125,9 @@ int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const 
     }
 
     folder.optimizeMemoryUsage();
+    usedDevicesMutex.lock();
     m_usedDevices.remove(hash64(QStorageInfo(folder.path).device()));
+    usedDevicesMutex.unlock();
     return totalNumOfFiles;
 }
 

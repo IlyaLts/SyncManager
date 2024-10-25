@@ -188,6 +188,7 @@ private:
 
     QMap<QString, QTimer *> m_notificationList;
     QSet<hash64_t> m_usedDevices;
+    QMutex usedDevicesMutex;
 
     QString m_versionFolder;
     QString m_versionPattern;
