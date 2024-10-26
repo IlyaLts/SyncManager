@@ -79,9 +79,9 @@ public:
     void updateStatus();
     void updateNextSyncingTime();
 
-    void saveFileDataLocally() const;
+    void saveFileDataLocally(const SyncProfile &profile) const;
     void saveFileDataDecentralised(const SyncProfile &profile) const;
-    void loadFileDataLocally();
+    void loadFileDataLocally(SyncProfile &profile);
     void loadFileDataDecentralised(SyncProfile &profile);
     void removeFileData();
     void removeFileData(const SyncFolder &folder);

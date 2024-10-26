@@ -71,25 +71,6 @@ SyncManager::~SyncManager
 */
 SyncManager::~SyncManager()
 {
-    if (m_saveDatabase)
-    {
-        removeFileData();
-
-        if (m_databaseLocation)
-        {
-            for (auto &profile : m_profiles)
-            {
-                if (profile.toBeRemoved)
-                    continue;
-
-                saveFileDataDecentralised(profile);
-            }
-        }
-        else
-        {
-            saveFileDataLocally();
-        }
-    }
 }
 
 /*
@@ -307,40 +288,21 @@ void SyncManager::updateNextSyncingTime()
 SyncManager::saveFileDataLocally
 ===================
 */
-void SyncManager::saveFileDataLocally() const
+void SyncManager::saveFileDataLocally(const SyncProfile &profile) const
 {
-    QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME);
-    if (!data.open(QIODevice::WriteOnly))
-        return;
-
-    QDataStream stream(&data);
-
-    stream << m_profiles.size();
-
-    QStringList profileNames;
-
-    for (auto &profile : m_profiles)
-        profileNames.append(profile.name);
-
-    for (int i = 0; auto &profile : m_profiles)
+    for (auto &folder : profile.folders)
     {
-        if (profile.toBeRemoved)
+        if (!folder.isActive() || folder.toBeRemoved)
             continue;
 
-        stream << profileNames[i];
-        stream << profile.folders.size();
+        QByteArray path(QByteArray::number(hash64(folder.path)));
 
-        for (auto &folder : profile.folders)
-        {
-            if (folder.toBeRemoved)
-                continue;
+        QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + path + ".db");
+        if (!data.open(QIODevice::WriteOnly))
+            continue;
 
-            // File data
-            stream << folder.path;
-            saveToFileData(folder, stream);
-        }
-
-        i++;
+        QDataStream stream(&data);
+        saveToFileData(folder, stream);
     }
 }
 
@@ -380,50 +342,21 @@ void SyncManager::saveFileDataDecentralised(const SyncProfile &profile) const
 SyncManager::loadFileDataLocally
 ===================
 */
-void SyncManager::loadFileDataLocally()
+void SyncManager::loadFileDataLocally(SyncProfile &profile)
 {
-    QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME);
-    if (!data.open(QIODevice::ReadOnly))
-        return;
-
-    QDataStream stream(&data);
-    QStringList profileNames;
-    qsizetype profilesSize;
-
-    stream >> profilesSize;
-
-    for (auto &profile : m_profiles)
-        profileNames.append(profile.name);
-
-    for (qsizetype i = 0; i < profilesSize; i++)
+    for (auto &folder : profile.folders)
     {
-        QString profileName;
-        qsizetype foldersSize;
+        if (!folder.isActive() || folder.toBeRemoved)
+            continue;
 
-        stream >> profileName;
-        stream >> foldersSize;
+        QByteArray path(QByteArray::number(hash64(folder.path)));
 
-        int profileIndex = profileNames.indexOf(profileName);
+        QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + path + ".db");
+        if (!data.open(QIODevice::ReadOnly))
+            continue;
 
-        for (qsizetype j = 0; j < foldersSize; j++)
-        {
-            QByteArray folderPath;
-            stream >> folderPath;
-
-            QStringList folderPaths;
-            bool folderExists = profileIndex >= 0;
-
-            if (folderExists)
-            {
-                for (auto &folder : m_profiles[profileIndex].folders)
-                    folderPaths.append(folder.path);
-            }
-
-            int folderIndex = folderPaths.indexOf(folderPath);
-            folderExists = folderExists && folderIndex >= 0;
-
-            loadFromFileData(m_profiles[profileIndex].folders[folderIndex], stream, !folderExists);
-        }
+        QDataStream stream(&data);
+        loadFromFileData(folder, stream, false);
     }
 }
 
@@ -469,7 +402,15 @@ SyncManager::removeFileData
 */
 void SyncManager::removeFileData(const SyncFolder &folder)
 {
-    QDir(folder.path + DATA_FOLDER_PATH).removeRecursively();
+    if (databaseLocation() == Decentralized)
+    {
+        QByteArray path = QByteArray::number(hash64(folder.path));
+        QFile::remove(path);
+    }
+    else
+    {
+        QDir(folder.path + DATA_FOLDER_PATH).removeRecursively();
+    }
 }
 
 /*
@@ -839,7 +780,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
                 if (m_databaseLocation == Decentralized)
                     loadFileDataDecentralised(profile);
                 else
-                    loadFileDataLocally();
+                    loadFileDataLocally(profile);
             }
 
             // Gets lists of all files in folders
@@ -946,12 +887,11 @@ bool SyncManager::syncProfile(SyncProfile &profile)
                     if (m_databaseLocation == Decentralized)
                         saveFileDataDecentralised(profile);
                     else
-                        saveFileDataLocally();
+                        saveFileDataLocally(profile);
                 }
 
-                for (auto &profile : profiles())
-                    for (auto &folder : profile.folders)
-                        folder.clearData();
+                for (auto &folder : profile.folders)
+                    folder.clearData();
             }
         }
     }
