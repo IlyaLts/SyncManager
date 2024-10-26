@@ -936,6 +936,9 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
             syncFiles(profile);
 
+            for (auto &folder : profile.folders)
+                folder.removeInvalidFileData(profile);
+
             if (m_saveDatabase)
             {
                 if (m_databaseChanged)
@@ -956,10 +959,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     m_databaseChanged = false;
 
     for (auto &folder : profile.folders)
-    {
-        folder.removeInvalidFileData(profile);
         folder.optimizeMemoryUsage();
-    }
 
     profile.clearFilePaths();
 
@@ -1119,6 +1119,8 @@ int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const 
             file->size = fileInfo.size();
             file->setNewlyAdded(true);
             file->attributes = getFileAttributes(fullFilePath);
+
+            m_databaseChanged = true;
         }
 
         totalNumOfFiles++;
