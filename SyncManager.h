@@ -134,7 +134,7 @@ Q_SIGNALS:
 private:
 
     void saveToFileData(const SyncFolder &folder, QDataStream &stream) const;
-    void loadFromFileData(SyncFolder &folder, QDataStream &stream, bool dry = false);
+    void loadFromFileData(SyncFolder &folder, QDataStream &stream);
     bool syncProfile(SyncProfile &profile);
     int getListOfFiles(SyncProfile &profile, SyncFolder &folder, const QList<QByteArray> &excludeList);
     void synchronizeFileAttributes(SyncProfile &profile);
