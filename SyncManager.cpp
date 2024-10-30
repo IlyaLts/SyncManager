@@ -431,7 +431,7 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
         *reinterpret_cast<hash64_t *>(p) = fileIt.key().data;
         p += sizeof(hash64_t);
-        qstrncpy(p, reinterpret_cast<char *>(const_cast<QDateTime *>(&fileIt->date)), sizeof(QDateTime));
+        memcpy(p, &fileIt->date, sizeof(QDateTime));
         p += sizeof(QDateTime);
         *reinterpret_cast<qint64 *>(p) = fileIt->size;
         p += sizeof(qint64);
@@ -995,10 +995,22 @@ int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const 
             }*/
 
             if (file.date != fileDate)
+            {
+                m_databaseChanged = true;
                 file.setUpdated(true);
+            }
+
+            if (file.size != fileInfo.size())
+                m_databaseChanged = true;
+
+            if (file.type != type)
+                m_databaseChanged = true;
 
             if (file.attributes != getFileAttributes(fullFilePath))
+            {
+                m_databaseChanged = true;
                 file.setAttributesUpdated(true);
+            }
 
             // Marks all parent folders as updated if the current folder was updated
             if (file.updated())
