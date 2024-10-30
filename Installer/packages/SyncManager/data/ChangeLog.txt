@@ -1,10 +1,16 @@
 ==========================
+1.9.1 - Oct 30, 2024
+==========================
+- Fixed file modification date not being saved properly to database, which could lead to incorrect synchronization decisions.
+- Fixed database size calculation after synchronization and for local databases.
+
+==========================
 1.9 - Oct 27, 2024
 ==========================
 - Optimized database saving by only saving when changes are detected.
 - Reduced memory usage during synchronization by up to 25%. This improvement is even more significant for three or more synchronization folders.
 - Removed old database loading policy in favor of a more efficient new database loading policy.
-- Change local database to smaller, folder-specific databases
+- Changed big local database to smaller, folder-specific databases.
 - Fixed a crash that could randomly occur during synchronization.
 - Fixed issue where database wasn't created when no changes were detected.
 
