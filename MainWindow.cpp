@@ -1144,6 +1144,47 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
 
 /*
 ===================
+MainWindow::updateDatabaseSize
+===================
+*/
+void MainWindow::updateDatabaseSize()
+{
+    int size = 0;
+
+    if (manager.databaseLocation() == SyncManager::Decentralized)
+    {
+        for (auto &profile : manager.profiles())
+            for (auto &folder : profile.folders)
+                size += QFileInfo(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME).size();
+    }
+    else
+    {
+        QDir::Filters filters = QDir::Files | QDir::Hidden;
+        QDirIterator it(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/", {"*.db"}, filters);
+
+        while (it.hasNext())
+        {
+            it.next();
+            size += it.fileInfo().size();
+        }
+    }
+
+    // Adds file data size info to the context menu
+    if (size)
+    {
+        if (size == 0)
+            saveDatabaseAction->setText(tr("&Save Files Data  (Requires disk space)"));
+        else if (size < 1024)
+            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 bytes)")).arg(size));
+        else if ((size / 1024) < 1024)
+            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 KB)")).arg(size / 1024));
+        else
+            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 MB)")).arg(size / 1024 / 1024));
+    }
+}
+
+/*
+===================
 MainWindow::updateStatus
 ===================
 */
@@ -1405,6 +1446,7 @@ void MainWindow::sync(int profileNumber)
 
         animSync.stop();
 
+        updateDatabaseSize();
         updateStatus();
         updateSyncTime();
         manager.updateTimer();
@@ -1615,30 +1657,7 @@ void MainWindow::retranslate()
     ui->SyncLabel->setText(tr("Synchronization profiles:"));
     ui->foldersLabel->setText(tr("Folders to synchronize:"));
 
-    int size = 0;
-
-    if (manager.databaseLocation())
-    {
-        for (auto &profile : manager.profiles())
-            for (auto &folder : profile.folders)
-                size += QFileInfo(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME).size();
-    }
-    else
-    {
-        size = QFileInfo(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME).size();
-    }
-
-    // Adds file data size info to the context menu
-    if (size)
-    {
-        if (size < 1024)
-            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 bytes)")).arg(size));
-        else if ((size / 1024) < 1024)
-            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 KB)")).arg(size / 1024));
-        else
-            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 MB)")).arg(size / 1024 / 1024));
-    }
-
+    updateDatabaseSize();
     updateStatus();
     updateSyncTime();
 

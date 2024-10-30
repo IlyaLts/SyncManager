@@ -94,6 +94,7 @@ private Q_SLOTS:
     void toggleDetectMoved();
     void updateSyncTime();
     void updateLastSyncTime(SyncProfile *profile);
+    void updateDatabaseSize();
     void updateStatus();
     bool updateApp();
     void showContextMenu(const QPoint &pos) const;
