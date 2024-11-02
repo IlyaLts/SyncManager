@@ -138,14 +138,29 @@ QFileInfo and QFile return a predetermined filename based on the argument provid
 instead of the actual current filename on the disk. So, the only way to get the current filename is to use QDirIterator.
 ===================
 */
-QFileInfo getCurrentFileInfo(const QString &path, const QStringList &nameFilters, QDir::Filters filters)
+QFileInfo getCurrentFileInfo(const QString &path, const QString &name, QDir::Filters filters)
 {
-    QDirIterator iterator(path, nameFilters, filters | QDir::Hidden);
+    QDirIterator it(path, QStringList(name), filters | QDir::Hidden | QDir::NoDotAndDotDot);
 
-    if (iterator.hasNext())
+    while (it.hasNext())
     {
-        iterator.next();
-        return iterator.fileInfo();
+        it.next();
+        return it.fileInfo();
+    }
+
+    // Sometimes, a file's name may resemble a wildcard (?*[]), causing QDirIterator to miss it.
+    // The best current workaround is search all directories within the specified path and
+    // perform a case-insensitive match against the exact filename.
+    QDirIterator it2(path, {}, filters | QDir::Hidden | QDir::NoDotAndDotDot);
+
+    while (it2.hasNext())
+    {
+        it2.next();
+
+        if (it2.fileInfo().fileName().compare(name, Qt::CaseInsensitive) != 0)
+            continue;
+
+        return it2.fileInfo();
     }
 
     return QFileInfo();

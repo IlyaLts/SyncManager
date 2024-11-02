@@ -1140,7 +1140,10 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 QByteArray otherCurrentFolderName;
                 QByteArray otherCurrentFolderPath;
 
-                QFileInfo otherFolder = getCurrentFileInfo(otherFileInfo.absolutePath(), {otherFileInfo.fileName()}, QDir::Dirs);
+                QByteArray folderName(profile.getFilePath(renamedFolderIt.key()));
+                folderName.remove(0, folderName.lastIndexOf("/") + 1);
+
+                QFileInfo otherFolder = getCurrentFileInfo(otherFileInfo.absolutePath(), otherFileInfo.fileName(), QDir::Dirs);
 
                 if (otherFolder.exists())
                 {
@@ -1148,9 +1151,14 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                     otherCurrentFolderPath = otherFolder.filePath().toUtf8();
                     otherCurrentFolderPath.remove(0, otherFolderIt->path.size());
                 }
-
-                QByteArray folderName(profile.getFilePath(renamedFolderIt.key()));
-                folderName.remove(0, folderName.lastIndexOf("/") + 1);
+                else
+                {
+                    QString str(otherFileInfo.absolutePath());
+                    str.append("/");
+                    str.append(otherFileInfo.fileName());
+                    qDebug("getCurrentFileInfo failed with %s", qUtf8Printable(str));
+                    continue;
+                }
 
                 // Both folder names should differ in case
                 if (otherCurrentFolderName.compare(folderName, Qt::CaseSensitive) == 0)
@@ -1966,13 +1974,13 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder, const QStr
             // Without this, copy operation causes undefined behavior as some file systems, such as Windows, are case insensitive.
             if (!m_caseSensitiveSystem)
             {
-                QByteArray originFilename = getCurrentFileInfo(origin.absolutePath(), {origin.fileName()}, QDir::Files).fileName().toUtf8();
+                QByteArray fileName = fileIt.value().second.first;
+                fileName.remove(0, fileName.lastIndexOf("/") + 1);
+
+                QByteArray originFilename = getCurrentFileInfo(origin.absolutePath(), origin.fileName(), QDir::Files).fileName().toUtf8();
 
                 if (!originFilename.isEmpty())
                 {
-                    QByteArray fileName = fileIt.value().second.first;
-                    fileName.remove(0, fileName.lastIndexOf("/") + 1);
-
                     // Aborts the copy operation if the origin path and the path on a disk have different cases
                     if (originFilename.compare(fileName, Qt::CaseSensitive) != 0)
                     {
