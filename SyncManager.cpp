@@ -388,11 +388,17 @@ SyncManager::removeFileData
 */
 void SyncManager::removeFileData()
 {
-    QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME);
+    QDirIterator it(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/", {"*.db"}, QDir::Files);
+
+    while (it.hasNext())
+    {
+        it.next();
+        QFile::remove(it.filePath());
+    }
 
     for (auto &profile : m_profiles)
         for (auto &folder : profile.folders)
-            removeFileData(folder);
+            QDir(folder.path + DATA_FOLDER_PATH).removeRecursively();
 }
 
 /*
@@ -405,7 +411,7 @@ void SyncManager::removeFileData(const SyncFolder &folder)
     if (databaseLocation() == Decentralized)
     {
         QByteArray path = QByteArray::number(hash64(folder.path));
-        QFile::remove(path);
+        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + path + ".db");
     }
     else
     {
