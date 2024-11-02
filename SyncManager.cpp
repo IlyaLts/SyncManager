@@ -423,7 +423,8 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
     qsizetype size = folder.files.size();
 
     // File data
-    stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size));
+    if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
+        return;
 
     for (auto fileIt = folder.files.begin(); fileIt != folder.files.end(); fileIt++)
     {
@@ -443,12 +444,15 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
         p += sizeof(qint8);
         *reinterpret_cast<Attributes *>(p) = fileIt->attributes;
 
-        stream.writeRawData(&buf[0], bufSize);
+        if (stream.writeRawData(&buf[0], bufSize) != bufSize)
+            return;
     }
 
     // Folders to rename
     size = folder.foldersToRename.size();
-    stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size));
+    
+    if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
+        return;
 
     for (const auto &fileIt : folder.foldersToRename)
     {
@@ -459,7 +463,9 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     // Files to move
     size = folder.filesToMove.size();
-    stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size));
+    
+    if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
+        return;
 
     for (const auto &fileIt : folder.filesToMove)
     {
@@ -470,7 +476,8 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     // Folders to create
     size = folder.foldersToCreate.size();
-    stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size));
+    if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
+        return;
 
     for (const auto &fileIt : folder.foldersToCreate)
     {
@@ -480,7 +487,9 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     // Files to copy
     size = folder.filesToCopy.size();
-    stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size));
+    
+    if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
+        return;
 
     for (const auto &fileIt : folder.filesToCopy)
     {
@@ -491,14 +500,18 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     // Folders to remove
     size = folder.foldersToRemove.size();
-    stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size));
+    
+    if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
+        return;
 
     for (const auto &path : folder.foldersToRemove)
         stream << path;
 
     // Files to remove
     size = folder.filesToRemove.size();
-    stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size));
+    
+    if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
+        return;
 
     for (const auto &path : folder.filesToRemove)
         stream << path;
