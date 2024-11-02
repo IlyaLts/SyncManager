@@ -426,7 +426,11 @@ SyncManager::saveToFileData
 */
 void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) const
 {
+    short version = DATABASE_VERSION;
     qsizetype size = folder.files.size();
+
+    if (stream.writeRawData(reinterpret_cast<char *>(&version), sizeof(version)) != sizeof(version))
+        return;
 
     // File data
     if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
@@ -456,7 +460,7 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     // Folders to rename
     size = folder.foldersToRename.size();
-    
+
     if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
         return;
 
@@ -469,7 +473,7 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     // Files to move
     size = folder.filesToMove.size();
-    
+
     if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
         return;
 
@@ -493,7 +497,7 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     // Files to copy
     size = folder.filesToCopy.size();
-    
+
     if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
         return;
 
@@ -506,7 +510,7 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     // Folders to remove
     size = folder.foldersToRemove.size();
-    
+
     if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
         return;
 
@@ -515,7 +519,7 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     // Files to remove
     size = folder.filesToRemove.size();
-    
+
     if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
         return;
 
@@ -532,7 +536,14 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream)
 {
     SET_TIME(startTime);
 
+    short version;
     qsizetype numOfFiles;
+
+    if (stream.readRawData(reinterpret_cast<char *>(&version), sizeof(version)) != sizeof(version))
+        return;
+
+    if (version != DATABASE_VERSION)
+        return;
 
     if (stream.readRawData(reinterpret_cast<char *>(&numOfFiles), sizeof(numOfFiles)) != sizeof(numOfFiles))
         return;

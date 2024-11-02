@@ -90,9 +90,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
 
-    if (!manager.saveDatabaseEnabled() || fileDataOutdated)
-        manager.removeFileData();
-
     setupMenus();
     readSettings();
     retranslate();
@@ -100,6 +97,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     setDatabaseLocation(manager.databaseLocation());
     updateSyncTime();
     updateStatus();
+
+    if (!manager.saveDatabaseEnabled() || fileDataOutdated)
+        manager.removeFileData();
 
     updateTimer.setSingleShot(true);
     appInitiated = true;
@@ -1474,7 +1474,7 @@ void MainWindow::readSettings()
 
     showInTray = settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool();
     language = static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt());
-    fileDataOutdated = settings.value("AppVersion").toString().compare("1.8") < 0;
+    fileDataOutdated = settings.value("AppVersion").toString().compare("1.9.2") < 0;
 
     for (int i = 0; i < manager.profiles().size(); i++)
     {

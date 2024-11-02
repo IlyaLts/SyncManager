@@ -33,6 +33,7 @@
 
 #define DATA_FOLDER_PATH        ".SyncManager"
 #define DATABASE_FILENAME       "db"
+#define DATABASE_VERSION        1
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_COOLDOWN   300000
 #define MOVED_FILES_MIN_SIZE    0
