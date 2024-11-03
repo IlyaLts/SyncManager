@@ -1401,7 +1401,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 pathToNewFile.append(profile.getFilePath(newFileIt.key()));
 
                 otherFolderIt->files[movedFileHash].lockedFlag = SyncFile::Locked;
-                QByteArray path = profile.getFilePath(movedFileHash);
+                QByteArray path = profile.getFilePath(newFileIt.key());
                 otherFolderIt->filesToMove.insert(movedFileHash, QPair<QByteArray, QPair<QByteArray, Attributes>>(path, QPair<QByteArray, Attributes>(pathToMove, getFileAttributes(pathToNewFile))));
 
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
