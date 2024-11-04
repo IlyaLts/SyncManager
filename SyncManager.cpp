@@ -438,7 +438,7 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 
     for (auto fileIt = folder.files.begin(); fileIt != folder.files.end(); fileIt++)
     {
-        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(SyncFile::Type) + sizeof(qint8) + sizeof(Attributes);
+        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(SyncFile::Type) + sizeof(SyncFile::LockedFlag) + sizeof(qint8) + sizeof(Attributes);
         char buf[bufSize];
         char *p = buf;
 
@@ -450,6 +450,8 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
         p += sizeof(qint64);
         *reinterpret_cast<SyncFile::Type *>(p) = fileIt->type;
         p += sizeof(SyncFile::Type);
+        *reinterpret_cast<SyncFile::LockedFlag *>(p) = fileIt->lockedFlag;
+        p += sizeof(SyncFile::LockedFlag);
         *reinterpret_cast<qint8 *>(p) = fileIt->flags;
         p += sizeof(qint8);
         *reinterpret_cast<Attributes *>(p) = fileIt->attributes;
@@ -553,7 +555,7 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream)
     // File data
     for (qsizetype i = 0; i < numOfFiles; i++)
     {
-        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(SyncFile::Type) + sizeof(qint8) + sizeof(Attributes);
+        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(SyncFile::Type) + sizeof(SyncFile::LockedFlag) + sizeof(qint8) + sizeof(Attributes);
         char buf[bufSize];
 
         if (stream.readRawData(&buf[0], bufSize) != bufSize)
@@ -564,6 +566,7 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream)
         QDateTime date;
         qint64 size;
         SyncFile::Type type;
+        SyncFile::LockedFlag lockedFlag;
         qint8 flags;
         Attributes attributes;
 
@@ -575,12 +578,15 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream)
         p += sizeof(qint64);
         type = *reinterpret_cast<SyncFile::Type *>(p);
         p += sizeof(SyncFile::Type);
+        lockedFlag = *reinterpret_cast<SyncFile::LockedFlag *>(p);
+        p += sizeof(SyncFile::LockedFlag);
         flags = *reinterpret_cast<qint8 *>(p);
         p += sizeof(qint8);
         attributes = *reinterpret_cast<Attributes *>(p);
 
         const auto it = folder.files.insert(hash, SyncFile(type, date, flags | SyncFile::OnRestore));
         it->size = size;
+        it->lockedFlag = lockedFlag;
         it->attributes = attributes;
     }
 
@@ -865,7 +871,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
     for (auto &folder : profile.folders)
     {
-        if (!folder.filesToMove.empty() && !folder.foldersToRename.empty())
+        if (!folder.filesToMove.empty() || !folder.foldersToRename.empty())
         {
             shouldReset = false;
             break;
