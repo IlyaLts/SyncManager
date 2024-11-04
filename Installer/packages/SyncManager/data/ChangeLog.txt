@@ -1,4 +1,10 @@
 ==========================
+1.9.3 - Nov 4, 2024
+==========================
+- Fixed broken detection of moved/renamed files.
+- Fixed the issue where moved/renamed files were copied if the app failed to move or rename them during the first synchronization.
+
+==========================
 1.9.2 - Nov 2, 2024
 ==========================
 - Fixed detection of renamed/moved folders and files, which wasn't working for files whose names resemble a wildcard (?*[]).
