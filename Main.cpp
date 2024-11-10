@@ -17,6 +17,7 @@
 ===============================================================================
 */
 
+#include "Application.h"
 #include "MainWindow.h"
 #include <QApplication>
 #include <QStyleFactory>
@@ -25,7 +26,6 @@
 #include <QStandardPaths>
 #include <QSharedMemory>
 #include <QMessageBox>
-#include <QFile>
 
 /*
 ===================
@@ -35,7 +35,7 @@ main
 int main(int argc, char *argv[])
 {
     Q_INIT_RESOURCE(SyncManager);
-    QApplication app(argc, argv);
+    Application app(argc, argv);
     QSharedMemory sharedMemory("SyncManagerRunning");
 
     // If the app crashes on Linux, the shared memory segment survives the crash,
@@ -49,12 +49,11 @@ int main(int argc, char *argv[])
     {
         QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat).clear();
         QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
-        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + DATABASE_FILENAME);
     }
 
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     QLocale::Language systemLanguage = QLocale::system().language();
-    setTranslator(static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt()));
+    dynamic_cast<Application *>(qApp)->setTranslator(static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt()));
 
     // Prevention of multiple instances
     if (!sharedMemory.create(1))
@@ -65,11 +64,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    MainWindow window;
-
     if (QCoreApplication::arguments().contains("launchOnStartup", Qt::CaseInsensitive))
-        window.setLaunchOnStartup(true);
+        app.setLaunchOnStartup(true);
 
+    MainWindow window;
     window.show();
     return app.exec();
 }

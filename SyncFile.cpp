@@ -27,7 +27,7 @@ SyncFile::isOlder
 */
 bool SyncFile::isOlder(const SyncFile &other) const
 {
-    // Has the file type or if both file types are different
+    // Must have the file type, or both file types must be different
     if (type != SyncFile::File && type == other.type)
         return false;
 

@@ -17,6 +17,7 @@
 ===============================================================================
 */
 
+#include "Application.h"
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include "DecoratedStringListModel.h"
@@ -159,64 +160,6 @@ void MainWindow::setTrayVisible(bool visible)
 
 /*
 ===================
-MainWindow::setLaunchOnStartup
-===================
-*/
-void MainWindow::setLaunchOnStartup(bool enable)
-{
-    QString path;
-
-    launchOnStartupAction->setChecked(enable);
-
-#ifdef Q_OS_WIN
-    path = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk";
-#elif defined(Q_OS_LINUX)
-    path = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop";
-#endif
-
-    if (enable)
-    {
-#ifdef Q_OS_WIN
-        QFile::link(QCoreApplication::applicationFilePath(), path);
-#elif defined(Q_OS_LINUX)
-
-        // Creates autostart folder if it doesn't exist
-        QDir().mkdir(QFileInfo(path).path());
-
-        QFile::remove(path);
-        QFile shortcut(path);
-        if (shortcut.open(QIODevice::WriteOnly))
-        {
-            QTextStream stream(&shortcut);
-            stream << "[Desktop Entry]\n";
-            stream << "Type=Application\n";
-
-            if (QFileInfo::exists(QFileInfo(QCoreApplication::applicationDirPath()).path() + "/SyncManager.sh"))
-                stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager.sh\n";
-            else
-                stream << "Exec=" + QCoreApplication::applicationDirPath() + "/SyncManager\n";
-
-            stream << "Hidden=false\n";
-            stream << "NoDisplay=false\n";
-            stream << "Terminal=false\n";
-            stream << "Name=Sync Manager\n";
-            stream << "Icon=" + QCoreApplication::applicationDirPath() + "/SyncManager.png\n";
-        }
-
-        // Somehow doesn't work on Linux
-        //QFile::link(QCoreApplication::applicationFilePath(), path);
-#endif
-    }
-    else
-    {
-        QFile::remove(path);
-    }
-
-    saveSettings();
-}
-
-/*
-===================
 MainWindow::closeEvent
 ===================
 */
@@ -288,17 +231,10 @@ void MainWindow::setupMenus()
     saveDatabaseAction = new QAction(tr("&Save Files Data (Requires disk space)"), this);
     saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
-    chineseAction = new QAction(tr("&Chinese"), this);
-    englishAction = new QAction(tr("&English"), this);
-    frenchAction = new QAction(tr("&French"), this);
-    germanAction = new QAction(tr("&German"), this);
-    hindiAction = new QAction(tr("&Hindi"), this);
-    italianAction = new QAction(tr("&Italian"), this);
-    japaneseAction = new QAction(tr("&Japanese"), this);
-    portugueseAction = new QAction(tr("&Portuguese"), this);
-    russianAction = new QAction(tr("&Russian"), this);
-    spanishAction = new QAction(tr("&Spanish"), this);
-    ukrainianAction = new QAction(tr("&Ukrainian"), this);
+
+    for (int i = 0; i < languageCount(); i++)
+        languageActions.append(new QAction(tr(languages[i].name), this));
+
     versioningAction = new QAction(tr("&Versioning"), this);
     deletePermanentlyAction = new QAction(tr("&Delete Files Permanently"), this);
     launchOnStartupAction = new QAction(tr("&Launch on Startup"), this);
@@ -322,17 +258,10 @@ void MainWindow::setupMenus()
     saveDatabaseAction->setCheckable(true);
     saveDatabaseLocallyAction->setCheckable(true);
     saveDatabaseDecentralizedAction->setCheckable(true);
-    chineseAction->setCheckable(true);
-    englishAction->setCheckable(true);
-    frenchAction->setCheckable(true);
-    germanAction->setCheckable(true);
-    hindiAction->setCheckable(true);
-    italianAction->setCheckable(true);
-    japaneseAction->setCheckable(true);
-    portugueseAction->setCheckable(true);
-    russianAction->setCheckable(true);
-    spanishAction->setCheckable(true);
-    ukrainianAction->setCheckable(true);
+
+    for (int i = 0; i < languageCount(); i++)
+        languageActions[i]->setCheckable(true);
+
     launchOnStartupAction->setCheckable(true);
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
@@ -360,17 +289,9 @@ void MainWindow::setupMenus()
     deletionModeMenu->addAction(deletePermanentlyAction);
 
     languageMenu = new UnhidableMenu(tr("&Language"), this);
-    languageMenu->addAction(chineseAction);
-    languageMenu->addAction(englishAction);
-    languageMenu->addAction(frenchAction);
-    languageMenu->addAction(germanAction);
-    languageMenu->addAction(hindiAction);
-    languageMenu->addAction(italianAction);
-    languageMenu->addAction(japaneseAction);
-    languageMenu->addAction(portugueseAction);
-    languageMenu->addAction(russianAction);
-    languageMenu->addAction(spanishAction);
-    languageMenu->addAction(ukrainianAction);
+
+    for (int i = 0; i < languageCount(); i++)
+        languageMenu->addAction(languageActions[i]);
 
     databaseLocationMenu = new UnhidableMenu(tr("&Database Location"), this);
     databaseLocationMenu->addAction(saveDatabaseLocallyAction);
@@ -430,17 +351,8 @@ void MainWindow::setupMenus()
     connect(saveDatabaseLocallyAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Locally));
     connect(saveDatabaseDecentralizedAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Decentralized));
 
-    connect(chineseAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Chinese));
-    connect(englishAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::English));
-    connect(frenchAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::French));
-    connect(germanAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::German));
-    connect(hindiAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Hindi));
-    connect(italianAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Italian));
-    connect(japaneseAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Japanese));
-    connect(portugueseAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Portuguese));
-    connect(russianAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Russian));
-    connect(spanishAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Spanish));
-    connect(ukrainianAction, &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, QLocale::Ukrainian));
+    for (int i = 0; i < languageCount(); i++)
+        connect(languageActions[i], &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, languages[i].language));
 
     connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
     connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
@@ -959,19 +871,10 @@ MainWindow::switchLanguage
 */
 void MainWindow::switchLanguage(QLocale::Language language)
 {
-    chineseAction->setChecked(language == QLocale::Chinese);
-    englishAction->setChecked(language == QLocale::English);
-    frenchAction->setChecked(language == QLocale::French);
-    germanAction->setChecked(language == QLocale::German);
-    hindiAction->setChecked(language == QLocale::Hindi);
-    italianAction->setChecked(language == QLocale::Italian);
-    japaneseAction->setChecked(language == QLocale::Japanese);
-    portugueseAction->setChecked(language == QLocale::Portuguese);
-    russianAction->setChecked(language == QLocale::Russian);
-    spanishAction->setChecked(language == QLocale::Spanish);
-    ukrainianAction->setChecked(language == QLocale::Ukrainian);
+    for (int i = 0; i < languageCount(); i++)
+        languageActions[i]->setChecked(language == languages[i].language);
 
-    setTranslator(language);
+    dynamic_cast<Application *>(qApp)->setTranslator(language);
     this->language = language;
     retranslate();
 }
@@ -983,7 +886,8 @@ MainWindow::launchOnStartup
 */
 void MainWindow::toggleLaunchOnStartup()
 {
-    setLaunchOnStartup(launchOnStartupAction->isChecked());
+    launchOnStartupAction->setChecked(!launchOnStartupAction->isChecked());
+    dynamic_cast<Application *>(qApp)->setLaunchOnStartup(launchOnStartupAction->isChecked());
     saveSettings();
 }
 
@@ -1107,7 +1011,8 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             }
             else if (!manager.profiles()[i].lastSyncDate.isNull())
             {
-                QString lastSync = QString(tr("Last synchronization: %1.")).arg(currentLocale.toString(profile->lastSyncDate, dateFormat));
+                QString time(dynamic_cast<Application *>(qApp)->locale.toString(profile->lastSyncDate, dateFormat));
+                QString lastSync = QString(tr("Last synchronization: %1.")).arg(time);
                 profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
             }
             else
@@ -1125,7 +1030,8 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
                     }
                     else if (!folder.lastSyncDate.isNull())
                     {
-                        QString lastSync = QString("Last synchronization: %1.").arg(currentLocale.toString(folder.lastSyncDate, dateFormat));
+                        QString time(dynamic_cast<Application *>(qApp)->locale.toString(folder.lastSyncDate, dateFormat));
+                        QString lastSync = QString("Last synchronization: %1.").arg(time);
                         folderModel->setData(folderModel->index(j, 0), lastSync, Qt::ToolTipRole);
                     }
                     else
@@ -1622,17 +1528,10 @@ void MainWindow::retranslate()
     saveDatabaseAction->setText(tr("&Save Files Data  (Requires disk space)"));
     saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
     saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
-    chineseAction->setText(tr("&Chinese"));
-    englishAction->setText(tr("&English"));
-    frenchAction->setText(tr("&French"));
-    germanAction->setText(tr("&German"));
-    hindiAction->setText(tr("&Hindi"));
-    italianAction->setText(tr("&Italian"));
-    japaneseAction->setText(tr("&Japanese"));
-    portugueseAction->setText(tr("&Portuguese"));
-    russianAction->setText(tr("&Russian"));
-    spanishAction->setText(tr("&Spanish"));
-    ukrainianAction->setText(tr("&Ukrainian"));
+
+    for (int i = 0; i < languageCount(); i++)
+        languageActions[i]->setText(tr(languages[i].name));
+
     versioningAction->setText(tr("&Versioning"));
     deletePermanentlyAction->setText(tr("&Delete Files Permanently"));
     launchOnStartupAction->setText(tr("&Launch on Startup"));

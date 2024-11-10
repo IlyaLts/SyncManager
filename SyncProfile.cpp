@@ -46,13 +46,15 @@ SyncProfile::addFilePath
 */
 void SyncProfile::addFilePath(hash64_t hash, const QByteArray &path)
 {
+    mutex.lock();
+
     if (!filePaths.contains(Hash(hash)))
     {
-        mutex.lock();
         auto it = filePaths.insert(Hash(hash), path);
         it->squeeze();
-        mutex.unlock();
     }
+
+    mutex.unlock();
 }
 
 /*

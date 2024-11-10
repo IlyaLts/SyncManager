@@ -36,13 +36,30 @@ class SyncFile;
 
 using hash64_t = quint64;
 
+#ifdef Q_OS_WIN
+using Attributes = qint32;
+#else
+using Attributes = quint32;
+#endif
+
+struct Language
+{
+    QLocale::Language language;
+    QLocale::Country country;
+    const char *path;
+    const char *name;
+};
+
+extern Language defaultLanguage;
+extern Language languages[];
+
 struct Hash
 {
     Hash(){}
-    Hash(hash64_t hash) {data = hash;}
-    Hash(const Hash &other) {data = other.data;}
+    Hash(hash64_t hash) { data = hash; }
+    Hash(const Hash &other) { data = other.data; }
 
-    bool operator ==(const Hash &other) const {return data == other.data;}
+    bool operator ==(const Hash &other) const { return data == other.data; }
 
     hash64_t data;
 };
@@ -56,15 +73,6 @@ Q_DECL_CONST_FUNCTION inline size_t qHash(const Hash &key, size_t seed = 0) noex
     return qHash(key.data, seed);
 #endif
 }
-
-#ifdef Q_OS_WIN
-using Attributes = qint32;
-#else
-using Attributes = quint32;
-#endif
-
-extern QTranslator currentTranslator;
-extern QLocale currentLocale;
 
 #ifdef DEBUG
 #include <chrono>
@@ -83,10 +91,10 @@ extern std::chrono::high_resolution_clock::time_point startTime;
 
 #endif // DEBUG
 
+int languageCount();
 hash64_t hash64(const QByteArray &str);
 void removeSimilarFiles(QHash<Hash, SyncFile *> &files);
 QFileInfo getCurrentFileInfo(const QString &path, const QString &name, QDir::Filters filters = QDir::NoFilter);
-void setTranslator(QLocale::Language language);
 bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent = nullptr);
 
 Attributes getFileAttributes(const QString &path);

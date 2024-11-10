@@ -60,7 +60,6 @@ public Q_SLOTS:
 
     void show();
     void setTrayVisible(bool visible);
-    void setLaunchOnStartup(bool enable);
 
 protected:
 
@@ -143,17 +142,7 @@ private:
     QAction *saveDatabaseAction;
     QAction *saveDatabaseLocallyAction;
     QAction *saveDatabaseDecentralizedAction;
-    QAction *chineseAction;
-    QAction *englishAction;
-    QAction *frenchAction;
-    QAction *germanAction;
-    QAction *hindiAction;
-    QAction *italianAction;
-    QAction *japaneseAction;
-    QAction *portugueseAction;
-    QAction *russianAction;
-    QAction *spanishAction;
-    QAction *ukrainianAction;
+    QList<QAction *> languageActions;
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
     QAction *disableNotificationAction;

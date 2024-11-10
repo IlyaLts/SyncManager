@@ -584,7 +584,7 @@ void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream)
         p += sizeof(qint8);
         attributes = *reinterpret_cast<Attributes *>(p);
 
-        const auto it = folder.files.insert(hash, SyncFile(type, date, flags | SyncFile::OnRestore));
+        const auto it = folder.files.insert(hash, SyncFile(type, date, flags));
         it->size = size;
         it->lockedFlag = lockedFlag;
         it->attributes = attributes;
@@ -909,16 +909,6 @@ SyncManager::getListOfFiles
 int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const QList<QByteArray> &excludeList)
 {
     int totalNumOfFiles = 0;
-
-    // Resets file states
-    for (auto &file : folder.files)
-    {
-        file.setExists(false);
-        file.setUpdated(file.onRestore() ? file.updated() : false);     // Keeps value if it was loaded from saved file data
-        file.setOnRestore(false);
-        file.setNewlyAdded(false);
-    }
-
     QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
     while (dir.hasNext())

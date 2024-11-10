@@ -43,7 +43,7 @@ void SyncFolder::clearData()
 ===================
 SyncFolder::removeInvalidFileData
 
-If a file doesn't have a path for some reason, then that means that the file doesn't exist at all.
+If a file doesn't have a path, then that means that the file doesn't exist at all.
 So, it is better to remove it from the database to prevent further synchronization issues.
 ===================
 */
