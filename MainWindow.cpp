@@ -132,13 +132,13 @@ void MainWindow::show()
     if (QSystemTrayIcon::isSystemTrayAvailable() && showInTray)
     {
         trayIcon->show();
-        qApp->setQuitOnLastWindowClosed(false);
+        syncApp->setQuitOnLastWindowClosed(false);
     }
     else
     {
         QMainWindow::show();
         trayIcon->hide();
-        qApp->setQuitOnLastWindowClosed(true);
+        syncApp->setQuitOnLastWindowClosed(true);
     }
 }
 
@@ -225,8 +225,8 @@ void MainWindow::setupMenus()
     automaticAction = new QAction(tr("&Automatic"), this);
     manualAction = new QAction(tr("&Manual"), this);
     increaseSyncTimeAction = new QAction(tr("&Increase"), this);
-    syncingTimeAction = new QAction(tr("Synchronize Every:"), this);
-    nextSynchronizationAction = new QAction(tr("Next Synchronization:"), this);
+    syncingTimeAction = new QAction(tr("Synchronize Every: "), this);
+    nextSynchronizationAction = new QAction(tr("Next Synchronization: "), this);
     decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
     moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
     saveDatabaseAction = new QAction(tr("&Save Files Data (Requires disk space)"), this);
@@ -737,7 +737,7 @@ void MainWindow::quit()
         (manager.isBusy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, this)))
     {
         manager.shouldQuit();
-        qApp->quit();
+        syncApp->quit();
     }
 }
 
@@ -877,7 +877,7 @@ void MainWindow::switchLanguage(QLocale::Language language)
     for (int i = 0; i < languageCount(); i++)
         languageActions[i]->setChecked(language == languages[i].language);
 
-    dynamic_cast<Application *>(qApp)->setTranslator(language);
+    syncApp->setTranslator(language);
     this->language = language;
     retranslate();
 }
@@ -890,7 +890,7 @@ MainWindow::launchOnStartup
 void MainWindow::toggleLaunchOnStartup()
 {
     launchOnStartupAction->setChecked(!launchOnStartupAction->isChecked());
-    dynamic_cast<Application *>(qApp)->setLaunchOnStartup(launchOnStartupAction->isChecked());
+    syncApp->setLaunchOnStartup(launchOnStartupAction->isChecked());
     saveSettings();
 }
 
@@ -987,10 +987,11 @@ void MainWindow::updateSyncTime()
     else if (seconds)
         str.append(QString(tr("%1 seconds")).arg(seconds));
 
+
     QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
     QDateTime dateTime = QDateTime::currentDateTime();
     dateTime += manager.syncTimer().remainingTimeAsDuration();
-    str2.append(dateTime.toString(dateFormat));
+    str2.append(syncApp->locale.toString(dateTime, dateFormat));
 
     syncingTimeAction->setText(str);
     nextSynchronizationAction->setText(str2);
@@ -1021,7 +1022,7 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             }
             else if (!manager.profiles()[i].lastSyncDate.isNull())
             {
-                QString time(dynamic_cast<Application *>(qApp)->locale.toString(profile->lastSyncDate, dateFormat));
+                QString time(syncApp->locale.toString(profile->lastSyncDate, dateFormat));
                 QString lastSync = QString(tr("Last synchronization: %1.")).arg(time);
                 profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
             }
@@ -1040,7 +1041,7 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
                     }
                     else if (!folder.lastSyncDate.isNull())
                     {
-                        QString time(dynamic_cast<Application *>(qApp)->locale.toString(folder.lastSyncDate, dateFormat));
+                        QString time(syncApp->locale.toString(folder.lastSyncDate, dateFormat));
                         QString lastSync = QString("Last synchronization: %1.").arg(time);
                         folderModel->setData(folderModel->index(j, 0), lastSync, Qt::ToolTipRole);
                     }

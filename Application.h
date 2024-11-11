@@ -23,6 +23,8 @@
 #include <QApplication>
 #include <QTranslator>
 
+#define syncApp (static_cast<Application *>(QCoreApplication::instance()))
+
 class Application : public QApplication
 {
 public:
