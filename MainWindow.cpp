@@ -226,6 +226,7 @@ void MainWindow::setupMenus()
     manualAction = new QAction(tr("&Manual"), this);
     increaseSyncTimeAction = new QAction(tr("&Increase"), this);
     syncingTimeAction = new QAction(tr("Synchronize Every:"), this);
+    nextSynchronizationAction = new QAction(tr("Next Synchronization:"), this);
     decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
     moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
     saveDatabaseAction = new QAction(tr("&Save Files Data (Requires disk space)"), this);
@@ -247,6 +248,7 @@ void MainWindow::setupMenus()
     version = new QAction(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION), this);
 
     syncingTimeAction->setDisabled(true);
+    nextSynchronizationAction->setDisabled(true);
     decreaseSyncTimeAction->setDisabled(manager.syncTimeMultiplier() <= 1);
     version->setDisabled(true);
 
@@ -281,6 +283,7 @@ void MainWindow::setupMenus()
     syncingTimeMenu = new UnhidableMenu(tr("&Syncing Time"), this);
     syncingTimeMenu->addAction(increaseSyncTimeAction);
     syncingTimeMenu->addAction(syncingTimeAction);
+    syncingTimeMenu->addAction(nextSynchronizationAction);
     syncingTimeMenu->addAction(decreaseSyncTimeAction);
 
     deletionModeMenu = new UnhidableMenu(tr("&Deletion Mode"), this);
@@ -973,6 +976,7 @@ void MainWindow::updateSyncTime()
     int days = (manager.syncEvery() / 1000 / 60 / 60 / 24);
 
     QString str(tr("Synchronize Every: "));
+    QString str2(tr("Next Synchronization: "));
 
     if (days)
         str.append(QString(tr("%1 days")).arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
@@ -983,7 +987,13 @@ void MainWindow::updateSyncTime()
     else if (seconds)
         str.append(QString(tr("%1 seconds")).arg(seconds));
 
+    QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
+    QDateTime dateTime = QDateTime::currentDateTime();
+    dateTime += manager.syncTimer().remainingTimeAsDuration();
+    str2.append(dateTime.toString(dateFormat));
+
     syncingTimeAction->setText(str);
+    nextSynchronizationAction->setText(str2);
 }
 
 /*

@@ -135,6 +135,7 @@ private:
     QAction *manualAction;
     QAction *increaseSyncTimeAction;
     QAction *syncingTimeAction;
+    QAction *nextSynchronizationAction;
     QAction *decreaseSyncTimeAction;
     QAction *moveToTrashAction;
     QAction *versioningAction;
