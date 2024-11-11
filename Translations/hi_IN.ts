@@ -56,6 +56,10 @@
             <translation>हर बार सिंक्रोनाइज करें: </translation>
         </message>
         <message>
+            <source>Next Synchronization: </source>
+            <translation>अगली सिंक्रनाइज़ेशन: </translation>
+        </message>
+        <message>
             <source>&amp;Decrease</source>
             <translation>&amp;कमी</translation>
         </message>

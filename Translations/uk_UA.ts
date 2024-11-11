@@ -56,6 +56,10 @@
             <translation>Синхронізувати кожні: </translation>
         </message>
         <message>
+            <source>Next Synchronization: </source>
+            <translation>Наступна синхронізація: </translation>
+        </message>
+        <message>
             <source>&amp;Decrease</source>
             <translation>&amp;Зменшити</translation>
         </message>

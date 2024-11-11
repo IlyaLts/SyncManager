@@ -56,6 +56,10 @@
             <translation>毎回同期: </translation>
         </message>
         <message>
+            <source>Next Synchronization: </source>
+            <translation>次の同期: </translation>
+        </message>
+        <message>
             <source>&amp;Decrease</source>
             <translation>&amp;減少</translation>
         </message>

@@ -56,6 +56,10 @@
             <translation>Synchroniser toutes les : </translation>
         </message>
         <message>
+            <source>Next Synchronization: </source>
+            <translation>Prochaine synchronisation : </translation>
+        </message>
+        <message>
             <source>&amp;Decrease</source>
             <translation>&amp;Réduire</translation>
         </message>

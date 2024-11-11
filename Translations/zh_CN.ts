@@ -56,6 +56,10 @@
             <translation>每隔： </translation>
         </message>
         <message>
+            <source>Next Synchronization: </source>
+            <translation>下一次同步: </translation>
+        </message>
+        <message>
             <source>&amp;Decrease</source>
             <translation>&amp;减少</translation>
         </message>
