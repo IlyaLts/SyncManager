@@ -41,6 +41,49 @@ void SyncProfile::operator =(const SyncProfile &other)
 
 /*
 ===================
+SyncProfile::resetLocks
+===================
+*/
+bool SyncProfile::resetLocks()
+{
+    bool databaseChanged = false;
+
+    for (auto &folder : folders)
+    {
+        for (QHash<Hash, SyncFile>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end(); ++fileIt)
+        {
+            if (fileIt->lockedFlag == SyncFile::Unlocked)
+                continue;
+
+            bool shouldReset = true;
+
+            for (auto &otherFolder : folders)
+            {
+                if (!otherFolder.filesToMove.empty() || !otherFolder.foldersToRename.empty())
+                {
+                    shouldReset = false;
+                    break;
+                }
+            }
+
+            if (shouldReset)
+            {
+                databaseChanged = true;
+
+                for (auto &folder : folders)
+                {
+                    if (folder.files.contains(fileIt.key()))
+                        folder.files[fileIt.key()].lockedFlag = SyncFile::Unlocked;
+                }
+            }
+        }
+    }
+
+    return databaseChanged;
+}
+
+/*
+===================
 SyncProfile::addFilePath
 ===================
 */

@@ -843,6 +843,9 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             for (auto &folder : profile.folders)
                 folder.removeInvalidFileData(profile);
 
+            if (profile.resetLocks())
+                m_databaseChanged = true;
+
             if (m_saveDatabase)
             {
                 if (m_databaseChanged)
@@ -865,25 +868,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         folder.optimizeMemoryUsage();
 
     profile.clearFilePaths();
-
-    // Resets locked flag after finishing files moving & folder renaming
-    bool shouldReset = true;
-
-    for (auto &folder : profile.folders)
-    {
-        if (!folder.filesToMove.empty() || !folder.foldersToRename.empty())
-        {
-            shouldReset = false;
-            break;
-        }
-    }
-
-    if (shouldReset)
-    {
-        for (auto &folder : profile.folders)
-            for (auto &file : folder.files)
-                file.lockedFlag = SyncFile::Unlocked;
-    }
 
     // Last sync date update
     profile.lastSyncDate = QDateTime::currentDateTime();
@@ -909,6 +893,7 @@ SyncManager::getListOfFiles
 int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const QList<QByteArray> &excludeList)
 {
     int totalNumOfFiles = 0;
+
     QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
     while (dir.hasNext())

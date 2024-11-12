@@ -43,6 +43,7 @@ public:
 
     void operator =(const SyncProfile &other);
 
+    bool resetLocks();
     void addFilePath(hash64_t hash, const QByteArray &path);
     inline void clearFilePaths() { filePaths.clear(); }
 
