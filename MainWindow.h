@@ -26,7 +26,7 @@
 #include <QTimer>
 #include <QMovie>
 
-#define SYNCMANAGER_VERSION     "1.9.3"
+#define SYNCMANAGER_VERSION     "1.9.4"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
 #define UPDATE_DELAY            40

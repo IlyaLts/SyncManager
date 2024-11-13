@@ -1,4 +1,10 @@
 ==========================
+1.9.4 - Nov 13, 2024
+==========================
+- Added the next synchronization info to menu.
+- Fixed new files not being synchronized after renaming or moving.
+
+==========================
 1.9.3 - Nov 4, 2024
 ==========================
 - Fixed broken detection of moved/renamed files.
