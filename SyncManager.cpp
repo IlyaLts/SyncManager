@@ -893,8 +893,10 @@ SyncManager::getListOfFiles
 int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const QList<QByteArray> &excludeList)
 {
     int totalNumOfFiles = 0;
-
     QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+
+    for (auto &file : folder.files)
+        file.flags = 0;
 
     while (dir.hasNext())
     {
