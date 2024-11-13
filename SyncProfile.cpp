@@ -46,6 +46,28 @@ SyncProfile::resetLocks
 */
 bool SyncProfile::resetLocks()
 {
+    for (auto &folder : folders)
+        if (!folder.filesToMove.empty() || !folder.foldersToRename.empty())
+            return false;
+
+    for (auto &folder : folders)
+    {
+        for (QHash<Hash, SyncFile>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end(); ++fileIt)
+        {
+            if (fileIt->lockedFlag == SyncFile::Unlocked)
+                continue;
+
+            for (auto &folder : folders)
+            {
+                if (folder.files.contains(fileIt.key()))
+                    folder.files[fileIt.key()].lockedFlag = SyncFile::Unlocked;
+            }
+        }
+    }
+
+    return true;
+
+    /*
     bool databaseChanged = false;
 
     for (auto &folder : folders)
@@ -59,7 +81,8 @@ bool SyncProfile::resetLocks()
 
             for (auto &otherFolder : folders)
             {
-                if (!otherFolder.filesToMove.empty() || !otherFolder.foldersToRename.empty())
+                if ((fileIt->type == SyncFile::File && otherFolder.filesToMove.contains(fileIt.key())) ||
+                    (fileIt->type == SyncFile::Folder && otherFolder.foldersToRename.contains(fileIt.key())))
                 {
                     shouldReset = false;
                     break;
@@ -79,7 +102,7 @@ bool SyncProfile::resetLocks()
         }
     }
 
-    return databaseChanged;
+    return databaseChanged;*/
 }
 
 /*
