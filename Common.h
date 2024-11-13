@@ -98,7 +98,7 @@ QFileInfo getCurrentFileInfo(const QString &path, const QString &name, QDir::Fil
 bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent = nullptr);
 
 Attributes getFileAttributes(const QString &path);
-void setFileAttribute(const QString &path, Attributes attributes);
+bool setFileAttribute(const QString &path, Attributes attributes);
 void setHiddenFileAttribute(const QString &path, bool hidden);
 
 #ifndef Q_OS_WIN

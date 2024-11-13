@@ -234,12 +234,12 @@ Attributes getFileAttributes(const QString &path)
 setFileAttribute
 ===================
 */
-void setFileAttribute(const QString &path, Attributes attributes)
+bool setFileAttribute(const QString &path, Attributes attributes)
 {
 #ifdef Q_OS_WIN
-    SetFileAttributesW(path.toStdWString().c_str(), attributes);
+    return SetFileAttributesW(path.toStdWString().c_str(), attributes);
 #else
-    chmod(path.toLatin1(), attributes);
+    return chmod(path.toLatin1(), attributes) == 0;
 #endif
 }
 

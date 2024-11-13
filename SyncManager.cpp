@@ -295,14 +295,8 @@ void SyncManager::saveFileDataLocally(const SyncProfile &profile) const
         if (!folder.isActive() || folder.toBeRemoved)
             continue;
 
-        QByteArray path(QByteArray::number(hash64(folder.path)));
-
-        QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + path + ".db");
-        if (!data.open(QIODevice::WriteOnly))
-            continue;
-
-        QDataStream stream(&data);
-        saveToFileData(folder, stream);
+        QByteArray filename(QByteArray::number(hash64(folder.path)) + ".db");
+        saveToFileData(folder, QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename);
     }
 }
 
@@ -323,17 +317,12 @@ void SyncManager::saveFileDataDecentralised(const SyncProfile &profile) const
         if (!QDir(folder.path + DATA_FOLDER_PATH).exists())
             continue;
 
-        QFile data(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
-        if (!data.open(QIODevice::WriteOnly))
-            continue;
+        saveToFileData(folder, folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
 
 #ifdef Q_OS_WIN
         setHiddenFileAttribute(QString(folder.path + DATA_FOLDER_PATH), true);
         setHiddenFileAttribute(QString(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME), true);
 #endif
-
-        QDataStream stream(&data);
-        saveToFileData(folder, stream);
     }
 }
 
@@ -349,14 +338,8 @@ void SyncManager::loadFileDataLocally(SyncProfile &profile)
         if (!folder.isActive() || folder.toBeRemoved)
             continue;
 
-        QByteArray path(QByteArray::number(hash64(folder.path)));
-
-        QFile data(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + path + ".db");
-        if (!data.open(QIODevice::ReadOnly))
-            continue;
-
-        QDataStream stream(&data);
-        loadFromFileData(folder, stream);
+        QByteArray filename(QByteArray::number(hash64(folder.path)) + ".db");
+        loadFromFileData(folder, QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename);
     }
 }
 
@@ -372,12 +355,7 @@ void SyncManager::loadFileDataDecentralised(SyncProfile &profile)
         if (!folder.isActive() || folder.toBeRemoved)
             continue;
 
-        QFile data(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
-        if (!data.open(QIODevice::ReadOnly))
-            continue;
-
-        QDataStream stream(&data);
-        loadFromFileData(folder, stream);
+        loadFromFileData(folder, folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
     }
 }
 
@@ -424,8 +402,13 @@ void SyncManager::removeFileData(const SyncFolder &folder)
 SyncManager::saveToFileData
 ===================
 */
-void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) const
+void SyncManager::saveToFileData(const SyncFolder &folder, const QString &path) const
 {
+    QFile data(path);
+    if (!data.open(QIODevice::WriteOnly))
+        return;
+
+    QDataStream stream(&data);
     short version = DATABASE_VERSION;
     qsizetype size = folder.files.size();
 
@@ -534,10 +517,15 @@ void SyncManager::saveToFileData(const SyncFolder &folder, QDataStream &stream) 
 SyncManager::loadFromFileData
 ===================
 */
-void SyncManager::loadFromFileData(SyncFolder &folder, QDataStream &stream)
+void SyncManager::loadFromFileData(SyncFolder &folder, const QString &path)
 {
     SET_TIME(startTime);
 
+    QFile data(path);
+    if (!data.open(QIODevice::ReadOnly))
+        return;
+
+    QDataStream stream(&data);
     short version;
     qsizetype numOfFiles;
 
@@ -755,7 +743,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             for (auto &folder : profile.folders)
             {
                 hash64_t requiredDevice = hash64(QStorageInfo(folder.path).device());
-                QPair<Hash, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return getListOfFiles(profile, folder, profile.excludeList); })));
+                QPair<Hash, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return getListOfFiles(profile, folder); })));
                 pair.second.suspend();
                 futureList.append(pair);
             }
@@ -890,7 +878,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 SyncManager::getListOfFiles
 ===================
 */
-int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const QList<QByteArray> &excludeList)
+int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder)
 {
     int totalNumOfFiles = 0;
     QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
@@ -907,6 +895,7 @@ int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const 
 
         QFileInfo fileInfo(dir.fileInfo());
 
+        // Skips hidden files
         if (ignoreHiddenFilesEnabled() && fileInfo.isHidden())
             continue;
 
@@ -923,14 +912,14 @@ int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const 
             }
         }
 
-        QByteArray fullFilePath = fileInfo.filePath().toUtf8();
-        QByteArray filePath(fullFilePath);
+        QByteArray absoluteFilePath = fileInfo.filePath().toUtf8();
+        QByteArray filePath(absoluteFilePath);
         filePath.remove(0, folder.path.size());
 
         bool shouldExclude = false;
 
         // Excludes unwanted files and folder from scanning
-        for (auto &exclude : excludeList)
+        for (auto &exclude : profile.excludeList)
         {
             if (m_caseSensitiveSystem ? qstrncmp(exclude, filePath, exclude.length()) == 0 : qstrnicmp(exclude, filePath, exclude.length()) == 0)
             {
@@ -980,7 +969,7 @@ int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const 
             if (file.type != type)
                 m_databaseChanged = true;
 
-            if (file.attributes != getFileAttributes(fullFilePath))
+            if (file.attributes != getFileAttributes(absoluteFilePath))
             {
                 m_databaseChanged = true;
                 file.setAttributesUpdated(true);
@@ -1006,14 +995,14 @@ int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder, const 
             file.size = fileInfo.size();
             file.type = type;
             file.setExists(true);
-            file.attributes = getFileAttributes(fullFilePath);
+            file.attributes = getFileAttributes(absoluteFilePath);
         }
         else
         {
             SyncFile *file = folder.files.insert(fileHash, SyncFile(type, fileInfo.lastModified())).operator->();
             file->size = fileInfo.size();
             file->setNewlyAdded(true);
-            file->attributes = getFileAttributes(fullFilePath);
+            file->attributes = getFileAttributes(absoluteFilePath);
 
             m_databaseChanged = true;
         }
@@ -1039,6 +1028,9 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
+        if (!folderIt->exists)
+            continue;
+
         for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
         {
             if (folderIt == otherFolderIt || !otherFolderIt->exists)
@@ -1058,25 +1050,30 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
                 const SyncFile &file = folderIt->files.value(otherFileIt.key());
                 const SyncFile &otherFile = otherFileIt.value();
 
-                if (file.lockedFlag != SyncFile::Unlocked || file.toBeRemoved() || otherFile.lockedFlag != SyncFile::Unlocked || otherFile.toBeRemoved())
+                if (file.lockedFlag != SyncFile::Unlocked || otherFile.lockedFlag != SyncFile::Unlocked)
                     continue;
 
-                if (file.exists() && otherFile.exists() && file.hasOlderAttributes(otherFile))
-                {
-                    SyncFile &folder = folderIt->files[otherFileIt.key()];
+                if (file.toBeRemoved() || otherFile.toBeRemoved())
+                    continue;
 
+                if (!file.exists() || !otherFile.exists())
+                    continue;
+
+                if (file.hasOlderAttributes(otherFile))
+                {
                     QByteArray from(otherFolderIt->path);
                     from.append(profile.getFilePath(otherFileIt.key()));
 
                     QByteArray to(folderIt->path);
                     to.append(profile.getFilePath(otherFileIt.key()));
 
-                    setFileAttribute(to, getFileAttributes(from));
-                    folder.attributes = otherFile.attributes;
-
-                    m_databaseChanged = true;
+                    if (setFileAttribute(to, getFileAttributes(from)))
+                    {
+                        SyncFile &folder = folderIt->files[otherFileIt.key()];
+                        folder.attributes = otherFile.attributes;
+                        m_databaseChanged = true;
+                    }
                 }
-
             }
         }
     }

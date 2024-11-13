@@ -134,10 +134,10 @@ Q_SIGNALS:
 
 private:
 
-    void saveToFileData(const SyncFolder &folder, QDataStream &stream) const;
-    void loadFromFileData(SyncFolder &folder, QDataStream &stream);
+    void saveToFileData(const SyncFolder &folder, const QString &path) const;
+    void loadFromFileData(SyncFolder &folder, const QString &path);
     bool syncProfile(SyncProfile &profile);
-    int getListOfFiles(SyncProfile &profile, SyncFolder &folder, const QList<QByteArray> &excludeList);
+    int getListOfFiles(SyncProfile &profile, SyncFolder &folder);
     void synchronizeFileAttributes(SyncProfile &profile);
     void checkForRenamedFolders(SyncProfile &profile);
     void checkForMovedFiles(SyncProfile &profile);
