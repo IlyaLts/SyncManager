@@ -68,7 +68,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(&manager, &SyncManager::warning, this, [this](QString title, QString message){ notify(title, message, QSystemTrayIcon::Critical); });
-    connect(&manager, &SyncManager::profileSynced, this, [this](SyncProfile *profile){ updateLastSyncTime(profile); updateSyncTime(); saveSettings(); });
+    connect(&manager, &SyncManager::profileSynced, this, [this](SyncProfile *profile){ updateLastSyncTime(profile); updateLastSyncTime(profile); saveSettings(); });
 
     // Loads synchronization profiles
     QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
@@ -226,7 +226,6 @@ void MainWindow::setupMenus()
     manualAction = new QAction(tr("&Manual"), this);
     increaseSyncTimeAction = new QAction(tr("&Increase"), this);
     syncingTimeAction = new QAction(tr("Synchronize Every: "), this);
-    nextSynchronizationAction = new QAction(tr("Next Synchronization: "), this);
     decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
     moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
     saveDatabaseAction = new QAction(tr("&Save Files Data (Requires disk space)"), this);
@@ -248,7 +247,6 @@ void MainWindow::setupMenus()
     version = new QAction(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION), this);
 
     syncingTimeAction->setDisabled(true);
-    nextSynchronizationAction->setDisabled(true);
     decreaseSyncTimeAction->setDisabled(manager.syncTimeMultiplier() <= 1);
     version->setDisabled(true);
 
@@ -283,7 +281,6 @@ void MainWindow::setupMenus()
     syncingTimeMenu = new UnhidableMenu(tr("&Syncing Time"), this);
     syncingTimeMenu->addAction(increaseSyncTimeAction);
     syncingTimeMenu->addAction(syncingTimeAction);
-    syncingTimeMenu->addAction(nextSynchronizationAction);
     syncingTimeMenu->addAction(decreaseSyncTimeAction);
 
     deletionModeMenu = new UnhidableMenu(tr("&Deletion Mode"), this);
@@ -842,6 +839,9 @@ void MainWindow::increaseSyncTime()
         if (manager.syncEvery() == std::numeric_limits<int>::max())
             increaseSyncTimeAction->setDisabled(true);
 
+        for (auto &profile : manager.profiles())
+            updateLastSyncTime(&profile);
+
         saveSettings();
     }
 }
@@ -863,6 +863,9 @@ void MainWindow::decreaseSyncTime()
 
     if (manager.syncTimeMultiplier() <= 1)
         decreaseSyncTimeAction->setDisabled(true);
+
+    for (auto &profile : manager.profiles())
+        updateLastSyncTime(&profile);
 
     saveSettings();
 }
@@ -976,7 +979,6 @@ void MainWindow::updateSyncTime()
     int days = (manager.syncEvery() / 1000 / 60 / 60 / 24);
 
     QString str(tr("Synchronize Every: "));
-    QString str2(tr("Next Synchronization: "));
 
     if (days)
         str.append(QString(tr("%1 days")).arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
@@ -987,14 +989,7 @@ void MainWindow::updateSyncTime()
     else if (seconds)
         str.append(QString(tr("%1 seconds")).arg(seconds));
 
-
-    QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
-    QDateTime dateTime = QDateTime::currentDateTime();
-    dateTime += manager.syncTimer().remainingTimeAsDuration();
-    str2.append(syncApp->locale.toString(dateTime, dateFormat));
-
     syncingTimeAction->setText(str);
-    nextSynchronizationAction->setText(str2);
 }
 
 /*
@@ -1016,6 +1011,14 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
                 if (folder.exists)
                     hasFolders = true;
 
+            QString nextSyncText("\n");
+            nextSyncText.append(tr("Next Synchronization: "));
+            QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
+            QDateTime dateTime = QDateTime::currentDateTime();
+            dateTime += manager.syncTimer().remainingTimeAsDuration();
+            nextSyncText.append(syncApp->locale.toString(dateTime, dateFormat));
+            nextSyncText.append(".");
+
             if (!hasFolders)
             {
                 profileModel->setData(profileModel->index(i, 0), tr("The profile has no folders available."), Qt::ToolTipRole);
@@ -1023,12 +1026,15 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             else if (!manager.profiles()[i].lastSyncDate.isNull())
             {
                 QString time(syncApp->locale.toString(profile->lastSyncDate, dateFormat));
-                QString lastSync = QString(tr("Last synchronization: %1.")).arg(time);
-                profileModel->setData(profileModel->index(i, 0), lastSync, Qt::ToolTipRole);
+                QString text = QString(tr("Last synchronization: %1.")).arg(time);
+                text.append(nextSyncText);
+                profileModel->setData(profileModel->index(i, 0), text, Qt::ToolTipRole);
             }
             else
             {
-                profileModel->setData(profileModel->index(i, 0), tr("Haven't been synchronized yet."), Qt::ToolTipRole);
+                QString text(tr("Haven't been synchronized yet."));
+                text.append(nextSyncText);
+                profileModel->setData(profileModel->index(i, 0), text, Qt::ToolTipRole);
             }
 
             if (ui->syncProfilesView->selectionModel()->selectedIndexes().contains(profileModel->index(i, 0)))
