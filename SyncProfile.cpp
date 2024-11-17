@@ -34,6 +34,7 @@ void SyncProfile::operator =(const SyncProfile &other)
     syncing = other.syncing;
     paused = other.paused;
     toBeRemoved = other.toBeRemoved;
+    syncEvery = other.syncEvery;
     syncTime = other.syncTime;
     lastSyncDate = other.lastSyncDate;
     name = other.name;

@@ -73,10 +73,10 @@ public:
     SyncManager();
     ~SyncManager();
 
-    void addToQueue(int profileNumber = -1);
+    void addToQueue(SyncProfile *profile);
     void sync();
 
-    void updateTimer();
+    void updateTimer(SyncProfile &profile);
     void updateStatus();
     void updateNextSyncingTime();
 
@@ -91,10 +91,9 @@ public:
     inline void setDeletionMode(DeletionMode mode) { m_deletionMode = mode; }
     inline SyncingMode syncingMode() const { return m_syncingMode; }
     inline DeletionMode deletionMode() const { return m_deletionMode; }
-    inline const QQueue<int> &queue() const { return m_queue; }
+    inline const QQueue<SyncProfile *> &queue() const { return m_queue; }
     inline const QList<SyncProfile> &profiles() const { return m_profiles; }
     inline QList<SyncProfile> &profiles() { return m_profiles; }
-    inline QTimer &syncTimer() { return m_syncTimer; }
 
     inline void shouldQuit() { m_shouldQuit = true; }
     inline void setSyncTimeMultiplier(int multiplier) { m_syncTimeMultiplier = multiplier; }
@@ -108,7 +107,6 @@ public:
 
     inline int filesToSync() const { return m_filesToSync; }
     inline int syncTimeMultiplier() const { return m_syncTimeMultiplier; }
-    inline int syncEvery() const { return m_syncEvery; }
     inline int existingProfiles() const { return m_existingProfiles; }
     inline int movedFileMinSize() const { return m_movedFileMinSize; }
     inline bool isCaseSensitiveSystem() const { return m_caseSensitiveSystem; }
@@ -157,13 +155,11 @@ private:
     SyncingMode m_syncingMode;
     DeletionMode m_deletionMode;
 
-    QQueue<int> m_queue;
+    QQueue<SyncProfile *> m_queue;
     QList<SyncProfile> m_profiles;
-    QTimer m_syncTimer;
 
     int m_filesToSync = 0;
     int m_syncTimeMultiplier = 1;
-    int m_syncEvery = 0;
     int m_existingProfiles = 0;
     int m_movedFileMinSize = 0;
     bool m_databaseChanged = false;

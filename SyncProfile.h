@@ -20,8 +20,9 @@
 #ifndef SYNCPROFILE_H
 #define SYNCPROFILE_H
 
-#include <QMutex>
 #include <QList>
+#include <QTimer>
+#include <QMutex>
 #include "Common.h"
 
 class SyncFolder;
@@ -37,9 +38,10 @@ class SyncProfile
 {
 public:
 
-    explicit SyncProfile(bool paused) : paused(paused){}
-    explicit SyncProfile(const SyncProfile &other) { *this = other; }
-    explicit SyncProfile(SyncProfile &&other) { *this = other; }
+    SyncProfile() { syncTimer.setSingleShot(true); }
+    explicit SyncProfile(bool paused) : SyncProfile()  { this->paused = paused; }
+    explicit SyncProfile(const SyncProfile &other) : SyncProfile() { *this = other; }
+    explicit SyncProfile(SyncProfile &&other) : SyncProfile() { *this = other; }
 
     void operator =(const SyncProfile &other);
 
@@ -57,6 +59,8 @@ public:
     bool syncing = false;
     bool paused = false;
     bool toBeRemoved = false;
+    int syncEvery = 0;
+    QTimer syncTimer;
     quint64 syncTime = 0;
     QDateTime lastSyncDate;
     QString name;

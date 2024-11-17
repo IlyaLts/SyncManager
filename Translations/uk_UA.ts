@@ -52,8 +52,8 @@
             <translation>&amp;amp;Збільшити</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>Синхронізувати кожні: </translation>
+          <source>Average Synchronization Time: </source>
+          <translation>Середній час синхронізації: </translation>
         </message>
         <message>
             <source>Next Synchronization: </source>

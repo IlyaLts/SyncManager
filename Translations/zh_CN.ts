@@ -52,8 +52,8 @@
             <translation>&amp;amp;增加</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>每隔： </translation>
+          <source>Average Synchronization Time: </source>
+          <translation>平均同步时间: </translation>
         </message>
         <message>
             <source>Next Synchronization: </source>

@@ -52,8 +52,8 @@
             <translation>&amp;Erhöhen</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>Synchronisieren alle: </translation>
+          <source>Average Synchronization Time: </source>
+          <translation>Durchschnittliche Synchronisationszeit: </translation>
         </message>
         <message>
             <source>Next Synchronization: </source>

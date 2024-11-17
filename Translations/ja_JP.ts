@@ -52,8 +52,8 @@
             <translation>&amp;amp;増加</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>毎回同期: </translation>
+          <source>Average Synchronization Time: </source>
+          <translation>平均同期時間: </translation>
         </message>
         <message>
             <source>Next Synchronization: </source>

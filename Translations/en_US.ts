@@ -52,8 +52,8 @@
             <translation>&amp;amp;ampIncrease</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>Synchronize Every: </translation>
+            <source>Average Synchronization Time: </source>
+            <translation>Average Synchronization Time: </translation>
         </message>
         <message>
             <source>Next Synchronization: </source>

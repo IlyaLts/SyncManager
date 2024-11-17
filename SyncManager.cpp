@@ -57,11 +57,6 @@ SyncManager::SyncManager()
     m_caseSensitiveSystem = settings.value("caseSensitiveSystem", m_caseSensitiveSystem).toBool();
     m_versionFolder = settings.value("VersionFolder", "[Deletions]").toString();
     m_versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
-
-    m_syncTimer.setSingleShot(true);
-
-    if (m_syncingMode == SyncManager::Automatic)
-        m_syncTimer.start(0);
 }
 
 /*
@@ -78,29 +73,25 @@ SyncManager::~SyncManager()
 SyncManager::addToQueue
 ===================
 */
-void SyncManager::addToQueue(int profileNumber)
+void SyncManager::addToQueue(SyncProfile *profile)
 {
-    if (m_profiles.isEmpty() || m_queue.contains(profileNumber))
+    if (m_profiles.isEmpty() || (profile && m_queue.contains(profile)))
         return;
 
     // Adds the passed profile number to the sync queue
-    if (profileNumber >= 0 && profileNumber < m_profiles.size())
+    if (profile)
     {
-        if ((!m_profiles[profileNumber].paused || m_syncingMode != Automatic) && !m_profiles[profileNumber].toBeRemoved)
+        if ((!profile->paused || m_syncingMode != Automatic) && !profile->toBeRemoved)
         {
-            m_queue.enqueue(profileNumber);
+            m_queue.enqueue(profile);
         }
     }
     // If a profile number is not passed, adds all remaining profiles to the sync queue
     else
     {
-        for (int i = 0; i < m_profiles.size(); i++)
-        {
-            if ((!m_profiles[i].paused || m_syncingMode != Automatic) && !m_profiles[i].toBeRemoved && !m_queue.contains(i))
-            {
-                m_queue.enqueue(i);
-            }
-        }
+        for (auto &profile : profiles())
+            if ((!profile.paused || m_syncingMode != Automatic) && !profile.toBeRemoved && !m_queue.contains(&profile))
+                m_queue.enqueue(&profile);
     }
 }
 
@@ -119,7 +110,7 @@ void SyncManager::sync()
 
     while (!m_queue.empty())
     {
-        if (!syncProfile(m_profiles[m_queue.head()]))
+        if (!syncProfile(*m_queue.head()))
             return;
 
         m_queue.dequeue();
@@ -179,7 +170,7 @@ void SyncManager::updateStatus()
         {
             folder.syncing = false;
 
-            if ((!m_queue.isEmpty() && m_queue.head() != i ) || folder.toBeRemoved)
+            if ((!m_queue.isEmpty() && m_queue.head() != &profile ) || folder.toBeRemoved)
                 continue;
 
             if (folder.exists)
@@ -216,7 +207,7 @@ void SyncManager::updateStatus()
 
     if (m_busy)
     {
-        for (auto &folder : m_profiles[m_queue.head()].folders)
+        for (auto &folder : m_queue.head()->folders)
         {
             if (folder.isActive())
             {
@@ -239,15 +230,13 @@ void SyncManager::updateStatus()
 SyncManager::updateTimer
 ===================
 */
-void SyncManager::updateTimer()
+void SyncManager::updateTimer(SyncProfile &profile)
 {
-    if (m_syncingMode == SyncManager::Automatic)
-    {
-        if ((!m_busy && m_syncTimer.isActive()) || (!m_syncTimer.isActive() || m_syncEvery < m_syncTimer.remainingTime()))
-        {
-            m_syncTimer.start(m_syncEvery);
-        }
-    }
+    if (m_syncingMode != SyncManager::Automatic)
+        return;
+
+    if ((!m_busy && profile.syncTimer.isActive()) || (!profile.syncTimer.isActive() || profile.syncEvery < profile.syncTimer.remainingTime()))
+        profile.syncTimer.start(profile.syncEvery);
 }
 
 /*
@@ -257,30 +246,31 @@ SyncManager::updateNextSyncingTime
 */
 void SyncManager::updateNextSyncingTime()
 {
-    int time = 0;
-
-    // Counts the total syncing time of profiles with at least two active folders
-    for (const auto &profile : m_profiles)
-        if (profile.isActive())
-            time += profile.syncTime;
-
-    // Multiplies sync time by 2
-    for (int i = 0; i < m_syncTimeMultiplier - 1; i++)
+    for (auto &profile : profiles())
     {
-        time <<= 1;
+        if (!profile.isActive())
+            continue;
 
-        // If exceeds the maximum value of an int
-        if (time < 0)
+        int time = profile.syncTime;
+
+        // Multiplies sync time by 2
+        for (int i = 0; i < m_syncTimeMultiplier - 1; i++)
         {
-            time = std::numeric_limits<int>::max();
-            break;
+            time <<= 1;
+
+            // If exceeds the maximum value of an int
+            if (time < 0)
+            {
+                time = std::numeric_limits<int>::max();
+                break;
+            }
         }
+
+        if (time < SYNC_MIN_DELAY)
+            time = SYNC_MIN_DELAY;
+
+        profile.syncEvery = time;
     }
-
-    if (time < SYNC_MIN_DELAY)
-        time = SYNC_MIN_DELAY;
-
-    m_syncEvery = time;
 }
 
 /*

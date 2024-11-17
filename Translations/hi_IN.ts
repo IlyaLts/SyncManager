@@ -52,8 +52,8 @@
             <translation>&amp;amp;वृद्धि</translation>
         </message>
         <message>
-            <source>Synchronize Every: </source>
-            <translation>हर बार सिंक्रोनाइज करें: </translation>
+          <source>Average Synchronization Time: </source>
+          <translation>औसत समन्वय समय: </translation>
         </message>
         <message>
             <source>Next Synchronization: </source>
