@@ -92,7 +92,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (auto &profile : manager.profiles())
     {
-        connect(&profile.syncTimer, &QTimer::timeout, this, [&profile, this](){ manager.setSyncHidden(true); sync(&const_cast<SyncProfile &>(profile)); });
+        connect(&profile.syncTimer, &QChronoTimer::timeout, this, [&profile, this](){ manager.setSyncHidden(true); sync(&const_cast<SyncProfile &>(profile)); });
         profile.syncTimer.setSingleShot(true);
     }
 
@@ -255,6 +255,13 @@ void MainWindow::setupMenus()
     decreaseSyncTimeAction->setDisabled(manager.syncTimeMultiplier() <= 1);
     version->setDisabled(true);
 
+    increaseSyncTimeAction->setEnabled(true);
+    decreaseSyncTimeAction->setEnabled(manager.syncTimeMultiplier() > 1);
+
+    for (auto &profile : manager.profiles())
+        if (profile.syncEvery >= std::numeric_limits<int>::max())
+            increaseSyncTimeAction->setEnabled(false);
+
     automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
     deletePermanentlyAction->setCheckable(true);
@@ -394,7 +401,7 @@ void MainWindow::addProfile()
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
 
-    connect(&manager.profiles().last().syncTimer, &QTimer::timeout, this, [this](){ manager.setSyncHidden(true); sync(&manager.profiles().last()); });
+    connect(&manager.profiles().last().syncTimer, &QChronoTimer::timeout, this, [this](){ manager.setSyncHidden(true); sync(&manager.profiles().last()); });
 
     QSettings profileData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
     profileData.setValue(newName, folderModel->stringList());
@@ -432,7 +439,7 @@ void MainWindow::removeProfile()
     {
         SyncProfile &profile = manager.profiles()[index.row()];
 
-        disconnect(&profile.syncTimer, &QTimer::timeout, this, nullptr);
+        disconnect(&profile.syncTimer, &QChronoTimer::timeout, this, nullptr);
         ui->syncProfilesView->model()->removeRow(index.row());
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
@@ -848,7 +855,7 @@ MainWindow::increaseSyncTime
 void MainWindow::increaseSyncTime()
 {
     for (auto &profile : manager.profiles())
-        if (profile.syncEvery == std::numeric_limits<int>::max())
+        if (profile.syncEvery >= std::numeric_limits<int>::max())
             return;
 
     manager.setSyncTimeMultiplier(manager.syncTimeMultiplier() + 1);
@@ -858,7 +865,7 @@ void MainWindow::increaseSyncTime()
 
     for (auto &profile : manager.profiles())
     {
-        if (profile.syncEvery == std::numeric_limits<int>::max())
+        if (profile.syncEvery >= std::numeric_limits<int>::max())
             increaseSyncTimeAction->setEnabled(false);
 
         manager.updateTimer(profile);
@@ -881,7 +888,7 @@ void MainWindow::decreaseSyncTime()
 
     for (auto &profile : manager.profiles())
     {
-        if (profile.syncEvery != std::numeric_limits<int>::max())
+        if (profile.syncEvery < std::numeric_limits<int>::max())
             increaseSyncTimeAction->setEnabled(true);
 
         if (manager.syncTimeMultiplier() <= 1)
@@ -997,7 +1004,7 @@ MainWindow::updateSyncTime
 */
 void MainWindow::updateSyncTime()
 {
-    int syncEvery = 0;
+    qint64 syncEvery = 0;
     QString text(tr("Average Synchronization Time: "));
 
     for (auto &profile : manager.profiles())
@@ -1040,8 +1047,8 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             QString nextSyncText("\n");
             nextSyncText.append(tr("Next Synchronization: "));
             QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
-            QDateTime dateTime = QDateTime::currentDateTime();
-            dateTime += profile->syncTimer.remainingTimeAsDuration();
+            QDateTime dateTime = profile->lastSyncDate;
+            dateTime += std::chrono::duration_cast<std::chrono::duration<quint64, std::milli>>(profile->syncTimer.remainingTime());
             nextSyncText.append(syncApp->locale.toString(dateTime, dateFormat));
             nextSyncText.append(".");
 

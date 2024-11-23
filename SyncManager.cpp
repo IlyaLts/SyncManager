@@ -235,8 +235,18 @@ void SyncManager::updateTimer(SyncProfile &profile)
     if (m_syncingMode != SyncManager::Automatic)
         return;
 
-    if ((!m_busy && profile.syncTimer.isActive()) || (!profile.syncTimer.isActive() || profile.syncEvery < profile.syncTimer.remainingTime()))
-        profile.syncTimer.start(profile.syncEvery);
+    QDateTime dateToSync(profile.lastSyncDate);
+    dateToSync = dateToSync.addMSecs(profile.syncEvery);
+    qint64 syncTime = 0;
+
+    if (dateToSync >= QDateTime::currentDateTime())
+        syncTime = profile.lastSyncDate.msecsTo(dateToSync);
+
+    if ((!m_busy && profile.syncTimer.isActive()) || (!profile.syncTimer.isActive() || std::chrono::duration<qint64, std::milli>(syncTime) < profile.syncTimer.remainingTime()))
+    {
+        profile.syncTimer.setInterval(std::chrono::duration_cast<std::chrono::duration<quint64, std::nano>>(std::chrono::duration<quint64, std::milli>(syncTime)));
+        profile.syncTimer.start();
+    }
 }
 
 /*
@@ -251,15 +261,16 @@ void SyncManager::updateNextSyncingTime()
         if (!profile.isActive())
             continue;
 
-        int time = profile.syncTime;
+        quint64 time = profile.syncTime;
 
         // Multiplies sync time by 2
         for (int i = 0; i < m_syncTimeMultiplier - 1; i++)
         {
             time <<= 1;
 
-            // If exceeds the maximum value of an int
-            if (time < 0)
+            // If exceeds the maximum value of an qint64
+            //if (time < 0)
+            if (time >= std::numeric_limits<int>::max())
             {
                 time = std::numeric_limits<int>::max();
                 break;

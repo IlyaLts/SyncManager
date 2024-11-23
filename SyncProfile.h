@@ -21,7 +21,7 @@
 #define SYNCPROFILE_H
 
 #include <QList>
-#include <QTimer>
+#include <QChronoTimer>
 #include <QMutex>
 #include "Common.h"
 
@@ -38,7 +38,7 @@ class SyncProfile
 {
 public:
 
-    SyncProfile() { syncTimer.setSingleShot(true); }
+    SyncProfile() { syncTimer.setSingleShot(true); syncTimer.setTimerType(Qt::VeryCoarseTimer); }
     explicit SyncProfile(bool paused) : SyncProfile()  { this->paused = paused; }
     explicit SyncProfile(const SyncProfile &other) : SyncProfile() { *this = other; }
     explicit SyncProfile(SyncProfile &&other) : SyncProfile() { *this = other; }
@@ -59,8 +59,8 @@ public:
     bool syncing = false;
     bool paused = false;
     bool toBeRemoved = false;
-    int syncEvery = 0;
-    QTimer syncTimer;
+    quint64 syncEvery = 0;
+    QChronoTimer syncTimer;
     quint64 syncTime = 0;
     QDateTime lastSyncDate;
     QString name;

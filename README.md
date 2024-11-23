@@ -35,7 +35,7 @@ Based on the changes detected, SyncManager performs the synchronization operatio
 1. **Copies new or modified files**
 
 # Building
-Requires Qt 6 or newer. Buildable with Qt Creator.
+Requires Qt 6.8 or newer. Buildable with Qt Creator.
 
 # License
 SyncManager is licensed under the GPL-3.0 license, see LICENSE.txt for more information.
