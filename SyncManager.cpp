@@ -232,6 +232,9 @@ SyncManager::updateTimer
 */
 void SyncManager::updateTimer(SyncProfile &profile)
 {
+    using namespace std;
+    using namespace std::chrono;
+
     if (m_syncingMode != SyncManager::Automatic)
         return;
 
@@ -242,9 +245,11 @@ void SyncManager::updateTimer(SyncProfile &profile)
     if (dateToSync >= QDateTime::currentDateTime())
         syncTime = profile.lastSyncDate.msecsTo(dateToSync);
 
-    if ((!m_busy && profile.syncTimer.isActive()) || (!profile.syncTimer.isActive() || std::chrono::duration<qint64, std::milli>(syncTime) < profile.syncTimer.remainingTime()))
+    bool profileActive = profile.syncTimer.isActive();
+
+    if ((!m_busy && profileActive) || (!profileActive || (duration<qint64, milli>(syncTime) < profile.syncTimer.remainingTime())))
     {
-        profile.syncTimer.setInterval(std::chrono::duration_cast<std::chrono::duration<quint64, std::nano>>(std::chrono::duration<quint64, std::milli>(syncTime)));
+        profile.syncTimer.setInterval(duration_cast<duration<qint64, nano>>(duration<quint64, milli>(syncTime)));
         profile.syncTimer.start();
     }
 }

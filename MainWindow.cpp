@@ -258,10 +258,6 @@ void MainWindow::setupMenus()
     increaseSyncTimeAction->setEnabled(true);
     decreaseSyncTimeAction->setEnabled(manager.syncTimeMultiplier() > 1);
 
-    for (auto &profile : manager.profiles())
-        if (profile.syncEvery >= std::numeric_limits<int>::max())
-            increaseSyncTimeAction->setEnabled(false);
-
     automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
     deletePermanentlyAction->setCheckable(true);
@@ -855,8 +851,13 @@ MainWindow::increaseSyncTime
 void MainWindow::increaseSyncTime()
 {
     for (auto &profile : manager.profiles())
+    {
         if (profile.syncEvery >= std::numeric_limits<int>::max())
+        {
+            increaseSyncTimeAction->setEnabled(false);
             return;
+        }
+    }
 
     manager.setSyncTimeMultiplier(manager.syncTimeMultiplier() + 1);
     decreaseSyncTimeAction->setEnabled(true);
@@ -1471,6 +1472,12 @@ void MainWindow::readSettings()
     detectMovedFilesAction->setChecked(manager.detectMovedFilesEnabled());
     switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
     switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", manager.MoveToTrash).toInt()));
+
+    manager.updateNextSyncingTime();
+
+    for (auto &profile : manager.profiles())
+        if (profile.syncEvery >= std::numeric_limits<int>::max())
+            increaseSyncTimeAction->setEnabled(false);
 }
 
 /*
