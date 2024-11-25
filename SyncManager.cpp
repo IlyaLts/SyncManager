@@ -251,6 +251,13 @@ void SyncManager::updateTimer(SyncProfile &profile)
     {
         profile.syncTimer.setInterval(duration_cast<duration<qint64, nano>>(duration<quint64, milli>(syncTime)));
         profile.syncTimer.start();
+
+        // Fix an integer overflow that can sometimes happen for unknown reasons
+        if (profile.syncTimer.remainingTime().count() < 0)
+        {
+            profile.syncTimer.setInterval(duration<qint64, nano>(std::numeric_limits<qint64>::max()));
+            profile.syncTimer.start();
+        }
     }
 }
 
