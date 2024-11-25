@@ -1,4 +1,11 @@
 ==========================
+1.9.5 - Nov 25, 2024
+==========================
+- Separated the next synchronization timer for each profile, allowing profiles with a small number of files to synchronize more frequently, regardless of other profiles with a large number of files.
+- Moved next synchronization information to the profile tooltip.
+- Fixed an issue where the next sync time was not updated after synchronization.
+
+==========================
 1.9.4 - Nov 13, 2024
 ==========================
 - Added the next synchronization info to menu.
