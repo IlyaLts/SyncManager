@@ -16,7 +16,8 @@ SyncManager uses sophisticated algorithms to detect changes since the last synch
 1. **New additions and file changes**
 1. **Deleted files and folders**
 ### Detection of Case-Changed Folders
-Since SyncManager doesn't store the original path of files, it relies on a comparison-based approach to detect case changes in folder names. It compares the current filename of a new folder in one location with the corresponding folder's filenames in other locations if it exists, checking for differences in case naming. If a difference is found, SyncManager assumes the case of the folder was changed and renames the folder accordingly in other locations.
+#### *(Only for case-insensitive systems)*
+Since SyncManager doesn't store the original paths of files, it relies on a comparison-based approach between synchronization folders to detect case changes in folder names. It compares the current filename of a newly renamed folder in one location with the corresponding folder's filenames in other locations, if they exist, checking for differences in case naming. If a difference is found, SyncManager assumes the case of the folder was changed and renames folders accordingly, matching the folder's filename in the source location.
 ### Detection of Moved and Renamed Files
 SyncManager searches for matches between removed and new files based on their modified date and size. If a match is found, the file is considered to be the same, and SyncManager renames or moves the corresponding file to other locations to match the new location in the source. In cases where there are multiple matches with the same modified date and size, SyncManager falls back to the standard synchronization method, copying files from one location to another.
 ### Conflict Resolution
@@ -33,6 +34,11 @@ Based on the changes detected, SyncManager performs the synchronization operatio
 1. **Removes deleted files**
 1. **Creates new folders**
 1. **Copies new or modified files**
+### Deletions Modes
+Manages how to handle deleted files.
+- **Move files to Trash** - *(Allows recovery, does not free storage.)*
+- **Versioning** - *(Move files to a time-stamped folder within the sibling folder with "_[Deletions]" postfix.)*
+- **Delete Files Permanently** - *(Irreversable, frees storage immediately.)*
 
 # Building
 Requires Qt 6.8 or newer. Buildable with Qt Creator.
