@@ -45,16 +45,6 @@ int main(int argc, char *argv[])
     sharedMemory.attach();
     sharedMemory.detach();
 
-    if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
-    {
-        QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat).clear();
-        QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
-    }
-
-    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    QLocale::Language systemLanguage = QLocale::system().language();
-    dynamic_cast<Application *>(qApp)->setTranslator(static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt()));
-
     // Prevention of multiple instances
     if (!sharedMemory.create(1))
     {
@@ -62,6 +52,14 @@ int main(int argc, char *argv[])
         QString text = app.translate("MainWindow", "The app is already launched and cannot be launched as a second instance.");
         QMessageBox::warning(NULL, title, text);
         return -1;
+    }
+
+    if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
+    {
+        QString localDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+
+        QSettings(localDataPath + "/" + PROFILES_FILENAME, QSettings::IniFormat).clear();
+        QSettings(localDataPath + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
     }
 
     if (QCoreApplication::arguments().contains("launchOnStartup", Qt::CaseInsensitive))

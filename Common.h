@@ -25,10 +25,7 @@
 #include <QMessageBox>
 
 #define DISABLE_DOUBLE_HASHING
-
-#ifndef Q_OS_WIN
 #define PRESERVE_MODIFICATION_DATE_ON_LINUX
-#endif
 
 class QTranslator;
 class QByteArray;
@@ -77,13 +74,13 @@ Q_DECL_CONST_FUNCTION inline size_t qHash(const Hash &key, size_t seed = 0) noex
 #ifdef DEBUG
 #include <chrono>
 
+extern std::chrono::high_resolution_clock::time_point startTime;
+
 void debugSetTime(std::chrono::high_resolution_clock::time_point &startTime);
 void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startTime, const char *message, ...);
 
 #define SET_TIME(t) debugSetTime(t);
 #define TIMESTAMP(t, ...) debugTimestamp(t, __VA_ARGS__);
-
-extern std::chrono::high_resolution_clock::time_point startTime;
 #else
 
 #define SET_TIME(t)

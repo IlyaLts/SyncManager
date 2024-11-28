@@ -18,6 +18,7 @@
 */
 
 #include "SyncManager.h"
+#include "Application.h"
 #include "MainWindow.h"
 
 #include <QStringListModel>

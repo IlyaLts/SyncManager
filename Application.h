@@ -25,14 +25,23 @@
 
 #define syncApp (static_cast<Application *>(QCoreApplication::instance()))
 
+#define SYNCMANAGER_VERSION     "1.9.5"
+#define SETTINGS_FILENAME       "Settings.ini"
+#define PROFILES_FILENAME       "Profiles.ini"
+#define UPDATE_DELAY            40
+
 class Application : public QApplication
 {
 public:
 
-    Application(int &argc, char **argv) : QApplication(argc, argv){}
+    Application(int &argc, char **argv);
 
     void setLaunchOnStartup(bool enable);
     void setTranslator(QLocale::Language language);
+
+    QString toLocalizedDateTime(const QDateTime &dateTime, const QString &format) { return locale.toString(dateTime, format); }
+
+private:
 
     QTranslator translator;
     QLocale locale;

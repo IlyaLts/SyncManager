@@ -9,7 +9,7 @@ Here's an overview of how it works:
 ### Syncing Modes
 Synchronization can be triggered using the following modes:
 - **Manual** - *(Lets you decide what and when to synchronize certain profiles)*
-- **Automatic** - *(Synchronizes data based on its average synchronization time, multiplied by the SyncManager multiplier, with a minimum delay of 1 second and a maximum delay of around 25 days)*
+- **Automatic** - *(Synchronizes data based on its average synchronization time, multiplied by the frequency multiplier, with a minimum delay of 1 second and a maximum delay of around 25 days)*
 ### File and Folder Discovery
 SyncManager starts by scanning the designated source and target locations for files and folders.
 ### Change Detection Order

@@ -17,13 +17,13 @@
 ===============================================================================
 */
 
+#include "Common.h"
+#include "SyncFile.h"
 #include <stdio.h>
 #include <cstdarg>
 #include <QDebug>
 #include <QCryptographicHash>
 #include <QDirIterator>
-#include "Common.h"
-#include "SyncFile.h"
 #include <QTranslator>
 #include <QApplication>
 #include <QMessageBox>
@@ -36,9 +36,6 @@
 #include <utime.h>
 #include <sys/time.h>
 #endif
-
-QTranslator currentTranslator;
-QLocale currentLocale;
 
 Language defaultLanguage = { QLocale::English, QLocale::UnitedStates, ":/i18n/en_US.qm", "&English" };
 

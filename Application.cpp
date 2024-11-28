@@ -22,6 +22,20 @@
 #include <QString>
 #include <QStandardPaths>
 #include <QFile>
+#include <QSettings>
+
+/*
+===================
+Application::Application
+===================
+*/
+Application::Application(int &argc, char **argv) : QApplication(argc, argv)
+{
+    QString localDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    QSettings settings(localDataPath + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    QLocale::Language systemLanguage = QLocale::system().language();
+    setTranslator(static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt()));
+}
 
 /*
 ===================

@@ -1050,7 +1050,7 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
             QDateTime dateTime = profile->lastSyncDate;
             dateTime += std::chrono::duration_cast<std::chrono::duration<quint64, std::milli>>(profile->syncTimer.remainingTime());
-            nextSyncText.append(syncApp->locale.toString(dateTime, dateFormat));
+            nextSyncText.append(syncApp->toLocalizedDateTime(dateTime, dateFormat));
             nextSyncText.append(".");
 
             if (!hasFolders)
@@ -1059,7 +1059,7 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             }
             else if (!manager.profiles()[i].lastSyncDate.isNull())
             {
-                QString time(syncApp->locale.toString(profile->lastSyncDate, dateFormat));
+                QString time(syncApp->toLocalizedDateTime(profile->lastSyncDate, dateFormat));
                 QString text = QString(tr("Last synchronization: %1.")).arg(time);
                 text.append(nextSyncText);
                 profileModel->setData(profileModel->index(i, 0), text, Qt::ToolTipRole);
@@ -1081,7 +1081,7 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
                     }
                     else if (!folder.lastSyncDate.isNull())
                     {
-                        QString time(syncApp->locale.toString(folder.lastSyncDate, dateFormat));
+                        QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate, dateFormat));
                         QString lastSync = QString("Last synchronization: %1.").arg(time);
                         folderModel->setData(folderModel->index(j, 0), lastSync, Qt::ToolTipRole);
                     }
