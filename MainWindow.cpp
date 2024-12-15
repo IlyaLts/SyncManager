@@ -958,6 +958,18 @@ MainWindow::setDatabaseLocation
 */
 void MainWindow::toggleSaveDatabase()
 {
+    if (manager.saveDatabaseEnabled())
+    {
+        QString title(tr("Disable database saving?"));
+        QString text(tr("Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!"));
+
+        if (!questionBox(QMessageBox::Warning, title, text, QMessageBox::Yes, this))
+        {
+            saveDatabaseAction->setChecked(true);
+            return;
+        }
+    }
+
     manager.enableDatabaseSaving(!manager.saveDatabaseEnabled());
     databaseLocationMenu->setEnabled(manager.saveDatabaseEnabled());
     saveSettings();

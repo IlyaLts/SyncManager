@@ -156,6 +156,14 @@
             <translation>Ви впевнені? Обережно: це може призвести до втрати даних!</translation>
         </message>
         <message>
+            <source>Disable database saving?</source>
+            <translation>Вимкнути збереження бази даних?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
+            <translation>Ви впевнені? Увага: без файлів бази даних SyncManager не зможе виявляти видалені та переміщені файли!</translation>
+        </message>
+        <message>
             <source>%1 days</source>
             <translation>%1 днів</translation>
         </message>

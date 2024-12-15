@@ -156,6 +156,14 @@
             <translation>Você tem certeza? Cuidado: isso pode causar perda de dados!</translation>
         </message>
         <message>
+            <source>Disable database saving?</source>
+            <translation>Desativar o salvamento do banco de dados?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
+            <translation>Tem certeza? Cuidado: sem os arquivos do banco de dados, o SyncManager não detectará arquivos removidos e movidos!</translation>
+        </message>
+        <message>
             <source>%1 days</source>
             <translation>%1 dias</translation>
         </message>

@@ -156,6 +156,14 @@
             <translation>क्या आप सुनिश्चित हैं? सावधानी: इससे डेटा हानि हो सकती है!</translation>
         </message>
         <message>
+            <source>Disable database saving?</source>
+            <translation>डेटाबेस सेविंग अक्षम करें?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
+            <translation>क्या आप सुनिश्चित हैं? सावधान रहें: डेटाबेस फ़ाइलों के बिना, SyncManager हटाए गए और स्थानांतरित फ़ाइलों का पता नहीं लगा पाएगा!</translation>
+        </message>
+        <message>
             <source>%1 days</source>
             <translation>%1 दिन</translation>
         </message>

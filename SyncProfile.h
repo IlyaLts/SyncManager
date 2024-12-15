@@ -60,8 +60,8 @@ public:
     bool paused = false;
     bool toBeRemoved = false;
     quint64 syncEvery = 0;
-    QChronoTimer syncTimer;
     quint64 syncTime = 0;
+    QChronoTimer syncTimer;
     QDateTime lastSyncDate;
     QString name;
 

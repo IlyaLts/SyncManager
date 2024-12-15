@@ -156,6 +156,14 @@
             <translation>確かにしてください。注意: これによりデータが失われる可能性があります!</translation>
         </message>
         <message>
+            <source>Disable database saving?</source>
+            <translation>データベースの保存を無効にしますか?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
+            <translation>よろしいですか？ 注意: データベースファイルがない場合、SyncManagerは削除および移動されたファイルを検出しません!</translation>
+        </message>
+        <message>
             <source>%1 days</source>
             <translation>%1 日間</translation>
         </message>

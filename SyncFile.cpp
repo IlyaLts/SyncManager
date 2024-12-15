@@ -45,8 +45,8 @@ bool SyncFile::isOlder(const SyncFile &other) const
     // Linux and MacOS don't preserve the original modification date by default, so the updated flags on both files should be mandatory
     if (updated() && other.updated() && date < other.date)
         return true;
-
 #endif
+
     return false;
 }
 

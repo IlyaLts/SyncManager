@@ -156,6 +156,14 @@
             <translation>你确定吗？注意：这可能导致数据丢失！</translation>
         </message>
         <message>
+            <source>Disable database saving?</source>
+            <translation>禁用数据库保存？</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
+            <translation>您确定吗？ 注意：没有数据库文件，SyncManager 将无法检测到已删除和移动的文件！</translation>
+        </message>
+        <message>
             <source>%1 days</source>
             <translation>%1 天</translation>
         </message>

@@ -156,6 +156,14 @@
             <translation>Вы уверены? Внимание: это может привести к потере данных!</translation>
         </message>
         <message>
+            <source>Disable database saving?</source>
+            <translation>Отключить сохранение базы данных?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
+            <translation>Вы уверены? Внимание: без файлов базы данных SyncManager не сможет обнаруживать удаленные и перемещенные файлы!</translation>
+        </message>
+        <message>
             <source>%1 days</source>
             <translation>%1 дней</translation>
         </message>
