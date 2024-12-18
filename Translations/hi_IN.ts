@@ -160,8 +160,8 @@
             <translation>डेटाबेस सेविंग अक्षम करें?</translation>
         </message>
         <message>
-            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
-            <translation>क्या आप सुनिश्चित हैं? सावधान रहें: डेटाबेस फ़ाइलों के बिना, SyncManager हटाए गए और स्थानांतरित फ़ाइलों का पता नहीं लगा पाएगा!</translation>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files on startup!</source>
+            <translation>क्या आप निश्चित हैं? सावधान: डेटाबेस फ़ाइलों के बिना, SyncManager स्टार्टअप पर हटाई और स्थानांतरित की गई फ़ाइलों का पता नहीं लगाएगा!</translation>
         </message>
         <message>
             <source>%1 days</source>

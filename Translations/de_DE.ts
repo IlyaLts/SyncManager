@@ -160,8 +160,8 @@
             <translation>Datenbankspeicherung deaktivieren?</translation>
         </message>
         <message>
-            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
-            <translation>Sind Sie sicher? Achtung: Ohne Datenbankdateien kann SyncManager keine entfernten und verschobenen Dateien erkennen!</translation>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files on startup!</source>
+            <translation>Sind Sie sicher? Achtung: Ohne Datenbankdateien erkennt SyncManager beim Start keine entfernten und verschobenen Dateien!</translation>
         </message>
         <message>
             <source>%1 days</source>

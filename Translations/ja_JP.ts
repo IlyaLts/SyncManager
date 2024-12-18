@@ -160,8 +160,8 @@
             <translation>データベースの保存を無効にしますか?</translation>
         </message>
         <message>
-            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
-            <translation>よろしいですか？ 注意: データベースファイルがない場合、SyncManagerは削除および移動されたファイルを検出しません!</translation>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files on startup!</source>
+            <translation>よろしいですか？ 注意：データベースファイルがないと、SyncManagerは起動時に削除および移動されたファイルを検出しません！</translation>
         </message>
         <message>
             <source>%1 days</source>

@@ -160,8 +160,8 @@
             <translation>Отключить сохранение базы данных?</translation>
         </message>
         <message>
-            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
-            <translation>Вы уверены? Внимание: без файлов базы данных SyncManager не сможет обнаруживать удаленные и перемещенные файлы!</translation>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files on startup!</source>
+            <translation>Вы уверены? Внимание: без файлов базы данных SyncManager не обнаружит удаленные и перемещенные файлы при запуске!</translation>
         </message>
         <message>
             <source>%1 days</source>

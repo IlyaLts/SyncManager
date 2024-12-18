@@ -160,8 +160,8 @@
             <translation>¿Deshabilitar el guardado de la base de datos?</translation>
         </message>
         <message>
-            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
-            <translation>¿Estás seguro? Advertencia: sin los archivos de la base de datos, SyncManager no detectará los archivos eliminados y movidos!</translation>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files on startup!</source>
+            <translation>¿Está seguro? Advertencia: sin archivos de base de datos, SyncManager no detectará archivos eliminados y movidos al inicio.</translation>
         </message>
         <message>
             <source>%1 days</source>

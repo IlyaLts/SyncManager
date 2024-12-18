@@ -160,8 +160,8 @@
             <translation>禁用数据库保存？</translation>
         </message>
         <message>
-            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
-            <translation>您确定吗？ 注意：没有数据库文件，SyncManager 将无法检测到已删除和移动的文件！</translation>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files on startup!</source>
+            <translation>你确定吗？ 注意：如果没有数据库文件，SyncManager 将不会在启动时检测到已删除和移动的文件！</translation>
         </message>
         <message>
             <source>%1 days</source>

@@ -160,8 +160,8 @@
             <translation>Disabilitare il salvataggio del database?</translation>
         </message>
         <message>
-            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
-            <translation>Sei sicuro? Attenzione: senza i file del database, SyncManager non rileverà i file rimossi e spostati!</translation>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files on startup!</source>
+            <translation>Sei sicuro? Attenzione: senza file di database, SyncManager non rileverà file rimossi e spostati all'avvio!</translation>
         </message>
         <message>
             <source>%1 days</source>

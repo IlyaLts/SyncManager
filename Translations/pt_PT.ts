@@ -160,8 +160,8 @@
             <translation>Desativar o salvamento do banco de dados?</translation>
         </message>
         <message>
-            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!</source>
-            <translation>Tem certeza? Cuidado: sem os arquivos do banco de dados, o SyncManager não detectará arquivos removidos e movidos!</translation>
+            <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files on startup!</source>
+            <translation>Tem a certeza? Atenção: sem ficheiros de base de dados, o SyncManager não detetará ficheiros removidos e movidos ao iniciar!</translation>
         </message>
         <message>
             <source>%1 days</source>
