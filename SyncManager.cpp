@@ -114,6 +114,7 @@ void SyncManager::sync()
         if (!syncProfile(*m_queue.head()))
             return;
 
+        m_queue.head()->syncHidden = false;
         m_queue.dequeue();
     }
 
@@ -140,7 +141,6 @@ void SyncManager::sync()
     }
 
     m_busy = false;
-    m_syncHidden = false;
 }
 
 /*
@@ -409,6 +409,20 @@ void SyncManager::removeFileData(const SyncFolder &folder)
     {
         QDir(folder.path + DATA_FOLDER_PATH).removeRecursively();
     }
+}
+
+/*
+===================
+SyncManager::isThereHiddenProfile
+===================
+*/
+bool SyncManager::isThereHiddenProfile() const
+{
+    for (auto &profile : profiles())
+        if (profile.syncHidden)
+            return true;
+
+    return false;
 }
 
 /*

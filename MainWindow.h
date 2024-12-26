@@ -92,7 +92,7 @@ private Q_SLOTS:
     void updateStatus();
     bool updateApp();
     void showContextMenu(const QPoint &pos) const;
-    void sync(SyncProfile *profile);
+    void sync(SyncProfile *profile, bool hidden = false);
     void readSettings();
     void saveSettings() const;
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);

@@ -98,7 +98,6 @@ public:
     inline void shouldQuit() { m_shouldQuit = true; }
     inline void setSyncTimeMultiplier(int multiplier) { m_syncTimeMultiplier = multiplier; }
     inline void setPaused(bool paused) { m_paused = paused; }
-    inline void setSyncHidden(bool hidden) { m_syncHidden = hidden; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }
     inline void enableDatabaseSaving(bool enable) { m_saveDatabase = enable; }
     inline void enableIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
@@ -116,7 +115,7 @@ public:
     inline bool isBusy() const { return m_busy; }
     inline bool isPaused() const { return m_paused; }
     inline bool isSyncing() const { return m_syncing; }
-    inline bool isSyncHidden() const { return m_syncHidden; }
+    bool isThereHiddenProfile() const;
     inline bool notificationsEnabled() const { return m_notifications; }
     inline bool saveDatabaseEnabled() const { return m_saveDatabase; }
     inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
@@ -176,7 +175,6 @@ private:
     bool m_busy = false;
     bool m_paused = false;
     bool m_syncing = false;
-    bool m_syncHidden = false;
     bool m_notifications = true;
     bool m_saveDatabase = false;
     DatabaseLocation m_databaseLocation = Decentralized;

@@ -92,7 +92,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (auto &profile : manager.profiles())
     {
-        connect(&profile.syncTimer, &QChronoTimer::timeout, this, [&profile, this](){ manager.setSyncHidden(true); sync(&const_cast<SyncProfile &>(profile)); });
+        connect(&profile.syncTimer, &QChronoTimer::timeout, this, [&profile, this](){ sync(&const_cast<SyncProfile &>(profile), true); });
         profile.syncTimer.setSingleShot(true);
     }
 
@@ -346,7 +346,7 @@ void MainWindow::setupMenus()
     this->menuBar()->addMenu(settingsMenu);
     this->menuBar()->setStyle(new MenuProxyStyle);
 
-    connect(syncNowAction, &QAction::triggered, this, [this](){ manager.setSyncHidden(false); sync(nullptr); });
+    connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Automatic));
     connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Manual));
@@ -397,7 +397,7 @@ void MainWindow::addProfile()
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
 
-    connect(&manager.profiles().last().syncTimer, &QChronoTimer::timeout, this, [this](){ manager.setSyncHidden(true); sync(&manager.profiles().last()); });
+    connect(&manager.profiles().last().syncTimer, &QChronoTimer::timeout, this, [this](){ sync(&manager.profiles().last(), true); });
 
     QSettings profileData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
     profileData.setValue(newName, folderModel->stringList());
@@ -1186,7 +1186,7 @@ void MainWindow::updateStatus()
             {
                 profileModel->setData(index, iconPause, Qt::DecorationRole);
             }
-            else if (manager.profiles()[i].syncing || (!manager.isSyncHidden() && manager.queue().contains(&manager.profiles()[i])))
+            else if (manager.profiles()[i].syncing || (!manager.profiles()[i].syncHidden && manager.queue().contains(&manager.profiles()[i])))
             {
                 profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
             }
@@ -1221,7 +1221,7 @@ void MainWindow::updateStatus()
 
                 if (manager.profiles()[row].folders[i].paused)
                     folderModel->setData(index, iconPause, Qt::DecorationRole);
-                else if (manager.profiles()[row].folders[i].syncing || (manager.queue().contains(&manager.profiles()[row]) && !manager.isSyncing() && !manager.isSyncHidden()))
+                else if (manager.profiles()[row].folders[i].syncing || (manager.queue().contains(&manager.profiles()[row]) && !manager.isSyncing() && !manager.profiles()[row].syncHidden))
                     folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
                 else if (!manager.profiles()[row].folders[i].exists)
                     folderModel->setData(index, iconRemove, Qt::DecorationRole);
@@ -1257,7 +1257,7 @@ void MainWindow::updateStatus()
     }
     else
     {
-        if (manager.isSyncing() || (!manager.isSyncHidden() && !manager.queue().empty()))
+        if (manager.isSyncing() || (!manager.isThereHiddenProfile() && !manager.queue().empty()))
         {
             if (trayIcon->icon().cacheKey() != trayIconSync.cacheKey())
                 trayIcon->setIcon(trayIconSync);
@@ -1348,7 +1348,7 @@ void MainWindow::showContextMenu(const QPoint &pos) const
             else
             {
                 menu.addAction(iconPause, tr("&Pause syncing profile"), this, SLOT(pauseSelected()));
-                menu.addAction(iconSync, tr("&Synchronize profile"), this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), &const_cast<SyncProfile &>(manager.profiles()[row])))->setDisabled(manager.queue().contains(&manager.profiles()[row]));
+                menu.addAction(iconSync, tr("&Synchronize profile"), this, std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), &const_cast<SyncProfile &>(manager.profiles()[row]), false))->setDisabled(manager.queue().contains(&manager.profiles()[row]));
             }
 
             menu.addAction(iconRemove, tr("&Remove profile"), this, SLOT(removeProfile()));
@@ -1383,8 +1383,21 @@ void MainWindow::showContextMenu(const QPoint &pos) const
 MainWindow::sync
 ===================
 */
-void MainWindow::sync(SyncProfile *profile)
+void MainWindow::sync(SyncProfile *profile, bool hidden)
 {
+    if (profile)
+    {
+        if (manager.queue().contains(profile))
+            return;
+
+        profile->syncHidden = hidden;
+    }
+    else
+    {
+        for (auto &profile : manager.profiles())
+            profile.syncHidden = false;
+    }
+
     manager.addToQueue(profile);
 
     if (!manager.isBusy())

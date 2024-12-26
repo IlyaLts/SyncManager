@@ -59,6 +59,7 @@ public:
     bool syncing = false;
     bool paused = false;
     bool toBeRemoved = false;
+    bool syncHidden = false;
     quint64 syncEvery = 0;
     quint64 syncTime = 0;
     QChronoTimer syncTimer;
