@@ -82,13 +82,11 @@ private Q_SLOTS:
     void toggleLaunchOnStartup();
     void toggleShowInTray();
     void toggleNotification();
-    void toggleSaveDatabase();
     void setDatabaseLocation(SyncManager::DatabaseLocation location);
     void toggleIgnoreHiddenFiles();
     void toggleDetectMoved();
     void updateSyncTime();
     void updateLastSyncTime(SyncProfile *profile);
-    void updateDatabaseSize();
     void updateStatus();
     bool updateApp();
     void showContextMenu(const QPoint &pos) const;
@@ -134,7 +132,6 @@ private:
     QAction *moveToTrashAction;
     QAction *versioningAction;
     QAction *deletePermanentlyAction;
-    QAction *saveDatabaseAction;
     QAction *saveDatabaseLocallyAction;
     QAction *saveDatabaseDecentralizedAction;
     QList<QAction *> languageActions;
@@ -153,9 +150,8 @@ private:
     UnhidableMenu *syncingModeMenu;
     UnhidableMenu *syncingTimeMenu;
     UnhidableMenu *deletionModeMenu;
-    UnhidableMenu *languageMenu;
-    UnhidableMenu *databaseMenu;
     UnhidableMenu *databaseLocationMenu;
+    UnhidableMenu *languageMenu;
 
     QLocale::Language language;
     QTimer updateTimer;

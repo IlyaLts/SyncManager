@@ -108,22 +108,6 @@
             <translation>Version : %1</translation>
         </message>
         <message>
-            <source>&amp;Save Files Data (Requires disk space)</source>
-            <translation>&amp;Enregistrer les données de fichiers (Nécessite de l'espace disque)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
-            <translation>&amp;Enregistrer les données de fichiers (Nécessite ~%1 octets)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
-            <translation>&amp;Enregistrer les données de fichiers (Nécessite ~%1 Ko)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
-            <translation>&amp;Enregistrer les données de fichiers (Nécessite ~%1 Mo)</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Dossier introuvable</translation>
         </message>
@@ -266,10 +250,6 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;Langue</translation>
-        </message>
-        <message>
-            <source>&amp;Database</source>
-            <translation>&amp;Base de données</translation>
         </message>
         <message>
             <source>&amp;Database Location</source>

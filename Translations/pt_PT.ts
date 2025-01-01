@@ -108,22 +108,6 @@
             <translation>Versão: %1</translation>
         </message>
         <message>
-            <source>&amp;Save Files Data (Requires disk space)</source>
-            <translation>&amp;Salvar dados de arquivos (Requer espaço em disco)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
-            <translation>&amp;Salvar dados de arquivos (Requer ~%1 bytes)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
-            <translation>&amp;Salvar dados de arquivos (Requer ~%1 KB)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
-            <translation>&amp;Salvar dados de arquivos (Requer ~%1 MB)</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Não foi possível encontrar a pasta</translation>
         </message>
@@ -266,10 +250,6 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;Língua</translation>
-        </message>
-        <message>
-            <source>&amp;Database</source>
-            <translation>&amp;Banco de dados</translation>
         </message>
         <message>
             <source>&amp;Database Location</source>

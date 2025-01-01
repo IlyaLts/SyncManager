@@ -108,22 +108,6 @@
             <translation>Version: %1</translation>
         </message>
         <message>
-            <source>&amp;Save Files Data (Requires disk space)</source>
-            <translation>&amp;Save Files Data (Requires disk space)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
-            <translation>&amp;Save Files Data (Requires ~%1 bytes)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
-            <translation>&amp;Save Files Data (Requires ~%1 KB)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
-            <translation>&amp;Save Files Data (Requires ~%1 MB)</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Couldn't find folder</translation>
         </message>
@@ -266,10 +250,6 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;Language</translation>
-        </message>
-        <message>
-            <source>&amp;Database</source>
-            <translation>&amp;Database</translation>
         </message>
         <message>
             <source>&amp;Database Location</source>

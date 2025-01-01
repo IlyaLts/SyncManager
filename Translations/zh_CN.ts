@@ -108,22 +108,6 @@
             <translation>版本：%1</translation>
         </message>
         <message>
-            <source>&amp;Save Files Data (Requires disk space)</source>
-            <translation>&amp;保存文件数据 （需要磁盘空间）</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
-            <translation>&amp;保存文件数据 （需要~%1 字节）</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
-            <translation>&amp;保存文件数据 （需要~%1 KB）</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
-            <translation>&amp;保存文件数据 （需要约 %1 MB）</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>找不到文件夹</translation>
         </message>
@@ -266,10 +250,6 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;語言</translation>
-        </message>
-        <message>
-            <source>&amp;Database</source>
-            <translation>&amp;数据库</translation>
         </message>
         <message>
             <source>&amp;Database Location</source>

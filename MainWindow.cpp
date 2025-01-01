@@ -104,7 +104,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     updateSyncTime();
     updateStatus();
 
-    if (!manager.saveDatabaseEnabled() || fileDataOutdated)
+    if (fileDataOutdated)
         manager.removeFileData();
 
     updateTimer.setSingleShot(true);
@@ -233,7 +233,6 @@ void MainWindow::setupMenus()
     syncingTimeAction = new QAction(tr("Synchronize Every: "), this);
     decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
     moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
-    saveDatabaseAction = new QAction(tr("&Save Files Data (Requires disk space)"), this);
     saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
 
@@ -263,7 +262,6 @@ void MainWindow::setupMenus()
     deletePermanentlyAction->setCheckable(true);
     moveToTrashAction->setCheckable(true);
     versioningAction->setCheckable(true);
-    saveDatabaseAction->setCheckable(true);
     saveDatabaseLocallyAction->setCheckable(true);
     saveDatabaseDecentralizedAction->setCheckable(true);
 
@@ -305,16 +303,12 @@ void MainWindow::setupMenus()
     databaseLocationMenu->addAction(saveDatabaseLocallyAction);
     databaseLocationMenu->addAction(saveDatabaseDecentralizedAction);
 
-    databaseMenu = new UnhidableMenu(tr("&Database"), this);
-    databaseMenu->addAction(saveDatabaseAction);
-    databaseMenu->addMenu(databaseLocationMenu);
-
     settingsMenu = new UnhidableMenu(tr("&Settings"), this);
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(syncingModeMenu);
     settingsMenu->addMenu(syncingTimeMenu);
     settingsMenu->addMenu(deletionModeMenu);
-    settingsMenu->addMenu(databaseMenu);
+    settingsMenu->addMenu(databaseLocationMenu);
     settingsMenu->addMenu(languageMenu);
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(showInTrayAction);
@@ -355,7 +349,6 @@ void MainWindow::setupMenus()
     connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.DeletePermanently));
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
-    connect(saveDatabaseAction, &QAction::triggered, this, &MainWindow::toggleSaveDatabase);
     connect(saveDatabaseLocallyAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Locally));
     connect(saveDatabaseDecentralizedAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Decentralized));
 
@@ -956,30 +949,6 @@ void MainWindow::toggleNotification()
 MainWindow::setDatabaseLocation
 ===================
 */
-void MainWindow::toggleSaveDatabase()
-{
-    if (manager.saveDatabaseEnabled())
-    {
-        QString title(tr("Disable database saving?"));
-        QString text(tr("Are you sure? Beware: without database files, SyncManager will not detect removed and moved files!"));
-
-        if (!questionBox(QMessageBox::Warning, title, text, QMessageBox::Yes, this))
-        {
-            saveDatabaseAction->setChecked(true);
-            return;
-        }
-    }
-
-    manager.enableDatabaseSaving(!manager.saveDatabaseEnabled());
-    databaseLocationMenu->setEnabled(manager.saveDatabaseEnabled());
-    saveSettings();
-}
-
-/*
-===================
-MainWindow::setDatabaseLocation
-===================
-*/
 void MainWindow::setDatabaseLocation(SyncManager::DatabaseLocation location)
 {
     saveDatabaseLocallyAction->setChecked(location == false);
@@ -1108,47 +1077,6 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
 
             return;
         }
-    }
-}
-
-/*
-===================
-MainWindow::updateDatabaseSize
-===================
-*/
-void MainWindow::updateDatabaseSize()
-{
-    int size = 0;
-
-    if (manager.databaseLocation() == SyncManager::Decentralized)
-    {
-        for (auto &profile : manager.profiles())
-            for (auto &folder : profile.folders)
-                size += QFileInfo(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME).size();
-    }
-    else
-    {
-        QDir::Filters filters = QDir::Files | QDir::Hidden;
-        QDirIterator it(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/", {"*.db"}, filters);
-
-        while (it.hasNext())
-        {
-            it.next();
-            size += it.fileInfo().size();
-        }
-    }
-
-    // Adds file data size info to the context menu
-    if (size)
-    {
-        if (size == 0)
-            saveDatabaseAction->setText(tr("&Save Files Data  (Requires disk space)"));
-        else if (size < 1024)
-            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 bytes)")).arg(size));
-        else if ((size / 1024) < 1024)
-            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 KB)")).arg(size / 1024));
-        else
-            saveDatabaseAction->setText(QString(tr("&Save Files Data (Requires ~%1 MB)")).arg(size / 1024 / 1024));
     }
 }
 
@@ -1410,7 +1338,8 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         for (auto &action : deletionModeMenu->actions())
             action->setEnabled(false);
 
-        databaseLocationMenu->setEnabled(false);
+        for (auto &action : databaseLocationMenu->actions())
+            action->setEnabled(false);
 
         QFuture<void> future = QtConcurrent::run([&]() { manager.sync(); });
 
@@ -1423,12 +1352,11 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         for (auto &action : deletionModeMenu->actions())
             action->setEnabled(true);
 
-        if (manager.saveDatabaseEnabled())
-            databaseLocationMenu->setEnabled(true);
+        for (auto &action : databaseLocationMenu->actions())
+            action->setEnabled(true);
 
         animSync.stop();
 
-        updateDatabaseSize();
         updateStatus();
         updateSyncTime();
     }
@@ -1489,8 +1417,7 @@ void MainWindow::readSettings()
             manager.profiles()[i].excludeList.append(exclude.toUtf8());
     }
 
-    saveDatabaseAction->setChecked(manager.saveDatabaseEnabled());
-    databaseLocationMenu->setEnabled(manager.saveDatabaseEnabled());
+    databaseLocationMenu->setEnabled(manager.databaseLocation());
     showInTrayAction->setChecked(showInTray);
     disableNotificationAction->setChecked(!manager.notificationsEnabled());
     ignoreHiddenFilesAction->setChecked(manager.ignoreHiddenFilesEnabled());
@@ -1534,7 +1461,6 @@ void MainWindow::saveSettings() const
     settings.setValue("Paused", manager.isPaused());
     settings.setValue("SyncingMode", manager.syncingMode());
     settings.setValue("DeletionMode", manager.deletionMode());
-    settings.setValue("SaveDatabase", manager.saveDatabaseEnabled());
     settings.setValue("DatabaseLocation", manager.databaseLocation());
     settings.setValue("Language", language);
     settings.setValue("Notifications", manager.notificationsEnabled());
@@ -1606,7 +1532,6 @@ void MainWindow::retranslate()
     syncingTimeAction->setText(tr("Synchronize Every:"));
     decreaseSyncTimeAction->setText(tr("&Decrease"));
     moveToTrashAction->setText(tr("&Move Files to Trash"));
-    saveDatabaseAction->setText(tr("&Save Files Data  (Requires disk space)"));
     saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
     saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
 
@@ -1627,7 +1552,6 @@ void MainWindow::retranslate()
     syncingModeMenu->setTitle(tr("&Syncing Mode"));
     syncingTimeMenu->setTitle(tr("&Syncing Time"));
     deletionModeMenu->setTitle(tr("&Deletion Mode"));
-    databaseMenu->setTitle(tr("&Database"));
     databaseLocationMenu->setTitle(tr("&Database Location"));
     languageMenu->setTitle(tr("&Language"));
     settingsMenu->setTitle(tr("&Settings"));
@@ -1637,7 +1561,6 @@ void MainWindow::retranslate()
     ui->SyncLabel->setText(tr("Synchronization profiles:"));
     ui->foldersLabel->setText(tr("Folders to synchronize:"));
 
-    updateDatabaseSize();
     updateStatus();
     updateSyncTime();
 

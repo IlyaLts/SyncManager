@@ -108,22 +108,6 @@
             <translation>संस्करण: %1</translation>
         </message>
         <message>
-            <source>&amp;Save Files Data  (Requires disk space)</source>
-            <translation>&amp;फ़ाइल डेटा सहेजें (डिस्क स्पेस की आवश्यकता है)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
-            <translation>&amp;फ़ाइल डेटा सहेजें (~%1 बाइट्स की आवश्यकता है)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
-            <translation>&amp;फ़ाइल डेटा सहेजें (~%1 केबी की आवश्यकता है)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
-            <translation>&amp;फ़ाइल डेटा सहेजें (~%1 एमबी की आवश्यकता है)</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>फ़ोल्डर नहीं मिल सका</translation>
         </message>
@@ -266,10 +250,6 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;भाषा</translation>
-        </message>
-        <message>
-            <source>&amp;Database</source>
-            <translation>&amp;डेटाबेस</translation>
         </message>
         <message>
             <source>&amp;Database Location</source>

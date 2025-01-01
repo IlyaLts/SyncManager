@@ -47,7 +47,6 @@ SyncManager::SyncManager()
 
     m_paused = settings.value(QLatin1String("Paused"), false).toBool();
     m_notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
-    m_saveDatabase = settings.value("SaveDatabase", true).toBool();
     m_ignoreHiddenFiles = settings.value("IgnoreHiddenFiles", true).toBool();
     m_databaseLocation = static_cast<SyncManager::DatabaseLocation>(settings.value("DatabaseLocation", SyncManager::Decentralized).toInt());
     m_detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
@@ -754,13 +753,10 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             qDebug("=======================================");
 #endif
 
-            if (m_saveDatabase)
-            {
-                if (m_databaseLocation == Decentralized)
-                    loadFileDataDecentralised(profile);
-                else
-                    loadFileDataLocally(profile);
-            }
+    if (m_databaseLocation == Decentralized)
+        loadFileDataDecentralised(profile);
+    else
+        loadFileDataLocally(profile);
 
             // Gets lists of all files in folders
             SET_TIME(startTime);
@@ -862,21 +858,16 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             if (profile.resetLocks())
                 m_databaseChanged = true;
 
-            if (m_saveDatabase)
-            {
-                if (m_databaseChanged)
-                {
-                    if (m_databaseLocation == Decentralized)
-                        saveFileDataDecentralised(profile);
-                    else
-                        saveFileDataLocally(profile);
-                }
-
-                for (auto &folder : profile.folders)
-                    folder.clearData();
-            }
-        }
+    if (m_databaseChanged)
+    {
+        if (m_databaseLocation == Decentralized)
+            saveFileDataDecentralised(profile);
+        else
+            saveFileDataLocally(profile);
     }
+
+    for (auto &folder : profile.folders)
+        folder.clearData();
 
     m_databaseChanged = false;
 
@@ -1741,8 +1732,7 @@ void SyncManager::renameFolders(SyncProfile &profile, SyncFolder &folder)
 {
     for (auto folderIt = folder.foldersToRename.begin(); folderIt != folder.foldersToRename.end() && (!m_paused && folder.isActive());)
     {
-        // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_saveDatabase)
+        if (m_shouldQuit)
             break;
 
         // Removes from the "folders to rename" list if the source file doesn't exist
@@ -1790,8 +1780,7 @@ void SyncManager::moveFiles(SyncProfile &profile, SyncFolder &folder)
 {
     for (auto fileIt = folder.filesToMove.begin(); fileIt != folder.filesToMove.end() && (!m_paused && folder.isActive());)
     {
-        // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_saveDatabase)
+        if (m_shouldQuit)
             break;
 
         // Removes from the "files to move" list if the source file doesn't exist
@@ -1863,8 +1852,7 @@ void SyncManager::removeFolders(SyncProfile &profile, SyncFolder &folder, const 
 
     for (auto folderIt = sortedFoldersToRemove.begin(); folderIt != sortedFoldersToRemove.end() && (!m_paused && folder.isActive());)
     {
-        // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_saveDatabase)
+        if (m_shouldQuit)
             break;
 
         QString folderPath(folder.path);
@@ -1898,8 +1886,7 @@ void SyncManager::removeFiles(SyncProfile &profile, SyncFolder &folder, const QS
 {
     for (auto fileIt = folder.filesToRemove.begin(); fileIt != folder.filesToRemove.end() && (!m_paused && folder.isActive());)
     {
-        // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_saveDatabase)
+        if (m_shouldQuit)
             break;
 
         QString filePath(folder.path);
@@ -1932,8 +1919,7 @@ void SyncManager::createFolders(SyncProfile &profile, SyncFolder &folder, const 
 {
     for (auto folderIt = folder.foldersToCreate.begin(); folderIt != folder.foldersToCreate.end() && (!m_paused && folder.isActive());)
     {
-        // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_saveDatabase)
+        if (m_shouldQuit)
             break;
 
         QString folderPath(folder.path);
@@ -1979,8 +1965,7 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder, const QStr
 
     for (auto fileIt = folder.filesToCopy.begin(); fileIt != folder.filesToCopy.end() && (!m_paused && folder.isActive());)
     {
-        // Breaks only if "remember files" is enabled, otherwise all made changes will be lost
-        if (m_shouldQuit && m_saveDatabase)
+        if (m_shouldQuit)
             break;
 
         // Removes from the "files to copy" list if the source file doesn't exist

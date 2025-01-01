@@ -108,22 +108,6 @@
             <translation>Версія: %1</translation>
         </message>
         <message>
-            <source>&amp;Save Files Data  (Requires disk space)</source>
-            <translation>&amp;Зберегти дані файлів (Потребує місця на диску)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 bytes)</source>
-            <translation>&amp;Зберегти дані файлів (Потребує ~%1 байт)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 KB)</source>
-            <translation>&amp;Зберегти дані файлів (Потребує ~%1 КБ)</translation>
-        </message>
-        <message>
-            <source>&amp;Save Files Data (Requires ~%1 MB)</source>
-            <translation>&amp;Зберегти дані файлів (Потребує ~%1 МБ)</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Не вдалося знайти папку</translation>
         </message>
@@ -266,10 +250,6 @@
         <message>
             <source>&amp;Language</source>
             <translation>&amp;Мова</translation>
-        </message>
-        <message>
-            <source>&amp;Database</source>
-            <translation>&amp;База даних</translation>
         </message>
         <message>
             <source>&amp;Database Location</source>
