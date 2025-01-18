@@ -1046,7 +1046,6 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
             else
             {
                 QString text(tr("Haven't been synchronized yet."));
-                text.append(nextSyncText);
                 profileModel->setData(profileModel->index(i, 0), text, Qt::ToolTipRole);
             }
 
