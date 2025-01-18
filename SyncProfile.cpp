@@ -23,6 +23,17 @@
 
 /*
 ===================
+SyncProfile::SyncProfile
+===================
+*/
+SyncProfile::SyncProfile()
+{
+    syncTimer.setSingleShot(true);
+    syncTimer.setTimerType(Qt::VeryCoarseTimer);
+}
+
+/*
+===================
 SyncProfile::operator =
 ===================
 */

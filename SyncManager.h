@@ -96,7 +96,7 @@ public:
     inline QList<SyncProfile> &profiles() { return m_profiles; }
 
     inline void shouldQuit() { m_shouldQuit = true; }
-    inline void setSyncTimeMultiplier(int multiplier) { m_syncTimeMultiplier = multiplier; }
+    void setSyncTimeMultiplier(int multiplier);
     inline void setPaused(bool paused) { m_paused = paused; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }
     inline void enableIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }

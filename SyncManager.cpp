@@ -243,7 +243,11 @@ void SyncManager::updateTimer(SyncProfile &profile)
     qint64 syncTime = 0;
 
     if (dateToSync >= QDateTime::currentDateTime())
-        syncTime = profile.lastSyncDate.msecsTo(dateToSync);
+        syncTime = QDateTime::currentDateTime().msecsTo(dateToSync);
+
+    if (!profile.isActive())
+        if (syncTime < SYNC_MIN_DELAY)
+            syncTime = SYNC_MIN_DELAY;
 
     bool profileActive = profile.syncTimer.isActive();
 
@@ -252,7 +256,7 @@ void SyncManager::updateTimer(SyncProfile &profile)
         profile.syncTimer.setInterval(duration_cast<duration<qint64, nano>>(duration<quint64, milli>(syncTime)));
         profile.syncTimer.start();
 
-        // Fix an integer overflow that can sometimes happen for unknown reasons
+        // Fix an integer overflow (QTBUG-132388)
         if (profile.syncTimer.remainingTime().count() < 0)
         {
             profile.syncTimer.setInterval(duration<qint64, nano>(std::numeric_limits<qint64>::max()));
@@ -270,9 +274,6 @@ void SyncManager::updateNextSyncingTime()
 {
     for (auto &profile : profiles())
     {
-        if (!profile.isActive())
-            continue;
-
         quint64 time = profile.syncTime;
 
         // Multiplies sync time by 2
@@ -408,6 +409,17 @@ void SyncManager::removeFileData(const SyncFolder &folder)
     {
         QDir(folder.path + DATA_FOLDER_PATH).removeRecursively();
     }
+}
+
+/*
+===================
+SyncManager::setSyncTimeMultiplier
+===================
+*/
+void SyncManager::setSyncTimeMultiplier(int multiplier)
+{
+    m_syncTimeMultiplier = multiplier;
+    updateNextSyncingTime();
 }
 
 /*
@@ -736,21 +748,25 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     debugSetTime(syncTime);
 #endif
 
-    if (!m_paused)
+    if (m_paused)
+        return true;
+
+    QElapsedTimer timer;
+    timer.start();
+
+    for (auto &folder : profile.folders)
+        folder.exists = QFileInfo::exists(folder.path);
+
+    if (!profile.isActive())
     {
-        QElapsedTimer timer;
-        timer.start();
+        emit profileSynced(&profile);
+        return true;
+    }
 
-        // Counts active folders in a profile
-        for (auto &folder : profile.folders)
-            folder.exists = QFileInfo::exists(folder.path);
-
-        if (profile.isActive())
-        {
 #ifdef DEBUG
-            qDebug("=======================================");
-            qDebug("Started syncing %s", qUtf8Printable(profile.name));
-            qDebug("=======================================");
+    qDebug("=======================================");
+    qDebug("Started syncing %s", qUtf8Printable(profile.name));
+    qDebug("=======================================");
 #endif
 
     if (m_databaseLocation == Decentralized)
@@ -758,105 +774,105 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     else
         loadFileDataLocally(profile);
 
-            // Gets lists of all files in folders
-            SET_TIME(startTime);
+    // Gets lists of all files in folders
+    SET_TIME(startTime);
 
-            int result = 0;
-            QList<QPair<Hash, QFuture<int>>> futureList;
+    int result = 0;
+    QList<QPair<Hash, QFuture<int>>> futureList;
 
-            for (auto &folder : profile.folders)
+    for (auto &folder : profile.folders)
+    {
+        hash64_t requiredDevice = hash64(QStorageInfo(folder.path).device());
+        QPair<Hash, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return getListOfFiles(profile, folder); })));
+        pair.second.suspend();
+        futureList.append(pair);
+    }
+
+    while (!futureList.isEmpty())
+    {
+        for (auto futureIt = futureList.begin(); futureIt != futureList.end();)
+        {
+            usedDevicesMutex.lock();
+
+            if (!m_usedDevices.contains(futureIt->first.data))
             {
-                hash64_t requiredDevice = hash64(QStorageInfo(folder.path).device());
-                QPair<Hash, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return getListOfFiles(profile, folder); })));
-                pair.second.suspend();
-                futureList.append(pair);
+                m_usedDevices.insert(futureIt->first.data);
+                futureIt->second.resume();
             }
 
-            while (!futureList.isEmpty())
+            if (futureIt->second.isFinished())
             {
-                for (auto futureIt = futureList.begin(); futureIt != futureList.end();)
-                {
-                    usedDevicesMutex.lock();
-
-                    if (!m_usedDevices.contains(futureIt->first.data))
-                    {
-                        m_usedDevices.insert(futureIt->first.data);
-                        futureIt->second.resume();
-                    }
-
-                    if (futureIt->second.isFinished())
-                    {
-                        result += futureIt->second.result();
-                        m_usedDevices.remove(futureIt->first.data);
-                        futureIt = futureList.erase(static_cast<QList<QPair<Hash, QFuture<int>>>::const_iterator>(futureIt));
-                    }
-                    else
-                    {
-                        futureIt++;
-                    }
-
-                    usedDevicesMutex.unlock();
-                }
-
-                if (m_shouldQuit)
-                    return false;
+                result += futureIt->second.result();
+                m_usedDevices.remove(futureIt->first.data);
+                futureIt = futureList.erase(static_cast<QList<QPair<Hash, QFuture<int>>>::const_iterator>(futureIt));
+            }
+            else
+            {
+                futureIt++;
             }
 
-            TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(profile.name));
+            usedDevicesMutex.unlock();
+        }
 
-            checkForChanges(profile);
+        if (m_shouldQuit)
+            return false;
+    }
 
-            bool countAverage = profile.syncTime ? true : false;
-            profile.syncTime += timer.elapsed();
+    TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(profile.name));
 
-            if (countAverage)
-                profile.syncTime /= 2;
+    checkForChanges(profile);
 
-            int numOfFoldersToRename = 0;
-            int numOfFilesToMove = 0;
-            int numOfFoldersToCreate = 0;
-            int numOffilesToCopy = 0;
-            int numOfFoldersToRemove = 0;
-            int numOfFilesToRemove = 0;
+    bool countAverage = profile.syncTime ? true : false;
+    profile.syncTime += timer.elapsed();
 
-            for (auto &folder : profile.folders)
-            {
-                numOfFoldersToRename += folder.foldersToRename.size();
-                numOfFilesToMove += folder.filesToMove.size();
-                numOfFoldersToCreate += folder.foldersToCreate.size();
-                numOffilesToCopy += folder.filesToCopy.size();
-                numOfFoldersToRemove += folder.foldersToRemove.size();
-                numOfFilesToRemove += folder.filesToRemove.size();
-            }
+    if (countAverage)
+        profile.syncTime /= 2;
 
-            if (numOfFoldersToRename || numOfFilesToMove || numOfFoldersToCreate || numOffilesToCopy || numOfFoldersToRemove || numOfFilesToRemove)
-            {
-                m_databaseChanged = true;
+    int numOfFoldersToRename = 0;
+    int numOfFilesToMove = 0;
+    int numOfFoldersToCreate = 0;
+    int numOffilesToCopy = 0;
+    int numOfFoldersToRemove = 0;
+    int numOfFilesToRemove = 0;
+
+    for (auto &folder : profile.folders)
+    {
+        numOfFoldersToRename += folder.foldersToRename.size();
+        numOfFilesToMove += folder.filesToMove.size();
+        numOfFoldersToCreate += folder.foldersToCreate.size();
+        numOffilesToCopy += folder.filesToCopy.size();
+        numOfFoldersToRemove += folder.foldersToRemove.size();
+        numOfFilesToRemove += folder.filesToRemove.size();
+    }
+
+    if (numOfFoldersToRename || numOfFilesToMove || numOfFoldersToCreate || numOffilesToCopy || numOfFoldersToRemove || numOfFilesToRemove)
+    {
+        m_databaseChanged = true;
 
 #ifdef DEBUG
-                qDebug("---------------------------------------");
-                if (numOfFoldersToRename)   qDebug("Folders to rename: %d", numOfFoldersToRename);
-                if (numOfFilesToMove)       qDebug("Files to move: %d", numOfFilesToMove);
-                if (numOfFoldersToCreate)   qDebug("Folders to create: %d", numOfFoldersToCreate);
-                if (numOffilesToCopy)       qDebug("Files to copy: %d", numOffilesToCopy);
-                if (numOfFoldersToRemove)   qDebug("Folders to remove: %d", numOfFoldersToRemove);
-                if (numOfFilesToRemove)     qDebug("Files to remove: %d", numOfFilesToRemove);
-                qDebug("---------------------------------------");
+        qDebug("---------------------------------------");
+        if (numOfFoldersToRename)   qDebug("Folders to rename: %d", numOfFoldersToRename);
+        if (numOfFilesToMove)       qDebug("Files to move: %d", numOfFilesToMove);
+        if (numOfFoldersToCreate)   qDebug("Folders to create: %d", numOfFoldersToCreate);
+        if (numOffilesToCopy)       qDebug("Files to copy: %d", numOffilesToCopy);
+        if (numOfFoldersToRemove)   qDebug("Folders to remove: %d", numOfFoldersToRemove);
+        if (numOfFilesToRemove)     qDebug("Files to remove: %d", numOfFilesToRemove);
+        qDebug("---------------------------------------");
 #endif
-            }
+    }
 
-            updateStatus();
+    updateStatus();
 
-            if (m_shouldQuit)
-                return false;
+    if (m_shouldQuit)
+        return false;
 
-            syncFiles(profile);
+    syncFiles(profile);
 
-            for (auto &folder : profile.folders)
-                folder.removeInvalidFileData(profile);
+    for (auto &folder : profile.folders)
+        folder.removeInvalidFileData(profile);
 
-            if (profile.resetLocks())
-                m_databaseChanged = true;
+    if (profile.resetLocks())
+        m_databaseChanged = true;
 
     if (m_databaseChanged)
     {
@@ -883,10 +899,9 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         if (folder.isActive())
             folder.lastSyncDate = QDateTime::currentDateTime();
 
-    emit profileSynced(&profile);
-
     updateStatus();
     updateNextSyncingTime();
+    emit profileSynced(&profile);
 
     TIMESTAMP(syncTime, "Syncing is complete.");
     return true;

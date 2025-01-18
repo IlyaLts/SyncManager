@@ -88,7 +88,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(&manager, &SyncManager::warning, this, [this](QString title, QString message){ notify(title, message, QSystemTrayIcon::Critical); });
-    connect(&manager, &SyncManager::profileSynced, this, [this](SyncProfile *profile){ manager.updateTimer(*profile);updateSyncTime(); updateLastSyncTime(profile); saveSettings(); });
+    connect(&manager, &SyncManager::profileSynced, this, &MainWindow::profileSynced);
 
     for (auto &profile : manager.profiles())
     {
@@ -402,7 +402,7 @@ void MainWindow::addProfile()
 
     ui->folderListView->selectionModel()->reset();
     ui->folderListView->update();
-    updateLastSyncTime(&manager.profiles().last());
+    updateProfileTooltip(manager.profiles().last());
     updateStatus();
     manager.updateNextSyncingTime();
     manager.updateTimer(manager.profiles().last());
@@ -480,7 +480,7 @@ void MainWindow::profileClicked(const QItemSelection &selected, const QItemSelec
         folderPaths.append(folder.path);
 
     folderModel->setStringList(folderPaths);
-    updateLastSyncTime(&manager.profiles()[ui->syncProfilesView->currentIndex().row()]);
+    updateProfileTooltip(manager.profiles()[ui->syncProfilesView->currentIndex().row()]);
     updateStatus();
 }
 
@@ -600,7 +600,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         }
     }
 
-    updateLastSyncTime(&manager.profiles()[row]);
+    updateProfileTooltip(manager.profiles()[row]);
 }
 
 /*
@@ -854,7 +854,6 @@ void MainWindow::increaseSyncTime()
 
     manager.setSyncTimeMultiplier(manager.syncTimeMultiplier() + 1);
     decreaseSyncTimeAction->setEnabled(true);
-    manager.updateNextSyncingTime();
     updateSyncTime();
 
     for (auto &profile : manager.profiles())
@@ -863,7 +862,7 @@ void MainWindow::increaseSyncTime()
             increaseSyncTimeAction->setEnabled(false);
 
         manager.updateTimer(profile);
-        updateLastSyncTime(&profile);
+        updateProfileTooltip(profile);
     }
 
     saveSettings();
@@ -877,7 +876,6 @@ MainWindow::decreaseSyncTime
 void MainWindow::decreaseSyncTime()
 {
     manager.setSyncTimeMultiplier(manager.syncTimeMultiplier() - 1);
-    manager.updateNextSyncingTime();
     updateSyncTime();
 
     for (auto &profile : manager.profiles())
@@ -889,7 +887,7 @@ void MainWindow::decreaseSyncTime()
             decreaseSyncTimeAction->setEnabled(false);
 
         manager.updateTimer(profile);
-        updateLastSyncTime(&profile);
+        updateProfileTooltip(profile);
     }
 
     saveSettings();
@@ -1011,14 +1009,14 @@ void MainWindow::updateSyncTime()
 
 /*
 ===================
-MainWindow::updateLastSyncTime
+MainWindow::updateProfileTooltip
 ===================
 */
-void MainWindow::updateLastSyncTime(SyncProfile *profile)
+void MainWindow::updateProfileTooltip(const SyncProfile &profile)
 {
     for (int i = 0; i < profileModel->rowCount(); i++)
     {
-        if (profileModel->index(i, 0).data(Qt::DisplayRole).toString() == profile->name)
+        if (profileModel->index(i, 0).data(Qt::DisplayRole).toString() == profile.name)
         {
             bool hasFolders = false;
 
@@ -1029,8 +1027,8 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             QString nextSyncText("\n");
             nextSyncText.append(tr("Next Synchronization: "));
             QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
-            QDateTime dateTime = profile->lastSyncDate;
-            dateTime += std::chrono::duration_cast<std::chrono::duration<quint64, std::milli>>(profile->syncTimer.remainingTime());
+            QDateTime dateTime = profile.lastSyncDate;
+            dateTime += std::chrono::duration<quint64, std::milli>(profile.syncEvery);
             nextSyncText.append(syncApp->toLocalizedDateTime(dateTime, dateFormat));
             nextSyncText.append(".");
 
@@ -1040,7 +1038,7 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
             }
             else if (!manager.profiles()[i].lastSyncDate.isNull())
             {
-                QString time(syncApp->toLocalizedDateTime(profile->lastSyncDate, dateFormat));
+                QString time(syncApp->toLocalizedDateTime(profile.lastSyncDate, dateFormat));
                 QString text = QString(tr("Last synchronization: %1.")).arg(time);
                 text.append(nextSyncText);
                 profileModel->setData(profileModel->index(i, 0), text, Qt::ToolTipRole);
@@ -1054,7 +1052,7 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
 
             if (ui->syncProfilesView->selectionModel()->selectedIndexes().contains(profileModel->index(i, 0)))
             {
-                for (int j = 0; auto &folder : profile->folders)
+                for (int j = 0; auto &folder : profile.folders)
                 {
                     if (!folder.exists)
                     {
@@ -1063,8 +1061,9 @@ void MainWindow::updateLastSyncTime(SyncProfile *profile)
                     else if (!folder.lastSyncDate.isNull())
                     {
                         QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate, dateFormat));
-                        QString lastSync = QString("Last synchronization: %1.").arg(time);
-                        folderModel->setData(folderModel->index(j, 0), lastSync, Qt::ToolTipRole);
+                        QString text = QString("Last synchronization: %1.").arg(time);
+                        text.append(nextSyncText);
+                        folderModel->setData(folderModel->index(j, 0), text, Qt::ToolTipRole);
                     }
                     else
                     {
@@ -1410,8 +1409,6 @@ void MainWindow::readSettings()
             folder.lastSyncDate = settings.value(profileName + QLatin1String("_profile/") + folder.path + QLatin1String("_LastSyncDate")).toDateTime();
         }
 
-        updateLastSyncTime(&manager.profiles()[i]);
-
         // Loads exclude list
         for (auto &exclude : settings.value(profileName + QLatin1String("_profile/") + QLatin1String("ExcludeList")).toStringList())
             manager.profiles()[i].excludeList.append(exclude.toUtf8());
@@ -1428,8 +1425,12 @@ void MainWindow::readSettings()
     manager.updateNextSyncingTime();
 
     for (auto &profile : manager.profiles())
+    {
         if (profile.syncEvery >= std::numeric_limits<int>::max())
             increaseSyncTimeAction->setEnabled(false);
+
+        updateProfileTooltip(profile);
+    }
 }
 
 /*
@@ -1519,6 +1520,19 @@ void MainWindow::notify(const QString &title, const QString &message, QSystemTra
 
 /*
 ===================
+MainWindow::profileSynced
+===================
+*/
+void MainWindow::profileSynced(SyncProfile *profile)
+{
+    manager.updateTimer(*profile);
+    updateSyncTime();
+    updateProfileTooltip(*profile);
+    saveSettings();
+}
+
+/*
+===================
 MainWindow::retranslate
 ===================
 */
@@ -1565,5 +1579,5 @@ void MainWindow::retranslate()
     updateSyncTime();
 
     for (auto &profile : manager.profiles())
-        updateLastSyncTime(&profile);
+        updateProfileTooltip(profile);
 }

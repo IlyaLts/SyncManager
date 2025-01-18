@@ -86,7 +86,7 @@ private Q_SLOTS:
     void toggleIgnoreHiddenFiles();
     void toggleDetectMoved();
     void updateSyncTime();
-    void updateLastSyncTime(SyncProfile *profile);
+    void updateProfileTooltip(const SyncProfile &profile);
     void updateStatus();
     bool updateApp();
     void showContextMenu(const QPoint &pos) const;
@@ -94,6 +94,7 @@ private Q_SLOTS:
     void readSettings();
     void saveSettings() const;
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
+    void profileSynced(SyncProfile *profile);
 
 private:
 

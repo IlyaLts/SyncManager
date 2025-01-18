@@ -38,7 +38,7 @@ class SyncProfile
 {
 public:
 
-    SyncProfile() { syncTimer.setSingleShot(true); syncTimer.setTimerType(Qt::VeryCoarseTimer); }
+    SyncProfile();
     explicit SyncProfile(bool paused) : SyncProfile()  { this->paused = paused; }
     explicit SyncProfile(const SyncProfile &other) : SyncProfile() { *this = other; }
     explicit SyncProfile(SyncProfile &&other) : SyncProfile() { *this = other; }
