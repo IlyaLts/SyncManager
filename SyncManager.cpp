@@ -976,20 +976,19 @@ int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder)
             SyncFile &file = folder.files[fileHash];
             QDateTime fileDate(fileInfo.lastModified());
 
-/*
             // Quits if a hash collision is detected
-            if (file.path != filePath)
+            if (file.processed())
             {
 #ifndef DEBUG
-                QMessageBox::critical(nullptr, QString("Hash collision detected!"), QString("%s vs %s").arg(qUtf8Printable(filePath), qUtf8Printable(file.path)));
+                QMessageBox::critical(nullptr, QString("Hash collision detected!"), QString("%s vs %s").arg(qUtf8Printable(filePath), qUtf8Printable(profile.filePath(fileHash))));
 #else
-                qCritical("Hash collision detected: %s vs %s", qUtf8Printable(filePath), qUtf8Printable(file.path));
+                qCritical("Hash collision detected: %s vs %s", qUtf8Printable(filePath), qUtf8Printable(profile.filePath(fileHash)));
 #endif
 
                 m_shouldQuit = true;
                 qApp->quit();
                 return -1;
-            }*/
+            }
 
             if (file.date != fileDate)
             {
