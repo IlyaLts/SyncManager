@@ -101,11 +101,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     retranslate();
     switchLanguage(language);
     setDatabaseLocation(manager.databaseLocation());
-    updateSyncTime();
+    updateMenuSyncTime();
     updateStatus();
-
-    if (fileDataOutdated)
-        manager.removeFileData();
 
     updateTimer.setSingleShot(true);
     appInitiated = true;
@@ -201,168 +198,6 @@ void MainWindow::showEvent(QShowEvent *event)
 {
     updateStatus();
     QMainWindow::showEvent(event);
-}
-
-/*
-===================
-MainWindow::setupMenus
-===================
-*/
-void MainWindow::setupMenus()
-{
-    iconAdd.addFile(":/Images/IconAdd.png");
-    iconDone.addFile(":/Images/IconDone.png");
-    iconPause.addFile(":/Images/IconPause.png");
-    iconRemove.addFile(":/Images/IconRemove.png");
-    iconResume.addFile(":/Images/IconResume.png");
-    iconSettings.addFile(":/Images/IconSettings.png");
-    iconSync.addFile(":/Images/IconSync.png");
-    iconWarning.addFile(":/Images/IconWarning.png");
-    trayIconDone.addFile(":/Images/TrayIconDone.png");
-    trayIconIssue.addFile(":/Images/TrayIconIssue.png");
-    trayIconPause.addFile(":/Images/TrayIconPause.png");
-    trayIconSync.addFile(":/Images/TrayIconSync.png");
-    trayIconWarning.addFile(":/Images/TrayIconWarning.png");
-    animSync.setFileName(":/Images/AnimSync.gif");
-
-    syncNowAction = new QAction(iconSync, tr("&Sync Now"), this);
-    pauseSyncingAction = new QAction(iconPause, tr("&Pause Syncing"), this);
-    automaticAction = new QAction(tr("&Automatic"), this);
-    manualAction = new QAction(tr("&Manual"), this);
-    increaseSyncTimeAction = new QAction(tr("&Increase"), this);
-    syncingTimeAction = new QAction(tr("Synchronize Every: "), this);
-    decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
-    moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
-    saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
-    saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
-
-    for (int i = 0; i < languageCount(); i++)
-        languageActions.append(new QAction(tr(languages[i].name), this));
-
-    versioningAction = new QAction(tr("&Versioning"), this);
-    deletePermanentlyAction = new QAction(tr("&Delete Files Permanently"), this);
-    launchOnStartupAction = new QAction(tr("&Launch on Startup"), this);
-    showInTrayAction = new QAction(tr("&Show in System Tray"));
-    disableNotificationAction = new QAction(tr("&Disable Notifications"), this);
-    ignoreHiddenFilesAction = new QAction(tr("&Ignore Hidden Files"), this);
-    detectMovedFilesAction = new QAction(tr("&Detect Renamed and Moved Files"), this);
-    showAction = new QAction(tr("&Show"), this);
-    quitAction = new QAction(tr("&Quit"), this);
-    version = new QAction(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION), this);
-
-    syncingTimeAction->setDisabled(true);
-    decreaseSyncTimeAction->setDisabled(manager.syncTimeMultiplier() <= 1);
-    version->setDisabled(true);
-
-    increaseSyncTimeAction->setEnabled(true);
-    decreaseSyncTimeAction->setEnabled(manager.syncTimeMultiplier() > 1);
-
-    automaticAction->setCheckable(true);
-    manualAction->setCheckable(true);
-    deletePermanentlyAction->setCheckable(true);
-    moveToTrashAction->setCheckable(true);
-    versioningAction->setCheckable(true);
-    saveDatabaseLocallyAction->setCheckable(true);
-    saveDatabaseDecentralizedAction->setCheckable(true);
-
-    for (int i = 0; i < languageCount(); i++)
-        languageActions[i]->setCheckable(true);
-
-    launchOnStartupAction->setCheckable(true);
-    showInTrayAction->setCheckable(true);
-    disableNotificationAction->setCheckable(true);
-    ignoreHiddenFilesAction->setCheckable(true);
-    detectMovedFilesAction->setCheckable(true);
-
-#ifdef Q_OS_WIN
-    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
-#else
-    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop"));
-#endif
-
-    syncingModeMenu = new UnhidableMenu(tr("&Syncing Mode"), this);
-    syncingModeMenu->addAction(automaticAction);
-    syncingModeMenu->addAction(manualAction);
-
-    syncingTimeMenu = new UnhidableMenu(tr("&Syncing Time"), this);
-    syncingTimeMenu->addAction(increaseSyncTimeAction);
-    syncingTimeMenu->addAction(syncingTimeAction);
-    syncingTimeMenu->addAction(decreaseSyncTimeAction);
-
-    deletionModeMenu = new UnhidableMenu(tr("&Deletion Mode"), this);
-    deletionModeMenu->addAction(moveToTrashAction);
-    deletionModeMenu->addAction(versioningAction);
-    deletionModeMenu->addAction(deletePermanentlyAction);
-
-    languageMenu = new UnhidableMenu(tr("&Language"), this);
-
-    for (int i = 0; i < languageCount(); i++)
-        languageMenu->addAction(languageActions[i]);
-
-    databaseLocationMenu = new UnhidableMenu(tr("&Database Location"), this);
-    databaseLocationMenu->addAction(saveDatabaseLocallyAction);
-    databaseLocationMenu->addAction(saveDatabaseDecentralizedAction);
-
-    settingsMenu = new UnhidableMenu(tr("&Settings"), this);
-    settingsMenu->setIcon(iconSettings);
-    settingsMenu->addMenu(syncingModeMenu);
-    settingsMenu->addMenu(syncingTimeMenu);
-    settingsMenu->addMenu(deletionModeMenu);
-    settingsMenu->addMenu(databaseLocationMenu);
-    settingsMenu->addMenu(languageMenu);
-    settingsMenu->addAction(launchOnStartupAction);
-    settingsMenu->addAction(showInTrayAction);
-    settingsMenu->addAction(disableNotificationAction);
-    settingsMenu->addAction(ignoreHiddenFilesAction);
-    settingsMenu->addAction(detectMovedFilesAction);
-    settingsMenu->addSeparator();
-    settingsMenu->addAction(version);
-
-    trayIconMenu = new QMenu(this);
-    trayIconMenu->addAction(syncNowAction);
-    trayIconMenu->addAction(pauseSyncingAction);
-    trayIconMenu->addSeparator();
-    trayIconMenu->addMenu(settingsMenu);
-
-#ifdef Q_OS_LINUX
-    trayIconMenu->addAction(showAction);
-#endif
-
-    trayIconMenu->addAction(quitAction);
-
-    trayIcon = new QSystemTrayIcon(this);
-    trayIcon->setToolTip("Sync Manager");
-    trayIcon->setContextMenu(trayIconMenu);
-    trayIcon->setIcon(trayIconDone);
-
-    this->menuBar()->addAction(syncNowAction);
-    this->menuBar()->addAction(pauseSyncingAction);
-    this->menuBar()->addMenu(settingsMenu);
-    this->menuBar()->setStyle(new MenuProxyStyle);
-
-    connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
-    connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
-    connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Automatic));
-    connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Manual));
-    connect(moveToTrashAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.MoveToTrash));
-    connect(versioningAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.Versioning));
-    connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.DeletePermanently));
-    connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
-    connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
-    connect(saveDatabaseLocallyAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Locally));
-    connect(saveDatabaseDecentralizedAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Decentralized));
-
-    for (int i = 0; i < languageCount(); i++)
-        connect(languageActions[i], &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, languages[i].language));
-
-    connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
-    connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
-    connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
-    connect(ignoreHiddenFilesAction, &QAction::triggered, this, &MainWindow::toggleIgnoreHiddenFiles);
-    connect(detectMovedFilesAction, &QAction::triggered, this, &MainWindow::toggleDetectMoved);
-    connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
-    connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
-    connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
 }
 
 /*
@@ -854,7 +689,7 @@ void MainWindow::increaseSyncTime()
 
     manager.setSyncTimeMultiplier(manager.syncTimeMultiplier() + 1);
     decreaseSyncTimeAction->setEnabled(true);
-    updateSyncTime();
+    updateMenuSyncTime();
 
     for (auto &profile : manager.profiles())
     {
@@ -876,7 +711,7 @@ MainWindow::decreaseSyncTime
 void MainWindow::decreaseSyncTime()
 {
     manager.setSyncTimeMultiplier(manager.syncTimeMultiplier() - 1);
-    updateSyncTime();
+    updateMenuSyncTime();
 
     for (auto &profile : manager.profiles())
     {
@@ -975,277 +810,6 @@ void MainWindow::toggleDetectMoved()
 {
     manager.enableDetectMovedFiles(!manager.detectMovedFilesEnabled());
     saveSettings();
-}
-
-/*
-===================
-MainWindow::updateSyncTime
-===================
-*/
-void MainWindow::updateSyncTime()
-{
-    qint64 syncEvery = 0;
-    QString text(tr("Average Synchronization Time: "));
-
-    for (auto &profile : manager.profiles())
-        syncEvery += profile.syncEvery / manager.profiles().size();
-
-    int seconds = (syncEvery / 1000) % 60;
-    int minutes = (syncEvery / 1000 / 60) % 60;
-    int hours = (syncEvery / 1000 / 60 / 60) % 24;
-    int days = (syncEvery / 1000 / 60 / 60 / 24);
-
-    if (days)
-        text.append(QString(tr("%1 days")).arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
-    else if (hours)
-        text.append(QString(tr("%1 hours")).arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
-    else if (minutes)
-        text.append(QString(tr("%1 minutes")).arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
-    else if (seconds)
-        text.append(QString(tr("%1 seconds")).arg(seconds));
-
-    syncingTimeAction->setText(text);
-}
-
-/*
-===================
-MainWindow::updateProfileTooltip
-===================
-*/
-void MainWindow::updateProfileTooltip(const SyncProfile &profile)
-{
-    for (int i = 0; i < profileModel->rowCount(); i++)
-    {
-        if (profileModel->index(i, 0).data(Qt::DisplayRole).toString() == profile.name)
-        {
-            bool hasFolders = false;
-
-            for (const auto &folder : manager.profiles()[i].folders)
-                if (folder.exists)
-                    hasFolders = true;
-
-            QString nextSyncText("\n");
-            nextSyncText.append(tr("Next Synchronization: "));
-            QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
-            QDateTime dateTime = profile.lastSyncDate;
-            dateTime += std::chrono::duration<quint64, std::milli>(profile.syncEvery);
-            nextSyncText.append(syncApp->toLocalizedDateTime(dateTime, dateFormat));
-            nextSyncText.append(".");
-
-            if (!hasFolders)
-            {
-                profileModel->setData(profileModel->index(i, 0), tr("The profile has no folders available."), Qt::ToolTipRole);
-            }
-            else if (!manager.profiles()[i].lastSyncDate.isNull())
-            {
-                QString time(syncApp->toLocalizedDateTime(profile.lastSyncDate, dateFormat));
-                QString text = QString(tr("Last synchronization: %1.")).arg(time);
-                text.append(nextSyncText);
-                profileModel->setData(profileModel->index(i, 0), text, Qt::ToolTipRole);
-            }
-            else
-            {
-                QString text(tr("Haven't been synchronized yet."));
-                profileModel->setData(profileModel->index(i, 0), text, Qt::ToolTipRole);
-            }
-
-            if (ui->syncProfilesView->selectionModel()->selectedIndexes().contains(profileModel->index(i, 0)))
-            {
-                for (int j = 0; auto &folder : profile.folders)
-                {
-                    if (!folder.exists)
-                    {
-                        folderModel->setData(folderModel->index(j, 0), tr("The folder is currently unavailable."), Qt::ToolTipRole);
-                    }
-                    else if (!folder.lastSyncDate.isNull())
-                    {
-                        QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate, dateFormat));
-                        QString text = QString("Last synchronization: %1.").arg(time);
-                        text.append(nextSyncText);
-                        folderModel->setData(folderModel->index(j, 0), text, Qt::ToolTipRole);
-                    }
-                    else
-                    {
-                        folderModel->setData(folderModel->index(j, 0), tr("Haven't been synchronized yet."), Qt::ToolTipRole);
-                    }
-
-                    j++;
-                }
-            }
-
-            return;
-        }
-    }
-}
-
-/*
-===================
-MainWindow::updateStatus
-===================
-*/
-void MainWindow::updateStatus()
-{
-    manager.updateStatus();
-
-    if (isVisible())
-    {
-        // Profile list
-        for (int i = 0, j = 0; i < manager.profiles().size(); i++)
-        {
-            if (manager.profiles()[i].toBeRemoved)
-                continue;
-
-            QModelIndex index = profileModel->index(j, 0);
-
-            bool hasFolders = false;
-            bool missingFolder = false;
-
-            for (const auto &folder : manager.profiles()[i].folders)
-            {
-                if (folder.exists)
-                    hasFolders = true;
-                else
-                    missingFolder = true;
-            }
-
-            if (manager.profiles()[i].paused)
-            {
-                profileModel->setData(index, iconPause, Qt::DecorationRole);
-            }
-            else if (manager.profiles()[i].syncing || (!manager.profiles()[i].syncHidden && manager.queue().contains(&manager.profiles()[i])))
-            {
-                profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-            }
-            else if (!hasFolders && !manager.profiles()[i].folders.isEmpty())
-            {
-                profileModel->setData(index, iconRemove, Qt::DecorationRole);
-            }
-            else if (missingFolder)
-            {
-                profileModel->setData(index, iconWarning, Qt::DecorationRole);
-            }
-            else
-            {
-                profileModel->setData(index, iconDone, Qt::DecorationRole);
-            }
-
-            ui->syncProfilesView->update(index);
-            j++;
-        }
-
-        // Folders
-        if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
-        {
-            int row = ui->syncProfilesView->selectionModel()->selectedRows()[0].row();
-
-            for (int i = 0, j = 0; i < manager.profiles()[row].folders.size(); i++)
-            {
-                if (manager.profiles()[row].folders[j].toBeRemoved)
-                    continue;
-
-                QModelIndex index = folderModel->index(i, 0);
-
-                if (manager.profiles()[row].folders[i].paused)
-                    folderModel->setData(index, iconPause, Qt::DecorationRole);
-                else if (manager.profiles()[row].folders[i].syncing || (manager.queue().contains(&manager.profiles()[row]) && !manager.isSyncing() && !manager.profiles()[row].syncHidden))
-                    folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-                else if (!manager.profiles()[row].folders[i].exists)
-                    folderModel->setData(index, iconRemove, Qt::DecorationRole);
-                else
-                    folderModel->setData(index, iconDone, Qt::DecorationRole);
-
-                ui->folderListView->update(index);
-                j++;
-            }
-        }
-    }
-
-    // Pause status
-    for (const auto &profile : manager.profiles())
-    {
-        manager.setPaused(profile.paused);
-
-        if (!manager.isPaused())
-            break;
-    }
-
-    // Tray & Icon
-    if (manager.syncingMode() == SyncManager::Automatic && manager.isPaused())
-    {
-        trayIcon->setIcon(trayIconPause);
-        setWindowIcon(trayIconPause);
-
-        // Fixes flickering menu bar
-        if (pauseSyncingAction->icon().cacheKey() != iconResume.cacheKey())
-            pauseSyncingAction->setIcon(iconResume);
-
-        pauseSyncingAction->setText(tr("&Resume Syncing"));
-    }
-    else
-    {
-        if (manager.isSyncing() || (!manager.isThereHiddenProfile() && !manager.queue().empty()))
-        {
-            if (trayIcon->icon().cacheKey() != trayIconSync.cacheKey())
-                trayIcon->setIcon(trayIconSync);
-
-            if (windowIcon().cacheKey() != trayIconSync.cacheKey())
-                setWindowIcon(trayIconSync);
-        }
-        else if (manager.isThereWarning())
-        {
-            if (manager.isThereIssue())
-            {
-                trayIcon->setIcon(trayIconIssue);
-                setWindowIcon(trayIconIssue);
-            }
-            else
-            {
-                trayIcon->setIcon(trayIconWarning);
-                setWindowIcon(trayIconWarning);
-            }
-        }
-        else
-        {
-            trayIcon->setIcon(trayIconDone);
-            setWindowIcon(trayIconDone);
-        }
-
-        // Fixes flickering menu bar
-        if (pauseSyncingAction->icon().cacheKey() != iconPause.cacheKey())
-            pauseSyncingAction->setIcon(iconPause);
-
-        pauseSyncingAction->setText(tr("&Pause Syncing"));
-    }
-
-    syncNowAction->setEnabled(manager.queue().size() != manager.existingProfiles());
-
-    if (!manager.filesToSync())
-    {
-        trayIcon->setToolTip("Sync Manager");
-        setWindowTitle("Sync Manager");
-    }
-    else
-    {
-        trayIcon->setToolTip(QString(tr("Sync Manager - %1 files to synchronize")).arg(manager.filesToSync()));
-        setWindowTitle(QString(tr("Sync Manager - %1 files to synchronize")).arg(manager.filesToSync()));
-    }
-}
-
-/*
-===================
-MainWindow::updateApp
-===================
-*/
-bool MainWindow::updateApp()
-{
-    if (updateTimer.remainingTime() <= 0)
-    {
-        updateStatus();
-        updateTimer.start(UPDATE_DELAY);
-    }
-
-    QApplication::processEvents();
-    return manager.isQuitting();
 }
 
 /*
@@ -1356,7 +920,285 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         animSync.stop();
 
         updateStatus();
-        updateSyncTime();
+        updateMenuSyncTime();
+    }
+}
+
+/*
+===================
+MainWindow::profileSynced
+===================
+*/
+void MainWindow::profileSynced(SyncProfile *profile)
+{
+    manager.updateTimer(*profile);
+    updateMenuSyncTime();
+    updateProfileTooltip(*profile);
+    saveSettings();
+}
+
+/*
+===================
+MainWindow::notify
+
+QSystemTrayIcon doesn't display messages when hidden.
+A quick workaround is to temporarily show the tray, display the message, and then re-hide it.
+===================
+*/
+void MainWindow::notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon)
+{
+    if (!trayIcon->isSystemTrayAvailable() || !manager.notificationsEnabled())
+        return;
+
+    bool visible = trayIcon->isVisible();
+
+    if (!visible)
+        trayIcon->show();
+
+    trayIcon->showMessage(title, message, icon, std::numeric_limits<int>::max());
+
+    if (!visible)
+        trayIcon->hide();
+}
+
+/*
+===================
+MainWindow::updateApp
+===================
+*/
+bool MainWindow::updateApp()
+{
+    if (updateTimer.remainingTime() <= 0)
+    {
+        updateStatus();
+        updateTimer.start(UPDATE_DELAY);
+    }
+
+    QApplication::processEvents();
+    return manager.isQuitting();
+}
+
+/*
+===================
+MainWindow::updateStatus
+===================
+*/
+void MainWindow::updateStatus()
+{
+    manager.updateStatus();
+
+    if (isVisible())
+    {
+        // Profile list
+        for (int i = 0, j = 0; i < manager.profiles().size(); i++)
+        {
+            if (manager.profiles()[i].toBeRemoved)
+                continue;
+
+            QModelIndex index = profileModel->index(j, 0);
+
+            if (manager.profiles()[i].paused)
+                profileModel->setData(index, iconPause, Qt::DecorationRole);
+            else if (manager.profiles()[i].syncing || (!manager.profiles()[i].syncHidden && manager.queue().contains(&manager.profiles()[i])))
+                profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
+            else if (!manager.profiles()[i].hasFolders() && !manager.profiles()[i].folders.isEmpty())
+                profileModel->setData(index, iconRemove, Qt::DecorationRole);
+            else if (manager.profiles()[i].hasMissingFolders())
+                profileModel->setData(index, iconWarning, Qt::DecorationRole);
+            else
+                profileModel->setData(index, iconDone, Qt::DecorationRole);
+
+            ui->syncProfilesView->update(index);
+            j++;
+        }
+
+        // Folders
+        if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
+        {
+            int row = ui->syncProfilesView->selectionModel()->selectedRows()[0].row();
+
+            for (int i = 0, j = 0; i < manager.profiles()[row].folders.size(); i++)
+            {
+                if (manager.profiles()[row].folders[j].toBeRemoved)
+                    continue;
+
+                QModelIndex index = folderModel->index(i, 0);
+
+                if (manager.profiles()[row].folders[i].paused)
+                    folderModel->setData(index, iconPause, Qt::DecorationRole);
+                else if (manager.profiles()[row].folders[i].syncing || (manager.queue().contains(&manager.profiles()[row]) && !manager.isSyncing() && !manager.profiles()[row].syncHidden))
+                    folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
+                else if (!manager.profiles()[row].folders[i].exists)
+                    folderModel->setData(index, iconRemove, Qt::DecorationRole);
+                else
+                    folderModel->setData(index, iconDone, Qt::DecorationRole);
+
+                ui->folderListView->update(index);
+                j++;
+            }
+        }
+    }
+
+    // Pause status
+    for (const auto &profile : manager.profiles())
+    {
+        manager.setPaused(profile.paused);
+
+        if (!manager.isPaused())
+            break;
+    }
+
+    // Tray & Icon
+    if (manager.syncingMode() == SyncManager::Automatic && manager.isPaused())
+    {
+        trayIcon->setIcon(trayIconPause);
+        setWindowIcon(trayIconPause);
+
+        // Fixes flickering menu bar
+        if (pauseSyncingAction->icon().cacheKey() != iconResume.cacheKey())
+            pauseSyncingAction->setIcon(iconResume);
+
+        pauseSyncingAction->setText(tr("&Resume Syncing"));
+    }
+    else
+    {
+        if (manager.isSyncing() || (!manager.isThereHiddenProfile() && !manager.queue().empty()))
+        {
+            if (trayIcon->icon().cacheKey() != trayIconSync.cacheKey())
+                trayIcon->setIcon(trayIconSync);
+
+            if (windowIcon().cacheKey() != trayIconSync.cacheKey())
+                setWindowIcon(trayIconSync);
+        }
+        else if (manager.isThereWarning())
+        {
+            if (manager.isThereIssue())
+            {
+                trayIcon->setIcon(trayIconIssue);
+                setWindowIcon(trayIconIssue);
+            }
+            else
+            {
+                trayIcon->setIcon(trayIconWarning);
+                setWindowIcon(trayIconWarning);
+            }
+        }
+        else
+        {
+            trayIcon->setIcon(trayIconDone);
+            setWindowIcon(trayIconDone);
+        }
+
+        // Fixes flickering menu bar
+        if (pauseSyncingAction->icon().cacheKey() != iconPause.cacheKey())
+            pauseSyncingAction->setIcon(iconPause);
+
+        pauseSyncingAction->setText(tr("&Pause Syncing"));
+    }
+
+    syncNowAction->setEnabled(manager.queue().size() != manager.existingProfiles());
+
+    if (manager.filesToSync())
+    {
+        trayIcon->setToolTip(QString(tr("Sync Manager - %1 files to synchronize")).arg(manager.filesToSync()));
+        setWindowTitle(QString(tr("Sync Manager - %1 files to synchronize")).arg(manager.filesToSync()));
+    }
+    else
+    {
+        trayIcon->setToolTip("Sync Manager");
+        setWindowTitle("Sync Manager");
+    }
+}
+
+/*
+===================
+MainWindow::updateMenuSyncTime
+===================
+*/
+void MainWindow::updateMenuSyncTime()
+{
+    qint64 syncEvery = 0;
+    QString text(tr("Average Synchronization Time: "));
+
+    for (auto &profile : manager.profiles())
+        syncEvery += profile.syncEvery / manager.profiles().size();
+
+    int seconds = (syncEvery / 1000) % 60;
+    int minutes = (syncEvery / 1000 / 60) % 60;
+    int hours = (syncEvery / 1000 / 60 / 60) % 24;
+    int days = (syncEvery / 1000 / 60 / 60 / 24);
+
+    if (days)
+        text.append(QString(tr("%1 days")).arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
+    else if (hours)
+        text.append(QString(tr("%1 hours")).arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
+    else if (minutes)
+        text.append(QString(tr("%1 minutes")).arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
+    else if (seconds)
+        text.append(QString(tr("%1 seconds")).arg(seconds));
+
+    syncingTimeAction->setText(text);
+}
+
+/*
+===================
+MainWindow::updateProfileTooltip
+===================
+*/
+void MainWindow::updateProfileTooltip(const SyncProfile &profile)
+{
+    int index = profileIndex(profile);
+
+    if (index < 0)
+        return;
+
+    QString nextSyncText("\n");
+    nextSyncText.append(tr("Next Synchronization: "));
+    QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
+    QDateTime dateTime = profile.lastSyncDate;
+    dateTime += std::chrono::duration<quint64, std::milli>(profile.syncEvery);
+    nextSyncText.append(syncApp->toLocalizedDateTime(dateTime, dateFormat));
+    nextSyncText.append(".");
+
+    if (!profile.hasFolders())
+    {
+        profileModel->setData(profileModel->index(index, 0), tr("The profile has no folders available."), Qt::ToolTipRole);
+    }
+    else if (!profile.lastSyncDate.isNull())
+    {
+        QString time(syncApp->toLocalizedDateTime(profile.lastSyncDate, dateFormat));
+        QString text = QString(tr("Last synchronization: %1.")).arg(time);
+        text.append(nextSyncText);
+        profileModel->setData(profileModel->index(index, 0), text, Qt::ToolTipRole);
+    }
+    else
+    {
+        QString text(tr("Haven't been synchronized yet."));
+        profileModel->setData(profileModel->index(index, 0), text, Qt::ToolTipRole);
+    }
+
+    if (ui->syncProfilesView->selectionModel()->selectedIndexes().contains(profileModel->index(index, 0)))
+    {
+        for (int i = 0; auto &folder : profile.folders)
+        {
+            if (!folder.exists)
+            {
+                folderModel->setData(folderModel->index(i, 0), tr("The folder is currently unavailable."), Qt::ToolTipRole);
+            }
+            else if (!folder.lastSyncDate.isNull())
+            {
+                QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate, dateFormat));
+                QString text = QString("Last synchronization: %1.").arg(time);
+                text.append(nextSyncText);
+                folderModel->setData(folderModel->index(i, 0), text, Qt::ToolTipRole);
+            }
+            else
+            {
+                folderModel->setData(folderModel->index(i, 0), tr("Haven't been synchronized yet."), Qt::ToolTipRole);
+            }
+
+            i++;
+        }
     }
 }
 
@@ -1381,7 +1223,6 @@ void MainWindow::readSettings()
 
     showInTray = settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool();
     language = static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt());
-    fileDataOutdated = settings.value("AppVersion").toString().compare("1.9.2") < 0;
 
     for (int i = 0; i < manager.profiles().size(); i++)
     {
@@ -1457,7 +1298,6 @@ void MainWindow::saveSettings() const
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("ShowInTray", showInTray);
-    settings.setValue("AppVersion", SYNCMANAGER_VERSION);
     settings.setValue("Paused", manager.isPaused());
     settings.setValue("SyncingMode", manager.syncingMode());
     settings.setValue("DeletionMode", manager.deletionMode());
@@ -1495,39 +1335,164 @@ void MainWindow::saveSettings() const
 
 /*
 ===================
-MainWindow::notify
-
-QSystemTrayIcon doesn't display messages when hidden.
-A quick workaround is to temporarily show the tray, display the message, and then re-hide it.
+MainWindow::setupMenus
 ===================
 */
-void MainWindow::notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon)
+void MainWindow::setupMenus()
 {
-    if (!trayIcon->isSystemTrayAvailable() || !manager.notificationsEnabled())
-        return;
+    iconAdd.addFile(":/Images/IconAdd.png");
+    iconDone.addFile(":/Images/IconDone.png");
+    iconPause.addFile(":/Images/IconPause.png");
+    iconRemove.addFile(":/Images/IconRemove.png");
+    iconResume.addFile(":/Images/IconResume.png");
+    iconSettings.addFile(":/Images/IconSettings.png");
+    iconSync.addFile(":/Images/IconSync.png");
+    iconWarning.addFile(":/Images/IconWarning.png");
+    trayIconDone.addFile(":/Images/TrayIconDone.png");
+    trayIconIssue.addFile(":/Images/TrayIconIssue.png");
+    trayIconPause.addFile(":/Images/TrayIconPause.png");
+    trayIconSync.addFile(":/Images/TrayIconSync.png");
+    trayIconWarning.addFile(":/Images/TrayIconWarning.png");
+    animSync.setFileName(":/Images/AnimSync.gif");
 
-    bool visible = trayIcon->isVisible();
+    syncNowAction = new QAction(iconSync, tr("&Sync Now"), this);
+    pauseSyncingAction = new QAction(iconPause, tr("&Pause Syncing"), this);
+    automaticAction = new QAction(tr("&Automatic"), this);
+    manualAction = new QAction(tr("&Manual"), this);
+    increaseSyncTimeAction = new QAction(tr("&Increase"), this);
+    syncingTimeAction = new QAction(tr("Synchronize Every: "), this);
+    decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
+    moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
+    saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
+    saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
 
-    if (!visible)
-        trayIcon->show();
+    for (int i = 0; i < languageCount(); i++)
+        languageActions.append(new QAction(tr(languages[i].name), this));
 
-    trayIcon->showMessage(title, message, icon, std::numeric_limits<int>::max());
+    versioningAction = new QAction(tr("&Versioning"), this);
+    deletePermanentlyAction = new QAction(tr("&Delete Files Permanently"), this);
+    launchOnStartupAction = new QAction(tr("&Launch on Startup"), this);
+    showInTrayAction = new QAction(tr("&Show in System Tray"));
+    disableNotificationAction = new QAction(tr("&Disable Notifications"), this);
+    ignoreHiddenFilesAction = new QAction(tr("&Ignore Hidden Files"), this);
+    detectMovedFilesAction = new QAction(tr("&Detect Renamed and Moved Files"), this);
+    showAction = new QAction(tr("&Show"), this);
+    quitAction = new QAction(tr("&Quit"), this);
+    version = new QAction(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION), this);
 
-    if (!visible)
-        trayIcon->hide();
-}
+    syncingTimeAction->setDisabled(true);
+    decreaseSyncTimeAction->setDisabled(manager.syncTimeMultiplier() <= 1);
+    version->setDisabled(true);
 
-/*
-===================
-MainWindow::profileSynced
-===================
-*/
-void MainWindow::profileSynced(SyncProfile *profile)
-{
-    manager.updateTimer(*profile);
-    updateSyncTime();
-    updateProfileTooltip(*profile);
-    saveSettings();
+    increaseSyncTimeAction->setEnabled(true);
+    decreaseSyncTimeAction->setEnabled(manager.syncTimeMultiplier() > 1);
+
+    automaticAction->setCheckable(true);
+    manualAction->setCheckable(true);
+    deletePermanentlyAction->setCheckable(true);
+    moveToTrashAction->setCheckable(true);
+    versioningAction->setCheckable(true);
+    saveDatabaseLocallyAction->setCheckable(true);
+    saveDatabaseDecentralizedAction->setCheckable(true);
+
+    for (int i = 0; i < languageCount(); i++)
+        languageActions[i]->setCheckable(true);
+
+    launchOnStartupAction->setCheckable(true);
+    showInTrayAction->setCheckable(true);
+    disableNotificationAction->setCheckable(true);
+    ignoreHiddenFilesAction->setCheckable(true);
+    detectMovedFilesAction->setCheckable(true);
+
+#ifdef Q_OS_WIN
+    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk"));
+#else
+    launchOnStartupAction->setChecked(QFile::exists(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop"));
+#endif
+
+    syncingModeMenu = new UnhidableMenu(tr("&Syncing Mode"), this);
+    syncingModeMenu->addAction(automaticAction);
+    syncingModeMenu->addAction(manualAction);
+
+    syncingTimeMenu = new UnhidableMenu(tr("&Syncing Time"), this);
+    syncingTimeMenu->addAction(increaseSyncTimeAction);
+    syncingTimeMenu->addAction(syncingTimeAction);
+    syncingTimeMenu->addAction(decreaseSyncTimeAction);
+
+    deletionModeMenu = new UnhidableMenu(tr("&Deletion Mode"), this);
+    deletionModeMenu->addAction(moveToTrashAction);
+    deletionModeMenu->addAction(versioningAction);
+    deletionModeMenu->addAction(deletePermanentlyAction);
+
+    languageMenu = new UnhidableMenu(tr("&Language"), this);
+
+    for (int i = 0; i < languageCount(); i++)
+        languageMenu->addAction(languageActions[i]);
+
+    databaseLocationMenu = new UnhidableMenu(tr("&Database Location"), this);
+    databaseLocationMenu->addAction(saveDatabaseLocallyAction);
+    databaseLocationMenu->addAction(saveDatabaseDecentralizedAction);
+
+    settingsMenu = new UnhidableMenu(tr("&Settings"), this);
+    settingsMenu->setIcon(iconSettings);
+    settingsMenu->addMenu(syncingModeMenu);
+    settingsMenu->addMenu(syncingTimeMenu);
+    settingsMenu->addMenu(deletionModeMenu);
+    settingsMenu->addMenu(databaseLocationMenu);
+    settingsMenu->addMenu(languageMenu);
+    settingsMenu->addAction(launchOnStartupAction);
+    settingsMenu->addAction(showInTrayAction);
+    settingsMenu->addAction(disableNotificationAction);
+    settingsMenu->addAction(ignoreHiddenFilesAction);
+    settingsMenu->addAction(detectMovedFilesAction);
+    settingsMenu->addSeparator();
+    settingsMenu->addAction(version);
+
+    trayIconMenu = new QMenu(this);
+    trayIconMenu->addAction(syncNowAction);
+    trayIconMenu->addAction(pauseSyncingAction);
+    trayIconMenu->addSeparator();
+    trayIconMenu->addMenu(settingsMenu);
+
+#ifdef Q_OS_LINUX
+    trayIconMenu->addAction(showAction);
+#endif
+
+    trayIconMenu->addAction(quitAction);
+
+    trayIcon = new QSystemTrayIcon(this);
+    trayIcon->setToolTip("Sync Manager");
+    trayIcon->setContextMenu(trayIconMenu);
+    trayIcon->setIcon(trayIconDone);
+
+    this->menuBar()->addAction(syncNowAction);
+    this->menuBar()->addAction(pauseSyncingAction);
+    this->menuBar()->addMenu(settingsMenu);
+    this->menuBar()->setStyle(new MenuProxyStyle);
+
+    connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
+    connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
+    connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Automatic));
+    connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Manual));
+    connect(moveToTrashAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.MoveToTrash));
+    connect(versioningAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.Versioning));
+    connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.DeletePermanently));
+    connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
+    connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
+    connect(saveDatabaseLocallyAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Locally));
+    connect(saveDatabaseDecentralizedAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Decentralized));
+
+    for (int i = 0; i < languageCount(); i++)
+        connect(languageActions[i], &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, languages[i].language));
+
+    connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
+    connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
+    connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
+    connect(ignoreHiddenFilesAction, &QAction::triggered, this, &MainWindow::toggleIgnoreHiddenFiles);
+    connect(detectMovedFilesAction, &QAction::triggered, this, &MainWindow::toggleDetectMoved);
+    connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
+    connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
+    connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
 }
 
 /*
@@ -1575,8 +1540,22 @@ void MainWindow::retranslate()
     ui->foldersLabel->setText(tr("Folders to synchronize:"));
 
     updateStatus();
-    updateSyncTime();
+    updateMenuSyncTime();
 
     for (auto &profile : manager.profiles())
         updateProfileTooltip(profile);
+}
+
+/*
+===================
+MainWindow::profileIndex
+===================
+*/
+int MainWindow::profileIndex(const SyncProfile &profile)
+{
+    for (int i = 0; i < profileModel->rowCount(); i++)
+        if (profileModel->index(i, 0).data(Qt::DisplayRole).toString() == profile.name)
+            return i;
+
+    return -1;
 }

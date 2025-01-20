@@ -150,3 +150,31 @@ bool SyncProfile::isActive() const
 
     return !paused && !toBeRemoved && activeFolders >= 2;
 }
+
+/*
+===================
+SyncProfile::hasFolders
+===================
+*/
+bool SyncProfile::hasFolders() const
+{
+    for (const auto &folder : folders)
+        if (folder.exists)
+            return true;
+
+    return false;
+}
+
+/*
+===================
+SyncProfile::hasMissingFolders
+===================
+*/
+bool SyncProfile::hasMissingFolders() const
+{
+    for (const auto &folder : folders)
+        if (!folder.exists)
+            return true;
+
+    return false;
+}

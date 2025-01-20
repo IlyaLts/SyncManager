@@ -49,9 +49,11 @@ public:
     void addFilePath(hash64_t hash, const QByteArray &path);
     inline void clearFilePaths() { filePaths.clear(); }
 
-    inline QByteArray getFilePath(Hash hash) { return filePaths.value(hash); }
+    inline QByteArray filePath(Hash hash) { return filePaths.value(hash); }
     inline bool hasFilePath(Hash hash) { return filePaths.contains(hash); }
     bool isActive() const;
+    bool hasFolders() const;
+    bool hasMissingFolders() const;
 
     QList<SyncFolder> folders;
     QList<QByteArray> excludeList;

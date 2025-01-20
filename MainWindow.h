@@ -21,6 +21,7 @@
 #define MAINWINDOW_H
 
 #include "SyncManager.h"
+#include "SyncProfile.h"
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include <QTimer>
@@ -63,7 +64,6 @@ protected:
 
 private Q_SLOTS:
 
-    void setupMenus();
     void addProfile();
     void removeProfile();
     void profileClicked(const QItemSelection &selected, const QItemSelection &deselected);
@@ -85,23 +85,24 @@ private Q_SLOTS:
     void setDatabaseLocation(SyncManager::DatabaseLocation location);
     void toggleIgnoreHiddenFiles();
     void toggleDetectMoved();
-    void updateSyncTime();
-    void updateProfileTooltip(const SyncProfile &profile);
-    void updateStatus();
-    bool updateApp();
     void showContextMenu(const QPoint &pos) const;
     void sync(SyncProfile *profile, bool hidden = false);
-    void readSettings();
-    void saveSettings() const;
-    void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
     void profileSynced(SyncProfile *profile);
 
 private:
 
+    void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
+    bool updateApp();
+    void updateStatus();
+    void updateMenuSyncTime();
+    void updateProfileTooltip(const SyncProfile &profile);
+    void readSettings();
+    void saveSettings() const;
+    void setupMenus();
     void retranslate();
+    int profileIndex(const SyncProfile &profile);
 
     SyncManager manager;
-
     Ui::MainWindow *ui;
 
     DecoratedStringListModel *profileModel;
@@ -158,7 +159,6 @@ private:
     QTimer updateTimer;
     bool showInTray;
     bool appInitiated = false;
-    bool fileDataOutdated = false;
 };
 
 #endif // MAINWINDOW_H

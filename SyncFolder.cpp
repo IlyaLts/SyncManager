@@ -80,7 +80,7 @@ SyncFolder::isTopFolderUpdated
 */
 bool SyncFolder::isTopFolderUpdated(SyncProfile &profile, hash64_t hash) const
 {
-    QByteArray path = profile.getFilePath(hash);
+    QByteArray path = profile.filePath(hash);
     return files.value(hash64(QByteArray(path).remove(path.indexOf('/'), path.size()))).updated();
 }
 
