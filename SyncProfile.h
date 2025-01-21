@@ -52,7 +52,7 @@ public:
     inline QByteArray filePath(Hash hash) { return filePaths.value(hash); }
     inline bool hasFilePath(Hash hash) { return filePaths.contains(hash); }
     bool isActive() const;
-    bool hasFolders() const;
+    bool hasExistingFolders() const;
     bool hasMissingFolders() const;
 
     QList<SyncFolder> folders;

@@ -153,10 +153,10 @@ bool SyncProfile::isActive() const
 
 /*
 ===================
-SyncProfile::hasFolders
+SyncProfile::hasExistingFolders
 ===================
 */
-bool SyncProfile::hasFolders() const
+bool SyncProfile::hasExistingFolders() const
 {
     for (const auto &folder : folders)
         if (folder.exists)
