@@ -1,4 +1,12 @@
 ==========================
+1.9.6 - Jan 23, 2025
+==========================
+- Fixed the issue where next sync time can not be larger than ~24 days.
+- Fixed the issue where the manager fails to sync profile on schedule after becoming active.
+- Fixed hidden syncing status for profiles on manual syncing in auto mode.
+- Removed the disable database saving option.
+
+==========================
 1.9.5 - Nov 25, 2024
 ==========================
 - Separated the next synchronization timer for each profile, allowing profiles with a small number of files to synchronize more frequently, regardless of other profiles with a large number of files.
