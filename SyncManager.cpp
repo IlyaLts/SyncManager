@@ -253,15 +253,15 @@ void SyncManager::updateTimer(SyncProfile &profile)
 
     if ((!m_busy && profileActive) || (!profileActive || (duration<qint64, milli>(syncTime) < profile.syncTimer.remainingTime())))
     {
-        profile.syncTimer.setInterval(duration_cast<duration<qint64, nano>>(duration<quint64, milli>(syncTime)));
-        profile.syncTimer.start();
+        quint64 interval = syncTime;
+        quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
 
-        // Fix an integer overflow (QTBUG-132388)
-        if (profile.syncTimer.remainingTime().count() < 0)
-        {
-            profile.syncTimer.setInterval(duration<qint64, nano>(std::numeric_limits<qint64>::max()));
-            profile.syncTimer.start();
-        }
+        // If exceeds the maximum value of an qint64
+        if (interval > max)
+            interval = max;
+
+        profile.syncTimer.setInterval(duration_cast<duration<qint64, nano>>(duration<quint64, milli>(interval)));
+        profile.syncTimer.start();
     }
 }
 
@@ -280,12 +280,12 @@ void SyncManager::updateNextSyncingTime()
         for (int i = 0; i < m_syncTimeMultiplier - 1; i++)
         {
             time <<= 1;
+            quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
 
             // If exceeds the maximum value of an qint64
-            //if (time < 0)
-            if (time >= std::numeric_limits<int>::max())
+            if (time > max)
             {
-                time = std::numeric_limits<int>::max();
+                time = max;
                 break;
             }
         }

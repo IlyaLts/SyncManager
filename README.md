@@ -45,7 +45,7 @@ When SyncManager needs to synchronize a file from one location to another but fi
 - **Delete Files Permanently** - *(Irreversible, frees storage immediately)*
 
 # Building
-Requires Qt 6.8 or newer. Buildable with Qt Creator.
+Requires Qt 6.9 or newer. Buildable with Qt Creator.
 
 # License
 SyncManager is licensed under the GPL-3.0 license, see LICENSE.txt for more information.

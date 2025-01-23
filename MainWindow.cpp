@@ -678,9 +678,12 @@ MainWindow::increaseSyncTime
 */
 void MainWindow::increaseSyncTime()
 {
+    quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
+
     for (auto &profile : manager.profiles())
     {
-        if (profile.syncEvery >= std::numeric_limits<int>::max())
+        // If exceeds the maximum value of an qint64
+        if (profile.syncEvery >= max)
         {
             increaseSyncTimeAction->setEnabled(false);
             return;
@@ -693,7 +696,8 @@ void MainWindow::increaseSyncTime()
 
     for (auto &profile : manager.profiles())
     {
-        if (profile.syncEvery >= std::numeric_limits<int>::max())
+        // If exceeds the maximum value of an qint64
+        if (profile.syncEvery >= max)
             increaseSyncTimeAction->setEnabled(false);
 
         manager.updateTimer(profile);
@@ -715,7 +719,10 @@ void MainWindow::decreaseSyncTime()
 
     for (auto &profile : manager.profiles())
     {
-        if (profile.syncEvery < std::numeric_limits<int>::max())
+        quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
+
+        // If exceeds the maximum value of an qint64
+        if (profile.syncEvery < max)
             increaseSyncTimeAction->setEnabled(true);
 
         if (manager.syncTimeMultiplier() <= 1)
@@ -1126,16 +1133,16 @@ MainWindow::updateMenuSyncTime
 */
 void MainWindow::updateMenuSyncTime()
 {
-    qint64 syncEvery = 0;
+    quint64 syncEvery = 0;
     QString text(tr("Average Synchronization Time: "));
 
     for (auto &profile : manager.profiles())
         syncEvery += profile.syncEvery / manager.profiles().size();
 
-    int seconds = (syncEvery / 1000) % 60;
-    int minutes = (syncEvery / 1000 / 60) % 60;
-    int hours = (syncEvery / 1000 / 60 / 60) % 24;
-    int days = (syncEvery / 1000 / 60 / 60 / 24);
+    quint64 seconds = (syncEvery / 1000) % 60;
+    quint64 minutes = (syncEvery / 1000 / 60) % 60;
+    quint64 hours = (syncEvery / 1000 / 60 / 60) % 24;
+    quint64 days = (syncEvery / 1000 / 60 / 60 / 24);
 
     if (days)
         text.append(QString(tr("%1 days")).arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
@@ -1275,7 +1282,10 @@ void MainWindow::readSettings()
 
     for (auto &profile : manager.profiles())
     {
-        if (profile.syncEvery >= std::numeric_limits<int>::max())
+        quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
+
+        // If exceeds the maximum value of an qint64
+        if (profile.syncEvery >= max)
             increaseSyncTimeAction->setEnabled(false);
 
         updateProfileTooltip(profile);
