@@ -8,10 +8,10 @@
 Here's an overview of how it works:
 ### Syncing Modes
 Synchronization can be triggered using the following modes:
-- **Manual** - *(Lets you decide what and when to synchronize certain profiles)*
-- **Automatic** - *(Synchronizes data based on its average synchronization time, multiplied by the frequency multiplier, with a minimum delay of 1 second and a maximum delay of around 25 days)*
+- **Manual** - *(Lets you decide when to synchronize certain profiles)*
+- **Automatic** - *(Synchronizes data based on its average synchronization time, multiplied by the frequency multiplier, with a minimum delay of 1 second)*
 ### File and Folder Discovery
-SyncManager starts by scanning the designated source and target locations for files and folders.
+SyncManager starts by scanning the designated folders for files and folders.
 ### Change Detection Order
 SyncManager uses sophisticated algorithms to detect changes since the last synchronization to determine which files and folders must be synchronized in the following order:
 1. **File attribute changes**
@@ -21,7 +21,7 @@ SyncManager uses sophisticated algorithms to detect changes since the last synch
 1. **Deleted files and folders**
 ### Detection of Case-Changed Folders
 #### *(Only for case-insensitive systems)*
-Since SyncManager doesn't store the original paths of files, it relies on a filepath comparison-based approach between synchronization folders to detect case changes in folder names. It compares the current filename of a newly renamed folder in one location with the corresponding folder's filenames in other locations (if they exist), checking for differences in case naming. If a difference is found, SyncManager assumes the case of the folder was changed and renames folders accordingly, matching the folder's filename in the source location.
+Since SyncManager doesn't store the original paths of files in a database, it relies on a filepath comparison-based approach between synchronization folders to detect case changes in folder names. It compares the current filename of a newly renamed folder in one location with the corresponding folder's filenames in other locations (if they exist), checking for differences in case naming. If a difference is found, SyncManager considers the case of the folder was changed and renames folders accordingly, matching the folder's filename in the source location.
 ### Detection of Moved and Renamed Files
 SyncManager searches for matches between removed and new files based on their modified date and size. If a match is found, the file is considered to be the same, and SyncManager renames or moves the corresponding file to other locations to match the new location in the source. In cases where there are multiple matches with the same modified date and size, SyncManager falls back to the standard synchronization method, copying files from one location to another.
 ### Conflict Resolution
