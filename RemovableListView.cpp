@@ -31,7 +31,8 @@ void RemovableListView::mousePressEvent(QMouseEvent *event)
     QListView::mousePressEvent(event);
 
     // Clears selection when a user clicks on an empty area
-    if (!item.isValid()) clearSelection();
+    if (!item.isValid())
+        clearSelection();
 }
 
 /*

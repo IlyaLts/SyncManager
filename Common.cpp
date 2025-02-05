@@ -19,8 +19,6 @@
 
 #include "Common.h"
 #include "SyncFile.h"
-#include <stdio.h>
-#include <cstdarg>
 #include <QDebug>
 #include <QCryptographicHash>
 #include <QDirIterator>
@@ -28,6 +26,8 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QPushButton>
+#include <stdio.h>
+#include <cstdarg>
 
 #ifdef Q_OS_WIN
 #include <fileapi.h>
@@ -36,23 +36,6 @@
 #include <utime.h>
 #include <sys/time.h>
 #endif
-
-Language defaultLanguage = { QLocale::English, QLocale::UnitedStates, ":/i18n/en_US.qm", "&English" };
-
-Language languages[] =
-    {
-        {QLocale::Chinese,      QLocale::China,         ":/i18n/zh_CN.qm", "&Chinese"},
-        {QLocale::English,      QLocale::UnitedStates,  ":/i18n/en_US.qm", "&English"},
-        {QLocale::French,       QLocale::France,        ":/i18n/fr_FR.qm", "&French"},
-        {QLocale::German,       QLocale::Germany,       ":/i18n/de_DE.qm", "&German"},
-        {QLocale::Hindi,        QLocale::India,         ":/i18n/hi_IN.qm", "&Hindi"},
-        {QLocale::Italian,      QLocale::Italy,         ":/i18n/it_IT.qm", "&Italian"},
-        {QLocale::Japanese,     QLocale::Japan,         ":/i18n/ja_JP.qm", "&Japanese"},
-        {QLocale::Portuguese,   QLocale::Portugal,      ":/i18n/pt_PT.qm", "&Portuguese"},
-        {QLocale::Russian,      QLocale::Russia,        ":/i18n/ru_RU.qm", "&Russian"},
-        {QLocale::Spanish,      QLocale::Spain,         ":/i18n/es_ES.qm", "&Spanish"},
-        {QLocale::Ukrainian,    QLocale::Ukraine,       ":/i18n/uk_UA.qm", "&Ukrainian"}
-};
 
 #ifdef DEBUG
 std::chrono::high_resolution_clock::time_point startTime;
@@ -89,16 +72,6 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 
 /*
 ===================
-languageCount
-===================
-*/
-int languageCount()
-{
-    return static_cast<int>(sizeof(languages) / sizeof(Language));
-}
-
-/*
-===================
 hash64
 ===================
 */
@@ -115,7 +88,7 @@ hash64_t hash64(const QByteArray &str)
 ===================
 removeSimilarFiles
 
-Removes duplicates from the list of files based on file size and modification time (Windows)
+Removes duplicates from the list of files based on file size and modification time
 ===================
 */
 void removeSimilarFiles(QHash<Hash, SyncFile *> &files)
@@ -133,7 +106,7 @@ void removeSimilarFiles(QHash<Hash, SyncFile *> &files)
             }
 
 #if defined(Q_OS_WIN) || defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
-            if (fileIt.value()->date != anotherFileIt.value()->date)
+            if (fileIt.value()->modifiedDate != anotherFileIt.value()->modifiedDate)
             {
                 ++anotherFileIt;
                 continue;

@@ -67,7 +67,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (auto &name : profileNames)
     {
-        manager.profiles().append(SyncProfile(manager.isPaused()));
+        manager.profiles().append(SyncProfile());
+        manager.profiles().last().paused = manager.isPaused();
         manager.profiles().last().name = name;
 
         QStringList paths = profilesData.value(name).toStringList();
@@ -75,7 +76,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         for (const auto &path : paths)
         {
-            manager.profiles().last().folders.append(SyncFolder(manager.isPaused()));
+            manager.profiles().last().folders.append(SyncFolder());
+            manager.profiles().last().folders.last().paused = manager.isPaused();
             manager.profiles().last().folders.last().path = path.toUtf8();
         }
     }
@@ -219,7 +221,8 @@ void MainWindow::addProfile()
         newName.insert(0, tr("New profile"));
     }
 
-    manager.profiles().append(SyncProfile(manager.isPaused()));
+    manager.profiles().append(SyncProfile());
+    manager.profiles().last().paused = manager.isPaused();
     manager.profiles().last().name = newName;
     profileNames.append(newName);
     profileModel->setStringList(profileNames);
@@ -279,7 +282,7 @@ void MainWindow::removeProfile()
         {
             folder.paused = true;
             folder.toBeRemoved = true;
-            manager.removeFileData(folder);
+            manager.removeDatabase(folder);
         }
 
         if (!manager.isBusy())
@@ -422,7 +425,8 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
         if (!exists)
         {
-            manager.profiles()[row].folders.append(SyncFolder(manager.isPaused()));
+            manager.profiles()[row].folders.append(SyncFolder());
+            manager.profiles()[row].folders.last().paused = manager.isPaused();
             manager.profiles()[row].folders.last().path = folder.toUtf8();
             manager.profiles()[row].folders.last().path.append("/");
             folderPaths.append(manager.profiles()[row].folders.last().path);
@@ -466,7 +470,7 @@ void MainWindow::removeFolder()
         folder.toBeRemoved = true;
         ui->folderListView->model()->removeRow(index.row());
 
-        manager.removeFileData(folder);
+        manager.removeDatabase(folder);
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
         settings.remove(manager.profiles()[profileRow].name + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"));
@@ -742,7 +746,7 @@ MainWindow::switchLanguage
 */
 void MainWindow::switchLanguage(QLocale::Language language)
 {
-    for (int i = 0; i < languageCount(); i++)
+    for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setChecked(language == languages[i].language);
 
     syncApp->setTranslator(language);
@@ -1079,7 +1083,7 @@ void MainWindow::updateStatus()
     }
     else
     {
-        if (manager.isSyncing() || (!manager.isThereHiddenProfile() && !manager.queue().empty()))
+        if (manager.isSyncing() || (!manager.isThereProfileWithHiddenSync() && !manager.queue().empty()))
         {
             if (trayIcon->icon().cacheKey() != trayIconSync.cacheKey())
                 trayIcon->setIcon(trayIconSync);
@@ -1163,9 +1167,9 @@ MainWindow::updateProfileTooltip
 */
 void MainWindow::updateProfileTooltip(const SyncProfile &profile)
 {
-    int index = profileIndex(profile);
+    QModelIndex index = profileIndex(profile);
 
-    if (index < 0)
+    if (!index.isValid())
         return;
 
     QString nextSyncText("\n");
@@ -1178,21 +1182,21 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
 
     if (!profile.hasExistingFolders())
     {
-        profileModel->setData(profileModel->index(index, 0), tr("The profile has no folders available."), Qt::ToolTipRole);
+        profileModel->setData(index, tr("The profile has no folders available."), Qt::ToolTipRole);
     }
     else if (!profile.lastSyncDate.isNull())
     {
         QString time(syncApp->toLocalizedDateTime(profile.lastSyncDate, dateFormat));
         QString text = QString(tr("Last synchronization: %1.")).arg(time) + nextSyncText;
-        profileModel->setData(profileModel->index(index, 0), text, Qt::ToolTipRole);
+        profileModel->setData(index, text, Qt::ToolTipRole);
     }
     else
     {
         QString text(tr("Haven't been synchronized yet."));
-        profileModel->setData(profileModel->index(index, 0), text, Qt::ToolTipRole);
+        profileModel->setData(index, text, Qt::ToolTipRole);
     }
 
-    if (ui->syncProfilesView->selectionModel()->selectedIndexes().contains(profileModel->index(index, 0)))
+    if (ui->syncProfilesView->selectionModel()->selectedIndexes().contains(index))
     {
         for (int i = 0; auto &folder : profile.folders)
         {
@@ -1387,7 +1391,7 @@ void MainWindow::setupMenus()
     saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
 
-    for (int i = 0; i < languageCount(); i++)
+    for (int i = 0; i < Application::languageCount(); i++)
         languageActions.append(new QAction(tr(languages[i].name), this));
 
     versioningAction = new QAction(tr("&Versioning"), this);
@@ -1416,7 +1420,7 @@ void MainWindow::setupMenus()
     saveDatabaseLocallyAction->setCheckable(true);
     saveDatabaseDecentralizedAction->setCheckable(true);
 
-    for (int i = 0; i < languageCount(); i++)
+    for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setCheckable(true);
 
     launchOnStartupAction->setCheckable(true);
@@ -1449,7 +1453,7 @@ void MainWindow::setupMenus()
 
     languageMenu = new UnhidableMenu(tr("&Language"), this);
 
-    for (int i = 0; i < languageCount(); i++)
+    for (int i = 0; i < Application::languageCount(); i++)
         languageMenu->addAction(languageActions[i]);
 
     databaseLocationMenu = new UnhidableMenu(tr("&Database Location"), this);
@@ -1505,7 +1509,7 @@ void MainWindow::setupMenus()
     connect(saveDatabaseLocallyAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Locally));
     connect(saveDatabaseDecentralizedAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Decentralized));
 
-    for (int i = 0; i < languageCount(); i++)
+    for (int i = 0; i < Application::languageCount(); i++)
         connect(languageActions[i], &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, languages[i].language));
 
     connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
@@ -1536,7 +1540,7 @@ void MainWindow::retranslate()
     saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
     saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
 
-    for (int i = 0; i < languageCount(); i++)
+    for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setText(tr(languages[i].name));
 
     versioningAction->setText(tr("&Versioning"));
@@ -1574,11 +1578,11 @@ void MainWindow::retranslate()
 MainWindow::profileIndex
 ===================
 */
-int MainWindow::profileIndex(const SyncProfile &profile)
+QModelIndex MainWindow::profileIndex(const SyncProfile &profile)
 {
     for (int i = 0; i < profileModel->rowCount(); i++)
         if (profileModel->index(i, 0).data(Qt::DisplayRole).toString() == profile.name)
-            return i;
+            return profileModel->index(i, 0);
 
-    return -1;
+    return QModelIndex();
 }

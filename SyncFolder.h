@@ -20,13 +20,40 @@
 #ifndef SYNCFOLDER_H
 #define SYNCFOLDER_H
 
+#include "SyncFile.h"
+#include "Common.h"
 #include <QByteArray>
 #include <QHash>
 #include <QSet>
-#include "SyncFile.h"
-#include "Common.h"
 
 class SyncProfile;
+
+struct FolderToRenameInfo
+{
+    QByteArray toPath;
+    QByteArray fromFullPath;
+    Attributes attributes;
+};
+
+struct FileToMoveInfo
+{
+    QByteArray toPath;
+    QByteArray fromFullPath;
+    Attributes attributes;
+};
+
+struct FolderToCreateInfo
+{
+    QByteArray path;
+    Attributes attributes;
+};
+
+struct FileToCopyInfo
+{
+    QByteArray toPath;
+    QByteArray fromFullPath;
+    QDateTime modifiedDate;
+};
 
 /*
 ===========================================================
@@ -39,20 +66,20 @@ class SyncFolder
 {
 public:
 
-    explicit SyncFolder(bool paused) : paused(paused){}
-
     void clearData();
     void removeInvalidFileData(SyncProfile &profile);
     void optimizeMemoryUsage();
+    void updateVersioningPath(const QString &folder, const QString &pattern);
     bool isTopFolderUpdated(SyncProfile &profile, hash64_t hash) const;
     bool isActive() const;
 
     QByteArray path;
+    QString versioningPath;
     QHash<Hash, SyncFile> files;
-    QHash<Hash, QPair<QByteArray, QPair<QByteArray, Attributes>>> foldersToRename;
-    QHash<Hash, QPair<QByteArray,  QPair<QByteArray, Attributes>>> filesToMove;
-    QHash<Hash, QPair<QByteArray, Attributes>> foldersToCreate;
-    QHash<Hash, QPair<QByteArray, QPair<QByteArray, QDateTime>>> filesToCopy;
+    QHash<Hash, FolderToRenameInfo> foldersToRename;
+    QHash<Hash, FileToMoveInfo> filesToMove;
+    QHash<Hash, FolderToCreateInfo> foldersToCreate;
+    QHash<Hash, FileToCopyInfo> filesToCopy;
     QHash<Hash, QByteArray> foldersToRemove;
     QHash<Hash, QByteArray> filesToRemove;
     QSet<QByteArray> foldersToUpdate;

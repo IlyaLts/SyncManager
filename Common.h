@@ -47,9 +47,6 @@ struct Language
     const char *name;
 };
 
-extern Language defaultLanguage;
-extern Language languages[];
-
 struct Hash
 {
     Hash(){}
@@ -88,7 +85,6 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 
 #endif // DEBUG
 
-int languageCount();
 hash64_t hash64(const QByteArray &str);
 void removeSimilarFiles(QHash<Hash, SyncFile *> &files);
 QFileInfo getCurrentFileInfo(const QString &path, const QString &name, QDir::Filters filters = QDir::NoFilter);

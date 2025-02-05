@@ -17,10 +17,10 @@
 ===============================================================================
 */
 
-#include <QMutex>
 #include "SyncFolder.h"
 #include "SyncProfile.h"
 #include "Common.h"
+#include <QMutex>
 
 /*
 ===================
@@ -43,7 +43,7 @@ void SyncFolder::clearData()
 ===================
 SyncFolder::removeInvalidFileData
 
-If a file doesn't have a path, then that means that the file doesn't exist at all.
+If a file doesn't have a path after getListOfFiles(), then that means that the file doesn't exist at all.
 So, it is better to remove it from the database to prevent further synchronization issues.
 ===================
 */
@@ -71,6 +71,22 @@ void SyncFolder::optimizeMemoryUsage()
     filesToCopy.squeeze();
     foldersToRemove.squeeze();
     filesToRemove.squeeze();
+}
+
+/*
+===================
+SyncFolder::updateVersioningPath
+===================
+*/
+void SyncFolder::updateVersioningPath(const QString &folder, const QString &pattern)
+{
+    versioningPath.assign(path);
+    versioningPath.remove(versioningPath.lastIndexOf("/", 1), versioningPath.size());
+    versioningPath.append("_");
+    versioningPath.append(folder);
+    versioningPath.append("/");
+    versioningPath.append(QDateTime::currentDateTime().toString(pattern));
+    versioningPath.append("/");
 }
 
 /*

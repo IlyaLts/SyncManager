@@ -20,10 +20,10 @@
 #ifndef SYNCPROFILE_H
 #define SYNCPROFILE_H
 
+#include "Common.h"
 #include <QList>
 #include <QChronoTimer>
 #include <QMutex>
-#include "Common.h"
 
 class SyncFolder;
 
@@ -39,7 +39,6 @@ class SyncProfile
 public:
 
     SyncProfile();
-    explicit SyncProfile(bool paused) : SyncProfile()  { this->paused = paused; }
     explicit SyncProfile(const SyncProfile &other) : SyncProfile() { *this = other; }
     explicit SyncProfile(SyncProfile &&other) : SyncProfile() { *this = other; }
 

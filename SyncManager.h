@@ -20,16 +20,15 @@
 #ifndef SYNCMANAGER_H
 #define SYNCMANAGER_H
 
+#include "SyncFile.h"
+#include "SyncFolder.h"
+#include "SyncProfile.h"
 #include <QList>
 #include <QSet>
 #include <QMap>
 #include <QQueue>
 #include <QTimer>
 #include <QDateTime>
-
-#include "SyncFile.h"
-#include "SyncFolder.h"
-#include "SyncProfile.h"
 
 #define DATA_FOLDER_PATH        ".SyncManager"
 #define DATABASE_FILENAME       "db"
@@ -80,12 +79,12 @@ public:
     void updateStatus();
     void updateNextSyncingTime();
 
-    void saveFileDataLocally(const SyncProfile &profile) const;
-    void saveFileDataDecentralised(const SyncProfile &profile) const;
-    void loadFileDataLocally(SyncProfile &profile);
-    void loadFileDataDecentralised(SyncProfile &profile);
-    void removeFileData();
-    void removeFileData(const SyncFolder &folder);
+    void saveDatabaseLocally(const SyncProfile &profile) const;
+    void saveDatabaseDecentralised(const SyncProfile &profile) const;
+    void loadDatabaseLocally(SyncProfile &profile);
+    void loadDatebaseDecentralised(SyncProfile &profile);
+    void removeDatabase(const SyncFolder &folder);
+    void removeAllDatabases();
 
     inline void setSyncingMode(SyncingMode mode) { m_syncingMode = mode; }
     inline void setDeletionMode(DeletionMode mode) { m_deletionMode = mode; }
@@ -114,7 +113,7 @@ public:
     inline bool isBusy() const { return m_busy; }
     inline bool isPaused() const { return m_paused; }
     inline bool isSyncing() const { return m_syncing; }
-    bool isThereHiddenProfile() const;
+    bool isThereProfileWithHiddenSync() const;
     inline bool notificationsEnabled() const { return m_notifications; }
     inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
     inline bool ignoreHiddenFilesEnabled() const { return m_ignoreHiddenFiles; }
@@ -129,8 +128,8 @@ Q_SIGNALS:
 
 private:
 
-    void saveToFileData(const SyncFolder &folder, const QString &path) const;
-    void loadFromFileData(SyncFolder &folder, const QString &path);
+    void saveToDatabase(const SyncFolder &folder, const QString &path) const;
+    void loadFromDatabase(SyncFolder &folder, const QString &path);
     bool syncProfile(SyncProfile &profile);
     int getListOfFiles(SyncProfile &profile, SyncFolder &folder);
     void synchronizeFileAttributes(SyncProfile &profile);
@@ -139,14 +138,14 @@ private:
     void checkForAddedFiles(SyncProfile &profile);
     void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);
-    bool removeFile(SyncProfile &profile, SyncFolder &folder, const QString &path, const QString &fullPath, const QString &versioningPath, SyncFile::Type type);
+    bool removeFile(SyncProfile &profile, SyncFolder &folder, const QString &path, const QString &fullPath, SyncFile::Type type);
     void renameFolders(SyncProfile &profile, SyncFolder &folder);
     void moveFiles(SyncProfile &profile, SyncFolder &folder);
     void createParentFolders(SyncProfile &profile, SyncFolder &folder, QByteArray path);
-    void removeFolders(SyncProfile &profile, SyncFolder &folder, const QString &versioningPath);
-    void removeFiles(SyncProfile &profile, SyncFolder &folder, const QString &versioningPath);
-    void createFolders(SyncProfile &profile, SyncFolder &folder, const QString &versioningPath);
-    void copyFiles(SyncProfile &profile, SyncFolder &folder, const QString &versioningPath);
+    void removeFolders(SyncProfile &profile, SyncFolder &folder);
+    void removeFiles(SyncProfile &profile, SyncFolder &folder);
+    void createFolders(SyncProfile &profile, SyncFolder &folder);
+    void copyFiles(SyncProfile &profile, SyncFolder &folder);
     void syncFiles(SyncProfile &profile);
 
     SyncingMode m_syncingMode;

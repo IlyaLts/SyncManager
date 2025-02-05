@@ -40,9 +40,7 @@ FolderListView::dragEnterEvent
 void FolderListView::dragEnterEvent(QDragEnterEvent *event)
 {
     if (event->mimeData()->hasUrls())
-    {
         event->acceptProposedAction();
-    }
 }
 
 /*

@@ -20,9 +20,9 @@
 #ifndef SYNCFILE_H
 #define SYNCFILE_H
 
+#include "Common.h"
 #include <QByteArray>
 #include <QDateTime>
-#include "Common.h"
 
 /*
 ===========================================================
@@ -60,7 +60,7 @@ public:
     };
 
     SyncFile(){}
-    SyncFile(Type type, QDateTime time, qint8 flags = Exists) : date(time), type(type), flags(flags){}
+    SyncFile(Type type, QDateTime modifiedDate) : modifiedDate(modifiedDate), type(type){}
 
     bool isOlder(const SyncFile &otherFile) const;
     bool hasOlderAttributes(const SyncFile &otherFile) const;
@@ -79,11 +79,11 @@ public:
     inline bool attributesUpdated() const { return flags & AttributesUpdated; }
     inline bool processed() const { return flags & Processed; }
 
-    QDateTime date;
+    QDateTime modifiedDate;
     qint64 size = 0;
     Type type = Unknown;
     LockedFlag lockedFlag = Unlocked;
-    qint8 flags = 0;
+    qint8 flags = Exists;
     Attributes attributes = 0;
 };
 

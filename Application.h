@@ -20,6 +20,7 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
+#include "Common.h"
 #include <QApplication>
 #include <QTranslator>
 
@@ -30,6 +31,9 @@
 #define PROFILES_FILENAME       "Profiles.ini"
 #define UPDATE_DELAY            40
 
+extern Language defaultLanguage;
+extern Language languages[];
+
 class Application : public QApplication
 {
 public:
@@ -39,7 +43,9 @@ public:
     void setLaunchOnStartup(bool enable);
     void setTranslator(QLocale::Language language);
 
-    QString toLocalizedDateTime(const QDateTime &dateTime, const QString &format) { return locale.toString(dateTime, format); }
+    inline QString toLocalizedDateTime(const QDateTime &dateTime, const QString &format) { return locale.toString(dateTime, format); }
+
+    static int languageCount();
 
 private:
 
