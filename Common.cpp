@@ -66,7 +66,7 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 
     std::chrono::high_resolution_clock::time_point time(std::chrono::high_resolution_clock::now() - startTime);
     auto ml = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
-    qDebug("%lld ms - %s", ml.count(), buffer);
+    qDebug() << ml.count() << "ms -" << buffer;
 }
 #endif // DEBUG
 

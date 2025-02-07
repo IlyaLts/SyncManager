@@ -768,9 +768,9 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     }
 
 #ifdef DEBUG
-    qDebug("=======================================");
-    qDebug("Started syncing %s", qUtf8Printable(profile.name));
-    qDebug("=======================================");
+    qDebug() << "=======================================";
+    qDebug() << "Started syncing" << qUtf8Printable(profile.name);
+    qDebug() << "=======================================";
 #endif
 
     if (m_databaseLocation == Decentralized)
@@ -854,14 +854,20 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         m_databaseChanged = true;
 
 #ifdef DEBUG
-        qDebug("---------------------------------------");
-        if (numOfFoldersToRename)   qDebug("Folders to rename: %d", numOfFoldersToRename);
-        if (numOfFilesToMove)       qDebug("Files to move: %d", numOfFilesToMove);
-        if (numOfFoldersToCreate)   qDebug("Folders to create: %d", numOfFoldersToCreate);
-        if (numOffilesToCopy)       qDebug("Files to copy: %d", numOffilesToCopy);
-        if (numOfFoldersToRemove)   qDebug("Folders to remove: %d", numOfFoldersToRemove);
-        if (numOfFilesToRemove)     qDebug("Files to remove: %d", numOfFilesToRemove);
-        qDebug("---------------------------------------");
+        qDebug() << "---------------------------------------";
+        if (numOfFoldersToRename)
+            qDebug() << "Folders to rename:" << numOfFoldersToRename;
+        if (numOfFilesToMove)
+            qDebug() << "Files to move:" << numOfFilesToMove;
+        if (numOfFoldersToCreate)
+            qDebug() << "Folders to create:" << numOfFoldersToCreate;
+        if (numOffilesToCopy)
+            qDebug() << "Files to copy:" << numOffilesToCopy;
+        if (numOfFoldersToRemove)
+            qDebug() << "Folders to remove:" << numOfFoldersToRemove;
+        if (numOfFilesToRemove)
+            qDebug() << "Files to remove:" << numOfFilesToRemove;
+        qDebug() << "---------------------------------------";
 #endif
     }
 
@@ -1205,7 +1211,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                     QString str(otherFileInfo.absolutePath());
                     str.append("/");
                     str.append(otherFileInfo.fileName());
-                    qDebug("getCurrentFileInfo failed with %s", qUtf8Printable(str));
+                    qDebug() << "getCurrentFileInfo failed with" << qUtf8Printable(str);
                     continue;
                 }
 
