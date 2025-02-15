@@ -1163,9 +1163,9 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 if (!otherFolderIt->isActive())
                     continue;
 
-                QString otherFolderPath(otherFolderIt->path);
-                otherFolderPath.append(profile.filePath(renamedFolderIt.key()));
-                QFileInfo otherFolderInfo(otherFolderPath);
+                QString otherFolderFullPath(otherFolderIt->path);
+                otherFolderFullPath.append(profile.filePath(renamedFolderIt.key()));
+                QFileInfo otherFolderInfo(otherFolderFullPath);
 
                 if (!otherFolderInfo.exists())
                 {
@@ -1186,14 +1186,14 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 if (!otherFolderIt->isActive())
                     continue;
 
-                QByteArray otherFolderPath(otherFolderIt->path);
-                otherFolderPath.append(profile.filePath(renamedFolderIt.key()));
-                QFileInfo otherFileInfo(otherFolderPath);
+                QByteArray otherFolderFullPath(otherFolderIt->path);
+                otherFolderFullPath.append(profile.filePath(renamedFolderIt.key()));
+                QFileInfo otherFileInfo(otherFolderFullPath);
                 QByteArray otherCurrentFolderName;
                 QByteArray otherCurrentFolderPath;
 
-                QByteArray folderName(profile.filePath(renamedFolderIt.key()));
-                folderName.remove(0, folderName.lastIndexOf("/") + 1);
+                QByteArray newFolderName(profile.filePath(renamedFolderIt.key()));
+                newFolderName.remove(0, newFolderName.lastIndexOf("/") + 1);
 
                 QFileInfo otherFolder = getCurrentFileInfo(otherFileInfo.absolutePath(), otherFileInfo.fileName(), QDir::Dirs);
 
@@ -1213,7 +1213,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 }
 
                 // Both folder names should differ in case
-                if (otherCurrentFolderName.compare(folderName, Qt::CaseSensitive) == 0)
+                if (otherCurrentFolderName.compare(newFolderName, Qt::CaseSensitive) == 0)
                     continue;
 
                 hash64_t otherFolderHash = hash64(otherCurrentFolderPath);
@@ -1222,56 +1222,57 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 if (otherFolderIt->foldersToRename.contains(otherFolderHash))
                     continue;
 
-                QString folderPath(folderIt->path);
-                folderPath.append(profile.filePath(renamedFolderIt.key()));
+                QString folderFullPath(folderIt->path);
+                folderFullPath.append(profile.filePath(renamedFolderIt.key()));
 
-                // Finally, adds the folder from another sync folder to the renaming list
-                otherFolderIt->foldersToRename.insert(otherFolderHash, {profile.filePath(renamedFolderIt.key()), otherFolder.filePath().toUtf8(), getFileAttributes(folderPath)});
+                // Finally, adds the folder from other sync folder to the renaming list
+                otherFolderIt->foldersToRename.insert(otherFolderHash, {profile.filePath(renamedFolderIt.key()), otherFolder.filePath().toUtf8(), getFileAttributes(folderFullPath)});
 
+                folderIt->files.remove(otherFolderHash);
                 renamedFolderIt->lockedFlag = SyncFile::Locked;
                 otherFolderIt->files[otherFolderHash].lockedFlag = SyncFile::Locked;
 
                 // Marks all subdirectories of the renamed folder in our sync folder as locked
-                QDirIterator dirIterator(folderPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+                QDirIterator dirIterator(folderFullPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
                 if (dirIterator.hasNext())
                 {
                     dirIterator.next();
 
-                    QByteArray path(dirIterator.filePath().toUtf8());
-                    path.remove(0, folderIt->path.size());
-                    hash64_t hash = hash64(path);
+                    QByteArray fullPath(dirIterator.filePath().toUtf8());
+                    fullPath.remove(0, folderIt->path.size());
+                    hash64_t hash = hash64(fullPath);
 
                     if (folderIt->files.contains(hash))
                         folderIt->files[hash].lockedFlag = SyncFile::LockedInternal;
                 }
 
-                // Marks all subdirectories of the folder that doesn't exist anymore in our sync folder as to be removed using the path from another sync folder
-                QString oldPath(folderIt->path);
-                oldPath.append(otherCurrentFolderPath);
-                QDirIterator oldDirIterator(oldPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+                // Marks all subdirectories of the folder that doesn't exist anymore in our sync folder as to be removed using the path from other sync folder
+                QString oldFullPath(folderIt->path);
+                oldFullPath.append(otherCurrentFolderPath);
+                QDirIterator oldDirIterator(oldFullPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
                 if (oldDirIterator.hasNext())
                 {
                     oldDirIterator.next();
 
-                    QByteArray path(oldDirIterator.filePath().toUtf8());
-                    path.remove(0, folderIt->path.size());
-                    folderIt->files.remove(hash64(path));
+                    QByteArray fullPath(oldDirIterator.filePath().toUtf8());
+                    fullPath.remove(0, folderIt->path.size());
+                    folderIt->files.remove(hash64(fullPath));
                 }
 
-                // Marks all subdirectories of the current folder in another sync folder as to be locked
-                QByteArray otherPathToRename(otherFolderIt->path);
-                otherPathToRename.append(otherCurrentFolderPath);
-                QDirIterator otherDirIterator(otherPathToRename, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+                // Marks all subdirectories of the current folder in other sync folder as to be locked
+                QByteArray otherFullPathToRename(otherFolderIt->path);
+                otherFullPathToRename.append(otherCurrentFolderPath);
+                QDirIterator otherDirIterator(otherFullPathToRename, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
                 if (otherDirIterator.hasNext())
                 {
                     otherDirIterator.next();
 
-                    QByteArray path(otherDirIterator.filePath().toUtf8());
-                    path.remove(0, otherFolderIt->path.size());
-                    hash64_t hash = hash64(path);
+                    QByteArray fullPath(otherDirIterator.filePath().toUtf8());
+                    fullPath.remove(0, otherFolderIt->path.size());
+                    hash64_t hash = hash64(fullPath);
 
                     if (folderIt->files.contains(hash))
                         folderIt->files[hash].lockedFlag = SyncFile::LockedInternal;
