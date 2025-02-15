@@ -1098,9 +1098,6 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
                 if (file.lockedFlag != SyncFile::Unlocked || otherFile.lockedFlag != SyncFile::Unlocked)
                     continue;
 
-                if (file.toBeRemoved() || otherFile.toBeRemoved())
-                    continue;
-
                 if (!file.exists() || !otherFile.exists())
                     continue;
 
@@ -1260,10 +1257,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 
                     QByteArray path(oldDirIterator.filePath().toUtf8());
                     path.remove(0, folderIt->path.size());
-                    hash64_t hash = hash64(path);
-
-                    if (folderIt->files.contains(hash))
-                        folderIt->files[hash].setToBeRemoved(true);
+                    folderIt->files.remove(hash64(path));
                 }
 
                 // Marks all subdirectories of the current folder in another sync folder as to be locked
@@ -1404,6 +1398,8 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             if (abort)
                 continue;
 
+            folderIt->files.remove(movedFileHash);
+
             // Adds a moved/renamed file for moving
             for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
             {
@@ -1416,7 +1412,6 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 const SyncFile &fileToMove = otherFolderIt->files.value(movedFileHash);
 
                 newFileIt.value()->lockedFlag = SyncFile::Locked;
-                movedFile->setToBeRemoved(true);
 
                 QByteArray pathToMove(otherFolderIt->path);
                 pathToMove.append(profile.filePath(movedFileHash));
@@ -1470,7 +1465,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                 const SyncFile &file = folderIt->files.value(otherFileIt.key());
                 const SyncFile &otherFile = otherFileIt.value();
 
-                if (file.lockedFlag != SyncFile::Unlocked || file.toBeRemoved() || otherFile.lockedFlag != SyncFile::Unlocked || otherFile.toBeRemoved())
+                if (file.lockedFlag != SyncFile::Unlocked || otherFile.lockedFlag != SyncFile::Unlocked)
                     continue;
 
                 bool alreadyAdded = folderIt->filesToCopy.contains(otherFileIt.key());
@@ -1557,13 +1552,6 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
         {
             if (!folderIt->isActive())
                 break;
-
-            // A file was moved and should be removed from a file datebase
-            if (fileIt->toBeRemoved())
-            {
-                fileIt = folderIt->files.erase(static_cast<QHash<Hash, SyncFile>::const_iterator>(fileIt));
-                continue;
-            }
 
             if (fileIt->exists() || fileIt->lockedFlag != SyncFile::Unlocked)
             {

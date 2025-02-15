@@ -54,7 +54,6 @@ public:
         Updated = 0x1,
         Exists = 0x2,
         NewlyAdded = 0x8,
-        ToBeRemoved = 0x10,
         AttributesUpdated = 0x20,
         Processed = 0x40
     };
@@ -68,14 +67,12 @@ public:
     void setUpdated(bool value) { flags = value ? (flags | Updated) : (flags & ~Updated); }
     void setExists(bool value) { flags = value ? (flags | Exists) : (flags & ~Exists); }
     void setNewlyAdded(bool value) { flags = value ? (flags | NewlyAdded) : (flags & ~NewlyAdded); }
-    void setToBeRemoved(bool value) { flags = value ? (flags | ToBeRemoved) : (flags & ~ToBeRemoved); }
     void setAttributesUpdated(bool value) { flags = value ? (flags | AttributesUpdated) : (flags & ~AttributesUpdated); }
     void setProcessed(bool value) { flags = value ? (flags | Processed) : (flags & ~Processed); }
 
     inline bool updated() const { return flags & Updated; }
     inline bool exists() const { return flags & Exists; }
     inline bool newlyAdded() const { return flags & NewlyAdded; }
-    inline bool toBeRemoved() const { return flags & ToBeRemoved; }
     inline bool attributesUpdated() const { return flags & AttributesUpdated; }
     inline bool processed() const { return flags & Processed; }
 
