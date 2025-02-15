@@ -1917,16 +1917,23 @@ void SyncManager::removeFiles(SyncProfile &profile, SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
-        QString filePath(folder.path);
-        filePath.append(*fileIt);
+        // Prevents the deletion of the main sync folder in case of a false detection during synchronization
+        if (fileIt->isEmpty())
+        {
+            fileIt = folder.filesToRemove.erase(static_cast<QHash<Hash, QByteArray>::const_iterator>(fileIt));
+            continue;
+        }
+
+        QString fullPath(folder.path);
+        fullPath.append(*fileIt);
         hash64_t fileHash = hash64(*fileIt);
 
-        if (removeFile(profile, folder, *fileIt, filePath, SyncFile::File) || !QFile().exists(filePath))
+        if (removeFile(profile, folder, *fileIt, fullPath, SyncFile::File) || !QFile().exists(fullPath))
         {
             folder.files.remove(fileHash);
             fileIt = folder.filesToRemove.erase(static_cast<QHash<Hash, QByteArray>::const_iterator>(fileIt));
 
-            QString parentPath = QFileInfo(filePath).path();
+            QString parentPath = QFileInfo(fullPath).path();
 
             if (QFileInfo::exists(parentPath))
                 folder.foldersToUpdate.insert(parentPath.toUtf8());
