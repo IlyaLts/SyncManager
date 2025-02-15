@@ -1871,6 +1871,13 @@ void SyncManager::removeFolders(SyncProfile &profile, SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
+        // Prevents the deletion of the main sync folder in case of a false detection during synchronization
+        if (folderIt->isEmpty())
+        {
+            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(folderIt));
+            continue;
+        }
+
         QString folderPath(folder.path);
         folderPath.append(*folderIt);
         hash64_t fileHash = hash64(folderIt->toUtf8());
