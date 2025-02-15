@@ -86,12 +86,12 @@ hash64_t hash64(const QByteArray &str)
 
 /*
 ===================
-removeSimilarFiles
+removeDuplicatesBySizeAndDate
 
 Removes duplicates from the list of files based on file size and modification time
 ===================
 */
-void removeSimilarFiles(QHash<Hash, SyncFile *> &files)
+void removeDuplicatesBySizeAndDate(QHash<Hash, SyncFile *> &files)
 {
     for (QHash<Hash, SyncFile *>::iterator fileIt = files.begin(); fileIt != files.end();)
     {
@@ -99,19 +99,11 @@ void removeSimilarFiles(QHash<Hash, SyncFile *> &files)
 
         for (QHash<Hash, SyncFile *>::iterator anotherFileIt = ++QHash<Hash, SyncFile *>::iterator(fileIt); anotherFileIt != files.end();)
         {
-            if (fileIt.value()->size != anotherFileIt.value()->size)
+            if (!fileIt.value()->hasSameSizeAndDate(*anotherFileIt.value()))
             {
                 ++anotherFileIt;
                 continue;
             }
-
-#if defined(Q_OS_WIN) || defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
-            if (fileIt.value()->modifiedDate != anotherFileIt.value()->modifiedDate)
-            {
-                ++anotherFileIt;
-                continue;
-            }
-#endif
 
             dup = true;
             anotherFileIt = files.erase(static_cast<QHash<Hash, SyncFile *>::const_iterator>(anotherFileIt));

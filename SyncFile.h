@@ -63,6 +63,7 @@ public:
 
     bool isOlder(const SyncFile &otherFile) const;
     bool hasOlderAttributes(const SyncFile &otherFile) const;
+    bool hasSameSizeAndDate(const SyncFile &otherFile) const;
 
     void setUpdated(bool value) { flags = value ? (flags | Updated) : (flags & ~Updated); }
     void setExists(bool value) { flags = value ? (flags | Exists) : (flags & ~Exists); }

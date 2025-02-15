@@ -68,3 +68,21 @@ bool SyncFile::hasOlderAttributes(const SyncFile &other) const
 
     return false;
 }
+
+/*
+===================
+SyncFile::hasSameSizeAndDate
+===================
+*/
+bool SyncFile::hasSameSizeAndDate(const SyncFile &otherFile) const
+{
+    if (size != otherFile.size)
+        return false;
+
+#if defined(Q_OS_WIN) || defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
+    if (modifiedDate != otherFile.modifiedDate)
+        return false;
+#endif
+
+    return true;
+}
