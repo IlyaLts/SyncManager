@@ -1,4 +1,9 @@
 ==========================
+1.9.7 - Feb 16, 2025
+==========================
+- Fixed the issue where renaming the case of a folder could lead to the deletion of the sync folder itself.
+
+==========================
 1.9.6 - Jan 23, 2025
 ==========================
 - Fixed the issue where next sync time can not be larger than ~24 days.
