@@ -1826,10 +1826,13 @@ void SyncManager::removeFolders(SyncProfile &profile, SyncFolder &folder)
 {
     // Sorts the folders for removal from the top to the bottom.
     // This ensures that the trash folder maintains the same folder structure as in the original destination.
-    QVector<QString> sortedFoldersToRemove;
+    QVector<QPair<Hash, QByteArray>> sortedFoldersToRemove;
     sortedFoldersToRemove.reserve(folder.foldersToRemove.size());
-    for (const auto &str : std::as_const(folder.foldersToRemove)) sortedFoldersToRemove.append(str);
-    std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const QString &a, const QString &b) -> bool { return a.size() < b.size(); });
+
+    for (auto it = folder.foldersToRemove.begin(); it != folder.foldersToRemove.end(); ++it)
+        sortedFoldersToRemove.append({it.key(), it.value()});
+
+    std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const auto &a, const auto &b) -> bool { return a.second.size() < b.second.size(); });
 
     for (auto folderIt = sortedFoldersToRemove.begin(); folderIt != sortedFoldersToRemove.end() && (!m_paused && folder.isActive());)
     {
@@ -1837,21 +1840,22 @@ void SyncManager::removeFolders(SyncProfile &profile, SyncFolder &folder)
             break;
 
         // Prevents the deletion of the main sync folder in case of a false detection during synchronization
-        if (folderIt->isEmpty())
+        if (folderIt->second.isEmpty())
         {
-            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(folderIt));
+            folder.foldersToRemove.remove(folderIt->first);
+            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QPair<Hash, QByteArray>>::const_iterator>(folderIt));
             continue;
         }
 
         QString fullPath(folder.path);
-        fullPath.append(*folderIt);
+        fullPath.append(folderIt->second);
 
-        if (removeFile(profile, folder, *folderIt, fullPath, SyncFile::Folder) || !QDir().exists(fullPath))
+        if (removeFile(profile, folder, folderIt->second, fullPath, SyncFile::Folder) || !QDir().exists(fullPath))
         {
-            hash64_t hash = hash64(folderIt->toUtf8());
+            hash64_t hash = hash64(folderIt->second);
             folder.files.remove(hash);
             folder.foldersToRemove.remove(hash);
-            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QString>::const_iterator>(folderIt));
+            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QPair<Hash, QByteArray>>::const_iterator>(folderIt));
 
             QString parentPath = QFileInfo(fullPath).path();
 
