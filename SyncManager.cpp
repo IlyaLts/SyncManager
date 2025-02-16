@@ -1228,8 +1228,11 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 // Finally, adds the folder from other sync folder to the renaming list
                 otherFolderIt->foldersToRename.insert(otherFolderHash, {profile.filePath(renamedFolderIt.key()), otherFolder.filePath().toUtf8(), getFileAttributes(folderFullPath)});
 
-                folderIt->files.remove(otherFolderHash);
+                // Do not reorder these, as it could lead to a crash because sometimes
+                // renamedFolderIt and otherFolderHash both lead to the same sync file
                 renamedFolderIt->lockedFlag = SyncFile::Locked;
+                folderIt->files.remove(otherFolderHash);
+
                 otherFolderIt->files[otherFolderHash].lockedFlag = SyncFile::Locked;
 
                 // Marks all subdirectories of the renamed folder in our sync folder as locked
@@ -1239,9 +1242,9 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 {
                     dirIterator.next();
 
-                    QByteArray fullPath(dirIterator.filePath().toUtf8());
-                    fullPath.remove(0, folderIt->path.size());
-                    hash64_t hash = hash64(fullPath);
+                    QByteArray path(dirIterator.filePath().toUtf8());
+                    path.remove(0, folderIt->path.size());
+                    hash64_t hash = hash64(path);
 
                     if (folderIt->files.contains(hash))
                         folderIt->files[hash].lockedFlag = SyncFile::LockedInternal;
@@ -1256,9 +1259,9 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 {
                     oldDirIterator.next();
 
-                    QByteArray fullPath(oldDirIterator.filePath().toUtf8());
-                    fullPath.remove(0, folderIt->path.size());
-                    folderIt->files.remove(hash64(fullPath));
+                    QByteArray path(oldDirIterator.filePath().toUtf8());
+                    path.remove(0, folderIt->path.size());
+                    folderIt->files.remove(hash64(path));
                 }
 
                 // Marks all subdirectories of the current folder in other sync folder as to be locked
@@ -1270,12 +1273,15 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 {
                     otherDirIterator.next();
 
-                    QByteArray fullPath(otherDirIterator.filePath().toUtf8());
-                    fullPath.remove(0, otherFolderIt->path.size());
-                    hash64_t hash = hash64(fullPath);
+                    QByteArray path(otherDirIterator.filePath().toUtf8());
+                    path.remove(0, otherFolderIt->path.size());
+                    hash64_t hash = hash64(path);
 
-                    if (folderIt->files.contains(hash))
-                        folderIt->files[hash].lockedFlag = SyncFile::LockedInternal;
+                    qDebug() << qUtf8Printable(path);
+
+
+                    if (otherFolderIt->files.contains(hash))
+                        otherFolderIt->files[hash].lockedFlag = SyncFile::LockedInternal;
                 }
             }
         }
@@ -1478,29 +1484,11 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                     // Or if other folders has a new version of a file and our file was removed
                      (!file.exists() && (otherFile.updated() || otherFolderIt->isTopFolderUpdated(profile, otherFileIt.key().data)))))
                 {
-                    // Aborts if a file is supposed to be removed
                     if (otherFile.type == SyncFile::File)
                     {
                         if (otherFolderIt->filesToRemove.contains(otherFileIt.key()))
                             continue;
-                    }
-                    else if (otherFile.type == SyncFile::Folder)
-                    {
-                        if (otherFolderIt->foldersToRemove.contains(otherFileIt.key()))
-                            continue;
-                    }
 
-                    if (otherFile.type == SyncFile::Folder)
-                    {
-                        QByteArray path = profile.filePath(otherFileIt.key());
-
-                        auto it = folderIt->foldersToCreate.insert(otherFileIt.key(), {path, otherFile.attributes});
-                        it->path.squeeze();
-
-                        folderIt->foldersToRemove.remove(otherFileIt.key());
-                    }
-                    else
-                    {
                         QByteArray to(profile.filePath(otherFileIt.key()));
                         QByteArray from(otherFolderIt->path);
                         from.append(profile.filePath(otherFileIt.key()));
@@ -1509,6 +1497,21 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                         it->toPath.squeeze();
                         it->fromFullPath.squeeze();
                         folderIt->filesToRemove.remove(otherFileIt.key());
+                    }
+                    else if (otherFile.type == SyncFile::Folder)
+                    {
+                        if (otherFolderIt->foldersToRemove.contains(otherFileIt.key()))
+                            continue;
+
+                        QByteArray path = profile.filePath(otherFileIt.key());
+
+
+                        qDebug() << qUtf8Printable(folderIt->path);
+                        qDebug() << qUtf8Printable(path);
+                        auto it = folderIt->foldersToCreate.insert(otherFileIt.key(), {path, otherFile.attributes});
+                        it->path.squeeze();
+
+                        folderIt->foldersToRemove.remove(otherFileIt.key());
                     }
                 }
             }
@@ -1575,6 +1578,17 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                         continue;
                     }
                 }
+            }
+
+            // Prevents the removal of folders that do not have a file path in any sync folders.
+            // This fixes the issue where, after renaming the case of a folder containing nested folders,
+            // the nested folders from their previous location would incorrectly be detected as removed.
+            // This was caused by the database retaining the old hashes of the renamed nested folders.
+            // This could also lead to the deletion of the sync folder itself, as the profile does not have paths under these old hashes.
+            if (!profile.hasFilePath(fileIt.key()))
+            {
+                ++fileIt;
+                continue;
             }
 
             // Adds files from other folders for removal
