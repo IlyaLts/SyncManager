@@ -828,7 +828,7 @@ void MainWindow::toggleDetectMoved()
 MainWindow::showContextMenu
 ===================
 */
-void MainWindow::showContextMenu(const QPoint &pos) const
+void MainWindow::showContextMenu(const QPoint &pos)
 {
     static QMenu menu;
     menu.clear();
@@ -851,8 +851,7 @@ void MainWindow::showContextMenu(const QPoint &pos) const
             {
                 menu.addAction(iconPause, tr("&Pause syncing profile"), this, SLOT(pauseSelected()));
 
-                auto func = std::bind(&MainWindow::sync, const_cast<MainWindow *>(this), &const_cast<SyncProfile &>(profile), false);
-                QAction *action = menu.addAction(iconSync, tr("&Synchronize profile"), this, func);
+                QAction *action = menu.addAction(iconSync, tr("&Synchronize profile"), this, [&](){ sync(&const_cast<SyncProfile &>(profile), false); });
                 action->setDisabled(manager.queue().contains(&profile));
             }
 
@@ -1499,25 +1498,25 @@ void MainWindow::setupMenus()
 
     connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
-    connect(automaticAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Automatic));
-    connect(manualAction, &QAction::triggered, this, std::bind(&MainWindow::switchSyncingMode, this, SyncManager::Manual));
-    connect(moveToTrashAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.MoveToTrash));
-    connect(versioningAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.Versioning));
-    connect(deletePermanentlyAction, &QAction::triggered, this, std::bind(&MainWindow::switchDeletionMode, this, manager.DeletePermanently));
+    connect(automaticAction, &QAction::triggered, this, [this](){ switchSyncingMode(SyncManager::Automatic); });
+    connect(manualAction, &QAction::triggered, this, [this](){ switchSyncingMode(SyncManager::Manual); });
+    connect(moveToTrashAction, &QAction::triggered, this, [this](){ switchDeletionMode(manager.MoveToTrash); });
+    connect(versioningAction, &QAction::triggered, this, [this](){ switchDeletionMode(manager.Versioning); });
+    connect(deletePermanentlyAction, &QAction::triggered, this, [this](){ switchDeletionMode(manager.DeletePermanently); });
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
-    connect(saveDatabaseLocallyAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Locally));
-    connect(saveDatabaseDecentralizedAction, &QAction::triggered, this, std::bind(&MainWindow::setDatabaseLocation, this, SyncManager::Decentralized));
+    connect(saveDatabaseLocallyAction, &QAction::triggered, this, [this](){ setDatabaseLocation(SyncManager::Locally); });
+    connect(saveDatabaseDecentralizedAction, &QAction::triggered, this, [this](){ setDatabaseLocation(SyncManager::Decentralized); });
 
     for (int i = 0; i < Application::languageCount(); i++)
-        connect(languageActions[i], &QAction::triggered, this, std::bind(&MainWindow::switchLanguage, this, languages[i].language));
+        connect(languageActions[i], &QAction::triggered, this, [i, this](){ switchLanguage(languages[i].language); });
 
     connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
     connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
     connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
     connect(ignoreHiddenFilesAction, &QAction::triggered, this, &MainWindow::toggleIgnoreHiddenFiles);
     connect(detectMovedFilesAction, &QAction::triggered, this, &MainWindow::toggleDetectMoved);
-    connect(showAction, &QAction::triggered, this, std::bind(&MainWindow::trayIconActivated, this, QSystemTrayIcon::DoubleClick));
+    connect(showAction, &QAction::triggered, this, [this](){ trayIconActivated(QSystemTrayIcon::DoubleClick); });
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
 }

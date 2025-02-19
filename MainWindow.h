@@ -85,7 +85,7 @@ private Q_SLOTS:
     void setDatabaseLocation(SyncManager::DatabaseLocation location);
     void toggleIgnoreHiddenFiles();
     void toggleDetectMoved();
-    void showContextMenu(const QPoint &pos) const;
+    void showContextMenu(const QPoint &pos);
     void sync(SyncProfile *profile, bool hidden = false);
     void profileSynced(SyncProfile *profile);
 
