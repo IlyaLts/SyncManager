@@ -663,7 +663,7 @@ void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
         QString title(tr("Switch deletion mode to delete files permanently?"));
         QString text(tr("Are you sure? Beware: this could lead to data loss!"));
 
-        if (!questionBox(QMessageBox::Warning, title, text, QMessageBox::Yes, this))
+        if (!questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
             mode = manager.deletionMode();
     }
 
