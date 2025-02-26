@@ -460,8 +460,8 @@ void SyncManager::saveToDatabase(const SyncFolder &folder, const QString &path) 
 
     for (auto fileIt = folder.files.begin(); fileIt != folder.files.end(); fileIt++)
     {
-        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(SyncFile::Type) +
-                               sizeof(SyncFile::LockedFlag) + sizeof(qint8) + sizeof(Attributes);
+        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) +
+                               sizeof(SyncFile::Type) + sizeof(SyncFile::LockedFlag) + sizeof(Attributes);
 
         char buf[bufSize];
         char *p = buf;
@@ -476,8 +476,6 @@ void SyncManager::saveToDatabase(const SyncFolder &folder, const QString &path) 
         p += sizeof(SyncFile::Type);
         *reinterpret_cast<SyncFile::LockedFlag *>(p) = fileIt->lockedFlag;
         p += sizeof(SyncFile::LockedFlag);
-        *reinterpret_cast<qint8 *>(p) = fileIt->flags;
-        p += sizeof(qint8);
         *reinterpret_cast<Attributes *>(p) = fileIt->attributes;
 
         if (stream.writeRawData(&buf[0], bufSize) != bufSize)
@@ -586,8 +584,8 @@ void SyncManager::loadFromDatabase(SyncFolder &folder, const QString &path)
     // File data
     for (qsizetype i = 0; i < numOfFiles; i++)
     {
-        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(SyncFile::Type) +
-                               sizeof(SyncFile::LockedFlag) + sizeof(qint8) + sizeof(Attributes);
+        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) +
+                               sizeof(SyncFile::Type) + sizeof(SyncFile::LockedFlag) + sizeof(Attributes);
 
         char buf[bufSize];
 
@@ -600,7 +598,6 @@ void SyncManager::loadFromDatabase(SyncFolder &folder, const QString &path)
         qint64 size;
         SyncFile::Type type;
         SyncFile::LockedFlag lockedFlag;
-        qint8 flags;
         Attributes attributes;
 
         hash = *reinterpret_cast<hash64_t *>(p);
@@ -613,14 +610,11 @@ void SyncManager::loadFromDatabase(SyncFolder &folder, const QString &path)
         p += sizeof(SyncFile::Type);
         lockedFlag = *reinterpret_cast<SyncFile::LockedFlag *>(p);
         p += sizeof(SyncFile::LockedFlag);
-        flags = *reinterpret_cast<qint8 *>(p);
-        p += sizeof(qint8);
         attributes = *reinterpret_cast<Attributes *>(p);
 
         const auto it = folder.files.insert(hash, SyncFile(type, modifiedDate));
         it->size = size;
         it->lockedFlag = lockedFlag;
-        it->flags = flags;
         it->attributes = attributes;
     }
 
@@ -1638,16 +1632,6 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
     checkForAddedFiles(profile);
     checkForRemovedFiles(profile);
-
-    // Fixes double syncing of updated files on restart, as these states are no longer needed in the file database after syncing
-    for (auto &folder : profile.folders)
-    {
-        for (auto &file : folder.files)
-        {
-            file.setUpdated(false);
-            file.setNewlyAdded(false);
-        }
-    }
 }
 
 /*
@@ -2108,8 +2092,4 @@ void SyncManager::syncFiles(SyncProfile &profile)
             folderIt = folder.foldersToUpdate.erase(static_cast<QSet<QByteArray>::const_iterator>(folderIt));
         }
     }
-
-    for (auto &folder : profile.folders)
-        for (auto &file : folder.files)
-            file.setAttributesUpdated(false);
 }
