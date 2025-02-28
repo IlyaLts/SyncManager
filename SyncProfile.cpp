@@ -119,6 +119,28 @@ bool SyncProfile::resetLocks()
 
 /*
 ===================
+SyncProfile::removeInvalidFileData
+
+If a file doesn't have a path after getListOfFiles(), then that means that the file doesn't exist at all.
+So, it is better to remove it from the database to prevent further synchronization issues.
+===================
+*/
+void SyncProfile::removeInvalidFileData()
+{
+    for (auto &folder : folders)
+    {
+        for (QHash<Hash, SyncFile>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end();)
+        {
+            if (!hasFilePath(fileIt.key()))
+                fileIt = folder.files.erase(static_cast<QHash<Hash, SyncFile>::const_iterator>(fileIt));
+            else
+                ++fileIt;
+        }
+    }
+}
+
+/*
+===================
 SyncProfile::addFilePath
 ===================
 */
@@ -149,6 +171,17 @@ bool SyncProfile::isActive() const
             activeFolders++;
 
     return !paused && !toBeRemoved && activeFolders >= 2;
+}
+
+/*
+===================
+SyncProfile::isTopFolderUpdated
+===================
+*/
+bool SyncProfile::isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) const
+{
+    QByteArray path = filePath(hash);
+    return folder.files.value(hash64(QByteArray(path).remove(path.indexOf('/'), path.size()))).updated();
 }
 
 /*

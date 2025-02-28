@@ -52,19 +52,9 @@ SyncManager::SyncManager()
     m_syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
     if (m_syncTimeMultiplier <= 0) m_syncTimeMultiplier = 1;
     m_movedFileMinSize = settings.value("MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt();
-
     m_caseSensitiveSystem = settings.value("caseSensitiveSystem", m_caseSensitiveSystem).toBool();
     m_versionFolder = settings.value("VersionFolder", "[Deletions]").toString();
     m_versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
-}
-
-/*
-===================
-SyncManager::~SyncManager
-===================
-*/
-SyncManager::~SyncManager()
-{
 }
 
 /*
@@ -781,7 +771,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     for (auto &folder : profile.folders)
     {
         hash64_t requiredDevice = hash64(QStorageInfo(folder.path).device());
-        QPair<Hash, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return getListOfFiles(profile, folder); })));
+        QPair<Hash, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return scanFiles(profile, folder); })));
         pair.second.suspend();
         futureList.append(pair);
     }
@@ -871,9 +861,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         return false;
 
     syncFiles(profile);
-
-    for (auto &folder : profile.folders)
-        folder.removeInvalidFileData(profile);
+    profile.removeInvalidFileData();
 
     if (profile.resetLocks())
         m_databaseChanged = true;
@@ -913,10 +901,10 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
 /*
 ===================
-SyncManager::getListOfFiles
+SyncManager::scanFiles
 ===================
 */
-int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder)
+int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
 {
     int totalNumOfFiles = 0;
     QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
@@ -981,10 +969,12 @@ int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder)
             QDateTime modifiedDate(fileInfo.lastModified());
 
             // Quits if a hash collision is detected
-            if (file.processed())
+            if (file.scanned())
             {
 #ifndef DEBUG
-                QMessageBox::critical(nullptr, QString("Hash collision detected!"), QString("%s vs %s").arg(qUtf8Printable(filePath), qUtf8Printable(profile.filePath(fileHash))));
+                QString title("Hash collision detected!");
+                QString text = QString("%1 vs %2").arg(qUtf8Printable(filePath), qUtf8Printable(profile.filePath(fileHash)));
+                QMessageBox::critical(nullptr, title, text);
 #else
                 qCritical("Hash collision detected: %s vs %s", qUtf8Printable(filePath), qUtf8Printable(profile.filePath(fileHash)));
 #endif
@@ -1033,15 +1023,16 @@ int SyncManager::getListOfFiles(SyncProfile &profile, SyncFolder &folder)
             file.type = type;
             file.attributes = getFileAttributes(absoluteFilePath);
             file.setExists(true);
-            file.setProcessed(true);
+            file.setScanned(true);
         }
+        // If a file is new
         else
         {
             SyncFile *file = folder.files.insert(fileHash, SyncFile(type, fileInfo.lastModified())).operator->();
             file->size = fileInfo.size();
             file->attributes = getFileAttributes(absoluteFilePath);
             file->setNewlyAdded(true);
-            file->setProcessed(true);
+            file->setScanned(true);
 
             m_databaseChanged = true;
         }
@@ -1476,7 +1467,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
 
                 if ((!folderIt->files.contains(otherFileIt.key()) || file.isOlder(otherFile) ||
                     // Or if other folders has a new version of a file and our file was removed
-                     (!file.exists() && (otherFile.updated() || otherFolderIt->isTopFolderUpdated(profile, otherFileIt.key().data)))))
+                     (!file.exists() && (otherFile.updated() || profile.isTopFolderUpdated(*otherFolderIt, otherFileIt.key().data)))))
                 {
                     if (otherFile.type == SyncFile::File)
                     {
@@ -2081,7 +2072,9 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
         folder.versioningPath.clear();
 
-        // Updates the modified date of the parent folders as adding/removing files and folders change their modified date
+        // Updates the modified date of parent folders as adding or removing files and folders changes their modified date.
+        // This is needed for conflict resolution in cases where a file has been modified in one location and deleted in another.
+        // SyncManager must synchronize the modified file, effectively ignoring the deletion.
         for (auto folderIt = folder.foldersToUpdate.begin(); folderIt != folder.foldersToUpdate.end();)
         {
             hash64_t folderHash = hash64(QByteArray(*folderIt).remove(0, folder.path.size()));

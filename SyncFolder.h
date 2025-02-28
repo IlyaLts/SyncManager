@@ -20,6 +20,7 @@
 #ifndef SYNCFOLDER_H
 #define SYNCFOLDER_H
 
+#include "SyncProfile.h"
 #include "SyncFile.h"
 #include "Common.h"
 #include <QByteArray>
@@ -67,10 +68,8 @@ class SyncFolder
 public:
 
     void clearData();
-    void removeInvalidFileData(SyncProfile &profile);
     void optimizeMemoryUsage();
     void updateVersioningPath(const QString &folder, const QString &pattern);
-    bool isTopFolderUpdated(SyncProfile &profile, hash64_t hash) const;
     bool isActive() const;
 
     QByteArray path;

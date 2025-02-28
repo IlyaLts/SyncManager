@@ -41,25 +41,6 @@ void SyncFolder::clearData()
 
 /*
 ===================
-SyncFolder::removeInvalidFileData
-
-If a file doesn't have a path after getListOfFiles(), then that means that the file doesn't exist at all.
-So, it is better to remove it from the database to prevent further synchronization issues.
-===================
-*/
-void SyncFolder::removeInvalidFileData(SyncProfile &profile)
-{
-    for (QHash<Hash, SyncFile>::iterator fileIt = files.begin(); fileIt != files.end();)
-    {
-        if (!profile.hasFilePath(fileIt.key()))
-            fileIt = files.erase(static_cast<QHash<Hash, SyncFile>::const_iterator>(fileIt));
-        else
-            ++fileIt;
-    }
-}
-
-/*
-===================
 SyncFolder::optimizeMemoryUsage
 ===================
 */
@@ -87,17 +68,6 @@ void SyncFolder::updateVersioningPath(const QString &folder, const QString &patt
     versioningPath.append("/");
     versioningPath.append(QDateTime::currentDateTime().toString(pattern));
     versioningPath.append("/");
-}
-
-/*
-===================
-SyncFolder::isTopFolderUpdated
-===================
-*/
-bool SyncFolder::isTopFolderUpdated(SyncProfile &profile, hash64_t hash) const
-{
-    QByteArray path = profile.filePath(hash);
-    return files.value(hash64(QByteArray(path).remove(path.indexOf('/'), path.size()))).updated();
 }
 
 /*

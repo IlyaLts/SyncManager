@@ -45,12 +45,14 @@ public:
     void operator =(const SyncProfile &other);
 
     bool resetLocks();
+    void removeInvalidFileData();
     void addFilePath(hash64_t hash, const QByteArray &path);
     inline void clearFilePaths() { filePaths.clear(); }
 
-    inline QByteArray filePath(Hash hash) { return filePaths.value(hash); }
-    inline bool hasFilePath(Hash hash) { return filePaths.contains(hash); }
+    inline QByteArray filePath(Hash hash) const { return filePaths.value(hash); }
+    inline bool hasFilePath(Hash hash) const { return filePaths.contains(hash); }
     bool isActive() const;
+    bool isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) const;
     bool hasExistingFolders() const;
     bool hasMissingFolders() const;
 

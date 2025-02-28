@@ -68,17 +68,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     for (auto &name : profileNames)
     {
         manager.profiles().append(SyncProfile());
-        manager.profiles().last().paused = manager.isPaused();
-        manager.profiles().last().name = name;
+
+        SyncProfile &profile = manager.profiles().last();
+        profile.paused = manager.isPaused();
+        profile.name = name;
 
         QStringList paths = profilesData.value(name).toStringList();
         paths.sort();
 
-        for (const auto &path : paths)
+        for (auto &path : paths)
         {
-            manager.profiles().last().folders.append(SyncFolder());
-            manager.profiles().last().folders.last().paused = manager.isPaused();
-            manager.profiles().last().folders.last().path = path.toUtf8();
+            profile.folders.append(SyncFolder());
+            profile.folders.last().paused = manager.isPaused();
+            profile.folders.last().path = path.toUtf8();
         }
     }
 
@@ -379,6 +381,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         return;
 
     int row = ui->syncProfilesView->selectionModel()->selectedIndexes()[0].row();
+    SyncProfile &profile = manager.profiles()[row];
     QStringList folders;
 
     if (mimeData)
@@ -403,7 +406,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
     QStringList folderPaths;
 
-    for (auto &folder : manager.profiles()[row].folders)
+    for (auto &folder : profile.folders)
         if (!folder.toBeRemoved)
             folderPaths.append(folder.path);
 
@@ -425,21 +428,21 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
         if (!exists)
         {
-            manager.profiles()[row].folders.append(SyncFolder());
-            manager.profiles()[row].folders.last().paused = manager.isPaused();
-            manager.profiles()[row].folders.last().path = folder.toUtf8();
-            manager.profiles()[row].folders.last().path.append("/");
-            folderPaths.append(manager.profiles()[row].folders.last().path);
+            profile.folders.append(SyncFolder());
+            profile.folders.last().paused = manager.isPaused();
+            profile.folders.last().path = folder.toUtf8();
+            profile.folders.last().path.append("/");
+            folderPaths.append(profile.folders.last().path);
 
             QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-            profilesData.setValue(manager.profiles()[row].name, folderPaths);
+            profilesData.setValue(profile.name, folderPaths);
 
             folderModel->setStringList(folderPaths);
             updateStatus();
         }
     }
 
-    updateProfileTooltip(manager.profiles()[row]);
+    updateProfileTooltip(profile);
 }
 
 /*

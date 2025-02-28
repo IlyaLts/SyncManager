@@ -55,7 +55,7 @@ public:
         Exists = 0x2,
         NewlyAdded = 0x8,
         AttributesUpdated = 0x20,
-        Processed = 0x40
+        Scanned = 0x40
     };
 
     SyncFile(){}
@@ -69,13 +69,13 @@ public:
     void setExists(bool value) { flags = value ? (flags | Exists) : (flags & ~Exists); }
     void setNewlyAdded(bool value) { flags = value ? (flags | NewlyAdded) : (flags & ~NewlyAdded); }
     void setAttributesUpdated(bool value) { flags = value ? (flags | AttributesUpdated) : (flags & ~AttributesUpdated); }
-    void setProcessed(bool value) { flags = value ? (flags | Processed) : (flags & ~Processed); }
+    void setScanned(bool value) { flags = value ? (flags | Scanned) : (flags & ~Scanned); }
 
     inline bool updated() const { return flags & Updated; }
     inline bool exists() const { return flags & Exists; }
     inline bool newlyAdded() const { return flags & NewlyAdded; }
     inline bool attributesUpdated() const { return flags & AttributesUpdated; }
-    inline bool processed() const { return flags & Processed; }
+    inline bool scanned() const { return flags & Scanned; }
 
     QDateTime modifiedDate;
     qint64 size = 0;

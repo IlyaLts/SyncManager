@@ -70,7 +70,6 @@ public:
     };
 
     SyncManager();
-    ~SyncManager();
 
     void addToQueue(SyncProfile *profile);
     void sync();
@@ -131,7 +130,7 @@ private:
     void saveToDatabase(const SyncFolder &folder, const QString &path) const;
     void loadFromDatabase(SyncFolder &folder, const QString &path);
     bool syncProfile(SyncProfile &profile);
-    int getListOfFiles(SyncProfile &profile, SyncFolder &folder);
+    int scanFiles(SyncProfile &profile, SyncFolder &folder);
     void synchronizeFileAttributes(SyncProfile &profile);
     void checkForRenamedFolders(SyncProfile &profile);
     void checkForMovedFiles(SyncProfile &profile);
