@@ -27,19 +27,17 @@
 #include <QHash>
 #include <QSet>
 
-class SyncProfile;
-
 struct FolderToRenameInfo
 {
     QByteArray toPath;
-    QByteArray fromFullPath;
+    QByteArray fromPath;
     Attributes attributes;
 };
 
 struct FileToMoveInfo
 {
     QByteArray toPath;
-    QByteArray fromFullPath;
+    QByteArray fromPath;
     Attributes attributes;
 };
 
