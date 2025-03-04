@@ -58,28 +58,24 @@ SyncProfile::resetLocks
 */
 bool SyncProfile::resetLocks()
 {
-    for (auto &folder : folders)
-        if (!folder.filesToMove.empty() || !folder.foldersToRename.empty())
-            return false;
+    QSet<hash64_t> fileHashes;
+    QSet<hash64_t> folderHashes;
 
     for (auto &folder : folders)
     {
-        for (QHash<Hash, SyncFile>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end(); ++fileIt)
+        for (QHash<Hash, FileToMoveInfo>::iterator it = folder.filesToMove.begin(); it != folder.filesToMove.end(); ++it)
         {
-            if (fileIt->lockedFlag == SyncFile::Unlocked)
-                continue;
+            fileHashes.insert(it.key().data);
+            fileHashes.insert(hash64(it.value().toPath));
+        }
 
-            for (auto &folder : folders)
-            {
-                if (folder.files.contains(fileIt.key()))
-                    folder.files[fileIt.key()].lockedFlag = SyncFile::Unlocked;
-            }
+        for (QHash<Hash, FolderToRenameInfo>::iterator it = folder.foldersToRename.begin(); it != folder.foldersToRename.end(); ++it)
+        {
+            folderHashes.insert(it.key().data);
+            folderHashes.insert(hash64(it.value().toPath));
         }
     }
 
-    return true;
-
-    /*
     bool databaseChanged = false;
 
     for (auto &folder : folders)
@@ -89,32 +85,21 @@ bool SyncProfile::resetLocks()
             if (fileIt->lockedFlag == SyncFile::Unlocked)
                 continue;
 
-            bool shouldReset = true;
+            if (fileIt->type == SyncFile::File && fileHashes.contains(fileIt.key().data))
+                continue;
 
-            for (auto &otherFolder : folders)
-            {
-                if ((fileIt->type == SyncFile::File && otherFolder.filesToMove.contains(fileIt.key())) ||
-                    (fileIt->type == SyncFile::Folder && otherFolder.foldersToRename.contains(fileIt.key())))
-                {
-                    shouldReset = false;
-                    break;
-                }
-            }
+            if (fileIt->type == SyncFile::Folder && folderHashes.contains(fileIt.key().data))
+                continue;
 
-            if (shouldReset)
+            if (folder.files.contains(fileIt.key()))
             {
                 databaseChanged = true;
-
-                for (auto &folder : folders)
-                {
-                    if (folder.files.contains(fileIt.key()))
-                        folder.files[fileIt.key()].lockedFlag = SyncFile::Unlocked;
-                }
+                folder.files[fileIt.key()].lockedFlag = SyncFile::Unlocked;
             }
         }
     }
 
-    return databaseChanged;*/
+    return databaseChanged;
 }
 
 /*
