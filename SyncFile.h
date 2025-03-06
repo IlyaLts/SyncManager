@@ -59,7 +59,7 @@ public:
     };
 
     SyncFile(){}
-    SyncFile(Type type, QDateTime modifiedDate) : modifiedDate(modifiedDate), type(type){}
+    SyncFile(Type type, QDateTime modifiedDate) : modifiedDate(modifiedDate), type(type), flags(Exists){}
 
     bool isOlder(const SyncFile &otherFile) const;
     bool hasOlderAttributes(const SyncFile &otherFile) const;
@@ -81,7 +81,7 @@ public:
     qint64 size = 0;
     Type type = Unknown;
     LockedFlag lockedFlag = Unlocked;
-    qint8 flags = Exists;
+    qint8 flags = 0;
     Attributes attributes = 0;
 };
 
