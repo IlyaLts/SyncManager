@@ -647,8 +647,7 @@ void SyncManager::loadFromDatabase(SyncFolder &folder, const QString &path)
         stream >> fromPath;
         stream >> attributes;
 
-        hash64_t hash = hash64(fromPath);
-        const auto it = folder.filesToMove.insert(hash, {toPath, fromPath, attributes});
+        const auto it = folder.filesToMove.insert(hash64(toPath), {toPath, fromPath, attributes});
         it->toPath.squeeze();
         it->fromPath.squeeze();
     }
@@ -1155,10 +1154,9 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                     continue;
 
                 QByteArray otherFolderFullPath(otherFolderIt->path);
-                otherFolderFullPath.append(profile.filePath(renamedFolderIt.key()));
-                QFileInfo otherFolderInfo(otherFolderFullPath);
+                otherFolderFullPath.append(renamedFolderPath);
 
-                if (!otherFolderInfo.exists())
+                if (!QFileInfo(otherFolderFullPath).exists())
                 {
                     abort = true;
                     break;
@@ -1268,9 +1266,6 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                     path.remove(0, otherFolderIt->path.size());
                     hash64_t hash = hash64(path);
 
-                    qDebug() << qUtf8Printable(path);
-
-
                     if (otherFolderIt->files.contains(hash))
                         otherFolderIt->files[hash].lockedFlag = SyncFile::LockedInternal;
                 }
@@ -1322,6 +1317,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             bool abort = false;
             SyncFile *movedFile = nullptr;
             hash64_t movedFileHash;
+            hash64_t newFileHash;
             QByteArray movedFilePath;
 
             // Searches for a match between a missed file and a newly added file
@@ -1332,6 +1328,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
                 movedFile = &folderIt->files[missingFileIt.key()];
                 movedFileHash = missingFileIt.key().data;
+                newFileHash = newFileIt.key().data;
                 movedFilePath = profile.filePath(movedFileHash);
                 break;
             }
@@ -1346,6 +1343,9 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                     continue;
 
                 if (!otherFolderIt->isActive())
+                    continue;
+
+                if (!otherFolderIt->files.contains(movedFileHash))
                     continue;
 
                 abort = true;
@@ -1400,7 +1400,19 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 pathToMove.append(movedFilePath);
 
                 otherFolderIt->files[movedFileHash].lockedFlag = SyncFile::Locked;
-                otherFolderIt->filesToMove.insert(movedFileHash, {newPathToFile, movedFilePath, getFileAttributes(fullNewPathToFile)});
+
+                // Removes the old file to move operation in cases where the file was not moved or
+                // renamed in other sync folders, but was moved or renamed in the main sync folder again
+                if (movedFilePath.isEmpty())
+                {
+                    if (otherFolderIt->filesToMove.contains(movedFileHash))
+                    {
+                        movedFilePath = otherFolderIt->filesToMove[movedFileHash].fromPath;
+                        otherFolderIt->filesToMove.remove(movedFileHash);
+                    }
+                }
+
+                otherFolderIt->filesToMove.insert(newFileHash, {newPathToFile, movedFilePath, getFileAttributes(fullNewPathToFile)});
 
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
                 const SyncFile &fileToMove = otherFolderIt->files.value(movedFileHash);
@@ -1497,10 +1509,6 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                             continue;
 
                         QByteArray path = profile.filePath(otherFileIt.key());
-
-
-                        qDebug() << qUtf8Printable(folderIt->path);
-                        qDebug() << qUtf8Printable(path);
                         auto it = folderIt->foldersToCreate.insert(otherFileIt.key(), {path, otherFile.attributes});
                         it->path.squeeze();
 
@@ -1765,9 +1773,15 @@ void SyncManager::moveFiles(SyncProfile &profile, SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
+        if (fileIt.value().fromPath.isEmpty() || fileIt.value().toPath.isEmpty())
+        {
+            fileIt = folder.filesToMove.erase(static_cast<QHash<Hash, FileToMoveInfo>::const_iterator>(fileIt));
+            continue;
+        }
+
         QByteArray fromFullPath(folder.path);
         fromFullPath.append(fileIt.value().fromPath);
-qDebug("FROM: %s", qUtf8Printable(fromFullPath));
+
         // Removes from the "files to move" list if the source file doesn't exist
         if (!QFileInfo::exists(fromFullPath))
         {
@@ -1777,9 +1791,6 @@ qDebug("FROM: %s", qUtf8Printable(fromFullPath));
 
         QByteArray toFullPath(folder.path);
         toFullPath.append(fileIt.value().toPath);
-
-
-        qDebug("TO: %s", qUtf8Printable(toFullPath));
 
         // Removes from the "files to move" list if a file already exists at the destination location
         if (QFileInfo::exists(toFullPath))
@@ -1807,7 +1818,7 @@ qDebug("FROM: %s", qUtf8Printable(fromFullPath));
 
             setFileAttribute(toFullPath, fileIt.value().attributes);
 
-            folder.files.remove(fileIt.key());
+            folder.files.remove(hash64(fileIt.value().fromPath));
             hash64_t hash = hash64(fileIt.value().toPath);
             auto it = folder.files.insert(hash, SyncFile(SyncFile::File, QFileInfo(toFullPath).lastModified()));
             it->size = QFileInfo(toFullPath).size();
