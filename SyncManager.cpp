@@ -1401,18 +1401,17 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
                 otherFolderIt->files[movedFileHash].lockedFlag = SyncFile::Locked;
 
+                QByteArray fromPath = movedFilePath;
+
                 // Removes the old file to move operation in cases where the file was not moved or
                 // renamed in other sync folders, but was moved or renamed in the main sync folder again
-                if (movedFilePath.isEmpty())
+                if (otherFolderIt->filesToMove.contains(movedFileHash))
                 {
-                    if (otherFolderIt->filesToMove.contains(movedFileHash))
-                    {
-                        movedFilePath = otherFolderIt->filesToMove[movedFileHash].fromPath;
-                        otherFolderIt->filesToMove.remove(movedFileHash);
-                    }
+                    fromPath = otherFolderIt->filesToMove[movedFileHash].fromPath;
+                    otherFolderIt->filesToMove.remove(movedFileHash);
                 }
 
-                otherFolderIt->filesToMove.insert(newFileHash, {newPathToFile, movedFilePath, getFileAttributes(fullNewPathToFile)});
+                otherFolderIt->filesToMove.insert(newFileHash, {newPathToFile, fromPath, getFileAttributes(fullNewPathToFile)});
 
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
                 const SyncFile &fileToMove = otherFolderIt->files.value(movedFileHash);
@@ -1509,6 +1508,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                             continue;
 
                         QByteArray path = profile.filePath(otherFileIt.key());
+
                         auto it = folderIt->foldersToCreate.insert(otherFileIt.key(), {path, otherFile.attributes});
                         it->path.squeeze();
 
@@ -1750,7 +1750,8 @@ void SyncManager::renameFolders(SyncProfile &profile, SyncFolder &folder)
 
             hash64_t hash = hash64(folderIt.value().toPath);
             folder.files.remove(folderIt.key());
-            folder.files.insert(hash, SyncFile(SyncFile::Folder, QFileInfo(toFullPath).lastModified()));
+            auto it = folder.files.insert(hash, SyncFile(SyncFile::Folder, QFileInfo(toFullPath).lastModified()));
+            it->lockedFlag = SyncFile::Locked;
             profile.addFilePath(hash, folderIt.value().toPath);
             folderIt = folder.foldersToRename.erase(static_cast<QHash<Hash, FolderToRenameInfo>::const_iterator>(folderIt));
         }
@@ -1822,6 +1823,7 @@ void SyncManager::moveFiles(SyncProfile &profile, SyncFolder &folder)
             hash64_t hash = hash64(fileIt.value().toPath);
             auto it = folder.files.insert(hash, SyncFile(SyncFile::File, QFileInfo(toFullPath).lastModified()));
             it->size = QFileInfo(toFullPath).size();
+            it->lockedFlag = SyncFile::Locked;
             profile.addFilePath(hash, fileIt.value().toPath);
             fileIt = folder.filesToMove.erase(static_cast<QHash<Hash, FileToMoveInfo>::const_iterator>(fileIt));
         }
@@ -1989,19 +1991,18 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
             continue;
         }
 
-        QString fullPath(folder.path);
-        fullPath.append(fileIt.value().toPath);
-        hash64_t hash = hash64(fileIt.value().toPath);
-        const SyncFile &file = folder.files.value(hash);
-        QFileInfo destination(fullPath);
+        QString toFullPath(folder.path);
+        toFullPath.append(fileIt.value().toPath);
+        hash64_t toHash = hash64(fileIt.value().toPath);
+        const SyncFile &toFile = folder.files.value(toHash);
+        QFileInfo toFileInfo(toFullPath);
 
-        // Destination file is a newly added file
-        if (file.type == SyncFile::Unknown && destination.exists())
+        if (!toFile.exists() && toFileInfo.exists())
         {
-            QFileInfo origin(fileIt.value().fromFullPath);
+            QFileInfo fromFileInfo(fileIt.value().fromFullPath);
 
-            // Aborts the copy operation if the origin file is older than the destination file
-            if (destination.lastModified() > origin.lastModified())
+            // Aborts the copy operation if the source file is older than the destination file
+            if (toFileInfo.lastModified() > fromFileInfo.lastModified())
             {
                 fileIt = folder.filesToCopy.erase(static_cast<QHash<Hash, FileToCopyInfo>::const_iterator>(fileIt));
                 continue;
@@ -2011,15 +2012,15 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
             // Without this, copy operation causes undefined behavior as some file systems, such as Windows, are case insensitive.
             if (!m_caseSensitiveSystem)
             {
-                QByteArray fileName = fileIt.value().fromFullPath;
-                fileName.remove(0, fileName.lastIndexOf("/") + 1);
+                QByteArray fromFileName = fileIt.value().fromFullPath;
+                fromFileName.remove(0, fromFileName.lastIndexOf("/") + 1);
 
-                QByteArray originFilename = getCurrentFileInfo(origin.absolutePath(), origin.fileName(), QDir::Files).fileName().toUtf8();
+                QByteArray currentFilename = getCurrentFileInfo(fromFileInfo.absolutePath(), fromFileInfo.fileName(), QDir::Files).fileName().toUtf8();
 
-                if (!originFilename.isEmpty())
+                if (!currentFilename.isEmpty())
                 {
-                    // Aborts the copy operation if the origin path and the path on a disk have different cases
-                    if (originFilename.compare(fileName, Qt::CaseSensitive) != 0)
+                    // Aborts the copy operation if the current path and the path on a disk have different cases
+                    if (currentFilename.compare(fromFileName, Qt::CaseSensitive) != 0)
                     {
                         fileIt = folder.filesToCopy.erase(static_cast<QHash<Hash, FileToCopyInfo>::const_iterator>(fileIt));
                         continue;
@@ -2028,28 +2029,27 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
             }
         }
 
-        createParentFolders(profile, folder, QDir::cleanPath(fullPath).toUtf8());
+        createParentFolders(profile, folder, QDir::cleanPath(toFullPath).toUtf8());
 
         // Removes a file with the same filename first if exists
-        if (destination.exists())
-            removeFile(profile, folder, fileIt.value().toPath, fullPath, file.type);
+        if (toFileInfo.exists())
+            removeFile(profile, folder, fileIt.value().toPath, toFullPath, toFile.type);
 
-        if (QFile::copy(fileIt.value().fromFullPath, fullPath))
+        if (QFile::copy(fileIt.value().fromFullPath, toFullPath))
         {
-            QFileInfo fileInfo(fullPath);
-
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
             setFileModificationDate(filePath, fileIt.value().second.second);
 #endif
 
-            // Do not touch QFileInfo(filePath).lastModified()), as we want to get the latest modified date
-            auto it = folder.files.insert(hash, SyncFile(SyncFile::File, fileInfo.lastModified()));
+            // Do not reorder QQFileInfo fileInfo(fullPath) with setFileModificationDate(), as we want to get the latest modified date
+            QFileInfo fileInfo(toFullPath);
+            auto it = folder.files.insert(toHash, SyncFile(SyncFile::File, fileInfo.lastModified()));
             it->size = fileInfo.size();
-            it->attributes = getFileAttributes(fullPath);
-            profile.addFilePath(hash, fileIt.value().toPath);
+            it->attributes = getFileAttributes(toFullPath);
+            profile.addFilePath(toHash, fileIt.value().toPath);
             fileIt = folder.filesToCopy.erase(static_cast<QHash<Hash, FileToCopyInfo>::const_iterator>(fileIt));
 
-            QByteArray parentPath = destination.path().toUtf8();
+            QByteArray parentPath = toFileInfo.path().toUtf8();
 
             if (QFileInfo::exists(parentPath))
                 folder.foldersToUpdate.insert(parentPath);

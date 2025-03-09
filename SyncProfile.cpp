@@ -65,8 +65,8 @@ bool SyncProfile::resetLocks()
     {
         for (QHash<Hash, FileToMoveInfo>::iterator it = folder.filesToMove.begin(); it != folder.filesToMove.end(); ++it)
         {
+            fileHashes.insert(hash64(it.value().fromPath));
             fileHashes.insert(it.key().data);
-            fileHashes.insert(hash64(it.value().toPath));
         }
 
         for (QHash<Hash, FolderToRenameInfo>::iterator it = folder.foldersToRename.begin(); it != folder.foldersToRename.end(); ++it)
