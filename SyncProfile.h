@@ -46,6 +46,10 @@ public:
 
     bool resetLocks();
     void removeInvalidFileData();
+    void saveDatabasesLocally() const;
+    void saveDatabasesDecentralised() const;
+    void loadDatabasesLocally();
+    void loadDatebasesDecentralised();
     void addFilePath(hash64_t hash, const QByteArray &path);
     inline void clearFilePaths() { filePaths.clear(); }
 

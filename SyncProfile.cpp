@@ -17,9 +17,11 @@
 ===============================================================================
 */
 
-#include <QMutex>
+#include "SyncManager.h"
 #include "SyncProfile.h"
 #include "SyncFolder.h"
+#include <QMutex>
+#include <QStandardPaths>
 
 /*
 ===================
@@ -121,6 +123,82 @@ void SyncProfile::removeInvalidFileData()
             else
                 ++fileIt;
         }
+    }
+}
+
+/*
+===================
+SyncProfile::saveDatabasesLocally
+===================
+*/
+void SyncProfile::saveDatabasesLocally() const
+{
+    for (auto &folder : folders)
+    {
+        if (!folder.isActive() || folder.toBeRemoved)
+            continue;
+
+        QByteArray filename(QByteArray::number(hash64(folder.path)) + ".db");
+        folder.saveToDatabase(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename);
+    }
+}
+
+/*
+===================
+SyncProfile::saveDatabasesDecentralised
+===================
+*/
+void SyncProfile::saveDatabasesDecentralised() const
+{
+    for (auto &folder : folders)
+    {
+        if (!folder.isActive() || folder.toBeRemoved)
+            continue;
+
+        QDir().mkdir(folder.path + DATA_FOLDER_PATH);
+
+        if (!QDir(folder.path + DATA_FOLDER_PATH).exists())
+            continue;
+
+        folder.saveToDatabase(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
+
+#ifdef Q_OS_WIN
+        setHiddenFileAttribute(QString(folder.path + DATA_FOLDER_PATH), true);
+        setHiddenFileAttribute(QString(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME), true);
+#endif
+    }
+}
+
+/*
+===================
+SyncProfile::loadDatabasesLocally
+===================
+*/
+void SyncProfile::loadDatabasesLocally()
+{
+    for (auto &folder : folders)
+    {
+        if (!folder.isActive() || folder.toBeRemoved)
+            continue;
+
+        QByteArray filename(QByteArray::number(hash64(folder.path)) + ".db");
+        folder.loadFromDatabase(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename);
+    }
+}
+
+/*
+===================
+SyncProfile::loadDatebasesDecentralised
+===================
+*/
+void SyncProfile::loadDatebasesDecentralised()
+{
+    for (auto &folder : folders)
+    {
+        if (!folder.isActive() || folder.toBeRemoved)
+            continue;
+
+        folder.loadFromDatabase(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
     }
 }
 

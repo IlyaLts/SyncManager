@@ -32,7 +32,7 @@
 
 #define DATA_FOLDER_PATH        ".SyncManager"
 #define DATABASE_FILENAME       "db"
-#define DATABASE_VERSION        6
+#define DATABASE_VERSION        3
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_COOLDOWN   300000
 #define MOVED_FILES_MIN_SIZE    0
@@ -77,12 +77,6 @@ public:
     void updateTimer(SyncProfile &profile);
     void updateStatus();
     void updateNextSyncingTime();
-
-    void saveDatabaseLocally(const SyncProfile &profile) const;
-    void saveDatabaseDecentralised(const SyncProfile &profile) const;
-    void loadDatabaseLocally(SyncProfile &profile);
-    void loadDatebaseDecentralised(SyncProfile &profile);
-    void removeDatabase(const SyncFolder &folder);
     void removeAllDatabases();
 
     inline void setSyncingMode(SyncingMode mode) { m_syncingMode = mode; }
@@ -127,8 +121,6 @@ Q_SIGNALS:
 
 private:
 
-    void saveToDatabase(const SyncFolder &folder, const QString &path) const;
-    void loadFromDatabase(SyncFolder &folder, const QString &path);
     bool syncProfile(SyncProfile &profile);
     int scanFiles(SyncProfile &profile, SyncFolder &folder);
     void synchronizeFileAttributes(SyncProfile &profile);

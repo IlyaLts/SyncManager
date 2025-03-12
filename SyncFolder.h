@@ -68,6 +68,9 @@ public:
     void clearData();
     void optimizeMemoryUsage();
     void updateVersioningPath(const QString &folder, const QString &pattern);
+    void saveToDatabase(const QString &path) const;
+    void loadFromDatabase(const QString &path);
+    void removeDatabase() const;
     bool isActive() const;
 
     QByteArray path;
