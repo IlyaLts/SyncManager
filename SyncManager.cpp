@@ -778,28 +778,19 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 
                 QByteArray otherFolderFullPath(otherFolderIt->path);
                 otherFolderFullPath.append(renamedFolderPath);
-                QFileInfo otherFileInfo(otherFolderFullPath);
                 QByteArray otherCurrentFolderName;
                 QByteArray otherCurrentFolderPath;
 
                 QByteArray newFolderName(renamedFolderPath);
                 newFolderName.remove(0, newFolderName.lastIndexOf("/") + 1);
 
-                QFileInfo otherFolder = getCurrentFileInfo(otherFileInfo.absolutePath(), otherFileInfo.fileName(), QDir::Dirs);
+                QFileInfo otherFolder = getCurrentFileInfo(otherFolderFullPath);
 
                 if (otherFolder.exists())
                 {
                     otherCurrentFolderName = otherFolder.fileName().toUtf8();
                     otherCurrentFolderPath = otherFolder.filePath().toUtf8();
                     otherCurrentFolderPath.remove(0, otherFolderIt->path.size());
-                }
-                else
-                {
-                    QString str(otherFileInfo.absolutePath());
-                    str.append("/");
-                    str.append(otherFileInfo.fileName());
-                    qDebug() << "getCurrentFileInfo failed with" << qUtf8Printable(str);
-                    continue;
                 }
 
                 // Both folder names should differ in case
@@ -1616,7 +1607,7 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
                 QByteArray fromFileName = fileIt.value().fromFullPath;
                 fromFileName.remove(0, fromFileName.lastIndexOf("/") + 1);
 
-                QByteArray currentFilename = getCurrentFileInfo(fromFileInfo.absolutePath(), fromFileInfo.fileName(), QDir::Files).fileName().toUtf8();
+                QByteArray currentFilename = getCurrentFileInfo(fileIt.value().fromFullPath).fileName().toUtf8();
 
                 if (!currentFilename.isEmpty())
                 {

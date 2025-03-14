@@ -31,6 +31,7 @@
 
 #ifdef Q_OS_WIN
 #include <fileapi.h>
+#include <windows.h>
 #else
 #include <sys/stat.h>
 #include <utime.h>
@@ -119,39 +120,32 @@ void removeDuplicatesBySizeAndDate(QHash<Hash, SyncFile *> &files)
 /*
 ===================
 getCurrentFileInfo
-
-Gets the current file information for a file with the correct case in a synchronized folder.
-
-QFileInfo and QFile return a predetermined filename based on the argument provided during construction,
-instead of the actual current filename on the disk. So, the only way to get the current filename is to use QDirIterator.
 ===================
 */
-QFileInfo getCurrentFileInfo(const QString &path, const QString &name, QDir::Filters filters)
+QFileInfo getCurrentFileInfo(const QString &path)
 {
-    QDirIterator it(path, QStringList(name), filters | QDir::Hidden | QDir::NoDotAndDotDot);
+#ifdef Q_OS_WIN
+    std::vector<wchar_t> buffer(MAX_PATH);
+    DWORD length = GetLongPathNameW(path.toStdWString().c_str(), buffer.data(), MAX_PATH);
 
-    while (it.hasNext())
+    if (!length)
+        return QFileInfo(path);
+
+    // If the buffer is too small to contain the path, the return value is the size
+    // of the buffer that is required to hold the path and the terminating null character
+    if (length > MAX_PATH)
     {
-        it.next();
-        return it.fileInfo();
+        buffer.resize(length);
+        length = GetLongPathNameW(path.toStdWString().c_str(), buffer.data(), length);
+
+        if (!length)
+            return QFileInfo(path);
     }
 
-    // Sometimes, a file's name may resemble a wildcard (?*[]), causing QDirIterator to miss it.
-    // The best current workaround is search all directories within the specified path and
-    // perform a case-insensitive match against the exact filename.
-    QDirIterator it2(path, {}, filters | QDir::Hidden | QDir::NoDotAndDotDot);
-
-    while (it2.hasNext())
-    {
-        it2.next();
-
-        if (it2.fileInfo().fileName().compare(name, Qt::CaseInsensitive) != 0)
-            continue;
-
-        return it2.fileInfo();
-    }
-
-    return QFileInfo();
+    return QFileInfo(QString(buffer.data()));
+#else
+    return QFileInfo(path);
+#endif
 }
 
 /*

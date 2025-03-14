@@ -87,7 +87,7 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 
 hash64_t hash64(const QByteArray &str);
 void removeDuplicatesBySizeAndDate (QHash<Hash, SyncFile *> &files);
-QFileInfo getCurrentFileInfo(const QString &path, const QString &name, QDir::Filters filters = QDir::NoFilter);
+QFileInfo getCurrentFileInfo(const QString &path);
 bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent = nullptr);
 
 Attributes getFileAttributes(const QString &path);
