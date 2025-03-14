@@ -6,12 +6,15 @@
 
 # How It Works
 Here's an overview of how it works:
+1. Loads its databases from disk, if available, to restore prior file information.
+1. Scans the designated folders for files and folders, looking for changes in file modified dates and file sizes.
+1. Detects changes and the type of synchronization that should be performed between folders.
+1. Based on the detected changes, synchronizes files across all folders.
+1. Updates its databases on disk, saving the latest file information for the next synchronization.
 ### Syncing Modes
 Synchronization can be triggered using the following modes:
 - **Manual** - *(Lets you decide when to synchronize certain profiles)*
 - **Automatic** - *(Synchronizes data based on its average synchronization time, multiplied by the frequency multiplier, with a minimum delay of 1 second)*
-### File and Folder Discovery
-SyncManager starts by scanning the designated folders for files and folders.
 ### Change Detection Order
 SyncManager uses sophisticated algorithms to detect changes since the last synchronization to determine which files and folders must be synchronized in the following order:
 1. **File attribute changes**
