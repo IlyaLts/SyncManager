@@ -125,7 +125,7 @@ getCurrentFileInfo
 QFileInfo getCurrentFileInfo(const QString &path)
 {
 #ifdef Q_OS_WIN
-    std::vector<wchar_t> buffer(MAX_PATH);
+    QVector<wchar_t> buffer(MAX_PATH);
     DWORD length = GetLongPathNameW(path.toStdWString().c_str(), buffer.data(), MAX_PATH);
 
     if (!length)
