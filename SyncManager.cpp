@@ -63,7 +63,7 @@ SyncManager::addToQueue
 */
 void SyncManager::addToQueue(SyncProfile *profile)
 {
-    if (m_profiles.isEmpty() || (profile && m_queue.contains(profile)))
+    if (m_profiles.empty() || (profile && m_queue.contains(profile)))
         return;
 
     // Adds the passed profile number to the sync queue
@@ -111,7 +111,7 @@ void SyncManager::sync()
         // Profiles
         if (profileIt->toBeRemoved)
         {
-            profileIt = m_profiles.erase(static_cast<QList<SyncProfile>::const_iterator>(profileIt));
+            profileIt = m_profiles.erase(static_cast<std::list<SyncProfile>::const_iterator>(profileIt));
             continue;
         }
 
@@ -119,7 +119,7 @@ void SyncManager::sync()
         for (auto folderIt = profileIt->folders.begin(); folderIt != profileIt->folders.end();)
         {
             if (folderIt->toBeRemoved)
-                folderIt = profileIt->folders.erase(static_cast<QList<SyncFolder>::const_iterator>(folderIt));
+                folderIt = profileIt->folders.erase(static_cast<std::list<SyncFolder>::const_iterator>(folderIt));
             else
                 folderIt++;
         }

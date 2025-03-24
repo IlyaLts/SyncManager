@@ -65,6 +65,8 @@ class SyncFolder
 {
 public:
 
+    inline bool operator ==(const SyncFolder &other) { return path == other.path; }
+
     void clearData();
     void optimizeMemoryUsage();
     void updateVersioningPath(const QString &folder, const QString &pattern);

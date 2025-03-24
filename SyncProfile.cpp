@@ -22,6 +22,7 @@
 #include "SyncFolder.h"
 #include <QMutex>
 #include <QStandardPaths>
+#include <QModelIndex>
 
 /*
 ===================
@@ -273,4 +274,18 @@ bool SyncProfile::hasMissingFolders() const
             return true;
 
     return false;
+}
+
+/*
+===================
+SyncProfile::folderByIndex
+===================
+*/
+SyncFolder *SyncProfile::folderByIndex(QModelIndex index)
+{
+    for (auto &folder : folders)
+        if (folder.path == index.data(Qt::DisplayRole).toString())
+            return &folder;
+
+    return nullptr;
 }

@@ -84,8 +84,8 @@ public:
     inline SyncingMode syncingMode() const { return m_syncingMode; }
     inline DeletionMode deletionMode() const { return m_deletionMode; }
     inline const QQueue<SyncProfile *> &queue() const { return m_queue; }
-    inline const QList<SyncProfile> &profiles() const { return m_profiles; }
-    inline QList<SyncProfile> &profiles() { return m_profiles; }
+    inline const std::list<SyncProfile> &profiles() const { return m_profiles; }
+    inline std::list<SyncProfile> &profiles() { return m_profiles; }
 
     inline void shouldQuit() { m_shouldQuit = true; }
     void setSyncTimeMultiplier(int multiplier);
@@ -143,7 +143,7 @@ private:
     DeletionMode m_deletionMode;
 
     QQueue<SyncProfile *> m_queue;
-    QList<SyncProfile> m_profiles;
+    std::list<SyncProfile> m_profiles;
 
     int m_filesToSync = 0;
     int m_syncTimeMultiplier = 1;

@@ -43,6 +43,7 @@ public:
     explicit SyncProfile(SyncProfile &&other) : SyncProfile() { *this = other; }
 
     void operator =(const SyncProfile &other);
+    inline bool operator ==(const SyncProfile &other) { return name == other.name; }
 
     bool resetLocks();
     void removeInvalidFileData();
@@ -59,8 +60,9 @@ public:
     bool isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) const;
     bool hasExistingFolders() const;
     bool hasMissingFolders() const;
+    SyncFolder *folderByIndex(QModelIndex index);
 
-    QList<SyncFolder> folders;
+    std::list<SyncFolder> folders;
     QList<QByteArray> excludeList;
 
     bool syncing = false;
