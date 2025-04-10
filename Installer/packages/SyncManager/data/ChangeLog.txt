@@ -1,4 +1,9 @@
 ==========================
+1.9.9 - Apr 10, 2025
+==========================
+- Fixed a crash when adding or removing profiles or folders during synchronization.
+
+==========================
 1.9.8 - Mar 14, 2025
 ==========================
 - Minor bugfixes.
