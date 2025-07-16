@@ -703,8 +703,26 @@ void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
     moveToTrashAction->setChecked(mode == SyncManager::MoveToTrash);
     versioningAction->setChecked(mode == SyncManager::Versioning);
     deletePermanentlyAction->setChecked(mode == SyncManager::DeletePermanently);
+    versioningFormatMenu->menuAction()->setVisible(mode == SyncManager::Versioning);
 
     saveSettings();
+}
+
+/*
+===================
+MainWindow::switchVersioningFormat
+===================
+*/
+void MainWindow::switchVersioningFormat(VersioningFormat format)
+{
+    fileTimeStampAction->setChecked(false);
+    folderTimeStampAction->setChecked(false);
+    manager.setVersioningFormat(format);
+
+    if (format == FileTimeStamp)
+        fileTimeStampAction->setChecked(true);
+    else if (format == FolderTimeStamp)
+        folderTimeStampAction->setChecked(true);
 }
 
 /*
@@ -957,6 +975,9 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         for (auto &action : deletionModeMenu->actions())
             action->setEnabled(false);
 
+        for (auto &action : versioningFormatMenu->actions())
+            action->setEnabled(false);
+
         for (auto &action : databaseLocationMenu->actions())
             action->setEnabled(false);
 
@@ -969,6 +990,9 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
             action->setEnabled(true);
 
         for (auto &action : deletionModeMenu->actions())
+            action->setEnabled(true);
+
+        for (auto &action : versioningFormatMenu->actions())
             action->setEnabled(true);
 
         for (auto &action : databaseLocationMenu->actions())
@@ -1331,7 +1355,8 @@ void MainWindow::readSettings()
     ignoreHiddenFilesAction->setChecked(manager.ignoreHiddenFilesEnabled());
     detectMovedFilesAction->setChecked(manager.detectMovedFilesEnabled());
     switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
-    switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", manager.MoveToTrash).toInt()));
+    switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", SyncManager::MoveToTrash).toInt()));
+    switchVersioningFormat(static_cast<VersioningFormat>(settings.value("VersioningFormat", FolderTimeStamp).toInt()));
 
     manager.updateNextSyncingTime();
 
@@ -1375,6 +1400,7 @@ void MainWindow::saveSettings() const
     settings.setValue("Paused", manager.isPaused());
     settings.setValue("SyncingMode", manager.syncingMode());
     settings.setValue("DeletionMode", manager.deletionMode());
+    settings.setValue("VersioningFormat", manager.versioningFormat());
     settings.setValue("DatabaseLocation", manager.databaseLocation());
     settings.setValue("Language", language);
     settings.setValue("Notifications", manager.notificationsEnabled());
@@ -1439,14 +1465,16 @@ void MainWindow::setupMenus()
     syncingTimeAction = new QAction(tr("Synchronize Every: "), this);
     decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
     moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
+    versioningAction = new QAction(tr("&Versioning"), this);
+    deletePermanentlyAction = new QAction(tr("&Delete Files Permanently"), this);
+    fileTimeStampAction = new QAction(tr("&File Time Stamp"), this);
+    folderTimeStampAction = new QAction(tr("&Folder Time Stamp"), this);
     saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions.append(new QAction(tr(languages[i].name), this));
 
-    versioningAction = new QAction(tr("&Versioning"), this);
-    deletePermanentlyAction = new QAction(tr("&Delete Files Permanently"), this);
     launchOnStartupAction = new QAction(tr("&Launch on Startup"), this);
     showInTrayAction = new QAction(tr("&Show in System Tray"));
     disableNotificationAction = new QAction(tr("&Disable Notifications"), this);
@@ -1468,6 +1496,8 @@ void MainWindow::setupMenus()
     deletePermanentlyAction->setCheckable(true);
     moveToTrashAction->setCheckable(true);
     versioningAction->setCheckable(true);
+    fileTimeStampAction->setCheckable(true);
+    folderTimeStampAction->setCheckable(true);
     saveDatabaseLocallyAction->setCheckable(true);
     saveDatabaseDecentralizedAction->setCheckable(true);
 
@@ -1502,6 +1532,10 @@ void MainWindow::setupMenus()
     deletionModeMenu->addAction(versioningAction);
     deletionModeMenu->addAction(deletePermanentlyAction);
 
+    versioningFormatMenu = new UnhidableMenu(tr("&Versioning Format"), this);
+    versioningFormatMenu->addAction(fileTimeStampAction);
+    versioningFormatMenu->addAction(folderTimeStampAction);
+
     languageMenu = new UnhidableMenu(tr("&Language"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
@@ -1516,6 +1550,7 @@ void MainWindow::setupMenus()
     settingsMenu->addMenu(syncingModeMenu);
     settingsMenu->addMenu(syncingTimeMenu);
     settingsMenu->addMenu(deletionModeMenu);
+    settingsMenu->addMenu(versioningFormatMenu);
     settingsMenu->addMenu(databaseLocationMenu);
     settingsMenu->addMenu(languageMenu);
     settingsMenu->addAction(launchOnStartupAction);
@@ -1552,9 +1587,11 @@ void MainWindow::setupMenus()
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(automaticAction, &QAction::triggered, this, [this](){ switchSyncingMode(SyncManager::Automatic); });
     connect(manualAction, &QAction::triggered, this, [this](){ switchSyncingMode(SyncManager::Manual); });
-    connect(moveToTrashAction, &QAction::triggered, this, [this](){ switchDeletionMode(manager.MoveToTrash); });
-    connect(versioningAction, &QAction::triggered, this, [this](){ switchDeletionMode(manager.Versioning); });
-    connect(deletePermanentlyAction, &QAction::triggered, this, [this](){ switchDeletionMode(manager.DeletePermanently); });
+    connect(moveToTrashAction, &QAction::triggered, this, [this](){ switchDeletionMode(SyncManager::MoveToTrash); });
+    connect(versioningAction, &QAction::triggered, this, [this](){ switchDeletionMode(SyncManager::Versioning); });
+    connect(deletePermanentlyAction, &QAction::triggered, this, [this](){ switchDeletionMode(SyncManager::DeletePermanently); });
+    connect(fileTimeStampAction, &QAction::triggered, this, [this](){ switchVersioningFormat(FileTimeStamp); });
+    connect(folderTimeStampAction, &QAction::triggered, this, [this](){ switchVersioningFormat(FolderTimeStamp); });
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
     connect(saveDatabaseLocallyAction, &QAction::triggered, this, [this](){ setDatabaseLocation(SyncManager::Locally); });
@@ -1588,14 +1625,16 @@ void MainWindow::retranslate()
     syncingTimeAction->setText(tr("Synchronize Every:"));
     decreaseSyncTimeAction->setText(tr("&Decrease"));
     moveToTrashAction->setText(tr("&Move Files to Trash"));
+    versioningAction->setText(tr("&Versioning"));
+    deletePermanentlyAction->setText(tr("&Delete Files Permanently"));
+    fileTimeStampAction->setText(tr("&File Time Stamp"));
+    folderTimeStampAction->setText(tr("&Folder Time Stamp"));
     saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
     saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setText(tr(languages[i].name));
 
-    versioningAction->setText(tr("&Versioning"));
-    deletePermanentlyAction->setText(tr("&Delete Files Permanently"));
     launchOnStartupAction->setText(tr("&Launch on Startup"));
     showInTrayAction->setText(tr("&Show in System Tray"));
     disableNotificationAction->setText(tr("&Disable Notifications"));
@@ -1608,6 +1647,7 @@ void MainWindow::retranslate()
     syncingModeMenu->setTitle(tr("&Syncing Mode"));
     syncingTimeMenu->setTitle(tr("&Syncing Time"));
     deletionModeMenu->setTitle(tr("&Deletion Mode"));
+    versioningFormatMenu->setTitle(tr("&Versioning Format"));
     databaseLocationMenu->setTitle(tr("&Database Location"));
     languageMenu->setTitle(tr("&Language"));
     settingsMenu->setTitle(tr("&Settings"));

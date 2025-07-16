@@ -81,8 +81,10 @@ public:
 
     inline void setSyncingMode(SyncingMode mode) { m_syncingMode = mode; }
     inline void setDeletionMode(DeletionMode mode) { m_deletionMode = mode; }
+    inline void setVersioningFormat(VersioningFormat format) { m_versioningFormat = format; }
     inline SyncingMode syncingMode() const { return m_syncingMode; }
     inline DeletionMode deletionMode() const { return m_deletionMode; }
+    inline VersioningFormat versioningFormat() const { return m_versioningFormat; }
     inline const QQueue<SyncProfile *> &queue() const { return m_queue; }
     inline const std::list<SyncProfile> &profiles() const { return m_profiles; }
     inline std::list<SyncProfile> &profiles() { return m_profiles; }
@@ -141,6 +143,7 @@ private:
 
     SyncingMode m_syncingMode;
     DeletionMode m_deletionMode;
+    VersioningFormat m_versioningFormat;
 
     QQueue<SyncProfile *> m_queue;
     std::list<SyncProfile> m_profiles;

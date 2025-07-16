@@ -1253,6 +1253,19 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         QString newLocation(folder.versioningPath);
         newLocation.append(path);
 
+        if (versioningFormat() == FileTimeStamp)
+        {
+            newLocation.append("_" + QDateTime::currentDateTime().toString(m_versionPattern));
+
+            // Adds a file extension after the timestamp
+            int dotIndex = path.lastIndexOf('.');
+            int slashIndex = path.lastIndexOf('/');
+            int backlashIndex = path.lastIndexOf('\\');
+
+            if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
+                newLocation.append(path.mid(dotIndex));
+        }
+
         createParentFolders(profile, folder, QDir::cleanPath(newLocation).toUtf8());
         return QFile::rename(fullPath, newLocation);
     }
@@ -1696,7 +1709,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
             continue;
 
         if (m_deletionMode == Versioning)
-            folder.updateVersioningPath(m_versionFolder, m_versionPattern);
+            folder.updateVersioningPath(m_versioningFormat, m_versionFolder, m_versionPattern);
 
         renameFolders(profile, folder);
         moveFiles(profile, folder);

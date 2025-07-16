@@ -54,6 +54,12 @@ struct FileToCopyInfo
     QDateTime modifiedDate;
 };
 
+enum VersioningFormat
+{
+    FileTimeStamp,
+    FolderTimeStamp
+};
+
 /*
 ===========================================================
 
@@ -69,7 +75,7 @@ public:
 
     void clearData();
     void optimizeMemoryUsage();
-    void updateVersioningPath(const QString &folder, const QString &pattern);
+    void updateVersioningPath(VersioningFormat format, const QString &folder, const QString &pattern);
     void saveToDatabase(const QString &path) const;
     void loadFromDatabase(const QString &path);
     void removeDatabase() const;
