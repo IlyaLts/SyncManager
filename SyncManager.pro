@@ -63,6 +63,7 @@ TRANSLATIONS += \
     Translations/hi_IN.ts \
     Translations/it_IT.ts \
     Translations/ja_JP.ts \
+    Translations/ko_KR.ts \
     Translations/pt_PT.ts \
     Translations/ru_RU.ts \
     Translations/uk_UA.ts \

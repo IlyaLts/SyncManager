@@ -38,7 +38,8 @@ Language languages[] =
         {QLocale::Portuguese,   QLocale::Portugal,      ":/i18n/pt_PT.qm", "&Portuguese"},
         {QLocale::Russian,      QLocale::Russia,        ":/i18n/ru_RU.qm", "&Russian"},
         {QLocale::Spanish,      QLocale::Spain,         ":/i18n/es_ES.qm", "&Spanish"},
-        {QLocale::Ukrainian,    QLocale::Ukraine,       ":/i18n/uk_UA.qm", "&Ukrainian"}
+        {QLocale::Ukrainian,    QLocale::Ukraine,       ":/i18n/uk_UA.qm", "&Ukrainian"},
+        {QLocale::Korean,       QLocale::SouthKorea,    ":/i18n/ko_KR.qm", "&Korean"}
 };
 
 /*
