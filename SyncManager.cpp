@@ -730,7 +730,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        if (!folderIt->isActive())
+        if (!folderIt->isActive() || folderIt->syncType == SyncFolder::ONE_WAY)
             continue;
 
         for (QHash<Hash, SyncFile>::iterator renamedFolderIt = folderIt->files.begin(); renamedFolderIt != folderIt->files.end(); ++renamedFolderIt)
@@ -882,7 +882,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        if (!folderIt->isActive())
+        if (!folderIt->isActive() || folderIt->syncType == SyncFolder::ONE_WAY)
             continue;
 
         QHash<Hash, SyncFile *> missingFiles;
@@ -1043,7 +1043,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                 if (!otherFolderIt->isActive())
                     break;
 
-                if (!otherFileIt.value().exists())
+                if (!otherFileIt.value().exists() || folderIt->syncType == SyncFolder::ONE_WAY)
                     continue;
 
                 const SyncFile &file = folderIt->files.value(otherFileIt.key());
@@ -1126,6 +1126,9 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
+        if (folderIt->syncType == SyncFolder::ONE_WAY)
+            continue;
+
         for (QHash<Hash, SyncFile>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
         {
             if (!folderIt->isActive())
@@ -1271,6 +1274,10 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         createParentFolders(profile, folder, QDir::cleanPath(newLocation).toUtf8());
         bool renamed = QFile::rename(fullPath, newLocation);
 
+        // If we're using a file timestamp format for versioning,
+        // a folder might fail to move to the versioning folder if the folder
+        // with the exact same filename already exists. In that case, we need
+        // to check if the existing folder is empty, and if so, delete it permanently.
         if (!renamed)
             if (type == SyncFile::Folder && m_deletionMode == Versioning && m_versioningFormat == FileTimeStamp)
                 if (QDir(fullPath).isEmpty())

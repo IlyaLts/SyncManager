@@ -93,6 +93,7 @@ public:
     void removeDatabase() const;
     bool isActive() const;
 
+    SyncType syncType = TWO_WAY;
     QByteArray path;
     QString versioningPath;
     QHash<Hash, SyncFile> files;

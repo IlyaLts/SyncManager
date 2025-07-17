@@ -9,6 +9,7 @@ SOURCES += \
     Common.cpp \
     DecoratedStringListModel.cpp \
     FolderListView.cpp \
+    FolderStyleDelegate.cpp \
     Main.cpp \
     MainWindow.cpp \
     MenuProxyStyle.cpp \
@@ -24,6 +25,7 @@ HEADERS += \
     Common.h \
     DecoratedStringListModel.h \
     FolderListView.h \
+    FolderStyleDelegate.h \
     MainWindow.h \
     MenuProxyStyle.h \
     RemovableListView.h \

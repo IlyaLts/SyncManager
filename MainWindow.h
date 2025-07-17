@@ -78,6 +78,7 @@ private Q_SLOTS:
     void switchDeletionMode(SyncManager::DeletionMode mode);
     void switchVersioningFormat(VersioningFormat format);
     void switchVersioningLocation(VersioningLocation location, bool init = false);
+    void switchSyncingType(SyncFolder &folder, SyncFolder::SyncType type);
     void increaseSyncTime();
     void decreaseSyncTime();
     void switchLanguage(QLocale::Language language);
@@ -119,6 +120,8 @@ private:
     QIcon iconSettings;
     QIcon iconSync;
     QIcon iconWarning;
+    QIcon iconOneWay;
+    QIcon iconTwoWay;
     QIcon trayIconDone;
     QIcon trayIconIssue;
     QIcon trayIconPause;

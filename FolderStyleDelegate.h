@@ -17,36 +17,34 @@
 ===============================================================================
 */
 
-#ifndef DECORATEDSTRINGLISTMODEL_H
-#define DECORATEDSTRINGLISTMODEL_H
+#ifndef FOLDERSTYLEDELEGATE_H
+#define FOLDERSTYLEDELEGATE_H
 
-#include <QStandardItemModel>
+#include <QStyledItemDelegate>
+#include <QPainter>
+#include <QIcon>
+#include <QSize>
+
+enum FolderDataRoles
+{
+    SyncTypeRole = Qt::UserRole + 1
+};
 
 /*
 ===========================================================
 
-    DecoratedStringListModel
+    FolderStyleDelegate
 
 ===========================================================
 */
-class DecoratedStringListModel : public QStandardItemModel
+class FolderStyleDelegate : public QStyledItemDelegate
 {
 public:
 
-    explicit DecoratedStringListModel(QObject* parent = nullptr) : QStandardItemModel(parent){}
+    explicit FolderStyleDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent){};
 
-    QVariant data(const QModelIndex &index, int role) const override;
-    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
-
-    QModelIndex index(int row, const QModelIndex &parent = QModelIndex()) const;
-
-    void setStringList(const QStringList &list);
-    QStringList stringList();
-
-private:
-
-    QMap<int, QVariant> rowIcons;
-    QMap<int, QString> toolTips;
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };
 
-#endif // DECORATEDSTRINGLISTMODEL_H
+#endif // FOLDERSTYLEDELEGATE_H

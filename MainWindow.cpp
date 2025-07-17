@@ -25,6 +25,7 @@
 #include "FolderListView.h"
 #include "MenuProxyStyle.h"
 #include "Common.h"
+#include "FolderStyleDelegate.h"
 #include <QStringListModel>
 #include <QSettings>
 #include <QCloseEvent>
@@ -52,6 +53,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     folderModel = new DecoratedStringListModel;
     ui->syncProfilesView->setModel(profileModel);
     ui->folderListView->setModel(folderModel);
+    ui->folderListView->setItemDelegate(new FolderStyleDelegate(ui->folderListView));
 
     if (QApplication::style()->name() == "windows11")
     {
@@ -734,9 +736,20 @@ void MainWindow::switchVersioningLocation(VersioningLocation location, bool init
 
     if (location == UserDesignatedFolder && !init)
     {
-        QString path = QFileDialog::getExistingDirectory(this, "Browse For Folder", "", QFileDialog::ShowDirsOnly);
+        QString path = QFileDialog::getExistingDirectory(this, "Browse for Versioning Folder", QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
         manager.setVersioningPath(path);
     }
+}
+
+/*
+===================
+MainWindow::switchSyncingType
+===================
+*/
+void MainWindow::switchSyncingType(SyncFolder &folder, SyncFolder::SyncType type)
+{
+    folder.syncType = type;
+    updateStatus();
 }
 
 /*
@@ -951,6 +964,13 @@ void MainWindow::showContextMenu(const QPoint &pos)
                 menu.addAction(iconPause, tr("&Pause syncing folder"), this, SLOT(pauseSelected()));
 
             menu.addAction(iconRemove, tr("&Remove folder"), this, SLOT(removeFolder()));
+
+            menu.addSeparator();
+
+            if (folder->syncType == SyncFolder::TWO_WAY)
+                menu.addAction(iconOneWay, tr("&Switch to one way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
+            else if (folder->syncType == SyncFolder::ONE_WAY)
+                menu.addAction(iconTwoWay, tr("&Switch to two way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
         }
 
         menu.popup(ui->folderListView->mapToGlobal(pos));
@@ -1094,7 +1114,7 @@ void MainWindow::updateStatus()
         // Profiles
         for (size_t i = 0; i < manager.profiles().size(); i++)
         {
-            QModelIndex index = profileModel->index(i, 0);
+            QModelIndex index = profileModel->index(i);
             SyncProfile *profile = profileByIndex(index);
 
             if (!profile)
@@ -1127,7 +1147,7 @@ void MainWindow::updateStatus()
             {
                 for (int i = 0; i < folderModel->rowCount(); i++)
                 {
-                    QModelIndex index = folderModel->index(i, 0);
+                    QModelIndex index = folderModel->index(i);
                     SyncFolder *folder = profile->folderByIndex(index);
 
                     if (!folder)
@@ -1135,6 +1155,15 @@ void MainWindow::updateStatus()
 
                     if (folder->toBeRemoved)
                         continue;
+
+                    QIcon *icon;
+
+                    if (folder->syncType == SyncFolder::TWO_WAY)
+                        icon = &iconTwoWay;
+                    else if (folder->syncType == SyncFolder::ONE_WAY)
+                        icon = &iconOneWay;
+
+                    folderModel->setData(index, *icon, SyncTypeRole);
 
                     if (folder->paused)
                         folderModel->setData(index, iconPause, Qt::DecorationRole);
@@ -1293,17 +1322,17 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
         {
             if (!folder.exists)
             {
-                folderModel->setData(folderModel->index(i, 0), tr("The folder is currently unavailable."), Qt::ToolTipRole);
+                folderModel->setData(folderModel->index(i), tr("The folder is currently unavailable."), Qt::ToolTipRole);
             }
             else if (!folder.lastSyncDate.isNull())
             {
                 QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate, dateFormat));
                 QString text = QString("Last synchronization: %1.").arg(time) + nextSyncText;
-                folderModel->setData(folderModel->index(i, 0), text, Qt::ToolTipRole);
+                folderModel->setData(folderModel->index(i), text, Qt::ToolTipRole);
             }
             else
             {
-                folderModel->setData(folderModel->index(i, 0), tr("Haven't been synchronized yet."), Qt::ToolTipRole);
+                folderModel->setData(folderModel->index(i), tr("Haven't been synchronized yet."), Qt::ToolTipRole);
             }
 
             i++;
@@ -1356,6 +1385,7 @@ void MainWindow::readSettings()
         for (auto &folder : profile->folders)
         {
             folder.paused = settings.value(profileKeyPath + folder.path + QLatin1String("_Paused"), false).toBool();
+            folder.syncType = static_cast<SyncFolder::SyncType>(settings.value(profileKeyPath + folder.path + QLatin1String("_SyncType"), SyncFolder::TWO_WAY).toInt());
 
             if (!folder.paused)
                 manager.setPaused(false);
@@ -1450,6 +1480,7 @@ void MainWindow::saveSettings() const
 
             settings.setValue(profileKeyPath + folder.path + QLatin1String("_LastSyncDate"), profile.lastSyncDate);
             settings.setValue(profileKeyPath + folder.path + QLatin1String("_Paused"), folder.paused);
+            settings.setValue(profileKeyPath + folder.path + QLatin1String("_SyncType"), folder.syncType);
         }
 
         settings.setValue(profileKeyPath + QLatin1String("Paused"), profile.paused);
@@ -1473,6 +1504,8 @@ void MainWindow::setupMenus()
     iconSettings.addFile(":/Images/IconSettings.png");
     iconSync.addFile(":/Images/IconSync.png");
     iconWarning.addFile(":/Images/IconWarning.png");
+    iconOneWay.addFile(":/Images/IconOneWay.png");
+    iconTwoWay.addFile(":/Images/IconTwoWay.png");
     trayIconDone.addFile(":/Images/TrayIconDone.png");
     trayIconIssue.addFile(":/Images/TrayIconIssue.png");
     trayIconPause.addFile(":/Images/TrayIconPause.png");
@@ -1723,8 +1756,8 @@ MainWindow::profileIndex
 QModelIndex MainWindow::profileIndex(const SyncProfile &profile)
 {
     for (int i = 0; i < profileModel->rowCount(); i++)
-        if (profileModel->index(i, 0).data(Qt::DisplayRole).toString() == profile.name)
-            return profileModel->index(i, 0);
+        if (profileModel->index(i).data(Qt::DisplayRole).toString() == profile.name)
+            return profileModel->index(i);
 
     return QModelIndex();
 }

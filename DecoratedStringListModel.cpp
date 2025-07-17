@@ -19,6 +19,7 @@
 
 #include "DecoratedStringListModel.h"
 #include <QColor>
+#include <QStringList>
 
 /*
 ===================
@@ -33,7 +34,7 @@ QVariant DecoratedStringListModel::data(const QModelIndex &index, int role) cons
     case Qt::ToolTipRole: return toolTips[index.row()];
     }
 
-    return QStringListModel::data(index, role);
+    return QStandardItemModel::data(index, role);
 }
 
 /*
@@ -57,5 +58,51 @@ bool DecoratedStringListModel::setData(const QModelIndex &index, const QVariant 
     }
     }
 
-    return QStringListModel::setData(index, value, role);
+    return QStandardItemModel::setData(index, value, role);
+}
+
+/*
+===================
+DecoratedStringListModel::index
+===================
+*/
+QModelIndex DecoratedStringListModel::index(int row, const QModelIndex &parent) const
+{
+    return QStandardItemModel::index(row, 0, parent);
+}
+
+/*
+===================
+DecoratedStringListModel::setStringList
+===================
+*/
+void DecoratedStringListModel::setStringList(const QStringList &list)
+{
+    clear();
+
+    for (const QString &string : list)
+        appendRow(new QStandardItem(string));
+}
+
+/*
+===================
+DecoratedStringListModel::StringList
+===================
+*/
+QStringList DecoratedStringListModel::stringList()
+{
+    QStringList stringList;
+    int rowCount = QStandardItemModel::rowCount();
+
+    for (int row = 0; row < rowCount; ++row)
+    {
+        QModelIndex index = QStandardItemModel::index(row, 0);
+
+        if (!index.isValid())
+            continue;
+
+        stringList.append(data(index, Qt::DisplayRole).toString());
+    }
+
+    return stringList;
 }
