@@ -704,6 +704,7 @@ void MainWindow::switchDeletionMode(SyncManager::DeletionMode mode)
     versioningAction->setChecked(mode == SyncManager::Versioning);
     deletePermanentlyAction->setChecked(mode == SyncManager::DeletePermanently);
     versioningFormatMenu->menuAction()->setVisible(mode == SyncManager::Versioning);
+    versioningLocationMenu->menuAction()->setVisible(mode == SyncManager::Versioning);
 
     saveSettings();
 }
@@ -715,14 +716,27 @@ MainWindow::switchVersioningFormat
 */
 void MainWindow::switchVersioningFormat(VersioningFormat format)
 {
-    fileTimeStampAction->setChecked(false);
-    folderTimeStampAction->setChecked(false);
+    fileTimeStampAction->setChecked(format == FileTimeStamp);
+    folderTimeStampAction->setChecked(format == FolderTimeStamp);
     manager.setVersioningFormat(format);
+}
 
-    if (format == FileTimeStamp)
-        fileTimeStampAction->setChecked(true);
-    else if (format == FolderTimeStamp)
-        folderTimeStampAction->setChecked(true);
+/*
+===================
+MainWindow::switchVersioningLocation
+===================
+*/
+void MainWindow::switchVersioningLocation(VersioningLocation location, bool init)
+{
+    locallyBesideFolderAction->setChecked(location== LocallyBesideFolder);
+    userDesignatedFolderAction->setChecked(location == UserDesignatedFolder);
+    manager.setVersioningLocation(location);
+
+    if (location == UserDesignatedFolder && !init)
+    {
+        QString path = QFileDialog::getExistingDirectory(this, "Browse For Folder", "", QFileDialog::ShowDirsOnly);
+        manager.setVersioningPath(path);
+    }
 }
 
 /*
@@ -978,6 +992,9 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         for (auto &action : versioningFormatMenu->actions())
             action->setEnabled(false);
 
+        for (auto &action : versioningLocationMenu->actions())
+            action->setEnabled(false);
+
         for (auto &action : databaseLocationMenu->actions())
             action->setEnabled(false);
 
@@ -993,6 +1010,9 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
             action->setEnabled(true);
 
         for (auto &action : versioningFormatMenu->actions())
+            action->setEnabled(true);
+
+        for (auto &action : versioningLocationMenu->actions())
             action->setEnabled(true);
 
         for (auto &action : databaseLocationMenu->actions())
@@ -1357,6 +1377,7 @@ void MainWindow::readSettings()
     switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
     switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", SyncManager::MoveToTrash).toInt()));
     switchVersioningFormat(static_cast<VersioningFormat>(settings.value("VersioningFormat", FolderTimeStamp).toInt()));
+    switchVersioningLocation(static_cast<VersioningLocation>(settings.value("VersioningLocation", LocallyBesideFolder).toInt()), true);
 
     manager.updateNextSyncingTime();
 
@@ -1401,6 +1422,8 @@ void MainWindow::saveSettings() const
     settings.setValue("SyncingMode", manager.syncingMode());
     settings.setValue("DeletionMode", manager.deletionMode());
     settings.setValue("VersioningFormat", manager.versioningFormat());
+    settings.setValue("VersioningLocation", manager.versioningLocation());
+    settings.setValue("VersioningPath", manager.versioningPath());
     settings.setValue("DatabaseLocation", manager.databaseLocation());
     settings.setValue("Language", language);
     settings.setValue("Notifications", manager.notificationsEnabled());
@@ -1469,6 +1492,8 @@ void MainWindow::setupMenus()
     deletePermanentlyAction = new QAction(tr("&Delete Files Permanently"), this);
     fileTimeStampAction = new QAction(tr("&File Time Stamp"), this);
     folderTimeStampAction = new QAction(tr("&Folder Time Stamp"), this);
+    locallyBesideFolderAction = new QAction(tr("&Locally Beside Folder"), this);
+    userDesignatedFolderAction = new QAction(tr("&User Designated Folder"), this);
     saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
 
@@ -1498,6 +1523,8 @@ void MainWindow::setupMenus()
     versioningAction->setCheckable(true);
     fileTimeStampAction->setCheckable(true);
     folderTimeStampAction->setCheckable(true);
+    locallyBesideFolderAction->setCheckable(true);
+    userDesignatedFolderAction->setCheckable(true);
     saveDatabaseLocallyAction->setCheckable(true);
     saveDatabaseDecentralizedAction->setCheckable(true);
 
@@ -1536,6 +1563,10 @@ void MainWindow::setupMenus()
     versioningFormatMenu->addAction(fileTimeStampAction);
     versioningFormatMenu->addAction(folderTimeStampAction);
 
+    versioningLocationMenu = new UnhidableMenu(tr("&Versioning Location"), this);
+    versioningLocationMenu->addAction(locallyBesideFolderAction);
+    versioningLocationMenu->addAction(userDesignatedFolderAction);
+
     languageMenu = new UnhidableMenu(tr("&Language"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
@@ -1551,6 +1582,7 @@ void MainWindow::setupMenus()
     settingsMenu->addMenu(syncingTimeMenu);
     settingsMenu->addMenu(deletionModeMenu);
     settingsMenu->addMenu(versioningFormatMenu);
+    settingsMenu->addMenu(versioningLocationMenu);
     settingsMenu->addMenu(databaseLocationMenu);
     settingsMenu->addMenu(languageMenu);
     settingsMenu->addAction(launchOnStartupAction);
@@ -1592,6 +1624,8 @@ void MainWindow::setupMenus()
     connect(deletePermanentlyAction, &QAction::triggered, this, [this](){ switchDeletionMode(SyncManager::DeletePermanently); });
     connect(fileTimeStampAction, &QAction::triggered, this, [this](){ switchVersioningFormat(FileTimeStamp); });
     connect(folderTimeStampAction, &QAction::triggered, this, [this](){ switchVersioningFormat(FolderTimeStamp); });
+    connect(locallyBesideFolderAction, &QAction::triggered, this, [this](){ switchVersioningLocation(LocallyBesideFolder); });
+    connect(userDesignatedFolderAction, &QAction::triggered, this, [this](){ switchVersioningLocation(UserDesignatedFolder); });
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
     connect(saveDatabaseLocallyAction, &QAction::triggered, this, [this](){ setDatabaseLocation(SyncManager::Locally); });
@@ -1629,6 +1663,8 @@ void MainWindow::retranslate()
     deletePermanentlyAction->setText(tr("&Delete Files Permanently"));
     fileTimeStampAction->setText(tr("&File Time Stamp"));
     folderTimeStampAction->setText(tr("&Folder Time Stamp"));
+    locallyBesideFolderAction->setText(tr("&Locally Beside Folder"));
+    userDesignatedFolderAction->setText(tr("&User Designated Folder"));
     saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
     saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
 
@@ -1648,6 +1684,7 @@ void MainWindow::retranslate()
     syncingTimeMenu->setTitle(tr("&Syncing Time"));
     deletionModeMenu->setTitle(tr("&Deletion Mode"));
     versioningFormatMenu->setTitle(tr("&Versioning Format"));
+    versioningLocationMenu->setTitle(tr("&Versioning Location"));
     databaseLocationMenu->setTitle(tr("&Database Location"));
     languageMenu->setTitle(tr("&Language"));
     settingsMenu->setTitle(tr("&Settings"));

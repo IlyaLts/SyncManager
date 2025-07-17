@@ -46,6 +46,7 @@ SyncManager::SyncManager()
     m_paused = settings.value(QLatin1String("Paused"), false).toBool();
     m_notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
     m_ignoreHiddenFiles = settings.value("IgnoreHiddenFiles", true).toBool();
+    m_versioningPath = settings.value("VersioningPath", "").toString();
     m_databaseLocation = static_cast<SyncManager::DatabaseLocation>(settings.value("DatabaseLocation", SyncManager::Decentralized).toInt());
     m_detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
     m_syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
@@ -1268,7 +1269,14 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         }
 
         createParentFolders(profile, folder, QDir::cleanPath(newLocation).toUtf8());
-        return QFile::rename(fullPath, newLocation);
+        bool renamed = QFile::rename(fullPath, newLocation);
+
+        if (!renamed)
+            if (type == SyncFile::Folder && m_deletionMode == Versioning && m_versioningFormat == FileTimeStamp)
+                if (QDir(fullPath).isEmpty())
+                    return QDir(fullPath).removeRecursively() || !QFileInfo::exists(fullPath);
+
+        return renamed;
     }
     else
     {
@@ -1710,7 +1718,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
             continue;
 
         if (m_deletionMode == Versioning)
-            folder.updateVersioningPath(m_versioningFormat, m_versionFolder, m_versionPattern);
+            folder.updateVersioningPath(m_versioningFormat, m_versioningLocation, m_versioningPath, profile.name, m_versionFolder, m_versionPattern);
 
         renameFolders(profile, folder);
         moveFiles(profile, folder);
@@ -1731,7 +1739,6 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
         createFolders(profile, folder);
         copyFiles(profile, folder);
-
         folder.versioningPath.clear();
 
         // Updates the modified date of parent folders as adding or removing files and folders changes their modified date.

@@ -60,6 +60,12 @@ enum VersioningFormat
     FolderTimeStamp
 };
 
+enum VersioningLocation
+{
+    LocallyBesideFolder,
+    UserDesignatedFolder
+};
+
 /*
 ===========================================================
 
@@ -71,11 +77,17 @@ class SyncFolder
 {
 public:
 
+    enum SyncType
+    {
+        TWO_WAY,
+        ONE_WAY
+    };
+
     inline bool operator ==(const SyncFolder &other) { return path == other.path; }
 
     void clearData();
     void optimizeMemoryUsage();
-    void updateVersioningPath(VersioningFormat format, const QString &folder, const QString &pattern);
+    void updateVersioningPath(VersioningFormat format, VersioningLocation location, QString path, const QString &profileName, const QString &folder, const QString &pattern);
     void saveToDatabase(const QString &path) const;
     void loadFromDatabase(const QString &path);
     void removeDatabase() const;

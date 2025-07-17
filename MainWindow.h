@@ -77,6 +77,7 @@ private Q_SLOTS:
     void switchSyncingMode(SyncManager::SyncingMode mode);
     void switchDeletionMode(SyncManager::DeletionMode mode);
     void switchVersioningFormat(VersioningFormat format);
+    void switchVersioningLocation(VersioningLocation location, bool init = false);
     void increaseSyncTime();
     void decreaseSyncTime();
     void switchLanguage(QLocale::Language language);
@@ -138,6 +139,8 @@ private:
     QAction *deletePermanentlyAction;
     QAction *fileTimeStampAction;
     QAction *folderTimeStampAction;
+    QAction *locallyBesideFolderAction;
+    QAction *userDesignatedFolderAction;
     QAction *saveDatabaseLocallyAction;
     QAction *saveDatabaseDecentralizedAction;
     QList<QAction *> languageActions;
@@ -157,6 +160,7 @@ private:
     UnhidableMenu *syncingTimeMenu;
     UnhidableMenu *deletionModeMenu;
     UnhidableMenu *versioningFormatMenu;
+    UnhidableMenu *versioningLocationMenu;
     UnhidableMenu *databaseLocationMenu;
     UnhidableMenu *languageMenu;
 
