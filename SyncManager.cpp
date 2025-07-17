@@ -1253,7 +1253,8 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         QString newLocation(folder.versioningPath);
         newLocation.append(path);
 
-        if (versioningFormat() == FileTimeStamp)
+        // Adds a time stamp to a deleted file
+        if (versioningFormat() == FileTimeStamp && type == SyncFile::File)
         {
             newLocation.append("_" + QDateTime::currentDateTime().toString(m_versionPattern));
 
@@ -1713,8 +1714,21 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
         renameFolders(profile, folder);
         moveFiles(profile, folder);
-        removeFolders(profile, folder);
-        removeFiles(profile, folder);
+
+        // In case we add a timestamp to files, we need to remove the files first.
+        // This is because we want to avoid adding timestamps to each file individually
+        // after placing the parent folder in the versioning folder, as it would impact performance.
+        if (m_deletionMode == Versioning && m_versioningFormat == FileTimeStamp)
+        {
+            removeFiles(profile, folder);
+            removeFolders(profile, folder);
+        }
+        else
+        {
+            removeFolders(profile, folder);
+            removeFiles(profile, folder);
+        }
+
         createFolders(profile, folder);
         copyFiles(profile, folder);
 
