@@ -103,8 +103,9 @@ private:
     void saveSettings() const;
     void setupMenus();
     void retranslate();
-    SyncProfile *profileByIndex(QModelIndex index);
+    SyncProfile *profileByIndex(const QModelIndex &index);
     QModelIndex profileIndex(const SyncProfile &profile);
+    QModelIndex profileIndexByName(const QString &name);
 
     SyncManager manager;
     Ui::MainWindow *ui;

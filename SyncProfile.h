@@ -24,6 +24,7 @@
 #include <QList>
 #include <QChronoTimer>
 #include <QMutex>
+#include <QModelIndex>
 
 class SyncFolder;
 
@@ -39,6 +40,7 @@ class SyncProfile
 public:
 
     SyncProfile();
+    explicit SyncProfile(const QModelIndex &index) : index(index){}
     explicit SyncProfile(const SyncProfile &other) : SyncProfile() { *this = other; }
     explicit SyncProfile(SyncProfile &&other) : SyncProfile() { *this = other; }
 
@@ -74,6 +76,7 @@ public:
     QChronoTimer syncTimer;
     QDateTime lastSyncDate;
     QString name;
+    QModelIndex index;
 
 private:
 

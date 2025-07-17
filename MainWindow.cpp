@@ -69,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (auto &name : profileNames)
     {
-        manager.profiles().push_back(SyncProfile());
+        manager.profiles().push_back(SyncProfile(profileIndexByName(name)));
 
         SyncProfile &profile = manager.profiles().back();
         profile.paused = manager.isPaused();
@@ -225,12 +225,12 @@ void MainWindow::addProfile()
         newName.insert(0, tr("New profile"));
     }
 
-    manager.profiles().push_back(SyncProfile());
-    manager.profiles().back().paused = manager.isPaused();
-    manager.profiles().back().name = newName;
     profileNames.append(newName);
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
+    manager.profiles().push_back(SyncProfile(profileIndexByName(newName)));
+    manager.profiles().back().paused = manager.isPaused();
+    manager.profiles().back().name = newName;
 
     connect(&manager.profiles().back().syncTimer, &QChronoTimer::timeout, this, [this](){ sync(&manager.profiles().back(), true); });
 
@@ -1739,10 +1739,10 @@ void MainWindow::retranslate()
 MainWindow::profileByIndex
 ===================
 */
-SyncProfile *MainWindow::profileByIndex(QModelIndex index)
+SyncProfile *MainWindow::profileByIndex(const QModelIndex &index)
 {
     for (auto &profile : manager.profiles())
-        if (profile.name == index.data(Qt::DisplayRole).toString())
+        if (profile.index == index)
             return &profile;
 
     return nullptr;
@@ -1756,7 +1756,21 @@ MainWindow::profileIndex
 QModelIndex MainWindow::profileIndex(const SyncProfile &profile)
 {
     for (int i = 0; i < profileModel->rowCount(); i++)
-        if (profileModel->index(i).data(Qt::DisplayRole).toString() == profile.name)
+        if (profileModel->index(i) == profile.index)
+            return profileModel->index(i);
+
+    return QModelIndex();
+}
+
+/*
+===================
+MainWindow::profileIndexByName
+===================
+*/
+QModelIndex MainWindow::profileIndexByName(const QString &name)
+{
+    for (int i = 0; i < profileModel->rowCount(); i++)
+        if (profileModel->index(i).data(Qt::DisplayRole).toString()  == name)
             return profileModel->index(i);
 
     return QModelIndex();

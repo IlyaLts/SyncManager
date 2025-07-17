@@ -52,6 +52,7 @@ void SyncProfile::operator =(const SyncProfile &other)
     syncTime = other.syncTime;
     lastSyncDate = other.lastSyncDate;
     name = other.name;
+    index = other.index;
 }
 
 /*
