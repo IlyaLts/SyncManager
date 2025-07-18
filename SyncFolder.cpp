@@ -63,7 +63,7 @@ SyncFolder::updateVersioningPath
 */
 void SyncFolder::updateVersioningPath(VersioningFormat format, VersioningLocation location, QString path, const QString &profileName, const QString &folder, const QString &pattern)
 {
-    if (location == UserDesignatedFolder)
+    if (location == CustomLocation)
     {
         versioningPath.assign(path);
     }
@@ -77,7 +77,7 @@ void SyncFolder::updateVersioningPath(VersioningFormat format, VersioningLocatio
 
     versioningPath.append("/");
 
-    if (location == UserDesignatedFolder)
+    if (location == CustomLocation)
         versioningPath.append(profileName + "/");
 
     if (format == FolderTimestamp)

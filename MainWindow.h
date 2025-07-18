@@ -147,7 +147,8 @@ private:
     QAction *folderTimestampAction;
     QAction *lastVersionAction;
     QAction *locallyNextToFolderAction;
-    QAction *userDesignatedFolderAction;
+    QAction *customLocationAction;
+    QAction *customLocationPathAction;
     QAction *saveDatabaseLocallyAction;
     QAction *saveDatabaseDecentralizedAction;
     QList<QAction *> languageActions;

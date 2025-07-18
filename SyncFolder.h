@@ -65,7 +65,7 @@ enum VersioningFormat
 enum VersioningLocation
 {
     LocallyNextToFolder,
-    UserDesignatedFolder
+    CustomLocation
 };
 
 /*

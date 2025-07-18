@@ -733,13 +733,18 @@ MainWindow::switchVersioningLocation
 void MainWindow::switchVersioningLocation(VersioningLocation location, bool init)
 {
     locallyNextToFolderAction->setChecked(location== LocallyNextToFolder);
-    userDesignatedFolderAction->setChecked(location == UserDesignatedFolder);
+    customLocationAction->setChecked(location == CustomLocation);
     manager.setVersioningLocation(location);
 
-    if (location == UserDesignatedFolder && !init)
+    if (location == CustomLocation && !init)
     {
         QString path = QFileDialog::getExistingDirectory(this, "Browse for Versioning Folder", QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
-        manager.setVersioningPath(path);
+
+        if (!path.isEmpty())
+        {
+            manager.setVersioningPath(path);
+            customLocationPathAction->setText(tr("Custom Location: ") + path);
+        }
     }
 }
 
@@ -1537,7 +1542,8 @@ void MainWindow::setupMenus()
     folderTimestampAction = new QAction(tr("&Folder Timestamp"), this);
     lastVersionAction = new QAction(tr("&Last Version"), this);
     locallyNextToFolderAction = new QAction(tr("&Locally Next to Folder"), this);
-    userDesignatedFolderAction = new QAction(tr("&User Designated Folder"), this);
+    customLocationAction = new QAction(tr("&Custom Location"), this);
+    customLocationPathAction = new QAction(tr("Custom Location: ") + manager.versioningPath(), this);
     saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
 
@@ -1570,7 +1576,8 @@ void MainWindow::setupMenus()
     folderTimestampAction->setCheckable(true);
     lastVersionAction->setCheckable(true);
     locallyNextToFolderAction->setCheckable(true);
-    userDesignatedFolderAction->setCheckable(true);
+    customLocationAction->setCheckable(true);
+    customLocationPathAction->setDisabled(true);
     saveDatabaseLocallyAction->setCheckable(true);
     saveDatabaseDecentralizedAction->setCheckable(true);
 
@@ -1613,7 +1620,9 @@ void MainWindow::setupMenus()
 
     versioningLocationMenu = new UnhidableMenu(tr("&Versioning Location"), this);
     versioningLocationMenu->addAction(locallyNextToFolderAction);
-    versioningLocationMenu->addAction(userDesignatedFolderAction);
+    versioningLocationMenu->addAction(customLocationAction);
+    versioningLocationMenu->addSeparator();
+    versioningLocationMenu->addAction(customLocationPathAction);
 
     languageMenu = new UnhidableMenu(tr("&Language"), this);
 
@@ -1675,7 +1684,7 @@ void MainWindow::setupMenus()
     connect(folderTimestampAction, &QAction::triggered, this, [this](){ switchVersioningFormat(FolderTimestamp); });
     connect(lastVersionAction, &QAction::triggered, this, [this](){ switchVersioningFormat(LastVersion); });
     connect(locallyNextToFolderAction, &QAction::triggered, this, [this](){ switchVersioningLocation(LocallyNextToFolder); });
-    connect(userDesignatedFolderAction, &QAction::triggered, this, [this](){ switchVersioningLocation(UserDesignatedFolder); });
+    connect(customLocationAction, &QAction::triggered, this, [this](){ switchVersioningLocation(CustomLocation); });
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
     connect(saveDatabaseLocallyAction, &QAction::triggered, this, [this](){ setDatabaseLocation(SyncManager::Locally); });
@@ -1716,7 +1725,8 @@ void MainWindow::retranslate()
     folderTimestampAction->setText(tr("&Folder Timestamp"));
     lastVersionAction->setText(tr("&Last Version"));
     locallyNextToFolderAction->setText(tr("&Locally Next to Folder"));
-    userDesignatedFolderAction->setText(tr("&User Designated Folder"));
+    customLocationAction->setText(tr("&Custom Location"));
+    customLocationPathAction->setText(tr("Custom Location: ") + manager.versioningPath());
     saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
     saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
 
