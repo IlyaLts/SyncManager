@@ -1265,7 +1265,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         newLocation.append(path);
 
         // Adds a timestamp to the end of the filename of a deleted file
-        if (versioningFormat() == FileTimestamp && type == SyncFile::File)
+        if (versioningFormat() == FileTimestampBefore && type == SyncFile::File)
         {
             newLocation.append("_" + QDateTime::currentDateTime().toString(m_versionPattern));
 
@@ -1277,10 +1277,8 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
             if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
                 newLocation.append(path.mid(dotIndex));
         }
-
-        /*
         // Adds a timestamp to a deleted file before the extension
-        if (versioningFormat() == FileTimestamp && type == SyncFile::File)
+        else if (versioningFormat() == FileTimestampAfter && type == SyncFile::File)
         {
             int nameEndIndex = newLocation.lastIndexOf('.');
             int slashIndex = newLocation.lastIndexOf('/');
@@ -1290,7 +1288,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
                 nameEndIndex = newLocation.length();
 
             newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(m_versionPattern));
-        }*/
+        }
 
         // As we want to have only the latest version of files,
         // we need to delete the existing files in the versioning folder first,
@@ -1311,7 +1309,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         // with the exact same filename already exists. In that case, we need
         // to check if the existing folder is empty, and if so, delete it permanently.
         if (!renamed)
-            if (m_versioningFormat == FileTimestamp || m_versioningFormat == LastVersion)
+            if (m_versioningFormat == FileTimestampBefore || m_versioningFormat == FileTimestampAfter || m_versioningFormat == LastVersion)
                 if (type == SyncFile::Folder && QDir(fullPath).isEmpty())
                     return QDir(fullPath).removeRecursively() || !QFileInfo::exists(fullPath);
 
@@ -1856,7 +1854,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
         // we still have that empty folder remaining. Also, in case if we use file timestamp format
         // we want to avoid adding timestamps to each file individually after placing the parent folder
         // in the versioning folder, as it would impact performance.
-        if (m_deletionMode == Versioning && (m_versioningFormat == FileTimestamp || m_versioningFormat == LastVersion))
+        if (m_deletionMode == Versioning && (m_versioningFormat == FileTimestampBefore || m_versioningFormat == FileTimestampAfter || m_versioningFormat == LastVersion))
         {
             removeFiles(profile, folder);
             removeFolders(profile, folder);

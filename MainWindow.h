@@ -141,7 +141,8 @@ private:
     QAction *moveToTrashAction;
     QAction *versioningAction;
     QAction *deletePermanentlyAction;
-    QAction *fileTimestampAction;
+    QAction *fileTimestampBeforeAction;
+    QAction *fileTimestampAfterAction;
     QAction *folderTimestampAction;
     QAction *lastVersionAction;
     QAction *locallyBesideFolderAction;

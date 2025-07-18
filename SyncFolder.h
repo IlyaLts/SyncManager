@@ -56,7 +56,8 @@ struct FileToCopyInfo
 
 enum VersioningFormat
 {
-    FileTimestamp,
+    FileTimestampBefore,    // Before extension
+    FileTimestampAfter,     // After extension
     FolderTimestamp,
     LastVersion
 };
