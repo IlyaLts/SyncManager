@@ -65,7 +65,6 @@ public:
     SyncFolder *folderByIndex(QModelIndex index);
 
     std::list<SyncFolder> folders;
-    QList<QByteArray> excludeList;
 
     bool syncing = false;
     bool paused = false;

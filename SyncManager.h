@@ -95,6 +95,10 @@ public:
 
     inline void shouldQuit() { m_shouldQuit = true; }
     void setSyncTimeMultiplier(int multiplier);
+    inline void setFileMinSize(qint64 size) { m_fileMinSize = size; }
+    inline void setFileMaxSize(qint64 size) { m_fileMaxSize = size; }
+    inline void setMovedFileMinSize(qint64 size) { m_movedFileMinSize = size; }
+    inline void setExcludeList(const QStringList &list) { m_excludeList = list; }
     inline void setPaused(bool paused) { m_paused = paused; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }
     inline void enableIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
@@ -104,7 +108,10 @@ public:
     inline int filesToSync() const { return m_filesToSync; }
     inline int syncTimeMultiplier() const { return m_syncTimeMultiplier; }
     inline int existingProfiles() const { return m_existingProfiles; }
-    inline int movedFileMinSize() const { return m_movedFileMinSize; }
+    inline qint64 fileMinSize() const { return m_fileMinSize; }
+    inline qint64 fileMaxSize() const { return m_fileMaxSize; }
+    inline qint64 movedFileMinSize() const { return m_movedFileMinSize; }
+    inline const QStringList &excludeList() const { return m_excludeList; }
     inline bool isCaseSensitiveSystem() const { return m_caseSensitiveSystem; }
     inline bool isQuitting() const { return m_shouldQuit; }
     inline bool isThereIssue() const { return m_issue; }
@@ -158,7 +165,10 @@ private:
     int m_filesToSync = 0;
     int m_syncTimeMultiplier = 1;
     int m_existingProfiles = 0;
-    int m_movedFileMinSize = 0;
+    qint64 m_fileMinSize = 0;
+    qint64 m_fileMaxSize = 0;
+    qint64 m_movedFileMinSize = 0;
+    QStringList m_excludeList;
     bool m_databaseChanged = false;
 
 #if defined(Q_OS_WIN) || defined(Q_OS_MACOS)

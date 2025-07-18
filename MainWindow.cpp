@@ -36,6 +36,7 @@
 #include <QMenuBar>
 #include <QTimer>
 #include <QtConcurrent/QtConcurrent>
+#include <QInputDialog>
 
 /*
 ===================
@@ -887,6 +888,64 @@ void MainWindow::setDatabaseLocation(SyncManager::DatabaseLocation location)
 
 /*
 ===================
+MainWindow::setFileMinSize
+===================
+*/
+void MainWindow::setFileMinSize()
+{
+    int size = QInputDialog::getInt(this, "Set Minimal File Size", "Please enter the minimum size in bytes:", manager.fileMinSize(), 0);
+
+    if (size && manager.fileMaxSize() && size > manager.fileMaxSize())
+        size = manager.fileMaxSize();
+
+    manager.setFileMinSize(size);
+    fileMinSizeAction->setText(tr("&Minimal File Size: %1 bytes").arg(manager.fileMinSize()));
+}
+
+/*
+===================
+MainWindow::setFileMaxSize
+===================
+*/
+void MainWindow::setFileMaxSize()
+{
+    int size = QInputDialog::getInt(this, "Set Minimal File Size", "Please enter the maximum size in bytes:", manager.fileMaxSize(), 0);
+
+    if (size && size < manager.fileMinSize())
+        size = manager.fileMinSize();
+
+    manager.setFileMaxSize(size);
+    fileMaxSizeAction->setText(tr("&Maximal File Size: %1 bytes").arg(manager.fileMaxSize()));
+}
+
+/*
+===================
+MainWindow::setMovedFileMinSize
+===================
+*/
+void MainWindow::setMovedFileMinSize()
+{
+    int size = QInputDialog::getInt(this, "Set Minimal Size for Moved File", "Please enter the minimal size in bytes:", manager.movedFileMinSize(), 0);
+    manager.setMovedFileMinSize(size);
+    movedFileMinSizeAction->setText(tr("&M: %1 bytes").arg(manager.movedFileMinSize()));
+}
+
+/*
+===================
+MainWindow::setExcludeList
+===================
+*/
+void MainWindow::setExcludeList()
+{
+    QString excludeString = manager.excludeList().join(";");
+    excludeString = QInputDialog::getText(this, "Set Exclude List", "Please enter exclude paths, separated by semicolons:", QLineEdit::Normal, excludeString);
+    QStringList excludeList = excludeString.split(';');
+    manager.setExcludeList(excludeList);
+    excludeAction->setText(tr("&Exclude: %1").arg(excludeString));
+}
+
+/*
+===================
 MainWindow::toggleIgnoreHiddenFiles
 ===================
 */
@@ -1406,10 +1465,6 @@ void MainWindow::readSettings()
             folder.exists = QFileInfo::exists(folder.path);
             folder.lastSyncDate = settings.value(profileKeyPath + folder.path + QLatin1String("_LastSyncDate")).toDateTime();
         }
-
-        // Loads exclude list
-        for (auto &exclude : settings.value(profileKeyPath + QLatin1String("ExcludeList")).toStringList())
-            profile->excludeList.append(exclude.toUtf8());
     }
 
     databaseLocationMenu->setEnabled(manager.databaseLocation());
@@ -1473,7 +1528,10 @@ void MainWindow::saveSettings() const
     settings.setValue("IgnoreHiddenFiles", manager.ignoreHiddenFilesEnabled());
     settings.setValue("DetectMovedFiles", manager.detectMovedFilesEnabled());
     settings.setValue("SyncTimeMultiplier", manager.syncTimeMultiplier());
+    settings.setValue("FileMinSize", manager.fileMinSize());
+    settings.setValue("FileMaxSize", manager.fileMaxSize());
     settings.setValue("MovedFileMinSize", manager.movedFileMinSize());
+    settings.setValue("ExcludeList", manager.excludeList());
     settings.setValue("caseSensitiveSystem", manager.isCaseSensitiveSystem());
     settings.setValue("VersionFolder", manager.versionFolder());
     settings.setValue("VersionPattern", manager.versionPattern());
@@ -1546,6 +1604,10 @@ void MainWindow::setupMenus()
     customLocationPathAction = new QAction(tr("Custom Location: ") + manager.versioningPath(), this);
     saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
+    fileMinSizeAction = new QAction(QString(tr("&Minimal File Size: %1 bytes")).arg(manager.fileMinSize()), this);
+    fileMaxSizeAction = new QAction(QString(tr("&Maximal File Size: %1 bytes")).arg(manager.fileMaxSize()), this);
+    movedFileMinSizeAction = new QAction(QString(tr("&M: %1 bytes")).arg(manager.movedFileMinSize()), this);
+    excludeAction = new QAction(QString(tr("&Exclude: %1")).arg(manager.excludeList().join(";")), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions.append(new QAction(tr(languages[i].name), this));
@@ -1624,14 +1686,20 @@ void MainWindow::setupMenus()
     versioningLocationMenu->addSeparator();
     versioningLocationMenu->addAction(customLocationPathAction);
 
+    databaseLocationMenu = new UnhidableMenu(tr("&Database Location"), this);
+    databaseLocationMenu->addAction(saveDatabaseLocallyAction);
+    databaseLocationMenu->addAction(saveDatabaseDecentralizedAction);
+
+    filteringMenu = new UnhidableMenu(tr("&Filtering"), this);
+    filteringMenu->addAction(fileMinSizeAction);
+    filteringMenu->addAction(fileMaxSizeAction);
+    filteringMenu->addAction(movedFileMinSizeAction);
+    filteringMenu->addAction(excludeAction);
+
     languageMenu = new UnhidableMenu(tr("&Language"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageMenu->addAction(languageActions[i]);
-
-    databaseLocationMenu = new UnhidableMenu(tr("&Database Location"), this);
-    databaseLocationMenu->addAction(saveDatabaseLocallyAction);
-    databaseLocationMenu->addAction(saveDatabaseDecentralizedAction);
 
     settingsMenu = new UnhidableMenu(tr("&Settings"), this);
     settingsMenu->setIcon(iconSettings);
@@ -1641,6 +1709,7 @@ void MainWindow::setupMenus()
     settingsMenu->addMenu(versioningFormatMenu);
     settingsMenu->addMenu(versioningLocationMenu);
     settingsMenu->addMenu(databaseLocationMenu);
+    settingsMenu->addMenu(filteringMenu);
     settingsMenu->addMenu(languageMenu);
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(showInTrayAction);
@@ -1689,6 +1758,10 @@ void MainWindow::setupMenus()
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
     connect(saveDatabaseLocallyAction, &QAction::triggered, this, [this](){ setDatabaseLocation(SyncManager::Locally); });
     connect(saveDatabaseDecentralizedAction, &QAction::triggered, this, [this](){ setDatabaseLocation(SyncManager::Decentralized); });
+    connect(fileMinSizeAction, &QAction::triggered, this, [this](){ setFileMinSize(); });
+    connect(fileMaxSizeAction, &QAction::triggered, this, [this](){ setFileMaxSize(); });
+    connect(movedFileMinSizeAction, &QAction::triggered, this, [this](){ setMovedFileMinSize(); });
+    connect(excludeAction, &QAction::triggered, this, [this](){ setExcludeList(); });
 
     for (int i = 0; i < Application::languageCount(); i++)
         connect(languageActions[i], &QAction::triggered, this, [i, this](){ switchLanguage(languages[i].language); });
@@ -1729,6 +1802,10 @@ void MainWindow::retranslate()
     customLocationPathAction->setText(tr("Custom Location: ") + manager.versioningPath());
     saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
     saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
+    fileMinSizeAction->setText(QString(tr("&Minimal File Size: %1 bytes")).arg(manager.fileMinSize()));
+    fileMaxSizeAction->setText(QString(tr("&Maximal File Size: %1 bytes")).arg(manager.fileMaxSize()));
+    movedFileMinSizeAction->setText(QString(tr("&Minimum Size for a Moved File: %1 bytes")).arg(manager.movedFileMinSize()));
+    excludeAction->setText(QString(tr("&Exclude: %1")).arg(manager.excludeList().join(";")));
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setText(tr(languages[i].name));
@@ -1748,6 +1825,7 @@ void MainWindow::retranslate()
     versioningFormatMenu->setTitle(tr("&Versioning Format"));
     versioningLocationMenu->setTitle(tr("&Versioning Location"));
     databaseLocationMenu->setTitle(tr("&Database Location"));
+    filteringMenu->setTitle(tr("&Filtering"));
     languageMenu->setTitle(tr("&Language"));
     settingsMenu->setTitle(tr("&Settings"));
 

@@ -51,7 +51,10 @@ SyncManager::SyncManager()
     m_detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
     m_syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
     if (m_syncTimeMultiplier <= 0) m_syncTimeMultiplier = 1;
+    m_fileMinSize = settings.value("FileMinSize", 0).toInt();
+    m_fileMaxSize = settings.value("FileMaxSize", 0).toInt();
     m_movedFileMinSize = settings.value("MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt();
+    m_excludeList = settings.value("ExcludeList").toStringList();
     m_caseSensitiveSystem = settings.value("caseSensitiveSystem", m_caseSensitiveSystem).toBool();
     m_versionFolder = settings.value("VersionFolder", "[Deletions]").toString();
     m_versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
@@ -526,6 +529,11 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         dir.next();
 
         QFileInfo fileInfo(dir.fileInfo());
+        qint64 fileSize = fileInfo.size();
+
+        // If the file is a symlink, this function returns information about the target, not the symlink
+        if (fileInfo.isSymLink())
+            fileSize = 0;
 
         // Skips hidden files
         if (ignoreHiddenFilesEnabled() && fileInfo.isHidden())
@@ -544,6 +552,12 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
             }
         }
 
+        if (m_fileMinSize > fileSize)
+            continue;
+
+        if (m_fileMaxSize > 0 && fileSize > m_fileMaxSize)
+            continue;
+
         QByteArray absoluteFilePath = fileInfo.filePath().toUtf8();
         QByteArray filePath(absoluteFilePath);
         filePath.remove(0, folder.path.size());
@@ -551,9 +565,11 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         bool shouldExclude = false;
 
         // Excludes unwanted files and folder from scanning
-        for (auto &exclude : profile.excludeList)
+        for (auto &exclude : m_excludeList)
         {
-            if (m_caseSensitiveSystem ? qstrncmp(exclude, filePath, exclude.length()) == 0 : qstrnicmp(exclude, filePath, exclude.length()) == 0)
+            QByteArray str = exclude.toUtf8();
+
+            if (m_caseSensitiveSystem ? qstrncmp(str, filePath, str.length()) == 0 : qstrnicmp(str, filePath, str.length()) == 0)
             {
                 shouldExclude = true;
                 break;
@@ -596,7 +612,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
                 file.setUpdated(true);
             }
 
-            if (file.size != fileInfo.size())
+            if (file.size != fileSize)
                 m_databaseChanged = true;
 
             if (file.type != type)
@@ -625,7 +641,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
             }
 
             file.modifiedDate = modifiedDate;
-            file.size = fileInfo.size();
+            file.size = fileSize;
             file.type = type;
             file.attributes = getFileAttributes(absoluteFilePath);
             file.setExists(true);
@@ -635,7 +651,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         else
         {
             SyncFile *file = folder.files.insert(fileHash, SyncFile(type, fileInfo.lastModified())).operator->();
-            file->size = fileInfo.size();
+            file->size = fileSize;
             file->attributes = getFileAttributes(absoluteFilePath);
             file->setNewlyAdded(true);
             file->setScanned(true);

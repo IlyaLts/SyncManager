@@ -43,7 +43,6 @@ SyncProfile::operator =
 void SyncProfile::operator =(const SyncProfile &other)
 {
     folders = other.folders;
-    excludeList = other.excludeList;
 
     syncing = other.syncing;
     paused = other.paused;

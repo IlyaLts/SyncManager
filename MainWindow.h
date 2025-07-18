@@ -86,6 +86,10 @@ private Q_SLOTS:
     void toggleShowInTray();
     void toggleNotification();
     void setDatabaseLocation(SyncManager::DatabaseLocation location);
+    void setFileMinSize();
+    void setFileMaxSize();
+    void setMovedFileMinSize();
+    void setExcludeList();
     void toggleIgnoreHiddenFiles();
     void toggleDetectMoved();
     void showContextMenu(const QPoint &pos);
@@ -151,6 +155,10 @@ private:
     QAction *customLocationPathAction;
     QAction *saveDatabaseLocallyAction;
     QAction *saveDatabaseDecentralizedAction;
+    QAction *fileMinSizeAction;
+    QAction *fileMaxSizeAction;
+    QAction *movedFileMinSizeAction;
+    QAction *excludeAction;
     QList<QAction *> languageActions;
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
@@ -170,6 +178,7 @@ private:
     UnhidableMenu *versioningFormatMenu;
     UnhidableMenu *versioningLocationMenu;
     UnhidableMenu *databaseLocationMenu;
+    UnhidableMenu *filteringMenu;
     UnhidableMenu *languageMenu;
 
     QLocale::Language language;
