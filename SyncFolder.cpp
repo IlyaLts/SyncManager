@@ -80,7 +80,7 @@ void SyncFolder::updateVersioningPath(VersioningFormat format, VersioningLocatio
     if (location == UserDesignatedFolder)
         versioningPath.append(profileName + "/");
 
-    if (format == FolderTimeStamp)
+    if (format == FolderTimestamp)
         versioningPath.append(QDateTime::currentDateTime().toString(pattern) + "/");
 }
 

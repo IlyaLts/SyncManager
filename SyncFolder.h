@@ -56,8 +56,9 @@ struct FileToCopyInfo
 
 enum VersioningFormat
 {
-    FileTimeStamp,
-    FolderTimeStamp
+    FileTimestamp,
+    FolderTimestamp,
+    LastVersion
 };
 
 enum VersioningLocation
