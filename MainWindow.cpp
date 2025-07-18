@@ -969,9 +969,9 @@ void MainWindow::showContextMenu(const QPoint &pos)
             menu.addSeparator();
 
             if (folder->syncType == SyncFolder::TWO_WAY)
-                menu.addAction(iconOneWay, tr("&Switch to one way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
+                menu.addAction(iconOneWay, tr("&Switch to one-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
             else if (folder->syncType == SyncFolder::ONE_WAY)
-                menu.addAction(iconTwoWay, tr("&Switch to two way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
+                menu.addAction(iconTwoWay, tr("&Switch to two-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
         }
 
         menu.popup(ui->folderListView->mapToGlobal(pos));

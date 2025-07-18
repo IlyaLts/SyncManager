@@ -143,6 +143,7 @@ private:
     void removeFiles(SyncProfile &profile, SyncFolder &folder);
     void createFolders(SyncProfile &profile, SyncFolder &folder);
     void copyFiles(SyncProfile &profile, SyncFolder &folder);
+    void removeNotExistedFiles(SyncProfile &profile, SyncFolder &folder);
     void syncFiles(SyncProfile &profile);
 
     SyncingMode m_syncingMode;

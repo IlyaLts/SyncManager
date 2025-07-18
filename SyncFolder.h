@@ -92,6 +92,7 @@ public:
     void saveToDatabase(const QString &path) const;
     void loadFromDatabase(const QString &path);
     void removeDatabase() const;
+    void removeNotExistedFiles();
     bool isActive() const;
 
     SyncType syncType = TWO_WAY;

@@ -646,6 +646,13 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         totalNumOfFiles++;
     }
 
+    // Since we only synchronize one-way folders in one direction,,
+    // we need to clear all file data because files that
+    // no longer exist there don't get removed from the database.
+    // This is just the easiest way to make one-way work properly.
+    if (folder.syncType == SyncFolder::ONE_WAY)
+        folder.removeNotExistedFiles();
+
     folder.optimizeMemoryUsage();
     usedDevicesMutex.lock();
     m_usedDevices.remove(hash64(QStorageInfo(folder.path).device()));
@@ -1032,7 +1039,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
     {
         for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
         {
-            if (folderIt == otherFolderIt || !otherFolderIt->exists)
+            if (folderIt == otherFolderIt || !otherFolderIt->exists || otherFolderIt->syncType == SyncFolder::ONE_WAY)
                 continue;
 
             if (!folderIt->isActive())
@@ -1043,7 +1050,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                 if (!otherFolderIt->isActive())
                     break;
 
-                if (!otherFileIt.value().exists() || folderIt->syncType == SyncFolder::ONE_WAY)
+                if (!otherFileIt.value().exists())
                     continue;
 
                 const SyncFile &file = folderIt->files.value(otherFileIt.key());
@@ -1737,6 +1744,94 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
 
 /*
 ===================
+SyncManager::removeNotExistedFiles
+===================
+*/
+void SyncManager::removeNotExistedFiles(SyncProfile &profile, SyncFolder &folder)
+{
+    // Folders first
+    for (QHash<Hash, SyncFile>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end();)
+    {
+        bool exists = false;
+
+        if (fileIt->exists() && fileIt->type != SyncFile::Folder)
+        {
+            ++fileIt;
+            continue;
+        }
+
+        for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
+        {
+            if (&(*folderIt) == &folder || !folderIt->exists || folderIt->syncType == SyncFolder::ONE_WAY)
+                continue;
+
+            if (!folderIt->isActive())
+                continue;
+
+            if (folderIt->files.contains(fileIt.key()))
+            {
+                exists = true;
+                break;
+            }
+        }
+
+        if (!exists)
+        {
+            QString path(profile.filePath(fileIt.key()));
+            QString fullPath(folder.path + path);
+
+            removeFile(profile, folder, path, fullPath, fileIt->type);
+            fileIt = folder.files.erase(static_cast<QHash<Hash, SyncFile>::const_iterator>(fileIt));
+        }
+        else
+        {
+            ++fileIt;
+        }
+    }
+
+    // Then files
+    for (QHash<Hash, SyncFile>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end();)
+    {
+        bool exists = false;
+
+        if (fileIt->exists() && fileIt->type != SyncFile::File)
+        {
+            ++fileIt;
+            continue;
+        }
+
+        for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
+        {
+            if (&(*folderIt) == &folder || !folderIt->exists || folderIt->syncType == SyncFolder::ONE_WAY)
+                continue;
+
+            if (!folderIt->isActive())
+                continue;
+
+            if (folderIt->files.contains(fileIt.key()))
+            {
+                exists = true;
+                break;
+            }
+        }
+
+        if (!exists)
+        {
+            QString path(profile.filePath(fileIt.key()));
+            QString fullPath(folder.path + path);
+
+            removeFile(profile, folder, path, fullPath, fileIt->type);
+            fileIt = folder.files.erase(static_cast<QHash<Hash, SyncFile>::const_iterator>(fileIt));
+        }
+        else
+        {
+            ++fileIt;
+        }
+    }
+}
+
+/*
+===================
 SyncManager::syncFiles
 ===================
 */
@@ -1755,10 +1850,13 @@ void SyncManager::syncFiles(SyncProfile &profile)
         renameFolders(profile, folder);
         moveFiles(profile, folder);
 
-        // In case we add a timestamp to files, we need to remove the files first.
-        // This is because we want to avoid adding timestamps to each file individually
-        // after placing the parent folder in the versioning folder, as it would impact performance.
-        if (m_deletionMode == Versioning && m_versioningFormat == FileTimestamp)
+        // In case we add a timestamp to files or keep the last version in the versioning folder,
+        // we need to remove the files first. This is mostly because we can't move or delete a folder first
+        // if it contains files and already exists in the versioning folder. As a result, at the end of synchronization,
+        // we still have that empty folder remaining. Also, in case if we use file timestamp format
+        // we want to avoid adding timestamps to each file individually after placing the parent folder
+        // in the versioning folder, as it would impact performance.
+        if (m_deletionMode == Versioning && (m_versioningFormat == FileTimestamp || m_versioningFormat == LastVersion))
         {
             removeFiles(profile, folder);
             removeFolders(profile, folder);
@@ -1771,6 +1869,11 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
         createFolders(profile, folder);
         copyFiles(profile, folder);
+
+        // We don't want files in one-way folders that don't exist in other folders
+        if (folder.syncType == SyncFolder::ONE_WAY)
+            removeNotExistedFiles(profile, folder);
+
         folder.versioningPath.clear();
 
         // Updates the modified date of parent folders as adding or removing files and folders changes their modified date.
