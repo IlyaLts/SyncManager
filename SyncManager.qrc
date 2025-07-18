@@ -17,5 +17,6 @@
         <file>Images/IconSettings.png</file>
         <file>Images/IconOneWay.png</file>
         <file>Images/IconTwoWay.png</file>
+        <file>Images/IconOneWayUpdate.png</file>
     </qresource>
 </RCC>

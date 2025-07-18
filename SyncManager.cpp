@@ -737,7 +737,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        if (!folderIt->isActive() || folderIt->syncType == SyncFolder::ONE_WAY)
+        if (!folderIt->isActive() || folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
             continue;
 
         for (QHash<Hash, SyncFile>::iterator renamedFolderIt = folderIt->files.begin(); renamedFolderIt != folderIt->files.end(); ++renamedFolderIt)
@@ -889,7 +889,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        if (!folderIt->isActive() || folderIt->syncType == SyncFolder::ONE_WAY)
+        if (!folderIt->isActive() || folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
             continue;
 
         QHash<Hash, SyncFile *> missingFiles;
@@ -1039,7 +1039,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
     {
         for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
         {
-            if (folderIt == otherFolderIt || !otherFolderIt->exists || otherFolderIt->syncType == SyncFolder::ONE_WAY)
+            if (folderIt == otherFolderIt || !otherFolderIt->exists || otherFolderIt->syncType == SyncFolder::ONE_WAY || otherFolderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
                 continue;
 
             if (!folderIt->isActive())
@@ -1133,7 +1133,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        if (folderIt->syncType == SyncFolder::ONE_WAY)
+        if (folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
             continue;
 
         for (QHash<Hash, SyncFile>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
@@ -1760,7 +1760,7 @@ void SyncManager::removeNotExistedFiles(SyncProfile &profile, SyncFolder &folder
 
         for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
         {
-            if (&(*folderIt) == &folder || !folderIt->exists || folderIt->syncType == SyncFolder::ONE_WAY)
+            if (&(*folderIt) == &folder || !folderIt->exists || folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
                 continue;
 
             if (!folderIt->isActive())
@@ -1800,7 +1800,7 @@ void SyncManager::removeNotExistedFiles(SyncProfile &profile, SyncFolder &folder
 
         for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
         {
-            if (&(*folderIt) == &folder || !folderIt->exists || folderIt->syncType == SyncFolder::ONE_WAY)
+            if (&(*folderIt) == &folder || !folderIt->exists || folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
                 continue;
 
             if (!folderIt->isActive())

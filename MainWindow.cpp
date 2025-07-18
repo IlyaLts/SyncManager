@@ -732,7 +732,7 @@ MainWindow::switchVersioningLocation
 */
 void MainWindow::switchVersioningLocation(VersioningLocation location, bool init)
 {
-    locallyBesideFolderAction->setChecked(location== LocallyBesideFolder);
+    locallyNextToFolderAction->setChecked(location== LocallyNextToFolder);
     userDesignatedFolderAction->setChecked(location == UserDesignatedFolder);
     manager.setVersioningLocation(location);
 
@@ -969,10 +969,14 @@ void MainWindow::showContextMenu(const QPoint &pos)
 
             menu.addSeparator();
 
-            if (folder->syncType == SyncFolder::TWO_WAY)
-                menu.addAction(iconOneWay, tr("&Switch to one-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
-            else if (folder->syncType == SyncFolder::ONE_WAY)
+            if (folder->syncType != SyncFolder::TWO_WAY)
                 menu.addAction(iconTwoWay, tr("&Switch to two-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
+
+            if (folder->syncType != SyncFolder::ONE_WAY)
+                menu.addAction(iconOneWay, tr("&Switch to one-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
+
+            if (folder->syncType != SyncFolder::ONE_WAY_UPDATE)
+                menu.addAction(iconOneWayUpdate, tr("&Switch to one-way update synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY_UPDATE); });
         }
 
         menu.popup(ui->folderListView->mapToGlobal(pos));
@@ -1164,6 +1168,8 @@ void MainWindow::updateStatus()
                         icon = &iconTwoWay;
                     else if (folder->syncType == SyncFolder::ONE_WAY)
                         icon = &iconOneWay;
+                    else if (folder->syncType == SyncFolder::ONE_WAY_UPDATE)
+                        icon = &iconOneWayUpdate;
 
                     folderModel->setData(index, *icon, SyncTypeRole);
 
@@ -1409,7 +1415,7 @@ void MainWindow::readSettings()
     switchSyncingMode(static_cast<SyncManager::SyncingMode>(settings.value("SyncingMode", SyncManager::Automatic).toInt()));
     switchDeletionMode(static_cast<SyncManager::DeletionMode>(settings.value("DeletionMode", SyncManager::MoveToTrash).toInt()));
     switchVersioningFormat(static_cast<VersioningFormat>(settings.value("VersioningFormat", FolderTimestamp).toInt()));
-    switchVersioningLocation(static_cast<VersioningLocation>(settings.value("VersioningLocation", LocallyBesideFolder).toInt()), true);
+    switchVersioningLocation(static_cast<VersioningLocation>(settings.value("VersioningLocation", LocallyNextToFolder).toInt()), true);
 
     manager.updateNextSyncingTime();
 
@@ -1506,8 +1512,9 @@ void MainWindow::setupMenus()
     iconSettings.addFile(":/Images/IconSettings.png");
     iconSync.addFile(":/Images/IconSync.png");
     iconWarning.addFile(":/Images/IconWarning.png");
-    iconOneWay.addFile(":/Images/IconOneWay.png");
     iconTwoWay.addFile(":/Images/IconTwoWay.png");
+    iconOneWay.addFile(":/Images/IconOneWay.png");
+    iconOneWayUpdate.addFile(":/Images/IconOneWayUpdate.png");
     trayIconDone.addFile(":/Images/TrayIconDone.png");
     trayIconIssue.addFile(":/Images/TrayIconIssue.png");
     trayIconPause.addFile(":/Images/TrayIconPause.png");
@@ -1529,7 +1536,7 @@ void MainWindow::setupMenus()
     fileTimestampAfterAction = new QAction(tr("&File Timestamp (After Extension)"), this);
     folderTimestampAction = new QAction(tr("&Folder Timestamp"), this);
     lastVersionAction = new QAction(tr("&Last Version"), this);
-    locallyBesideFolderAction = new QAction(tr("&Locally Beside Folder"), this);
+    locallyNextToFolderAction = new QAction(tr("&Locally Next to Folder"), this);
     userDesignatedFolderAction = new QAction(tr("&User Designated Folder"), this);
     saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
@@ -1562,7 +1569,7 @@ void MainWindow::setupMenus()
     fileTimestampAfterAction->setCheckable(true);
     folderTimestampAction->setCheckable(true);
     lastVersionAction->setCheckable(true);
-    locallyBesideFolderAction->setCheckable(true);
+    locallyNextToFolderAction->setCheckable(true);
     userDesignatedFolderAction->setCheckable(true);
     saveDatabaseLocallyAction->setCheckable(true);
     saveDatabaseDecentralizedAction->setCheckable(true);
@@ -1605,7 +1612,7 @@ void MainWindow::setupMenus()
     versioningFormatMenu->addAction(lastVersionAction);
 
     versioningLocationMenu = new UnhidableMenu(tr("&Versioning Location"), this);
-    versioningLocationMenu->addAction(locallyBesideFolderAction);
+    versioningLocationMenu->addAction(locallyNextToFolderAction);
     versioningLocationMenu->addAction(userDesignatedFolderAction);
 
     languageMenu = new UnhidableMenu(tr("&Language"), this);
@@ -1667,7 +1674,7 @@ void MainWindow::setupMenus()
     connect(fileTimestampAfterAction, &QAction::triggered, this, [this](){ switchVersioningFormat(FileTimestampAfter); });
     connect(folderTimestampAction, &QAction::triggered, this, [this](){ switchVersioningFormat(FolderTimestamp); });
     connect(lastVersionAction, &QAction::triggered, this, [this](){ switchVersioningFormat(LastVersion); });
-    connect(locallyBesideFolderAction, &QAction::triggered, this, [this](){ switchVersioningLocation(LocallyBesideFolder); });
+    connect(locallyNextToFolderAction, &QAction::triggered, this, [this](){ switchVersioningLocation(LocallyNextToFolder); });
     connect(userDesignatedFolderAction, &QAction::triggered, this, [this](){ switchVersioningLocation(UserDesignatedFolder); });
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
     connect(decreaseSyncTimeAction, &QAction::triggered, this, &MainWindow::decreaseSyncTime);
@@ -1708,7 +1715,7 @@ void MainWindow::retranslate()
     fileTimestampAfterAction->setText(tr("&File Timestamp (After Extension)"));
     folderTimestampAction->setText(tr("&Folder Timestamp"));
     lastVersionAction->setText(tr("&Last Version"));
-    locallyBesideFolderAction->setText(tr("&Locally Beside Folder"));
+    locallyNextToFolderAction->setText(tr("&Locally Next to Folder"));
     userDesignatedFolderAction->setText(tr("&User Designated Folder"));
     saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
     saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));

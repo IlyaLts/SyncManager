@@ -121,8 +121,9 @@ private:
     QIcon iconSettings;
     QIcon iconSync;
     QIcon iconWarning;
-    QIcon iconOneWay;
     QIcon iconTwoWay;
+    QIcon iconOneWay;
+    QIcon iconOneWayUpdate;
     QIcon trayIconDone;
     QIcon trayIconIssue;
     QIcon trayIconPause;
@@ -145,7 +146,7 @@ private:
     QAction *fileTimestampAfterAction;
     QAction *folderTimestampAction;
     QAction *lastVersionAction;
-    QAction *locallyBesideFolderAction;
+    QAction *locallyNextToFolderAction;
     QAction *userDesignatedFolderAction;
     QAction *saveDatabaseLocallyAction;
     QAction *saveDatabaseDecentralizedAction;

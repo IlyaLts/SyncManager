@@ -32,7 +32,7 @@ void FolderStyleDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
 
     if (!syncTypeIcon.isNull())
     {
-        int iconSize = option.decorationSize.width();
+        int iconSize = option.decorationSize.width() * 1.2f;
         QRect syncTypeRect = option.rect;
 
         syncTypeRect.setRight(syncTypeRect.right() - 5);

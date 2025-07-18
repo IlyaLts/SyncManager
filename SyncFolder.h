@@ -64,7 +64,7 @@ enum VersioningFormat
 
 enum VersioningLocation
 {
-    LocallyBesideFolder,
+    LocallyNextToFolder,
     UserDesignatedFolder
 };
 
@@ -82,7 +82,8 @@ public:
     enum SyncType
     {
         TWO_WAY,
-        ONE_WAY
+        ONE_WAY,
+        ONE_WAY_UPDATE
     };
 
     inline bool operator ==(const SyncFolder &other) { return path == other.path; }
