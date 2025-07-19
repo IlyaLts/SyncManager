@@ -105,6 +105,8 @@ public:
     inline void enableIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
     inline void setDatabaseLocation(DatabaseLocation location) { m_databaseLocation = location; }
     inline void enableDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
+    inline void setVersioningFolder(const QString &name) { m_versioningFolder = name; }
+    inline void setVersioningPattern(const QString &pattern) { m_versioningPattern = pattern; }
 
     inline int filesToSync() const { return m_filesToSync; }
     inline int syncTimeMultiplier() const { return m_syncTimeMultiplier; }
@@ -126,8 +128,8 @@ public:
     inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
     inline bool ignoreHiddenFilesEnabled() const { return m_ignoreHiddenFiles; }
     inline bool detectMovedFilesEnabled() const { return m_detectMovedFiles; }
-    inline const QString &versionFolder() const { return m_versionFolder; }
-    inline const QString &versionPattern() const { return m_versionPattern; }
+    inline const QString &versioningFolder() const { return m_versioningFolder; }
+    inline const QString &versioningPattern() const { return m_versioningPattern; }
 
 Q_SIGNALS:
 
@@ -195,8 +197,8 @@ private:
     QSet<hash64_t> m_usedDevices;
     QMutex usedDevicesMutex;
 
-    QString m_versionFolder;
-    QString m_versionPattern;
+    QString m_versioningFolder;
+    QString m_versioningPattern;
 };
 
 #endif // SYNCMANAGER_H

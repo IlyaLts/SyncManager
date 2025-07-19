@@ -284,6 +284,34 @@
             <translation>&amp;Последняя версия</translation>
         </message>
         <message>
+            <source>Set Versioning Folder Postfix</source>
+            <translation>Установить суффикс папки версионирования</translation>
+        </message>
+        <message>
+            <source>Please enter versioning folder postfix:</source>
+            <translation>Пожалуйста, введите суффикс папки версионирования:</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Postfix: %1</source>
+            <translation>&amp;Суффикс папки: %1</translation>
+        </message>
+        <message>
+            <source>Set Versioning Pattern</source>
+            <translation>Установить шаблон версионирования</translation>
+        </message>
+        <message>
+            <source>Please enter versioning pattern:</source>
+            <translation>Пожалуйста, введите шаблон версионирования:</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>Примеры:</translation>
+        </message>
+        <message>
+            <source>&amp;Pattern: %1</source>
+            <translation>&amp;Шаблон: %1</translation>
+        </message>
+        <message>
             <source>&amp;Versioning Location</source>
             <translation>&amp;Расположение версионирования</translation>
         </message>

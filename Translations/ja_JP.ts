@@ -284,6 +284,34 @@
             <translation>&amp;最終バージョン</translation>
         </message>
         <message>
+            <source>Set Versioning Folder Postfix</source>
+            <translation>バージョン管理フォルダーの接尾辞を設定</translation>
+        </message>
+        <message>
+            <source>Please enter versioning folder postfix:</source>
+            <translation>バージョン管理フォルダーの接尾辞を入力してください:</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Postfix: %1</source>
+            <translation>&amp;フォルダー接尾辞: %1</translation>
+        </message>
+        <message>
+            <source>Set Versioning Pattern</source>
+            <translation>バージョン管理パターンを設定</translation>
+        </message>
+        <message>
+            <source>Please enter versioning pattern:</source>
+            <translation>バージョン管理パターンを入力してください:</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>例:</translation>
+        </message>
+        <message>
+            <source>&amp;Pattern: %1</source>
+            <translation>&amp;パターン: %1</translation>
+        </message>
+        <message>
             <source>&amp;Versioning Location</source>
             <translation>&amp;バージョン管理の場所</translation>
         </message>

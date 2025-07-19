@@ -284,6 +284,34 @@
             <translation>&amp;Última versión</translation>
         </message>
         <message>
+            <source>Set Versioning Folder Postfix</source>
+            <translation>Establecer sufijo de carpeta de versiones</translation>
+        </message>
+        <message>
+            <source>Please enter versioning folder postfix:</source>
+            <translation>Por favor, introduzca el sufijo de la carpeta de versiones:</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Postfix: %1</source>
+            <translation>&amp;Sufijo de carpeta: %1</translation>
+        </message>
+        <message>
+            <source>Set Versioning Pattern</source>
+            <translation>Establecer patrón de versiones</translation>
+        </message>
+        <message>
+            <source>Please enter versioning pattern:</source>
+            <translation>Por favor, introduzca el patrón de versiones:</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>Ejemplos:</translation>
+        </message>
+        <message>
+            <source>&amp;Pattern: %1</source>
+            <translation>&amp;Patrón: %1</translation>
+        </message>
+        <message>
             <source>&amp;Versioning Location</source>
             <translation>&amp;Ubicación del versionado</translation>
         </message>

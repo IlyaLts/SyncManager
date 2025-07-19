@@ -284,6 +284,34 @@
             <translation>&amp;Остання версія</translation>
         </message>
         <message>
+            <source>Set Versioning Folder Postfix</source>
+            <translation>Встановити суфікс папки керування версіями</translation>
+        </message>
+        <message>
+            <source>Please enter versioning folder postfix:</source>
+            <translation>Будь ласка, введіть суфікс папки керування версіями:</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Postfix: %1</source>
+            <translation>&amp;Суфікс папки: %1</translation>
+        </message>
+        <message>
+            <source>Set Versioning Pattern</source>
+            <translation>Встановити шаблон керування версіями</translation>
+        </message>
+        <message>
+            <source>Please enter versioning pattern:</source>
+            <translation>Будь ласка, введіть шаблон керування версіями:</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>Приклади:</translation>
+        </message>
+        <message>
+            <source>&amp;Pattern: %1</source>
+            <translation>&amp;Шаблон: %1</translation>
+        </message>
+        <message>
             <source>&amp;Versioning Location</source>
             <translation>&amp;Розташування версіонування</translation>
         </message>

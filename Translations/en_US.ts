@@ -284,6 +284,34 @@
             <translation>&amp;Last Version</translation>
         </message>
         <message>
+            <source>Set Versioning Folder Postfix</source>
+            <translation>Set Versioning Folder Postfix</translation>
+        </message>
+        <message>
+            <source>Please enter versioning folder postfix:</source>
+            <translation>Please enter versioning folder postfix:</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Postfix: %1</source>
+            <translation>&amp;Folder Postfix: %1</translation>
+        </message>
+        <message>
+            <source>Set Versioning Pattern</source>
+            <translation>Set Versioning Pattern</translation>
+        </message>
+        <message>
+            <source>Please enter versioning pattern:</source>
+            <translation>Please enter versioning pattern:</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>Examples:</translation>
+        </message>
+        <message>
+            <source>&amp;Pattern: %1</source>
+            <translation>&amp;Pattern: %1</translation>
+        </message>
+        <message>
             <source>&amp;Versioning Location</source>
             <translation>&amp;Versioning Location</translation>
         </message>

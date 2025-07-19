@@ -57,8 +57,8 @@ SyncManager::SyncManager()
     m_includeList = settings.value("IncludeList").toStringList();
     m_excludeList = settings.value("ExcludeList").toStringList();
     m_caseSensitiveSystem = settings.value("caseSensitiveSystem", m_caseSensitiveSystem).toBool();
-    m_versionFolder = settings.value("VersionFolder", "[Deletions]").toString();
-    m_versionPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
+    m_versioningFolder = settings.value("VersionFolder", "[Deletions]").toString();
+    m_versioningPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
 }
 
 /*
@@ -1295,7 +1295,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         // Adds a timestamp to the end of the filename of a deleted file
         if (versioningFormat() == FileTimestampBefore && type == SyncFile::File)
         {
-            newLocation.append("_" + QDateTime::currentDateTime().toString(m_versionPattern));
+            newLocation.append("_" + QDateTime::currentDateTime().toString(m_versioningPattern));
 
             // Adds a file extension after the timestamp
             int dotIndex = path.lastIndexOf('.');
@@ -1315,7 +1315,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
             if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
                 nameEndIndex = newLocation.length();
 
-            newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(m_versionPattern));
+            newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(m_versioningPattern));
         }
 
         // As we want to have only the latest version of files,
@@ -1858,7 +1858,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
             continue;
 
         if (m_deletionMode == Versioning)
-            folder.updateVersioningPath(m_versioningFormat, m_versioningLocation, m_versioningPath, profile.name, m_versionFolder, m_versionPattern);
+            folder.updateVersioningPath(m_versioningFormat, m_versioningLocation, m_versioningPath, profile.name, m_versioningFolder, m_versioningPattern);
 
         renameFolders(profile, folder);
         moveFiles(profile, folder);

@@ -86,6 +86,8 @@ private Q_SLOTS:
     void toggleShowInTray();
     void toggleNotification();
     void setDatabaseLocation(SyncManager::DatabaseLocation location);
+    void setVersioningPostfix();
+    void setVersioningPattern();
     void setFileMinSize();
     void setFileMaxSize();
     void setMovedFileMinSize();
@@ -151,6 +153,8 @@ private:
     QAction *fileTimestampAfterAction;
     QAction *folderTimestampAction;
     QAction *lastVersionAction;
+    QAction *versioningPostfixAction;
+    QAction *versioningPatternAction;
     QAction *locallyNextToFolderAction;
     QAction *customLocationAction;
     QAction *customLocationPathAction;

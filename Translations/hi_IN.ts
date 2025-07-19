@@ -284,6 +284,34 @@
             <translation>&amp;अंतिम संस्करण</translation>
         </message>
         <message>
+            <source>Set Versioning Folder Postfix</source>
+            <translation>संस्करण फ़ोल्डर प्रत्यय सेट करें</translation>
+        </message>
+        <message>
+            <source>Please enter versioning folder postfix:</source>
+            <translation>कृपया संस्करण फ़ोल्डर प्रत्यय दर्ज करें:</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Postfix: %1</source>
+            <translation>&amp;फ़ोल्डर प्रत्यय: %1</translation>
+        </message>
+        <message>
+            <source>Set Versioning Pattern</source>
+            <translation>संस्करण पैटर्न सेट करें</translation>
+        </message>
+        <message>
+            <source>Please enter versioning pattern:</source>
+            <translation>कृपया संस्करण पैटर्न दर्ज करें:</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>उदाहरण:</translation>
+        </message>
+        <message>
+            <source>&amp;Pattern: %1</source>
+            <translation>&amp;पैटर्न: %1</translation>
+        </message>
+        <message>
             <source>&amp;Versioning Location</source>
             <translation>&amp;वर्जनिंग स्थान</translation>
         </message>

@@ -284,6 +284,34 @@
             <translation>&amp;Última Versão</translation>
         </message>
         <message>
+            <source>Set Versioning Folder Postfix</source>
+            <translation>Definir Sufixo da Pasta de Versionamento</translation>
+        </message>
+        <message>
+            <source>Please enter versioning folder postfix:</source>
+            <translation>Por favor, digite o sufixo da pasta de versionamento:</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Postfix: %1</source>
+            <translation>&amp;Sufixo da Pasta: %1</translation>
+        </message>
+        <message>
+            <source>Set Versioning Pattern</source>
+            <translation>Definir Padrão de Versionamento</translation>
+        </message>
+        <message>
+            <source>Please enter versioning pattern:</source>
+            <translation>Por favor, digite o padrão de versionamento:</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>Exemplos:</translation>
+        </message>
+        <message>
+            <source>&amp;Pattern: %1</source>
+            <translation>&amp;Padrão: %1</translation>
+        </message>
+        <message>
             <source>&amp;Versioning Location</source>
             <translation>&amp;Localização do Versionamento</translation>
         </message>

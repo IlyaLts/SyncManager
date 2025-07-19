@@ -284,6 +284,34 @@
             <translation>&amp;최신 버전</translation>
         </message>
         <message>
+            <source>Set Versioning Folder Postfix</source>
+            <translation>버전 관리 폴더 접미사 설정</translation>
+        </message>
+        <message>
+            <source>Please enter versioning folder postfix:</source>
+            <translation>버전 관리 폴더 접미사를 입력하세요:</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Postfix: %1</source>
+            <translation>&amp;폴더 접미사: %1</translation>
+        </message>
+        <message>
+            <source>Set Versioning Pattern</source>
+            <translation>버전 관리 패턴 설정</translation>
+        </message>
+        <message>
+            <source>Please enter versioning pattern:</source>
+            <translation>버전 관리 패턴을 입력하세요:</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>예시:</translation>
+        </message>
+        <message>
+            <source>&amp;Pattern: %1</source>
+            <translation>&amp;패턴: %1</translation>
+        </message>
+        <message>
             <source>&amp;Versioning Location</source>
             <translation>&amp;버전 관리 위치</translation>
         </message>

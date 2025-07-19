@@ -284,6 +284,34 @@
             <translation>&amp;Dernière version</translation>
         </message>
         <message>
+            <source>Set Versioning Folder Postfix</source>
+            <translation>Définir le suffixe du dossier de versionnement</translation>
+        </message>
+        <message>
+            <source>Please enter versioning folder postfix:</source>
+            <translation>Veuillez entrer le suffixe du dossier de versionnement :</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Postfix: %1</source>
+            <translation>&amp;Suffixe du dossier : %1</translation>
+        </message>
+        <message>
+            <source>Set Versioning Pattern</source>
+            <translation>Définir le motif de versionnement</translation>
+        </message>
+        <message>
+            <source>Please enter versioning pattern:</source>
+            <translation>Veuillez entrer le motif de versionnement :</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>Exemples :</translation>
+        </message>
+        <message>
+            <source>&amp;Pattern: %1</source>
+            <translation>&amp;Motif : %1</translation>
+        </message>
+        <message>
             <source>&amp;Versioning Location</source>
             <translation>&amp;Emplacement du versioning</translation>
         </message>

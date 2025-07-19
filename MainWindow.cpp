@@ -890,6 +890,49 @@ void MainWindow::setDatabaseLocation(SyncManager::DatabaseLocation location)
 
 /*
 ===================
+MainWindow::setVersioningPostfix
+===================
+*/
+void MainWindow::setVersioningPostfix()
+{
+    QString postfix = manager.versioningFolder();
+    QString title(tr("Set Versioning Folder Postfix"));
+    QString text(tr("Please enter versioning folder postfix:"));
+
+    if (!textInputDialog(this, title, text, postfix, postfix))
+        return;
+
+    manager.setVersioningFolder(postfix);
+    versioningPostfixAction->setText(QString(tr("&Folder Postfix: %1")).arg(manager.versioningFolder()));
+}
+
+/*
+===================
+MainWindow::setVersioningPattern
+===================
+*/
+void MainWindow::setVersioningPattern()
+{
+    QString pattern = manager.versioningPattern();
+    QString title(tr("Set Versioning Pattern"));
+    QString text(tr("Please enter versioning pattern:"));
+    text.append("\n\n");
+    text.append(tr("Examples:"));
+    text.append("\nyyyy_M_d_h_m_s_z     - 2001_5_21_14_13_09_120");
+    text.append("\nyyyy_MM_dd           - 2001_05_21");
+    text.append("\nyy_MMMM_d            - 01_May_21");
+    text.append("\nhh:mm:ss.zzz         - 14_13_09_120");
+    text.append("\nap_h_m_s             - pm_2_13_9");
+
+    if (!textInputDialog(this, title, text, pattern, pattern))
+        return;
+
+    manager.setVersioningPattern(pattern);
+    versioningPatternAction->setText(QString(tr("&Pattern: %1")).arg(manager.versioningPattern()));
+}
+
+/*
+===================
 MainWindow::setFileMinSize
 ===================
 */
@@ -1586,8 +1629,8 @@ void MainWindow::saveSettings() const
     settings.setValue("IncludeList", manager.includeList());
     settings.setValue("ExcludeList", manager.excludeList());
     settings.setValue("caseSensitiveSystem", manager.isCaseSensitiveSystem());
-    settings.setValue("VersionFolder", manager.versionFolder());
-    settings.setValue("VersionPattern", manager.versionPattern());
+    settings.setValue("VersionFolder", manager.versioningFolder());
+    settings.setValue("VersionPattern", manager.versioningPattern());
 
     // Saves profiles/folders pause states and last sync dates
     for (auto &profile : manager.profiles())
@@ -1652,6 +1695,8 @@ void MainWindow::setupMenus()
     fileTimestampAfterAction = new QAction(tr("&File Timestamp (After Extension)"), this);
     folderTimestampAction = new QAction(tr("&Folder Timestamp"), this);
     lastVersionAction = new QAction(tr("&Last Version"), this);
+    versioningPostfixAction = new QAction(QString(tr("&Folder Postfix: %1")).arg(manager.versioningFolder()), this);
+    versioningPatternAction = new QAction(QString(tr("&Pattern: %1")).arg(manager.versioningPattern()), this);
     locallyNextToFolderAction = new QAction(tr("&Locally Next to Folder"), this);
     customLocationAction = new QAction(tr("&Custom Location"), this);
     customLocationPathAction = new QAction(tr("Custom Location: ") + manager.versioningPath(), this);
@@ -1733,6 +1778,9 @@ void MainWindow::setupMenus()
     versioningFormatMenu->addAction(fileTimestampAfterAction);
     versioningFormatMenu->addAction(folderTimestampAction);
     versioningFormatMenu->addAction(lastVersionAction);
+    versioningFormatMenu->addSeparator();
+    versioningFormatMenu->addAction(versioningPostfixAction);
+    versioningFormatMenu->addAction(versioningPatternAction);
 
     versioningLocationMenu = new UnhidableMenu(tr("&Versioning Location"), this);
     versioningLocationMenu->addAction(locallyNextToFolderAction);
@@ -1807,6 +1855,8 @@ void MainWindow::setupMenus()
     connect(fileTimestampAfterAction, &QAction::triggered, this, [this](){ switchVersioningFormat(FileTimestampAfter); });
     connect(folderTimestampAction, &QAction::triggered, this, [this](){ switchVersioningFormat(FolderTimestamp); });
     connect(lastVersionAction, &QAction::triggered, this, [this](){ switchVersioningFormat(LastVersion); });
+    connect(versioningPostfixAction, &QAction::triggered, this, [this](){ setVersioningPostfix(); });
+    connect(versioningPatternAction, &QAction::triggered, this, [this](){ setVersioningPattern(); });
     connect(locallyNextToFolderAction, &QAction::triggered, this, [this](){ switchVersioningLocation(LocallyNextToFolder); });
     connect(customLocationAction, &QAction::triggered, this, [this](){ switchVersioningLocation(CustomLocation); });
     connect(increaseSyncTimeAction, &QAction::triggered, this, &MainWindow::increaseSyncTime);
@@ -1853,6 +1903,8 @@ void MainWindow::retranslate()
     fileTimestampAfterAction->setText(tr("&File Timestamp (After Extension)"));
     folderTimestampAction->setText(tr("&Folder Timestamp"));
     lastVersionAction->setText(tr("&Last Version"));
+    versioningPostfixAction->setText(QString(tr("&Folder Postfix: %1")).arg(manager.versioningFolder()));
+    versioningPatternAction->setText(QString(tr("&Pattern: %1")).arg(manager.versioningPattern()));
     locallyNextToFolderAction->setText(tr("&Locally Next to Folder"));
     customLocationAction->setText(tr("&Custom Location"));
     customLocationPathAction->setText(tr("Custom Location: ") + manager.versioningPath());

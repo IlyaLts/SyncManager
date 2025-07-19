@@ -284,6 +284,34 @@
             <translation>&amp;最新版本</translation>
         </message>
         <message>
+            <source>Set Versioning Folder Postfix</source>
+            <translation>设置版本控制文件夹后缀</translation>
+        </message>
+        <message>
+            <source>Please enter versioning folder postfix:</source>
+            <translation>请输入版本控制文件夹后缀：</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Postfix: %1</source>
+            <translation>&amp;文件夹后缀: %1</translation>
+        </message>
+        <message>
+            <source>Set Versioning Pattern</source>
+            <translation>设置版本控制模式</translation>
+        </message>
+        <message>
+            <source>Please enter versioning pattern:</source>
+            <translation>请输入版本控制模式：</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>示例：</translation>
+        </message>
+        <message>
+            <source>&amp;Pattern: %1</source>
+            <translation>&amp;模式: %1</translation>
+        </message>
+        <message>
             <source>&amp;Versioning Location</source>
             <translation>&amp;版本位置</translation>
         </message>
