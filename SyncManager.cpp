@@ -517,7 +517,13 @@ SyncManager::scanFiles
 int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
 {
     int totalNumOfFiles = 0;
-    QDirIterator dir(folder.path, m_includeList, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+    QStringList nameFilters(m_includeList);
+    nameFilters.removeAll(""); // It's important for proper iteration because the include list may contain empty strings
+
+    if (nameFilters.isEmpty())
+        nameFilters.append("*");
+
+    QDirIterator dir(folder.path, nameFilters, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
     for (auto &file : folder.files)
         file.flags = 0;
