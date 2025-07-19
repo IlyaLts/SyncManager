@@ -89,6 +89,7 @@ private Q_SLOTS:
     void setFileMinSize();
     void setFileMaxSize();
     void setMovedFileMinSize();
+    void setIncludeList();
     void setExcludeList();
     void toggleIgnoreHiddenFiles();
     void toggleDetectMoved();
@@ -158,6 +159,7 @@ private:
     QAction *fileMinSizeAction;
     QAction *fileMaxSizeAction;
     QAction *movedFileMinSizeAction;
+    QAction *includeAction;
     QAction *excludeAction;
     QList<QAction *> languageActions;
     QAction *launchOnStartupAction;

@@ -98,6 +98,7 @@ public:
     inline void setFileMinSize(qint64 size) { m_fileMinSize = size; }
     inline void setFileMaxSize(qint64 size) { m_fileMaxSize = size; }
     inline void setMovedFileMinSize(qint64 size) { m_movedFileMinSize = size; }
+    inline void setIncludeList(const QStringList &list) { m_includeList = list; }
     inline void setExcludeList(const QStringList &list) { m_excludeList = list; }
     inline void setPaused(bool paused) { m_paused = paused; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }
@@ -111,6 +112,7 @@ public:
     inline qint64 fileMinSize() const { return m_fileMinSize; }
     inline qint64 fileMaxSize() const { return m_fileMaxSize; }
     inline qint64 movedFileMinSize() const { return m_movedFileMinSize; }
+    inline const QStringList &includeList() const { return m_includeList; }
     inline const QStringList &excludeList() const { return m_excludeList; }
     inline bool isCaseSensitiveSystem() const { return m_caseSensitiveSystem; }
     inline bool isQuitting() const { return m_shouldQuit; }
@@ -168,6 +170,7 @@ private:
     qint64 m_fileMinSize = 0;
     qint64 m_fileMaxSize = 0;
     qint64 m_movedFileMinSize = 0;
+    QStringList m_includeList;
     QStringList m_excludeList;
     bool m_databaseChanged = false;
 

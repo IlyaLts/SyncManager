@@ -932,14 +932,48 @@ void MainWindow::setMovedFileMinSize()
 
 /*
 ===================
+MainWindow::setIncludeList
+===================
+*/
+void MainWindow::setIncludeList()
+{
+    bool ok;
+    QString includeString = manager.includeList().join("; ");
+    includeString = QInputDialog::getText(this, "Set Include List", "Please enter include paths, separated by semicolons:", QLineEdit::Normal, includeString, &ok);
+
+    if (!ok)
+        return;
+
+    QStringList includeList = includeString.split(";");
+
+    for (auto &include : includeList)
+        include = include.trimmed();
+
+    includeString = includeList.join("; ");
+    manager.setIncludeList(includeList);
+    includeAction->setText(tr("&Include: %1").arg(includeString));
+}
+
+/*
+===================
 MainWindow::setExcludeList
 ===================
 */
 void MainWindow::setExcludeList()
 {
-    QString excludeString = manager.excludeList().join(";");
-    excludeString = QInputDialog::getText(this, "Set Exclude List", "Please enter exclude paths, separated by semicolons:", QLineEdit::Normal, excludeString);
-    QStringList excludeList = excludeString.split(';');
+    bool ok;
+    QString excludeString = manager.excludeList().join("; ");
+    excludeString = QInputDialog::getText(this, "Set Exclude List", "Please enter exclude paths, separated by semicolons:", QLineEdit::Normal, excludeString, &ok);
+
+    if (!ok)
+        return;
+
+    QStringList excludeList = excludeString.split(";");
+
+    for (auto &exclude : excludeList)
+        exclude = exclude.trimmed();
+
+    excludeString = excludeList.join("; ");
     manager.setExcludeList(excludeList);
     excludeAction->setText(tr("&Exclude: %1").arg(excludeString));
 }
@@ -1531,6 +1565,7 @@ void MainWindow::saveSettings() const
     settings.setValue("FileMinSize", manager.fileMinSize());
     settings.setValue("FileMaxSize", manager.fileMaxSize());
     settings.setValue("MovedFileMinSize", manager.movedFileMinSize());
+    settings.setValue("IncludeList", manager.includeList());
     settings.setValue("ExcludeList", manager.excludeList());
     settings.setValue("caseSensitiveSystem", manager.isCaseSensitiveSystem());
     settings.setValue("VersionFolder", manager.versionFolder());
@@ -1607,7 +1642,8 @@ void MainWindow::setupMenus()
     fileMinSizeAction = new QAction(QString(tr("&Minimal File Size: %1 bytes")).arg(manager.fileMinSize()), this);
     fileMaxSizeAction = new QAction(QString(tr("&Maximal File Size: %1 bytes")).arg(manager.fileMaxSize()), this);
     movedFileMinSizeAction = new QAction(QString(tr("&M: %1 bytes")).arg(manager.movedFileMinSize()), this);
-    excludeAction = new QAction(QString(tr("&Exclude: %1")).arg(manager.excludeList().join(";")), this);
+    includeAction = new QAction(QString(tr("&Include: %1")).arg(manager.includeList().join("; ")), this);
+    excludeAction = new QAction(QString(tr("&Exclude: %1")).arg(manager.excludeList().join("; ")), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions.append(new QAction(tr(languages[i].name), this));
@@ -1694,6 +1730,7 @@ void MainWindow::setupMenus()
     filteringMenu->addAction(fileMinSizeAction);
     filteringMenu->addAction(fileMaxSizeAction);
     filteringMenu->addAction(movedFileMinSizeAction);
+    filteringMenu->addAction(includeAction);
     filteringMenu->addAction(excludeAction);
 
     languageMenu = new UnhidableMenu(tr("&Language"), this);
@@ -1761,6 +1798,7 @@ void MainWindow::setupMenus()
     connect(fileMinSizeAction, &QAction::triggered, this, [this](){ setFileMinSize(); });
     connect(fileMaxSizeAction, &QAction::triggered, this, [this](){ setFileMaxSize(); });
     connect(movedFileMinSizeAction, &QAction::triggered, this, [this](){ setMovedFileMinSize(); });
+    connect(includeAction, &QAction::triggered, this, [this](){ setIncludeList(); });
     connect(excludeAction, &QAction::triggered, this, [this](){ setExcludeList(); });
 
     for (int i = 0; i < Application::languageCount(); i++)
@@ -1805,7 +1843,8 @@ void MainWindow::retranslate()
     fileMinSizeAction->setText(QString(tr("&Minimal File Size: %1 bytes")).arg(manager.fileMinSize()));
     fileMaxSizeAction->setText(QString(tr("&Maximal File Size: %1 bytes")).arg(manager.fileMaxSize()));
     movedFileMinSizeAction->setText(QString(tr("&Minimum Size for a Moved File: %1 bytes")).arg(manager.movedFileMinSize()));
-    excludeAction->setText(QString(tr("&Exclude: %1")).arg(manager.excludeList().join(";")));
+    includeAction->setText(QString(tr("&Include: %1")).arg(manager.includeList().join("; ")));
+    excludeAction->setText(QString(tr("&Exclude: %1")).arg(manager.excludeList().join("; ")));
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setText(tr(languages[i].name));

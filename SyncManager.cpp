@@ -54,6 +54,7 @@ SyncManager::SyncManager()
     m_fileMinSize = settings.value("FileMinSize", 0).toInt();
     m_fileMaxSize = settings.value("FileMaxSize", 0).toInt();
     m_movedFileMinSize = settings.value("MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt();
+    m_includeList = settings.value("IncludeList").toStringList();
     m_excludeList = settings.value("ExcludeList").toStringList();
     m_caseSensitiveSystem = settings.value("caseSensitiveSystem", m_caseSensitiveSystem).toBool();
     m_versionFolder = settings.value("VersionFolder", "[Deletions]").toString();
@@ -516,7 +517,7 @@ SyncManager::scanFiles
 int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
 {
     int totalNumOfFiles = 0;
-    QDirIterator dir(folder.path, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
+    QDirIterator dir(folder.path, m_includeList, QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
 
     for (auto &file : folder.files)
         file.flags = 0;
@@ -565,11 +566,12 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         bool shouldExclude = false;
 
         // Excludes unwanted files and folder from scanning
-        for (auto &exclude : m_excludeList)
+        for (QString &exclude : m_excludeList)
         {
-            QByteArray str = exclude.toUtf8();
+            QRegularExpression re(QRegularExpression::wildcardToRegularExpression(exclude), m_caseSensitiveSystem ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption);
+            re.setPattern(QRegularExpression::anchoredPattern(re.pattern()));
 
-            if (m_caseSensitiveSystem ? qstrncmp(str, filePath, str.length()) == 0 : qstrnicmp(str, filePath, str.length()) == 0)
+            if (re.match(filePath).hasMatch())
             {
                 shouldExclude = true;
                 break;
