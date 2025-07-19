@@ -1220,6 +1220,9 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                 if (folderIt == otherFolderIt || !otherFolderIt->isActive())
                     continue;
 
+                if (otherFolderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
+                    continue;
+
                 const SyncFile &fileToRemove = otherFolderIt->files.value(fileIt.key());
 
                 if (fileToRemove.exists())
