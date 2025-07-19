@@ -2,7 +2,7 @@
 
 **SyncManager** is a custom-made lightweight synchronization manager that helps you synchronize files and folders across different locations. SyncManager lets you synchronize your data in two ways: manually or automatically. Manual syncing mode lets you decide what and when to synchronize data, while automatic syncing mode synchronizes data based on its average synchronization time. You can also decide how to handle old versions of files and folders: move them to the trash, delete them permanently, or version them in a special folder. The utility is mostly designed to run in the system tray, but it can also work without any system tray interactions. Written using Qt Framework for Windows/Linux.
 
-![SyncManagerLight](https://github.com/user-attachments/assets/c25d45ee-5051-463a-b183-8a6408cf3367)
+![SyncManagerLight](https://github.com/user-attachments/assets/10558a09-0d79-4a14-9be5-627cf785b0f9)
 
 # How It Works
 Here's an overview of how it works:
@@ -15,6 +15,11 @@ Here's an overview of how it works:
 Synchronization can be triggered using the following modes:
 - **Manual** - *(Lets you decide when to synchronize certain profiles)*
 - **Automatic** - *(Synchronizes data based on its average synchronization time, multiplied by the frequency multiplier, with a minimum delay of 1 second)*
+### Synchronization Types
+There are three synchronization types that determine how a folder should be synchronized.
+- **Two-way** - *(Synchronizes files in both directions)*
+- **One-way** - *(Basically, mirroring two-way folders, removing anything that doesn't exist in that folders)*
+- **One-way update** - *(Synchronize files from two-way folders only once, and it can be freely deleted from the folder. Files are not deleted if they have been deleted from two-way folders)*
 ### Change Detection Order
 SyncManager uses sophisticated algorithms to detect changes since the last synchronization to determine which files and folders must be synchronized in the following order:
 1. **File attribute changes**
@@ -45,7 +50,24 @@ Based on the changes detected, SyncManager performs the synchronization operatio
 When SyncManager needs to synchronize a file from one location to another but finds an older version of the file in the destination, it must delete the existing file first using the following methods:
 - **Move files to Trash** - *(Allows recovery, does not free storage)*
 - **Versioning** - *(Move files to a time-stamped folder within the sibling folder with "_[Deletions]" postfix)*
-- **Delete Files Permanently** - *(Irreversible, frees storage immediately)*
+- **Delete Files Permanently** - *(Irreversible, frees storage immediately)*  
+### Versioning Formats
+Files can be versioned using several different ways:
+- **File timestamp before extension** - *([Filename][Timestamp].[Extension])*
+- **File timestamp after extension** - *([Filename].[Extension][Timestamp].[Extension])*
+- **Folder timestamp** - *([folder timestamp]/[filename])*
+- **Last version** - *(Keeps only the most recently deleted version of files)*
+### Versioning Location
+Files can be moved to two locations for versioning:
+1. Locally, next to synchronization folders, in its own folder with the specified versioning prefix.
+2. In a custom location folder designated by the user.
+### Filtering
+Files can be filtered from synchronization using the following options:
+- **Minimum file size**
+- **Maximum file size**
+- **Minimum size for a moved file** - *(The size at which files are allowed to be detected as moved or renamed)*
+- **Include list** - *(Whitelist)*
+- **Exclude list** - *(Blacklist)*
 
 # Building
 Requires Qt 6.9 or newer. Buildable with Qt Creator.
