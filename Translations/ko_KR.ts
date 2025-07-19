@@ -263,5 +263,117 @@
             <source>&amp;Decentralized (Inside synchronization folders)</source>
             <translation>&amp;분산 (동기화 폴더 내)</translation>
         </message>
+        <message>
+            <source>&amp;Versioning Format</source>
+            <translation>&amp;버전 관리 형식</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (Before Extension)</source>
+            <translation>&amp;파일 타임스탬프 (확장자 앞)</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (After Extension)</source>
+            <translation>&amp;파일 타임스탬프 (확장자 뒤)</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Timestamp</source>
+            <translation>&amp;폴더 타임스탬프</translation>
+        </message>
+        <message>
+            <source>&amp;Last Version</source>
+            <translation>&amp;최신 버전</translation>
+        </message>
+        <message>
+            <source>&amp;Versioning Location</source>
+            <translation>&amp;버전 관리 위치</translation>
+        </message>
+        <message>
+            <source>&amp;Locally Next to Folder</source>
+            <translation>&amp;폴더 옆 로컬</translation>
+        </message>
+        <message>
+            <source>&amp;Custom Location</source>
+            <translation>&amp;사용자 지정 위치</translation>
+        </message>
+        <message>
+            <source>Custom Location: </source>
+            <translation>사용자 지정 위치: </translation>
+        </message>
+        <message>
+            <source>Browse for Versioning Folder</source>
+            <translation>버전 관리 폴더 찾아보기</translation>
+        </message>
+        <message>
+            <source>&amp;Filtering</source>
+            <translation>&amp;필터링</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum File Size: %1 bytes</source>
+            <translation>&amp;최소 파일 크기: %1 바이트</translation>
+        </message>
+        <message>
+            <source>&amp;Maximum File Size: %1 bytes</source>
+            <translation>&amp;최대 파일 크기: %1 바이트</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
+            <translation>&amp;이동된 파일의 최소 크기: %1 바이트</translation>
+        </message>
+        <message>
+            <source>&amp;Include: %1</source>
+            <translation>&amp;포함: %1</translation>
+        </message>
+        <message>
+            <source>&amp;Exclude: %1</source>
+            <translation>&amp;제외: %1</translation>
+        </message>
+        <message>
+            <source>Set Minimum File Size</source>
+            <translation>최소 파일 크기 설정</translation>
+        </message>
+        <message>
+            <source>Please enter the minimum size in bytes:</source>
+            <translation>최소 크기를 바이트 단위로 입력하십시오:</translation>
+        </message>
+        <message>
+            <source>Set Maximum File Size</source>
+            <translation>최대 파일 크기 설정</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum size in bytes:</source>
+            <translation>최대 크기를 바이트 단위로 입력하십시오:</translation>
+        </message>
+        <message>
+            <source>Set Minimum Size for Moved File</source>
+            <translation>이동된 파일의 최소 크기 설정</translation>
+        </message>
+        <message>
+            <source>Set Include List</source>
+            <translation>포함 목록 설정</translation>
+        </message>
+        <message>
+            <source>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>포함 목록을 세미콜론으로 구분하여 입력하십시오. 와일드카드(예: *.txt)가 지원됩니다.</translation>
+        </message>
+        <message>
+            <source>Set Exclude List</source>
+            <translation>제외 목록 설정</translation>
+        </message>
+        <message>
+            <source>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>제외 목록을 세미콜론으로 구분하여 입력하십시오. 와일드카드(예: *.txt)가 지원됩니다.</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to two-way synchronization</source>
+            <translation>&amp;양방향 동기화로 전환</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way synchronization</source>
+            <translation>&amp;단방향 동기화로 전환</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way update synchronization</source>
+            <translation>&amp;단방향 업데이트 동기화로 전환</translation>
+        </message>
     </context>
 </TS>

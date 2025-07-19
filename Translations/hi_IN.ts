@@ -263,5 +263,117 @@
             <source>&amp;Decentralized (Inside synchronization folders)</source>
             <translation>&amp;विकेंद्रित (सिंक्रनाइज़ेशन फ़ोल्डर्स के अंदर)</translation>
         </message>
+        <message>
+            <source>&amp;Versioning Format</source>
+            <translation>&amp;वर्जनिंग प्रारूप</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (Before Extension)</source>
+            <translation>&amp;फ़ाइल टाइमस्टैम्प (एक्सटेंशन से पहले)</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (After Extension)</source>
+            <translation>&amp;फ़ाइल टाइमस्टैम्प (एक्सटेंशन के बाद)</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Timestamp</source>
+            <translation>&amp;फ़ोल्डर टाइमस्टैम्प</translation>
+        </message>
+        <message>
+            <source>&amp;Last Version</source>
+            <translation>&amp;अंतिम संस्करण</translation>
+        </message>
+        <message>
+            <source>&amp;Versioning Location</source>
+            <translation>&amp;वर्जनिंग स्थान</translation>
+        </message>
+        <message>
+            <source>&amp;Locally Next to Folder</source>
+            <translation>&amp;स्थानीय रूप से फ़ोल्डर के बगल में</translation>
+        </message>
+        <message>
+            <source>&amp;Custom Location</source>
+            <translation>&amp;कस्टम स्थान</translation>
+        </message>
+        <message>
+            <source>Custom Location: </source>
+            <translation>कस्टम स्थान: </translation>
+        </message>
+        <message>
+            <source>Browse for Versioning Folder</source>
+            <translation>वर्जनिंग फ़ोल्डर के लिए ब्राउज़ करें</translation>
+        </message>
+        <message>
+            <source>&amp;Filtering</source>
+            <translation>&amp;फ़िल्टरिंग</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum File Size: %1 bytes</source>
+            <translation>&amp;न्यूनतम फ़ाइल आकार: %1 बाइट्स</translation>
+        </message>
+        <message>
+            <source>&amp;Maximum File Size: %1 bytes</source>
+            <translation>&amp;अधिकतम फ़ाइल आकार: %1 बाइट्स</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
+            <translation>&amp;स्थानांतरित फ़ाइल के लिए न्यूनतम आकार: %1 बाइट्स</translation>
+        </message>
+        <message>
+            <source>&amp;Include: %1</source>
+            <translation>&amp;शामिल करें: %1</translation>
+        </message>
+        <message>
+            <source>&amp;Exclude: %1</source>
+            <translation>&amp;बाहर निकालें: %1</translation>
+        </message>
+        <message>
+            <source>Set Minimum File Size</source>
+            <translation>न्यूनतम फ़ाइल आकार सेट करें</translation>
+        </message>
+        <message>
+            <source>Please enter the minimum size in bytes:</source>
+            <translation>कृपया बाइट्स में न्यूनतम आकार दर्ज करें:</translation>
+        </message>
+        <message>
+            <source>Set Maximum File Size</source>
+            <translation>अधिकतम फ़ाइल आकार सेट करें</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum size in bytes:</source>
+            <translation>कृपया बाइट्स में अधिकतम आकार दर्ज करें:</translation>
+        </message>
+        <message>
+            <source>Set Minimum Size for Moved File</source>
+            <translation>स्थानांतरित फ़ाइल के लिए न्यूनतम आकार सेट करें</translation>
+        </message>
+        <message>
+            <source>Set Include List</source>
+            <translation>शामिल सूची सेट करें</translation>
+        </message>
+        <message>
+            <source>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>कृपया शामिल सूची दर्ज करें, अर्धविराम से अलग करें। वाइल्डकार्ड (जैसे, *.txt) समर्थित हैं।</translation>
+        </message>
+        <message>
+            <source>Set Exclude List</source>
+            <translation>बाहर निकालें सूची सेट करें</translation>
+        </message>
+        <message>
+            <source>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>कृपया बाहर निकालें सूची दर्ज करें, अर्धविराम से अलग करें। वाइल्डकार्ड (जैसे, *.txt) समर्थित हैं।</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to two-way synchronization</source>
+            <translation>&amp;दो-तरफ़ा सिंक्रनाइज़ेशन पर स्विच करें</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way synchronization</source>
+            <translation>&amp;एक-तरफ़ा सिंक्रनाइज़ेशन पर स्विच करें</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way update synchronization</source>
+            <translation>&amp;एक-तरफ़ा अपडेट सिंक्रनाइज़ेशन पर स्विच करें</translation>
+        </message>
     </context>
 </TS>

@@ -263,5 +263,117 @@
             <source>&amp;Decentralized (Inside synchronization folders)</source>
             <translation>&amp;Децентралізовано (Всередині папок синхронізації)</translation>
         </message>
+        <message>
+            <source>&amp;Versioning Format</source>
+            <translation>&amp;Формат версіонування</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (Before Extension)</source>
+            <translation>&amp;Відмітка часу файлу (до розширення)</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (After Extension)</source>
+            <translation>&amp;Відмітка часу файлу (після розширення)</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Timestamp</source>
+            <translation>&amp;Відмітка часу папки</translation>
+        </message>
+        <message>
+            <source>&amp;Last Version</source>
+            <translation>&amp;Остання версія</translation>
+        </message>
+        <message>
+            <source>&amp;Versioning Location</source>
+            <translation>&amp;Розташування версіонування</translation>
+        </message>
+        <message>
+            <source>&amp;Locally Next to Folder</source>
+            <translation>&amp;Локально поруч з папкою</translation>
+        </message>
+        <message>
+            <source>&amp;Custom Location</source>
+            <translation>&amp;Визначене користувачем розташування</translation>
+        </message>
+        <message>
+            <source>Custom Location: </source>
+            <translation>Визначене користувачем розташування: </translation>
+        </message>
+        <message>
+            <source>Browse for Versioning Folder</source>
+            <translation>Огляд папки для версіонування</translation>
+        </message>
+        <message>
+            <source>&amp;Filtering</source>
+            <translation>&amp;Фільтрація</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum File Size: %1 bytes</source>
+            <translation>&amp;Мінімальний розмір файлу: %1 байт</translation>
+        </message>
+        <message>
+            <source>&amp;Maximum File Size: %1 bytes</source>
+            <translation>&amp;Максимальний розмір файлу: %1 байт</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
+            <translation>&amp;Мінімальний розмір для переміщеного файлу: %1 байт</translation>
+        </message>
+        <message>
+            <source>&amp;Include: %1</source>
+            <translation>&amp;Включити: %1</translation>
+        </message>
+        <message>
+            <source>&amp;Exclude: %1</source>
+            <translation>&amp;Виключити: %1</translation>
+        </message>
+        <message>
+            <source>Set Minimum File Size</source>
+            <translation>Встановити мінімальний розмір файлу</translation>
+        </message>
+        <message>
+            <source>Please enter the minimum size in bytes:</source>
+            <translation>Будь ласка, введіть мінімальний розмір у байтах:</translation>
+        </message>
+        <message>
+            <source>Set Maximum File Size</source>
+            <translation>Встановити максимальний розмір файлу</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum size in bytes:</source>
+            <translation>Будь ласка, введіть максимальний розмір у байтах:</translation>
+        </message>
+        <message>
+            <source>Set Minimum Size for Moved File</source>
+            <translation>Встановити мінімальний розмір для переміщеного файлу</translation>
+        </message>
+        <message>
+            <source>Set Include List</source>
+            <translation>Встановити список включень</translation>
+        </message>
+        <message>
+            <source>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>Будь ласка, введіть список включень, розділений крапкою з комою. Підтримуються символи узагальнення (наприклад, *.txt).</translation>
+        </message>
+        <message>
+            <source>Set Exclude List</source>
+            <translation>Встановити список виключень</translation>
+        </message>
+        <message>
+            <source>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>Будь ласка, введіть список виключень, розділений крапкою з комою. Підтримуються символи узагальнення (наприклад, *.txt).</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to two-way synchronization</source>
+            <translation>&amp;Перейти до двосторонньої синхронізації</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way synchronization</source>
+            <translation>&amp;Перейти до односторонньої синхронізації</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way update synchronization</source>
+            <translation>&amp;Перейти до односторонньої синхронізації оновлень</translation>
+        </message>
     </context>
 </TS>

@@ -936,7 +936,7 @@ void MainWindow::setMovedFileMinSize()
     int size = QInputDialog::getInt(this, title, text, manager.movedFileMinSize(), 0);
 
     manager.setMovedFileMinSize(size);
-    movedFileMinSizeAction->setText(tr("&M: %1 bytes").arg(manager.movedFileMinSize()));
+    movedFileMinSizeAction->setText(tr("&Minimum Size for a Moved File: %1 bytes").arg(manager.movedFileMinSize()));
 }
 
 /*
@@ -1654,7 +1654,7 @@ void MainWindow::setupMenus()
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
     fileMinSizeAction = new QAction(QString(tr("&Minimum File Size: %1 bytes")).arg(manager.fileMinSize()), this);
     fileMaxSizeAction = new QAction(QString(tr("&Maximum File Size: %1 bytes")).arg(manager.fileMaxSize()), this);
-    movedFileMinSizeAction = new QAction(QString(tr("&M: %1 bytes")).arg(manager.movedFileMinSize()), this);
+    movedFileMinSizeAction = new QAction(QString(tr("&Minimum Size for a Moved File: %1 bytes")).arg(manager.movedFileMinSize()), this);
     includeAction = new QAction(QString(tr("&Include: %1")).arg(manager.includeList().join("; ")), this);
     excludeAction = new QAction(QString(tr("&Exclude: %1")).arg(manager.excludeList().join("; ")), this);
 

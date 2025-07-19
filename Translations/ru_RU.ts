@@ -263,5 +263,117 @@
             <source>&amp;Decentralized (Inside synchronization folders)</source>
             <translation>&amp;Децентрализованно (Внутри папок синхронизации)</translation>
         </message>
+        <message>
+            <source>&amp;Versioning Format</source>
+            <translation>&amp;Формат версионирования</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (Before Extension)</source>
+            <translation>&amp;Метка времени файла (до расширения)</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (After Extension)</source>
+            <translation>&amp;Метка времени файла (после расширения)</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Timestamp</source>
+            <translation>&amp;Метка времени папки</translation>
+        </message>
+        <message>
+            <source>&amp;Last Version</source>
+            <translation>&amp;Последняя версия</translation>
+        </message>
+        <message>
+            <source>&amp;Versioning Location</source>
+            <translation>&amp;Расположение версионирования</translation>
+        </message>
+        <message>
+            <source>&amp;Locally Next to Folder</source>
+            <translation>&amp;Локально рядом с папкой</translation>
+        </message>
+        <message>
+            <source>&amp;Custom Location</source>
+            <translation>&amp;Пользовательское расположение</translation>
+        </message>
+        <message>
+            <source>Custom Location: </source>
+            <translation>Пользовательское расположение: </translation>
+        </message>
+        <message>
+            <source>Browse for Versioning Folder</source>
+            <translation>Обзор папки версионирования</translation>
+        </message>
+        <message>
+            <source>&amp;Filtering</source>
+            <translation>&amp;Фильтрация</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum File Size: %1 bytes</source>
+            <translation>&amp;Минимальный размер файла: %1 байт</translation>
+        </message>
+        <message>
+            <source>&amp;Maximum File Size: %1 bytes</source>
+            <translation>&amp;Максимальный размер файла: %1 байт</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
+            <translation>&amp;Минимальный размер для перемещенного файла: %1 байт</translation>
+        </message>
+        <message>
+            <source>&amp;Include: %1</source>
+            <translation>&amp;Включить: %1</translation>
+        </message>
+        <message>
+            <source>&amp;Exclude: %1</source>
+            <translation>&amp;Исключить: %1</translation>
+        </message>
+        <message>
+            <source>Set Minimum File Size</source>
+            <translation>Установить минимальный размер файла</translation>
+        </message>
+        <message>
+            <source>Please enter the minimum size in bytes:</source>
+            <translation>Пожалуйста, введите минимальный размер в байтах:</translation>
+        </message>
+        <message>
+            <source>Set Maximum File Size</source>
+            <translation>Установить максимальный размер файла</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum size in bytes:</source>
+            <translation>Пожалуйста, введите максимальный размер в байтах:</translation>
+        </message>
+        <message>
+            <source>Set Minimum Size for Moved File</source>
+            <translation>Установить минимальный размер для перемещенного файла</translation>
+        </message>
+        <message>
+            <source>Set Include List</source>
+            <translation>Установить список включений</translation>
+        </message>
+        <message>
+            <source>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>Пожалуйста, введите список включений, разделенный точкой с запятой. Поддерживаются подстановочные знаки (например, *.txt).</translation>
+        </message>
+        <message>
+            <source>Set Exclude List</source>
+            <translation>Установить список исключений</translation>
+        </message>
+        <message>
+            <source>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>Пожалуйста, введите список исключений, разделенный точкой с запятой. Поддерживаются подстановочные знаки (например, *.txt).</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to two-way synchronization</source>
+            <translation>&amp;Переключиться на двустороннюю синхронизацию</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way synchronization</source>
+            <translation>&amp;Переключиться на одностороннюю синхронизацию</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way update synchronization</source>
+            <translation>&amp;Переключиться на одностороннюю синхронизацию обновлений</translation>
+        </message>
     </context>
 </TS>

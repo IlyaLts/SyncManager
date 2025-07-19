@@ -263,5 +263,117 @@
             <source>&amp;Decentralized (Inside synchronization folders)</source>
             <translation>&amp;分散化 (同期フォルダ内)</translation>
         </message>
+        <message>
+            <source>&amp;Versioning Format</source>
+            <translation>&amp;バージョン管理形式</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (Before Extension)</source>
+            <translation>&amp;ファイルタイムスタンプ (拡張子の前)</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (After Extension)</source>
+            <translation>&amp;ファイルタイムスタンプ (拡張子の後)</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Timestamp</source>
+            <translation>&amp;フォルダータイムスタンプ</translation>
+        </message>
+        <message>
+            <source>&amp;Last Version</source>
+            <translation>&amp;最終バージョン</translation>
+        </message>
+        <message>
+            <source>&amp;Versioning Location</source>
+            <translation>&amp;バージョン管理の場所</translation>
+        </message>
+        <message>
+            <source>&amp;Locally Next to Folder</source>
+            <translation>&amp;フォルダーの隣にローカル</translation>
+        </message>
+        <message>
+            <source>&amp;Custom Location</source>
+            <translation>&amp;カスタム場所</translation>
+        </message>
+        <message>
+            <source>Custom Location: </source>
+            <translation>カスタム場所: </translation>
+        </message>
+        <message>
+            <source>Browse for Versioning Folder</source>
+            <translation>バージョン管理フォルダーを参照</translation>
+        </message>
+        <message>
+            <source>&amp;Filtering</source>
+            <translation>&amp;フィルタリング</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum File Size: %1 bytes</source>
+            <translation>&amp;最小ファイルサイズ: %1 バイト</translation>
+        </message>
+        <message>
+            <source>&amp;Maximum File Size: %1 bytes</source>
+            <translation>&amp;最大ファイルサイズ: %1 バイト</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
+            <translation>&amp;移動されたファイルの最小サイズ: %1 バイト</translation>
+        </message>
+        <message>
+            <source>&amp;Include: %1</source>
+            <translation>&amp;含む: %1</translation>
+        </message>
+        <message>
+            <source>&amp;Exclude: %1</source>
+            <translation>&amp;除外: %1</translation>
+        </message>
+        <message>
+            <source>Set Minimum File Size</source>
+            <translation>最小ファイルサイズを設定</translation>
+        </message>
+        <message>
+            <source>Please enter the minimum size in bytes:</source>
+            <translation>最小サイズをバイトで入力してください:</translation>
+        </message>
+        <message>
+            <source>Set Maximum File Size</source>
+            <translation>最大ファイルサイズを設定</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum size in bytes:</source>
+            <translation>最大サイズをバイトで入力してください:</translation>
+        </message>
+        <message>
+            <source>Set Minimum Size for Moved File</source>
+            <translation>移動されたファイルの最小サイズを設定</translation>
+        </message>
+        <message>
+            <source>Set Include List</source>
+            <translation>含むリストを設定</translation>
+        </message>
+        <message>
+            <source>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>セミコロンで区切られた含むリストを入力してください。ワイルドカード (例: *.txt) がサポートされています。</translation>
+        </message>
+        <message>
+            <source>Set Exclude List</source>
+            <translation>除外リストを設定</translation>
+        </message>
+        <message>
+            <source>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>セミコロンで区切られた除外リストを入力してください。ワイルドカード (例: *.txt) がサポートされています。</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to two-way synchronization</source>
+            <translation>&amp;双方向同期に切り替える</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way synchronization</source>
+            <translation>&amp;一方向同期に切り替える</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way update synchronization</source>
+            <translation>&amp;一方向更新同期に切り替える</translation>
+        </message>
     </context>
 </TS>

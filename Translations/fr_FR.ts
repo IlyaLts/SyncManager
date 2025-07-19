@@ -263,5 +263,117 @@
             <source>&amp;Decentralized (Inside synchronization folders)</source>
             <translation>&amp;Décentralisé (Dans les dossiers de synchronisation)</translation>
         </message>
+        <message>
+            <source>&amp;Versioning Format</source>
+            <translation>&amp;Format de versioning</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (Before Extension)</source>
+            <translation>&amp;Horodatage du fichier (avant l'extension)</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (After Extension)</source>
+            <translation>&amp;Horodatage du fichier (après l'extension)</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Timestamp</source>
+            <translation>&amp;Horodatage du dossier</translation>
+        </message>
+        <message>
+            <source>&amp;Last Version</source>
+            <translation>&amp;Dernière version</translation>
+        </message>
+        <message>
+            <source>&amp;Versioning Location</source>
+            <translation>&amp;Emplacement du versioning</translation>
+        </message>
+        <message>
+            <source>&amp;Locally Next to Folder</source>
+            <translation>&amp;Localement à côté du dossier</translation>
+        </message>
+        <message>
+            <source>&amp;Custom Location</source>
+            <translation>&amp;Emplacement personnalisé</translation>
+        </message>
+        <message>
+            <source>Custom Location: </source>
+            <translation>Emplacement personnalisé : </translation>
+        </message>
+        <message>
+            <source>Browse for Versioning Folder</source>
+            <translation>Parcourir pour le dossier de versioning</translation>
+        </message>
+        <message>
+            <source>&amp;Filtering</source>
+            <translation>&amp;Filtrage</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum File Size: %1 bytes</source>
+            <translation>&amp;Taille minimale du fichier : %1 octets</translation>
+        </message>
+        <message>
+            <source>&amp;Maximum File Size: %1 bytes</source>
+            <translation>&amp;Taille maximale du fichier : %1 octets</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
+            <translation>&amp;Taille minimale pour un fichier déplacé : %1 octets</translation>
+        </message>
+        <message>
+            <source>&amp;Include: %1</source>
+            <translation>&amp;Inclure : %1</translation>
+        </message>
+        <message>
+            <source>&amp;Exclude: %1</source>
+            <translation>&amp;Exclure : %1</translation>
+        </message>
+        <message>
+            <source>Set Minimum File Size</source>
+            <translation>Définir la taille minimale du fichier</translation>
+        </message>
+        <message>
+            <source>Please enter the minimum size in bytes:</source>
+            <translation>Veuillez entrer la taille minimale en octets :</translation>
+        </message>
+        <message>
+            <source>Set Maximum File Size</source>
+            <translation>Définir la taille maximale du fichier</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum size in bytes:</source>
+            <translation>Veuillez entrer la taille maximale en octets :</translation>
+        </message>
+        <message>
+            <source>Set Minimum Size for Moved File</source>
+            <translation>Définir la taille minimale pour un fichier déplacé</translation>
+        </message>
+        <message>
+            <source>Set Include List</source>
+            <translation>Définir la liste d'inclusion</translation>
+        </message>
+        <message>
+            <source>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>Veuillez entrer la liste d'inclusion, séparée par des points-virgules. Les caractères génériques (par exemple, *.txt) sont pris en charge.</translation>
+        </message>
+        <message>
+            <source>Set Exclude List</source>
+            <translation>Définir la liste d'exclusion</translation>
+        </message>
+        <message>
+            <source>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>Veuillez entrer la liste d'exclusion, séparée par des points-virgules. Les caractères génériques (par exemple, *.txt) sont pris en charge.</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to two-way synchronization</source>
+            <translation>&amp;Passer à la synchronisation bidirectionnelle</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way synchronization</source>
+            <translation>&amp;Passer à la synchronisation unidirectionnelle</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way update synchronization</source>
+            <translation>&amp;Passer à la synchronisation de mise à jour unidirectionnelle</translation>
+        </message>
     </context>
 </TS>

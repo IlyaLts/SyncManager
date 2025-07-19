@@ -263,5 +263,117 @@
             <source>&amp;Decentralized (Inside synchronization folders)</source>
             <translation>&amp;去中心化 （同步文件夹内）</translation>
         </message>
+        <message>
+            <source>&amp;Versioning Format</source>
+            <translation>&amp;版本格式</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (Before Extension)</source>
+            <translation>&amp;文件时间戳（扩展名之前）</translation>
+        </message>
+        <message>
+            <source>&amp;File Timestamp (After Extension)</source>
+            <translation>&amp;文件时间戳（扩展名之后）</translation>
+        </message>
+        <message>
+            <source>&amp;Folder Timestamp</source>
+            <translation>&amp;文件夹时间戳</translation>
+        </message>
+        <message>
+            <source>&amp;Last Version</source>
+            <translation>&amp;最新版本</translation>
+        </message>
+        <message>
+            <source>&amp;Versioning Location</source>
+            <translation>&amp;版本位置</translation>
+        </message>
+        <message>
+            <source>&amp;Locally Next to Folder</source>
+            <translation>&amp;本地文件夹旁边</translation>
+        </message>
+        <message>
+            <source>&amp;Custom Location</source>
+            <translation>&amp;自定义位置</translation>
+        </message>
+        <message>
+            <source>Custom Location: </source>
+            <translation>自定义位置：</translation>
+        </message>
+        <message>
+            <source>Browse for Versioning Folder</source>
+            <translation>浏览版本文件夹</translation>
+        </message>
+        <message>
+            <source>&amp;Filtering</source>
+            <translation>&amp;筛选</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum File Size: %1 bytes</source>
+            <translation>&amp;最小文件大小：%1 字节</translation>
+        </message>
+        <message>
+            <source>&amp;Maximum File Size: %1 bytes</source>
+            <translation>&amp;最大文件大小：%1 字节</translation>
+        </message>
+        <message>
+            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
+            <translation>&amp;移动文件的最小大小：%1 字节</translation>
+        </message>
+        <message>
+            <source>&amp;Include: %1</source>
+            <translation>&amp;包括：%1</translation>
+        </message>
+        <message>
+            <source>&amp;Exclude: %1</source>
+            <translation>&amp;排除：%1</translation>
+        </message>
+        <message>
+            <source>Set Minimum File Size</source>
+            <translation>设置最小文件大小</translation>
+        </message>
+        <message>
+            <source>Please enter the minimum size in bytes:</source>
+            <translation>请输入最小大小（字节）：</translation>
+        </message>
+        <message>
+            <source>Set Maximum File Size</source>
+            <translation>设置最大文件大小</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum size in bytes:</source>
+            <translation>请输入最大大小（字节）：</translation>
+        </message>
+        <message>
+            <source>Set Minimum Size for Moved File</source>
+            <translation>设置移动文件的最小大小</translation>
+        </message>
+        <message>
+            <source>Set Include List</source>
+            <translation>设置包含列表</translation>
+        </message>
+        <message>
+            <source>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>请输入包含列表，以分号分隔。支持通配符（例如，*.txt）。</translation>
+        </message>
+        <message>
+            <source>Set Exclude List</source>
+            <translation>设置排除列表</translation>
+        </message>
+        <message>
+            <source>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>请输入排除列表，以分号分隔。支持通配符（例如，*.txt）。</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to two-way synchronization</source>
+            <translation>&amp;切换到双向同步</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way synchronization</source>
+            <translation>&amp;切换到单向同步</translation>
+        </message>
+        <message>
+            <source>&amp;Switch to one-way update synchronization</source>
+            <translation>&amp;切换到单向更新同步</translation>
+        </message>
     </context>
 </TS>
