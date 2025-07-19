@@ -375,5 +375,13 @@
             <source>&amp;Switch to one-way update synchronization</source>
             <translation>&amp;Passa alla sincronizzazione unidirezionale di aggiornamento</translation>
         </message>
+        <message>
+            <source>&amp;OK</source>
+            <translation>&amp;OK</translation>
+        </message>
+        <message>
+            <source>&amp;Cancel</source>
+            <translation>&amp;Annulla</translation>
+        </message>
     </context>
 </TS>

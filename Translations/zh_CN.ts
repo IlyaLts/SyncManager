@@ -375,5 +375,13 @@
             <source>&amp;Switch to one-way update synchronization</source>
             <translation>&amp;切换到单向更新同步</translation>
         </message>
+        <message>
+            <source>&amp;OK</source>
+            <translation>&amp;确定</translation>
+        </message>
+        <message>
+            <source>&amp;Cancel</source>
+            <translation>&amp;取消</translation>
+        </message>
     </context>
 </TS>

@@ -897,7 +897,10 @@ void MainWindow::setFileMinSize()
 {
     QString title(tr("Set Minimum File Size"));
     QString text(tr("Please enter the minimum size in bytes:"));
-    int size = QInputDialog::getInt(this, title, text, manager.fileMinSize(), 0);
+    int size;
+
+    if (!intInputDialog(this, title, text, size, manager.fileMinSize(), 0))
+        return;
 
     if (size && manager.fileMaxSize() && size > manager.fileMaxSize())
         size = manager.fileMaxSize();
@@ -915,7 +918,10 @@ void MainWindow::setFileMaxSize()
 {
     QString title(tr("Set Maximum File Size"));
     QString text(tr("Please enter the maximum size in bytes:"));
-    int size = QInputDialog::getInt(this, title, text, manager.fileMaxSize(), 0);
+    int size;
+
+    if (!intInputDialog(this, title, text, size, manager.fileMaxSize(), 0))
+        return;
 
     if (size && size < manager.fileMinSize())
         size = manager.fileMinSize();
@@ -933,7 +939,10 @@ void MainWindow::setMovedFileMinSize()
 {
     QString title(tr("Set Minimum Size for Moved File"));
     QString text(tr("Please enter the minimum size in bytes:"));
-    int size = QInputDialog::getInt(this, title, text, manager.movedFileMinSize(), 0);
+    int size;
+
+    if (!intInputDialog(this, title, text, size, manager.movedFileMinSize(), 0))
+        return;
 
     manager.setMovedFileMinSize(size);
     movedFileMinSizeAction->setText(tr("&Minimum Size for a Moved File: %1 bytes").arg(manager.movedFileMinSize()));
@@ -946,13 +955,11 @@ MainWindow::setIncludeList
 */
 void MainWindow::setIncludeList()
 {
-    bool ok;
     QString includeString = manager.includeList().join("; ");
     QString title(tr("Set Include List"));
     QString text(tr("Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
-    includeString = QInputDialog::getText(this, title, text, QLineEdit::Normal, includeString, &ok);
 
-    if (!ok)
+    if (!textInputDialog(this, title, text, includeString, includeString))
         return;
 
     QStringList includeList = includeString.split(";");
@@ -972,13 +979,11 @@ MainWindow::setExcludeList
 */
 void MainWindow::setExcludeList()
 {
-    bool ok;
     QString excludeString = manager.excludeList().join("; ");
     QString title(tr("Set Exclude List"));
     QString text(tr("Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
-    excludeString = QInputDialog::getText(this, title, text, QLineEdit::Normal, excludeString, &ok);
 
-    if (!ok)
+    if (!textInputDialog(this, title, text, excludeString, excludeString))
         return;
 
     QStringList excludeList = excludeString.split(";");

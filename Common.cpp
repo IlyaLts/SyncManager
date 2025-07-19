@@ -25,6 +25,7 @@
 #include <QTranslator>
 #include <QApplication>
 #include <QMessageBox>
+#include <QInputDialog>
 #include <QPushButton>
 #include <stdio.h>
 #include <cstdarg>
@@ -170,10 +171,61 @@ bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &te
 
 /*
 ===================
+intInputDialog
+===================
+*/
+bool intInputDialog(QWidget *parent, const QString &title, const QString &label, int &returnValue, int value, int minValue, int maxValue)
+{
+    QInputDialog *dialog = new QInputDialog(parent);
+    dialog->setInputMode(QInputDialog::IntInput);
+    dialog->setIntMinimum(minValue);
+    dialog->setIntMaximum(maxValue);
+    dialog->setWindowTitle(title);
+    dialog->setLabelText(label);
+    dialog->setIntValue(value);
+    dialog->setOkButtonText(qApp->translate("MainWindow", "&OK"));
+    dialog->setCancelButtonText(qApp->translate("MainWindow", "&Cancel"));
+    dialog->deleteLater();
+
+    if (dialog->exec())
+    {
+        returnValue = dialog->intValue();
+        return true;
+    }
+
+    return false;
+}
+
+/*
+===================
+textInputDialog
+===================
+*/
+bool textInputDialog(QWidget *parent, const QString &title, const QString &label, QString &returnText, const QString &text)
+{
+    QInputDialog *dialog = new QInputDialog(parent);
+    dialog->setInputMode(QInputDialog::TextInput);
+    dialog->setWindowTitle(title);
+    dialog->setLabelText(label);
+    dialog->setTextValue(text);
+    dialog->setOkButtonText(qApp->translate("MainWindow", "&OK"));
+    dialog->setCancelButtonText(qApp->translate("MainWindow", "&Cancel"));
+    dialog->deleteLater();
+
+    if (dialog->exec())
+    {
+        returnText = dialog->textValue();
+        return true;
+    }
+
+    return false;
+}
+
+/*
+===================
 getFileAttributes
 ===================
 */
-
 Attributes getFileAttributes(const QString &path)
 {
 #ifdef Q_OS_WIN

@@ -375,5 +375,13 @@
             <source>&amp;Switch to one-way update synchronization</source>
             <translation>&amp;एक-तरफ़ा अपडेट सिंक्रनाइज़ेशन पर स्विच करें</translation>
         </message>
+        <message>
+            <source>&amp;OK</source>
+            <translation>&amp;ठीक है</translation>
+        </message>
+        <message>
+            <source>&amp;Cancel</source>
+            <translation>&amp;रद्द करें</translation>
+        </message>
     </context>
 </TS>

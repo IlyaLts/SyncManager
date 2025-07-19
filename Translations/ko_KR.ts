@@ -375,5 +375,13 @@
             <source>&amp;Switch to one-way update synchronization</source>
             <translation>&amp;단방향 업데이트 동기화로 전환</translation>
         </message>
+        <message>
+            <source>&amp;OK</source>
+            <translation>&amp;확인</translation>
+        </message>
+        <message>
+            <source>&amp;Cancel</source>
+            <translation>&amp;취소</translation>
+        </message>
     </context>
 </TS>

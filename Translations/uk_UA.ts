@@ -375,5 +375,13 @@
             <source>&amp;Switch to one-way update synchronization</source>
             <translation>&amp;Перейти до односторонньої синхронізації оновлень</translation>
         </message>
+        <message>
+            <source>&amp;OK</source>
+            <translation>&amp;Гаразд</translation>
+        </message>
+        <message>
+            <source>&amp;Cancel</source>
+            <translation>&amp;Скасувати</translation>
+        </message>
     </context>
 </TS>
