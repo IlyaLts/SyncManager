@@ -54,20 +54,6 @@ struct FileToCopyInfo
     QDateTime modifiedDate;
 };
 
-enum VersioningFormat
-{
-    FileTimestampBefore,    // Before extension
-    FileTimestampAfter,     // After extension
-    FolderTimestamp,
-    LastVersion
-};
-
-enum VersioningLocation
-{
-    LocallyNextToFolder,
-    CustomLocation
-};
-
 /*
 ===========================================================
 
@@ -94,7 +80,7 @@ public:
     void saveToDatabase(const QString &path) const;
     void loadFromDatabase(const QString &path);
     void removeDatabase() const;
-    void removeNotExistedFiles();
+    void removeNonExistentFiles();
     bool isActive() const;
 
     SyncType syncType = TWO_WAY;

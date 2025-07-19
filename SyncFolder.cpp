@@ -401,10 +401,10 @@ void SyncFolder::removeDatabase() const
 
 /*
 ===================
-SyncFolder::removeNotExistedFiles
+SyncFolder::removeNonExistentFiles
 ===================
 */
-void SyncFolder::removeNotExistedFiles()
+void SyncFolder::removeNonExistentFiles()
 {
     for (QHash<Hash, SyncFile>::iterator fileIt = files.begin(); fileIt != files.end();)
     {

@@ -413,7 +413,8 @@ void MainWindow::addFolder(const QMimeData *mimeData)
     }
     else
     {
-        QString folderPath = QFileDialog::getExistingDirectory(this, tr("Browse For Folder"), QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
+        QString title(tr("Browse For Folder"));
+        QString folderPath = QFileDialog::getExistingDirectory(this, title, QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
 
         if (folderPath.isEmpty())
             return;
@@ -739,7 +740,8 @@ void MainWindow::switchVersioningLocation(VersioningLocation location, bool init
 
     if (location == CustomLocation && !init)
     {
-        QString path = QFileDialog::getExistingDirectory(this, "Browse for Versioning Folder", QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
+        QString title(tr("Browse for Versioning Folder"));
+        QString path = QFileDialog::getExistingDirectory(this, title, QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
 
         if (!path.isEmpty())
         {
@@ -893,13 +895,15 @@ MainWindow::setFileMinSize
 */
 void MainWindow::setFileMinSize()
 {
-    int size = QInputDialog::getInt(this, "Set Minimal File Size", "Please enter the minimum size in bytes:", manager.fileMinSize(), 0);
+    QString title(tr("Set Minimum File Size"));
+    QString text(tr("Please enter the minimum size in bytes:"));
+    int size = QInputDialog::getInt(this, title, text, manager.fileMinSize(), 0);
 
     if (size && manager.fileMaxSize() && size > manager.fileMaxSize())
         size = manager.fileMaxSize();
 
     manager.setFileMinSize(size);
-    fileMinSizeAction->setText(tr("&Minimal File Size: %1 bytes").arg(manager.fileMinSize()));
+    fileMinSizeAction->setText(tr("&Minimum File Size: %1 bytes").arg(manager.fileMinSize()));
 }
 
 /*
@@ -909,13 +913,15 @@ MainWindow::setFileMaxSize
 */
 void MainWindow::setFileMaxSize()
 {
-    int size = QInputDialog::getInt(this, "Set Minimal File Size", "Please enter the maximum size in bytes:", manager.fileMaxSize(), 0);
+    QString title(tr("Set Maximum File Size"));
+    QString text(tr("Please enter the maximum size in bytes:"));
+    int size = QInputDialog::getInt(this, title, text, manager.fileMaxSize(), 0);
 
     if (size && size < manager.fileMinSize())
         size = manager.fileMinSize();
 
     manager.setFileMaxSize(size);
-    fileMaxSizeAction->setText(tr("&Maximal File Size: %1 bytes").arg(manager.fileMaxSize()));
+    fileMaxSizeAction->setText(tr("&Maximum File Size: %1 bytes").arg(manager.fileMaxSize()));
 }
 
 /*
@@ -925,7 +931,10 @@ MainWindow::setMovedFileMinSize
 */
 void MainWindow::setMovedFileMinSize()
 {
-    int size = QInputDialog::getInt(this, "Set Minimal Size for Moved File", "Please enter the minimal size in bytes:", manager.movedFileMinSize(), 0);
+    QString title(tr("Set Minimum Size for Moved File"));
+    QString text(tr("Please enter the minimum size in bytes:"));
+    int size = QInputDialog::getInt(this, title, text, manager.movedFileMinSize(), 0);
+
     manager.setMovedFileMinSize(size);
     movedFileMinSizeAction->setText(tr("&M: %1 bytes").arg(manager.movedFileMinSize()));
 }
@@ -939,7 +948,9 @@ void MainWindow::setIncludeList()
 {
     bool ok;
     QString includeString = manager.includeList().join("; ");
-    includeString = QInputDialog::getText(this, "Set Include List", "Please enter include paths, separated by semicolons:", QLineEdit::Normal, includeString, &ok);
+    QString title(tr("Set Include List"));
+    QString text(tr("Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
+    includeString = QInputDialog::getText(this, title, text, QLineEdit::Normal, includeString, &ok);
 
     if (!ok)
         return;
@@ -963,7 +974,9 @@ void MainWindow::setExcludeList()
 {
     bool ok;
     QString excludeString = manager.excludeList().join("; ");
-    excludeString = QInputDialog::getText(this, "Set Exclude List", "Please enter exclude paths, separated by semicolons:", QLineEdit::Normal, excludeString, &ok);
+    QString title(tr("Set Exclude List"));
+    QString text(tr("Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
+    excludeString = QInputDialog::getText(this, title, text, QLineEdit::Normal, excludeString, &ok);
 
     if (!ok)
         return;
@@ -1639,8 +1652,8 @@ void MainWindow::setupMenus()
     customLocationPathAction = new QAction(tr("Custom Location: ") + manager.versioningPath(), this);
     saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
     saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
-    fileMinSizeAction = new QAction(QString(tr("&Minimal File Size: %1 bytes")).arg(manager.fileMinSize()), this);
-    fileMaxSizeAction = new QAction(QString(tr("&Maximal File Size: %1 bytes")).arg(manager.fileMaxSize()), this);
+    fileMinSizeAction = new QAction(QString(tr("&Minimum File Size: %1 bytes")).arg(manager.fileMinSize()), this);
+    fileMaxSizeAction = new QAction(QString(tr("&Maximum File Size: %1 bytes")).arg(manager.fileMaxSize()), this);
     movedFileMinSizeAction = new QAction(QString(tr("&M: %1 bytes")).arg(manager.movedFileMinSize()), this);
     includeAction = new QAction(QString(tr("&Include: %1")).arg(manager.includeList().join("; ")), this);
     excludeAction = new QAction(QString(tr("&Exclude: %1")).arg(manager.excludeList().join("; ")), this);
@@ -1840,8 +1853,8 @@ void MainWindow::retranslate()
     customLocationPathAction->setText(tr("Custom Location: ") + manager.versioningPath());
     saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
     saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
-    fileMinSizeAction->setText(QString(tr("&Minimal File Size: %1 bytes")).arg(manager.fileMinSize()));
-    fileMaxSizeAction->setText(QString(tr("&Maximal File Size: %1 bytes")).arg(manager.fileMaxSize()));
+    fileMinSizeAction->setText(QString(tr("&Minimum File Size: %1 bytes")).arg(manager.fileMinSize()));
+    fileMaxSizeAction->setText(QString(tr("&Maximum File Size: %1 bytes")).arg(manager.fileMaxSize()));
     movedFileMinSizeAction->setText(QString(tr("&Minimum Size for a Moved File: %1 bytes")).arg(manager.movedFileMinSize()));
     includeAction->setText(QString(tr("&Include: %1")).arg(manager.includeList().join("; ")));
     excludeAction->setText(QString(tr("&Exclude: %1")).arg(manager.excludeList().join("; ")));
