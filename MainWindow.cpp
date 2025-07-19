@@ -918,11 +918,11 @@ void MainWindow::setVersioningPattern()
     QString text(tr("Please enter versioning pattern:"));
     text.append("\n\n");
     text.append(tr("Examples:"));
-    text.append("\nyyyy_M_d_h_m_s_z     - 2001_5_21_14_13_09_120");
-    text.append("\nyyyy_MM_dd           - 2001_05_21");
-    text.append("\nyy_MMMM_d            - 01_May_21");
-    text.append("\nhh:mm:ss.zzz         - 14_13_09_120");
-    text.append("\nap_h_m_s             - pm_2_13_9");
+    text.append("\nyyyy_M_d_h_m_s_z - 2001_5_21_14_13_09_120");
+    text.append("\nyyyy_MM_dd - 2001_05_21");
+    text.append("\nyy_MMMM_d - 01_May_21");
+    text.append("\nhh:mm:ss.zzz - 14_13_09_120");
+    text.append("\nap_h_m_s - pm_2_13_9");
 
     if (!textInputDialog(this, title, text, pattern, pattern))
         return;

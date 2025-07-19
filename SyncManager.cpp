@@ -1802,6 +1802,7 @@ void SyncManager::removeUniqueFiles(SyncProfile &profile, SyncFolder &folder)
         for (QHash<Hash, SyncFile>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end();)
         {
             bool exists = false;
+            bool hasTwoWay = false;
 
             if (fileIt->exists() && fileIt->type != types[i])
             {
@@ -1813,6 +1814,10 @@ void SyncManager::removeUniqueFiles(SyncProfile &profile, SyncFolder &folder)
             {
                 if (&(*folderIt) == &folder || !folderIt->exists)
                     continue;
+
+                // Prevents files from being removed if there are no folders to mirror from
+                if (folderIt->syncType == SyncFolder::TWO_WAY)
+                    hasTwoWay = true;
 
                 if (folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
                     continue;
@@ -1827,7 +1832,7 @@ void SyncManager::removeUniqueFiles(SyncProfile &profile, SyncFolder &folder)
                 }
             }
 
-            if (!exists)
+            if (!exists && hasTwoWay)
             {
                 QString path(profile.filePath(fileIt.key()));
                 QString fullPath(folder.path + path);
