@@ -1,4 +1,14 @@
 ==========================
+2.0 - Jul 19, 2025
+==========================
+- Added three types of synchronization: two-way, one-way, and one-way update synchronization.
+- Added the ability to change the versioning folder name, location, and versioning pattern.
+- Added customizable versioning formats such as file timestamp before and after extension, folder timestamp, and last version.
+- Added filtering by name, extension type, minimum size, and maximum size.
+- Added korean language support.
+- Fixed the issue where renaming a profile was impossible.
+
+==========================
 1.9.9 - Apr 10, 2025
 ==========================
 - Fixed a crash when adding or removing profiles or folders during synchronization.
