@@ -1,6 +1,6 @@
 # Introduction
 
-**SyncManager** is a custom-made lightweight synchronization manager that helps you synchronize files and folders across different locations. SyncManager lets you synchronize your data in two ways: manually or automatically. Manual syncing mode lets you decide what and when to synchronize data, while automatic syncing mode synchronizes data based on its average synchronization time. You can also decide how to handle old versions of files and folders: move them to the trash, delete them permanently, or version them in a special folder. The utility is mostly designed to run in the system tray, but it can also work without any system tray interactions. Written using Qt Framework for Windows/Linux.
+**SyncManager** is a custom-made lightweight synchronization manager that helps you synchronize files and folders across different locations. SyncManager lets you synchronize your data in two ways: manually or automatically. Manual syncing mode lets you decide what and when to synchronize data, while automatic syncing mode synchronizes data based on its average synchronization time. It also offers three distinct synchronization types: two-way, one-way, and one-way update, allowing you to synchronize data between folders in different ways. Plus, it has filtering and customizable versioning settings that help you to set synchronization more precisely. You can also decide how to handle old versions of files and folders: move them to the trash, delete them permanently, or version them in a special folder. The utility is primarily designed to run in the system tray, but it can also function without system tray interaction, operating as a fully automated solution that seamlessly launches at system startup. Written using Qt Framework for Windows/Linux.
 
 ![SyncManagerLight](https://github.com/user-attachments/assets/10558a09-0d79-4a14-9be5-627cf785b0f9)
 
@@ -17,9 +17,9 @@ Synchronization can be triggered using the following modes:
 - **Automatic** - *(Synchronizes data based on its average synchronization time, multiplied by the frequency multiplier, with a minimum delay of 1 second)*
 ### Synchronization Types
 There are three synchronization types that determine how a folder should be synchronized.
-- **Two-way** - *(Synchronizes files in both directions)*
-- **One-way** - *(Basically, mirroring two-way folders, removing anything that doesn't exist in that folders)*
-- **One-way update** - *(Synchronize files from two-way folders only once, and it can be freely deleted from the folder. Files are not deleted if they have been deleted from two-way folders)*
+- **Two-way** - *(Synchronizes files in both direction)*
+- **One-way** - *(Basically, mirrors two-way folders, removing anything that doesn't exist in that folders)*
+- **One-way update** - *(Synchronizes files from two-way folders only once, and they can be freely deleted from the folder. Files don't get deleted if they have been deleted from two-way folders)*
 ### Change Detection Order
 SyncManager uses sophisticated algorithms to detect changes since the last synchronization to determine which files and folders must be synchronized in the following order:
 1. **File attribute changes**
@@ -52,22 +52,22 @@ When SyncManager needs to synchronize a file from one location to another but fi
 - **Versioning** - *(Move files to a time-stamped folder within the sibling folder with "_[Deletions]" postfix)*
 - **Delete Files Permanently** - *(Irreversible, frees storage immediately)*  
 ### Versioning Formats
-Files can be versioned using several different ways:
-- **File timestamp before extension** - *([Filename][Timestamp].[Extension])*
-- **File timestamp after extension** - *([Filename].[Extension][Timestamp].[Extension])*
-- **Folder timestamp** - *([folder timestamp]/[filename])*
-- **Last version** - *(Keeps only the most recently deleted version of files)*
+Files can be versioned in the following formats:
+- **File timestamp before extension** - *(The timestamp is added right before the file's extension (e.g., [Filename][Timestamp].[Extension]))*
+- **File timestamp after extension** - *(The timestamp is added after the file's extension (e.g., [Filename].[Extension].[Timestamp].[Extension]))*
+- **Folder timestamp** - *(Files are moved into a new folder named with a timestamp, while keeping their original filename and extension (e.g., [folder timestamp]/[filename].[Extension]))*
+- **Last version** - *(Only the most recently deleted version of your files is kept, overwriting any older deleted versions)*
 ### Versioning Location
-Files can be moved to two locations for versioning:
-1. Locally, next to synchronization folders, in its own folder with the specified versioning prefix.
-2. In a custom location folder designated by the user.
+Files can be moved for versioning in the following locations:
+1. Locally, in a separate folder next to a synchronization folder, that has the same name, but with the specified versioning postfix added.
+2. In a custom location designated by a user, within folders that follow this pattern: [Versioning folder]/[Profile name]/[Folder name], without the specified versioning prefix.
 ### Filtering
 Files can be filtered from synchronization using the following options:
 - **Minimum file size**
 - **Maximum file size**
 - **Minimum size for a moved file** - *(The size at which files are allowed to be detected as moved or renamed)*
-- **Include list** - *(Whitelist)*
-- **Exclude list** - *(Blacklist)*
+- **Include** - *(Whitelist)*
+- **Exclude** - *(Blacklist)*
 
 # Building
 Requires Qt 6.9 or newer. Buildable with Qt Creator.
