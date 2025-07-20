@@ -1810,22 +1810,19 @@ void SyncManager::removeUniqueFiles(SyncProfile &profile, SyncFolder &folder)
                 continue;
             }
 
-            for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
+            for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
             {
-                if (&(*folderIt) == &folder || !folderIt->exists)
+                if (&(*otherFolderIt) == &folder || !otherFolderIt->exists || !otherFolderIt->isActive())
                     continue;
 
                 // Prevents files from being removed if there are no folders to mirror from
-                if (folderIt->syncType == SyncFolder::TWO_WAY)
+                if (otherFolderIt->syncType == SyncFolder::TWO_WAY)
                     hasTwoWay = true;
 
-                if (folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
+                if (otherFolderIt->syncType == SyncFolder::ONE_WAY || otherFolderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
                     continue;
 
-                if (!folderIt->isActive())
-                    continue;
-
-                if (folderIt->files.contains(fileIt.key()))
+                if (otherFolderIt->files.contains(fileIt.key()))
                 {
                     exists = true;
                     break;
