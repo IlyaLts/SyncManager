@@ -1295,6 +1295,18 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         // Adds a timestamp to the end of the filename of a deleted file
         if (versioningFormat() == FileTimestampBefore && type == SyncFile::File)
         {
+            int nameEndIndex = newLocation.lastIndexOf('.');
+            int slashIndex = newLocation.lastIndexOf('/');
+            int backlashIndex = newLocation.lastIndexOf('\\');
+
+            if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
+                nameEndIndex = newLocation.length();
+
+            newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(m_versioningPattern));
+        }
+        // Adds a timestamp to a deleted file before the extension
+        else if (versioningFormat() == FileTimestampAfter && type == SyncFile::File)
+        {
             newLocation.append("_" + QDateTime::currentDateTime().toString(m_versioningPattern));
 
             // Adds a file extension after the timestamp
@@ -1304,18 +1316,6 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
 
             if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
                 newLocation.append(path.mid(dotIndex));
-        }
-        // Adds a timestamp to a deleted file before the extension
-        else if (versioningFormat() == FileTimestampAfter && type == SyncFile::File)
-        {
-            int nameEndIndex = newLocation.lastIndexOf('.');
-            int slashIndex = newLocation.lastIndexOf('/');
-            int backlashIndex = newLocation.lastIndexOf('\\');
-
-            if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
-                nameEndIndex = newLocation.length();
-
-            newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(m_versioningPattern));
         }
 
         // As we want to have only the latest version of files,
