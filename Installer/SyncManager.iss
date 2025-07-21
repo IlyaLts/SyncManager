@@ -20,6 +20,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName=SyncManager
 CloseApplications=force
+CloseApplicationsFilter=".exe"
 UninstallDisplayName={#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ; "ArchitecturesAllowed=x64compatible" specifies that Setup cannot run
@@ -36,7 +37,7 @@ LicenseFile=packages\SyncManager\meta\LICENSE.txt
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=build
-OutputBaseFilename=SyncManager
+OutputBaseFilename=SyncManagerInstaller
 SetupIconFile=..\Icon.ico
 SolidCompression=yes
 WizardStyle=modern
@@ -82,14 +83,13 @@ function InitializeUninstall(): Boolean;
 var
   ErrorCode: Integer;
 begin
-  Exec('taskkill.exe', '/f /im SyncManager.exe', '', SW_HIDE, ewWaitUntilTerminated, ErrorCode);
-  //if CheckForMutexes('SyncManagerMutex') and
-  //   (MsgBox('Application is running, do you want to close it?',
-  //           mbConfirmation, MB_OKCANCEL) = IDOK) then
-  //begin
-  //  Exec('taskkill.exe', '/f /im SyncManager.exe', '', SW_HIDE, 
-  //       ewWaitUntilTerminated, ErrorCode);
-  //end;
+  if CheckForMutexes('SyncManagerMutex') and
+     (MsgBox('Application is running, do you want to close it?',
+             mbConfirmation, MB_OKCANCEL) = IDOK) then
+  begin
+    Exec('taskkill.exe', '/f /im SyncManager.exe', '', SW_HIDE, 
+         ewWaitUntilTerminated, ErrorCode);
+  end;
 
   Result := True;
 end;
