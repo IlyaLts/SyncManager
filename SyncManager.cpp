@@ -676,7 +676,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         totalNumOfFiles++;
     }
 
-    // Since we only synchronize one-way folders in one direction,,
+    // Since we only synchronize one-way folders in one direction,
     // we need to clear all file data because files that
     // no longer exist there don't get removed from the database.
     // This is just the easiest way to make one-way work properly.
@@ -1841,6 +1841,13 @@ void SyncManager::removeUniqueFiles(SyncProfile &profile, SyncFolder &folder)
                     continue;
 
                 if (otherFolderIt->files.contains(fileIt.key()))
+                {
+                    exists = true;
+                    break;
+                }
+
+                // In case there is a file, but with a different case name
+                if (!otherFolderIt->caseSensitive && QFile(profile.filePath(fileIt.key())).exists())
                 {
                     exists = true;
                     break;
