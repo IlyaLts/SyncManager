@@ -20,36 +20,36 @@
             <translation>Папки для синхронизации:</translation>
         </message>
         <message>
-            <source>&amp;Syncing Mode</source>
-            <translation>&amp;Режим синхронизации</translation>
+            <source>Syncing Mode</source>
+            <translation>Режим синхронизации</translation>
         </message>
         <message>
-            <source>&amp;Syncing Time</source>
-            <translation>&amp;Время синхронизации</translation>
+            <source>Syncing Time</source>
+            <translation>Время синхронизации</translation>
         </message>
         <message>
-            <source>&amp;Deletion Mode</source>
-            <translation>&amp;Режим удаления</translation>
+            <source>Deletion Mode</source>
+            <translation>Режим удаления</translation>
         </message>
         <message>
-            <source>&amp;Settings</source>
-            <translation>&amp;Настройки</translation>
+            <source>Settings</source>
+            <translation>Настройки</translation>
         </message>
         <message>
-            <source>&amp;Sync Now</source>
-            <translation>&amp;Синхронизировать сейчас</translation>
+            <source>Sync Now</source>
+            <translation>Синхронизировать сейчас</translation>
         </message>
         <message>
-            <source>&amp;Automatic</source>
-            <translation>&amp;Автоматический</translation>
+            <source>Automatic</source>
+            <translation>Автоматический</translation>
         </message>
         <message>
-            <source>&amp;Manual</source>
-            <translation>&amp;Ручной</translation>
+            <source>Manual</source>
+            <translation>Ручной</translation>
         </message>
         <message>
-            <source>&amp;Increase</source>
-            <translation>&amp;Увеличить</translation>
+            <source>Increase</source>
+            <translation>Увеличить</translation>
         </message>
         <message>
           <source>Average Synchronization Time: </source>
@@ -60,48 +60,48 @@
             <translation>Следующая синхронизация: </translation>
         </message>
         <message>
-            <source>&amp;Decrease</source>
-            <translation>&amp;Уменьшить</translation>
+            <source>Decrease</source>
+            <translation>Уменьшить</translation>
         </message>
         <message>
-            <source>&amp;Move Files to Trash</source>
-            <translation>&amp;Переместить файлы в корзину</translation>
+            <source>Move Files to Trash</source>
+            <translation>Переместить файлы в корзину</translation>
         </message>
         <message>
-            <source>&amp;Versioning</source>
-            <translation>&amp;Контроль версий</translation>
+            <source>Versioning</source>
+            <translation>Контроль версий</translation>
         </message>
         <message>
-            <source>&amp;Delete Files Permanently</source>
-            <translation>&amp;Удалить файлы навсегда</translation>
+            <source>Delete Files Permanently</source>
+            <translation>Удалить файлы навсегда</translation>
         </message>
         <message>
-            <source>&amp;Launch on Startup</source>
-            <translation>&amp;Запускать при запуске системы</translation>
+            <source>Launch on Startup</source>
+            <translation>Запускать при запуске системы</translation>
         </message>
         <message>
-            <source>&amp;Show in System Tray</source>
-            <translation>&amp;Отображать в системном трее</translation>
+            <source>Show in System Tray</source>
+            <translation>Отображать в системном трее</translation>
         </message>
         <message>
-            <source>&amp;Disable Notifications</source>
-            <translation>&amp;Отключить уведомления</translation>
+            <source>Disable Notifications</source>
+            <translation>Отключить уведомления</translation>
         </message>
         <message>
-            <source>&amp;Ignore Hidden Files</source>
-            <translation>&amp;Игнорировать скрытые файлы</translation>
+            <source>Ignore Hidden Files</source>
+            <translation>Игнорировать скрытые файлы</translation>
         </message>
         <message>
-            <source>&amp;Detect Renamed and Moved Files</source>
-            <translation>&amp;Обнаруживать переименованные и перемещенные файлы</translation>
+            <source>Detect Renamed and Moved Files</source>
+            <translation>Обнаруживать переименованные и перемещенные файлы</translation>
         </message>
         <message>
-            <source>&amp;Show</source>
-            <translation>&amp;Показать</translation>
+            <source>Show</source>
+            <translation>Показать</translation>
         </message>
         <message>
-            <source>&amp;Quit</source>
-            <translation>&amp;Выйти</translation>
+            <source>Quit</source>
+            <translation>Выйти</translation>
         </message>
         <message>
             <source>Version: %1</source>
@@ -110,10 +110,6 @@
         <message>
             <source>Couldn't find folder</source>
             <translation>Не удалось найти папку</translation>
-        </message>
-        <message>
-            <source>Quit</source>
-            <translation>Выйти</translation>
         </message>
         <message>
             <source>Are you sure you want to quit?</source>
@@ -180,52 +176,48 @@
             <translation>Еще не синхронизировано.</translation>
         </message>
         <message>
-            <source>&amp;Resume Syncing</source>
-            <translation>&amp;Возобновить синхронизацию</translation>
+            <source>Resume Syncing</source>
+            <translation>Возобновить синхронизацию</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;Приостановить синхронизацию</translation>
+            <source>Pause Syncing</source>
+            <translation>Приостановить синхронизацию</translation>
         </message>
         <message>
             <source>Sync Manager - %1 files to synchronize</source>
             <translation>Менеджер синхронизации - %1 файлов для синхронизации</translation>
         </message>
         <message>
-            <source>&amp;Add a new profile</source>
-            <translation>&amp;Добавить новый профиль</translation>
+            <source>Add a new profile</source>
+            <translation>Добавить новый профиль</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing profile</source>
-            <translation>&amp;Возобновить синхронизацию профиля</translation>
+            <source>Resume syncing profile</source>
+            <translation>Возобновить синхронизацию профиля</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing profile</source>
-            <translation>&amp;Приостановить синхронизацию профиля</translation>
+            <source>Pause syncing profile</source>
+            <translation>Приостановить синхронизацию профиля</translation>
         </message>
         <message>
-            <source>&amp;Synchronize profile</source>
-            <translation>&amp;Синхронизировать профиль</translation>
+            <source>Synchronize profile</source>
+            <translation>Синхронизировать профиль</translation>
         </message>
         <message>
-            <source>&amp;Remove profile</source>
-            <translation>&amp;Удалить профиль</translation>
+            <source>Add a new folder</source>
+            <translation>Добавить новую папку</translation>
         </message>
         <message>
-            <source>&amp;Add a new folder</source>
-            <translation>&amp;Добавить новую папку</translation>
+            <source>Resume syncing folder</source>
+            <translation>Возобновить синхронизацию папки</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing folder</source>
-            <translation>&amp;Возобновить синхронизацию папки</translation>
+            <source>Pause syncing folder</source>
+            <translation>Приостановить синхронизацию папки</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing folder</source>
-            <translation>&amp;Приостановить синхронизацию папки</translation>
-        </message>
-        <message>
-            <source>&amp;Remove folder</source>
-            <translation>&amp;Удалить папку</translation>
+            <source>Remove folder</source>
+            <translation>Удалить папку</translation>
         </message>
         <message>
             <source>Browse For Folder</source>
@@ -236,52 +228,52 @@
             <translation>Недостаточно места на диске %1 (%2)</translation>
         </message>
         <message>
-            <source>&amp;Yes</source>
-            <translation>&amp;Да</translation>
+            <source>Yes</source>
+            <translation>Да</translation>
         </message>
         <message>
-            <source>&amp;No</source>
-            <translation>&amp;Нет</translation>
+            <source>No</source>
+            <translation>Нет</translation>
         </message>
         <message>
             <source>New profile</source>
             <translation>Новый профиль</translation>
         </message>
         <message>
-            <source>&amp;Language</source>
-            <translation>&amp;Язык</translation>
+            <source>Language</source>
+            <translation>Язык</translation>
         </message>
         <message>
-            <source>&amp;Database Location</source>
-            <translation>&amp;Расположение базы данных</translation>
+            <source>Database Location</source>
+            <translation>Расположение базы данных</translation>
         </message>
         <message>
-            <source>&amp;Locally (On the local machine)</source>
-            <translation>&amp;Локально (На локальном компьютере)</translation>
+            <source>Locally (On the local machine)</source>
+            <translation>Локально (На локальном компьютере)</translation>
         </message>
         <message>
-            <source>&amp;Decentralized (Inside synchronization folders)</source>
-            <translation>&amp;Децентрализованно (Внутри папок синхронизации)</translation>
+            <source>Decentralized (Inside synchronization folders)</source>
+            <translation>Децентрализованно (Внутри папок синхронизации)</translation>
         </message>
         <message>
-            <source>&amp;Versioning Format</source>
-            <translation>&amp;Формат версионирования</translation>
+            <source>Versioning Format</source>
+            <translation>Формат версионирования</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (Before Extension)</source>
-            <translation>&amp;Метка времени файла (до расширения)</translation>
+            <source>File Timestamp (Before Extension)</source>
+            <translation>Метка времени файла (до расширения)</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (After Extension)</source>
-            <translation>&amp;Метка времени файла (после расширения)</translation>
+            <source>File Timestamp (After Extension)</source>
+            <translation>Метка времени файла (после расширения)</translation>
         </message>
         <message>
-            <source>&amp;Folder Timestamp</source>
-            <translation>&amp;Метка времени папки</translation>
+            <source>Folder Timestamp</source>
+            <translation>Метка времени папки</translation>
         </message>
         <message>
-            <source>&amp;Last Version</source>
-            <translation>&amp;Последняя версия</translation>
+            <source>Last Version</source>
+            <translation>Последняя версия</translation>
         </message>
         <message>
             <source>Set Versioning Folder Postfix</source>
@@ -292,8 +284,8 @@
             <translation>Пожалуйста, введите суффикс папки версионирования:</translation>
         </message>
         <message>
-            <source>&amp;Folder Postfix: %1</source>
-            <translation>&amp;Суффикс папки: %1</translation>
+            <source>Folder Postfix: %1</source>
+            <translation>Суффикс папки: %1</translation>
         </message>
         <message>
             <source>Set Versioning Pattern</source>
@@ -308,20 +300,20 @@
             <translation>Примеры:</translation>
         </message>
         <message>
-            <source>&amp;Pattern: %1</source>
-            <translation>&amp;Шаблон: %1</translation>
+            <source>Pattern: %1</source>
+            <translation>Шаблон: %1</translation>
         </message>
         <message>
-            <source>&amp;Versioning Location</source>
-            <translation>&amp;Расположение версионирования</translation>
+            <source>Versioning Location</source>
+            <translation>Расположение версионирования</translation>
         </message>
         <message>
-            <source>&amp;Locally Next to Folder</source>
-            <translation>&amp;Локально рядом с папкой</translation>
+            <source>Locally Next to Folder</source>
+            <translation>Локально рядом с папкой</translation>
         </message>
         <message>
-            <source>&amp;Custom Location</source>
-            <translation>&amp;Пользовательское расположение</translation>
+            <source>Custom Location</source>
+            <translation>Пользовательское расположение</translation>
         </message>
         <message>
             <source>Custom Location: </source>
@@ -332,28 +324,28 @@
             <translation>Обзор папки версионирования</translation>
         </message>
         <message>
-            <source>&amp;Filtering</source>
-            <translation>&amp;Фильтрация</translation>
+            <source>Filtering</source>
+            <translation>Фильтрация</translation>
         </message>
         <message>
-            <source>&amp;Minimum File Size: %1 bytes</source>
-            <translation>&amp;Минимальный размер файла: %1 байт</translation>
+            <source>Minimum File Size: %1 bytes</source>
+            <translation>Минимальный размер файла: %1 байт</translation>
         </message>
         <message>
-            <source>&amp;Maximum File Size: %1 bytes</source>
-            <translation>&amp;Максимальный размер файла: %1 байт</translation>
+            <source>Maximum File Size: %1 bytes</source>
+            <translation>Максимальный размер файла: %1 байт</translation>
         </message>
         <message>
-            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
-            <translation>&amp;Минимальный размер для перемещенного файла: %1 байт</translation>
+            <source>Minimum Size for a Moved File: %1 bytes</source>
+            <translation>Минимальный размер для перемещенного файла: %1 байт</translation>
         </message>
         <message>
-            <source>&amp;Include: %1</source>
-            <translation>&amp;Включить: %1</translation>
+            <source>Include: %1</source>
+            <translation>Включить: %1</translation>
         </message>
         <message>
-            <source>&amp;Exclude: %1</source>
-            <translation>&amp;Исключить: %1</translation>
+            <source>Exclude: %1</source>
+            <translation>Исключить: %1</translation>
         </message>
         <message>
             <source>Set Minimum File Size</source>
@@ -392,24 +384,24 @@
             <translation>Пожалуйста, введите список исключений, разделенный точкой с запятой. Поддерживаются подстановочные знаки (например, *.txt).</translation>
         </message>
         <message>
-            <source>&amp;Switch to two-way synchronization</source>
-            <translation>&amp;Переключиться на двустороннюю синхронизацию</translation>
+            <source>Switch to two-way synchronization</source>
+            <translation>Переключиться на двустороннюю синхронизацию</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way synchronization</source>
-            <translation>&amp;Переключиться на одностороннюю синхронизацию</translation>
+            <source>Switch to one-way synchronization</source>
+            <translation>Переключиться на одностороннюю синхронизацию</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way update synchronization</source>
-            <translation>&amp;Переключиться на одностороннюю синхронизацию обновлений</translation>
+            <source>Switch to one-way update synchronization</source>
+            <translation>Переключиться на одностороннюю синхронизацию обновлений</translation>
         </message>
         <message>
-            <source>&amp;OK</source>
-            <translation>&amp;ОК</translation>
+            <source>OK</source>
+            <translation>ОК</translation>
         </message>
         <message>
-            <source>&amp;Cancel</source>
-            <translation>&amp;Отмена</translation>
+            <source>Cancel</source>
+            <translation>Отмена</translation>
         </message>
     </context>
 </TS>

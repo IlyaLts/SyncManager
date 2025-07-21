@@ -20,36 +20,36 @@
             <translation>同期するフォルダ:</translation>
         </message>
         <message>
-            <source>&amp;Syncing Mode</source>
-            <translation>&amp;同期モード</translation>
+            <source>Syncing Mode</source>
+            <translation>同期モード</translation>
         </message>
         <message>
-            <source>&amp;Syncing Time</source>
-            <translation>&amp;同期時間</translation>
+            <source>Syncing Time</source>
+            <translation>同期時間</translation>
         </message>
         <message>
-            <source>&amp;Deletion Mode</source>
-            <translation>&amp;削除モード</translation>
+            <source>Deletion Mode</source>
+            <translation>削除モード</translation>
         </message>
         <message>
-            <source>&amp;Settings</source>
-            <translation>&amp;設定</translation>
+            <source>Settings</source>
+            <translation>設定</translation>
         </message>
         <message>
-            <source>&amp;Sync Now</source>
-            <translation>&amp;今すぐ同期</translation>
+            <source>Sync Now</source>
+            <translation>今すぐ同期</translation>
         </message>
         <message>
-            <source>&amp;Automatic</source>
-            <translation>&amp;自動</translation>
+            <source>Automatic</source>
+            <translation>自動</translation>
         </message>
         <message>
-            <source>&amp;Manual</source>
-            <translation>&amp;手動</translation>
+            <source>Manual</source>
+            <translation>手動</translation>
         </message>
         <message>
-            <source>&amp;Increase</source>
-            <translation>&amp;増加</translation>
+            <source>Increase</source>
+            <translation>増加</translation>
         </message>
         <message>
           <source>Average Synchronization Time: </source>
@@ -60,48 +60,48 @@
             <translation>次の同期: </translation>
         </message>
         <message>
-            <source>&amp;Decrease</source>
-            <translation>&amp;減少</translation>
+            <source>Decrease</source>
+            <translation>減少</translation>
         </message>
         <message>
-            <source>&amp;Move Files to Trash</source>
-            <translation>&amp;ファイルをゴミ箱に移動</translation>
+            <source>Move Files to Trash</source>
+            <translation>ファイルをゴミ箱に移動</translation>
         </message>
         <message>
-            <source>&amp;Versioning</source>
-            <translation>&amp;バージョニング</translation>
+            <source>Versioning</source>
+            <translation>バージョニング</translation>
         </message>
         <message>
-            <source>&amp;Delete Files Permanently</source>
-            <translation>&amp;ファイルを完全に削除</translation>
+            <source>Delete Files Permanently</source>
+            <translation>ファイルを完全に削除</translation>
         </message>
         <message>
-            <source>&amp;Launch on Startup</source>
-            <translation>&amp;起動時に起動</translation>
+            <source>Launch on Startup</source>
+            <translation>起動時に起動</translation>
         </message>
         <message>
-            <source>&amp;Show in System Tray</source>
-            <translation>&amp;システムトレイに表示</translation>
+            <source>Show in System Tray</source>
+            <translation>システムトレイに表示</translation>
         </message>
         <message>
-            <source>&amp;Disable Notifications</source>
-            <translation>&amp;通知を無効にする</translation>
+            <source>Disable Notifications</source>
+            <translation>通知を無効にする</translation>
         </message>
         <message>
-            <source>&amp;Ignore Hidden Files</source>
-            <translation>&amp;隠しファイルを無視する</translation>
+            <source>Ignore Hidden Files</source>
+            <translation>隠しファイルを無視する</translation>
         </message>
         <message>
-            <source>&amp;Detect Renamed and Moved Files</source>
-            <translation>&amp;名前変更および移動されたファイルを検出</translation>
+            <source>Detect Renamed and Moved Files</source>
+            <translation>名前変更および移動されたファイルを検出</translation>
         </message>
         <message>
-            <source>&amp;Show</source>
-            <translation>&amp;表示</translation>
+            <source>Show</source>
+            <translation>表示</translation>
         </message>
         <message>
-            <source>&amp;Quit</source>
-            <translation>&amp;終了</translation>
+            <source>Quit</source>
+            <translation>終了</translation>
         </message>
         <message>
             <source>Version: %1</source>
@@ -110,10 +110,6 @@
         <message>
             <source>Couldn't find folder</source>
             <translation>フォルダが見つかりません</translation>
-        </message>
-        <message>
-            <source>Quit</source>
-            <translation>終了</translation>
         </message>
         <message>
             <source>Are you sure you want to quit?</source>
@@ -180,52 +176,48 @@
             <translation>まだ同期されていません。</translation>
         </message>
         <message>
-            <source>&amp;Resume Syncing</source>
-            <translation>&amp;同期を再開</translation>
+            <source>Resume Syncing</source>
+            <translation>同期を再開</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;同期を一時停止</translation>
+            <source>Pause Syncing</source>
+            <translation>同期を一時停止</translation>
         </message>
         <message>
             <source>Sync Manager - %1 files to synchronize</source>
             <translation>同期マネージャー - %1 ファイルを同期する</translation>
         </message>
         <message>
-            <source>&amp;Add a new profile</source>
-            <translation>&amp;新しいプロファイルを追加</translation>
+            <source>Add a new profile</source>
+            <translation>新しいプロファイルを追加</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing profile</source>
-            <translation>&amp;プロファイルの同期を再開</translation>
+            <source>Resume syncing profile</source>
+            <translation>プロファイルの同期を再開</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing profile</source>
-            <translation>&amp;プロファイルの同期を一時停止</translation>
+            <source>Pause syncing profile</source>
+            <translation>プロファイルの同期を一時停止</translation>
         </message>
         <message>
-            <source>&amp;Synchronize profile</source>
-            <translation>&amp;プロファイルを同期する</translation>
+            <source>Synchronize profile</source>
+            <translation>プロファイルを同期する</translation>
         </message>
         <message>
-            <source>&amp;Remove profile</source>
-            <translation>&amp;プロファイルを削除</translation>
+            <source>Add a new folder</source>
+            <translation>新しいフォルダを追加</translation>
         </message>
         <message>
-            <source>&amp;Add a new folder</source>
-            <translation>&amp;新しいフォルダを追加</translation>
+            <source>Resume syncing folder</source>
+            <translation>フォルダの同期を再開</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing folder</source>
-            <translation>&amp;フォルダの同期を再開</translation>
+            <source>Pause syncing folder</source>
+            <translation>フォルダの同期を一時停止</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing folder</source>
-            <translation>&amp;フォルダの同期を一時停止</translation>
-        </message>
-        <message>
-            <source>&amp;Remove folder</source>
-            <translation>&amp;フォルダを削除</translation>
+            <source>Remove folder</source>
+            <translation>フォルダを削除</translation>
         </message>
         <message>
             <source>Browse For Folder</source>
@@ -236,52 +228,52 @@
             <translation>%1 (%2) のディスクスペースが不足しています</translation>
         </message>
         <message>
-            <source>&amp;Yes</source>
-            <translation>&amp;はい</translation>
+            <source>Yes</source>
+            <translation>はい</translation>
         </message>
         <message>
-            <source>&amp;No</source>
-            <translation>&amp;いいえ</translation>
+            <source>No</source>
+            <translation>いいえ</translation>
         </message>
         <message>
             <source>New profile</source>
             <translation>新プロフィール</translation>
         </message>
         <message>
-            <source>&amp;Language</source>
-            <translation>&amp;言語</translation>
+            <source>Language</source>
+            <translation>言語</translation>
         </message>
         <message>
-            <source>&amp;Database Location</source>
-            <translation>&amp;データベースの場所</translation>
+            <source>Database Location</source>
+            <translation>データベースの場所</translation>
         </message>
         <message>
-            <source>&amp;Locally (On the local machine)</source>
-            <translation>&amp;ローカルに (ローカルマシン上)</translation>
+            <source>Locally (On the local machine)</source>
+            <translation>ローカルに (ローカルマシン上)</translation>
         </message>
         <message>
-            <source>&amp;Decentralized (Inside synchronization folders)</source>
-            <translation>&amp;分散化 (同期フォルダ内)</translation>
+            <source>Decentralized (Inside synchronization folders)</source>
+            <translation>分散化 (同期フォルダ内)</translation>
         </message>
         <message>
-            <source>&amp;Versioning Format</source>
-            <translation>&amp;バージョン管理形式</translation>
+            <source>Versioning Format</source>
+            <translation>バージョン管理形式</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (Before Extension)</source>
-            <translation>&amp;ファイルタイムスタンプ (拡張子の前)</translation>
+            <source>File Timestamp (Before Extension)</source>
+            <translation>ファイルタイムスタンプ (拡張子の前)</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (After Extension)</source>
-            <translation>&amp;ファイルタイムスタンプ (拡張子の後)</translation>
+            <source>File Timestamp (After Extension)</source>
+            <translation>ファイルタイムスタンプ (拡張子の後)</translation>
         </message>
         <message>
-            <source>&amp;Folder Timestamp</source>
-            <translation>&amp;フォルダータイムスタンプ</translation>
+            <source>Folder Timestamp</source>
+            <translation>フォルダータイムスタンプ</translation>
         </message>
         <message>
-            <source>&amp;Last Version</source>
-            <translation>&amp;最終バージョン</translation>
+            <source>Last Version</source>
+            <translation>最終バージョン</translation>
         </message>
         <message>
             <source>Set Versioning Folder Postfix</source>
@@ -292,8 +284,8 @@
             <translation>バージョン管理フォルダーの接尾辞を入力してください:</translation>
         </message>
         <message>
-            <source>&amp;Folder Postfix: %1</source>
-            <translation>&amp;フォルダー接尾辞: %1</translation>
+            <source>Folder Postfix: %1</source>
+            <translation>フォルダー接尾辞: %1</translation>
         </message>
         <message>
             <source>Set Versioning Pattern</source>
@@ -308,20 +300,20 @@
             <translation>例:</translation>
         </message>
         <message>
-            <source>&amp;Pattern: %1</source>
-            <translation>&amp;パターン: %1</translation>
+            <source>Pattern: %1</source>
+            <translation>パターン: %1</translation>
         </message>
         <message>
-            <source>&amp;Versioning Location</source>
-            <translation>&amp;バージョン管理の場所</translation>
+            <source>Versioning Location</source>
+            <translation>バージョン管理の場所</translation>
         </message>
         <message>
-            <source>&amp;Locally Next to Folder</source>
-            <translation>&amp;フォルダーの隣にローカル</translation>
+            <source>Locally Next to Folder</source>
+            <translation>フォルダーの隣にローカル</translation>
         </message>
         <message>
-            <source>&amp;Custom Location</source>
-            <translation>&amp;カスタム場所</translation>
+            <source>Custom Location</source>
+            <translation>カスタム場所</translation>
         </message>
         <message>
             <source>Custom Location: </source>
@@ -332,28 +324,28 @@
             <translation>バージョン管理フォルダーを参照</translation>
         </message>
         <message>
-            <source>&amp;Filtering</source>
-            <translation>&amp;フィルタリング</translation>
+            <source>Filtering</source>
+            <translation>フィルタリング</translation>
         </message>
         <message>
-            <source>&amp;Minimum File Size: %1 bytes</source>
-            <translation>&amp;最小ファイルサイズ: %1 バイト</translation>
+            <source>Minimum File Size: %1 bytes</source>
+            <translation>最小ファイルサイズ: %1 バイト</translation>
         </message>
         <message>
-            <source>&amp;Maximum File Size: %1 bytes</source>
-            <translation>&amp;最大ファイルサイズ: %1 バイト</translation>
+            <source>Maximum File Size: %1 bytes</source>
+            <translation>最大ファイルサイズ: %1 バイト</translation>
         </message>
         <message>
-            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
-            <translation>&amp;移動されたファイルの最小サイズ: %1 バイト</translation>
+            <source>Minimum Size for a Moved File: %1 bytes</source>
+            <translation>移動されたファイルの最小サイズ: %1 バイト</translation>
         </message>
         <message>
-            <source>&amp;Include: %1</source>
-            <translation>&amp;含む: %1</translation>
+            <source>Include: %1</source>
+            <translation>含む: %1</translation>
         </message>
         <message>
-            <source>&amp;Exclude: %1</source>
-            <translation>&amp;除外: %1</translation>
+            <source>Exclude: %1</source>
+            <translation>除外: %1</translation>
         </message>
         <message>
             <source>Set Minimum File Size</source>
@@ -392,24 +384,24 @@
             <translation>セミコロンで区切られた除外リストを入力してください。ワイルドカード (例: *.txt) がサポートされています。</translation>
         </message>
         <message>
-            <source>&amp;Switch to two-way synchronization</source>
-            <translation>&amp;双方向同期に切り替える</translation>
+            <source>Switch to two-way synchronization</source>
+            <translation>双方向同期に切り替える</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way synchronization</source>
-            <translation>&amp;一方向同期に切り替える</translation>
+            <source>Switch to one-way synchronization</source>
+            <translation>一方向同期に切り替える</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way update synchronization</source>
-            <translation>&amp;一方向更新同期に切り替える</translation>
+            <source>Switch to one-way update synchronization</source>
+            <translation>一方向更新同期に切り替える</translation>
         </message>
         <message>
-            <source>&amp;OK</source>
-            <translation>&amp;OK</translation>
+            <source>OK</source>
+            <translation>OK</translation>
         </message>
         <message>
-            <source>&amp;Cancel</source>
-            <translation>&amp;キャンセル</translation>
+            <source>Cancel</source>
+            <translation>キャンセル</translation>
         </message>
     </context>
 </TS>

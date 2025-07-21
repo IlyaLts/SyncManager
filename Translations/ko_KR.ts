@@ -20,36 +20,36 @@
             <translation>동기화할 폴더:</translation>
         </message>
         <message>
-            <source>&amp;Syncing Mode</source>
-            <translation>&amp;동기화 모드</translation>
+            <source>Syncing Mode</source>
+            <translation>동기화 모드</translation>
         </message>
         <message>
-            <source>&amp;Syncing Time</source>
-            <translation>&amp;동기화 시간</translation>
+            <source>Syncing Time</source>
+            <translation>동기화 시간</translation>
         </message>
         <message>
-            <source>&amp;Deletion Mode</source>
-            <translation>&amp;삭제 모드</translation>
+            <source>Deletion Mode</source>
+            <translation>삭제 모드</translation>
         </message>
         <message>
-            <source>&amp;Settings</source>
-            <translation>&amp;설정</translation>
+            <source>Settings</source>
+            <translation>설정</translation>
         </message>
         <message>
-            <source>&amp;Sync Now</source>
-            <translation>&amp;지금 동기화</translation>
+            <source>Sync Now</source>
+            <translation>지금 동기화</translation>
         </message>
         <message>
-            <source>&amp;Automatic</source>
-            <translation>&amp;자동</translation>
+            <source>Automatic</source>
+            <translation>자동</translation>
         </message>
         <message>
-            <source>&amp;Manual</source>
-            <translation>&amp;수동</translation>
+            <source>Manual</source>
+            <translation>수동</translation>
         </message>
         <message>
-            <source>&amp;Increase</source>
-            <translation>&amp;증가</translation>
+            <source>Increase</source>
+            <translation>증가</translation>
         </message>
         <message>
             <source>Average Synchronization Time: </source>
@@ -60,48 +60,48 @@
             <translation>다음 동기화: </translation>
         </message>
         <message>
-            <source>&amp;Decrease</source>
-            <translation>&amp;감소</translation>
+            <source>Decrease</source>
+            <translation>감소</translation>
         </message>
         <message>
-            <source>&amp;Move Files to Trash</source>
-            <translation>&amp;파일을 휴지통으로 이동</translation>
+            <source>Move Files to Trash</source>
+            <translation>파일을 휴지통으로 이동</translation>
         </message>
         <message>
-            <source>&amp;Versioning</source>
-            <translation>&amp;버전 관리</translation>
+            <source>Versioning</source>
+            <translation>버전 관리</translation>
         </message>
         <message>
-            <source>&amp;Delete Files Permanently</source>
-            <translation>&amp;파일 영구 삭제</translation>
+            <source>Delete Files Permanently</source>
+            <translation>파일 영구 삭제</translation>
         </message>
         <message>
-            <source>&amp;Launch on Startup</source>
-            <translation>&amp;시작 시 실행</translation>
+            <source>Launch on Startup</source>
+            <translation>시작 시 실행</translation>
         </message>
         <message>
-            <source>&amp;Show in System Tray</source>
-            <translation>&amp;시스템 트레이에 표시</translation>
+            <source>Show in System Tray</source>
+            <translation>시스템 트레이에 표시</translation>
         </message>
         <message>
-            <source>&amp;Disable Notifications</source>
-            <translation>&amp;알림 비활성화</translation>
+            <source>Disable Notifications</source>
+            <translation>알림 비활성화</translation>
         </message>
         <message>
-            <source>&amp;Ignore Hidden Files</source>
-            <translation>&amp;숨김 파일 무시</translation>
+            <source>Ignore Hidden Files</source>
+            <translation>숨김 파일 무시</translation>
         </message>
         <message>
-            <source>&amp;Detect Renamed and Moved Files</source>
-            <translation>&amp;이름 변경 및 이동된 파일 감지</translation>
+            <source>Detect Renamed and Moved Files</source>
+            <translation>이름 변경 및 이동된 파일 감지</translation>
         </message>
         <message>
-            <source>&amp;Show</source>
-            <translation>&amp;표시</translation>
+            <source>Show</source>
+            <translation>표시</translation>
         </message>
         <message>
-            <source>&amp;Quit</source>
-            <translation>&amp;종료</translation>
+            <source>Quit</source>
+            <translation>종료</translation>
         </message>
         <message>
             <source>Version: %1</source>
@@ -110,10 +110,6 @@
         <message>
             <source>Couldn't find folder</source>
             <translation>폴더를 찾을 수 없습니다</translation>
-        </message>
-        <message>
-            <source>Quit</source>
-            <translation>종료</translation>
         </message>
         <message>
             <source>Are you sure you want to quit?</source>
@@ -180,52 +176,48 @@
             <translation>아직 동기화되지 않았습니다.</translation>
         </message>
         <message>
-            <source>&amp;Resume Syncing</source>
-            <translation>&amp;동기화 재개</translation>
+            <source>Resume Syncing</source>
+            <translation>동기화 재개</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;동기화 일시 중지</translation>
+            <source>Pause Syncing</source>
+            <translation>동기화 일시 중지</translation>
         </message>
         <message>
             <source>Sync Manager - %1 files to synchronize</source>
             <translation>동기화 관리자 - 동기화할 파일 %1개</translation>
         </message>
         <message>
-            <source>&amp;Add a new profile</source>
-            <translation>&amp;새 프로필 추가</translation>
+            <source>Add a new profile</source>
+            <translation>새 프로필 추가</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing profile</source>
-            <translation>&amp;프로필 동기화 재개</translation>
+            <source>Resume syncing profile</source>
+            <translation>프로필 동기화 재개</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing profile</source>
-            <translation>&amp;프로필 동기화 일시 중지</translation>
+            <source>Pause syncing profile</source>
+            <translation>프로필 동기화 일시 중지</translation>
         </message>
         <message>
-            <source>&amp;Synchronize profile</source>
-            <translation>&amp;프로필 동기화</translation>
+            <source>Synchronize profile</source>
+            <translation>프로필 동기화</translation>
         </message>
         <message>
-            <source>&amp;Remove profile</source>
-            <translation>&amp;프로필 제거</translation>
+            <source>Add a new folder</source>
+            <translation>새 폴더 추가</translation>
         </message>
         <message>
-            <source>&amp;Add a new folder</source>
-            <translation>&amp;새 폴더 추가</translation>
+            <source>Resume syncing folder</source>
+            <translation>폴더 동기화 재개</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing folder</source>
-            <translation>&amp;폴더 동기화 재개</translation>
+            <source>Pause syncing folder</source>
+            <translation>폴더 동기화 일시 중지</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing folder</source>
-            <translation>&amp;폴더 동기화 일시 중지</translation>
-        </message>
-        <message>
-            <source>&amp;Remove folder</source>
-            <translation>&amp;폴더 제거</translation>
+            <source>Remove folder</source>
+            <translation>폴더 제거</translation>
         </message>
         <message>
             <source>Browse For Folder</source>
@@ -236,52 +228,52 @@
             <translation>%1에 디스크 공간이 부족합니다 (%2)</translation>
         </message>
         <message>
-            <source>&amp;Yes</source>
-            <translation>&amp;예</translation>
+            <source>Yes</source>
+            <translation>예</translation>
         </message>
         <message>
-            <source>&amp;No</source>
-            <translation>&amp;아니요</translation>
+            <source>No</source>
+            <translation>아니요</translation>
         </message>
         <message>
             <source>New profile</source>
             <translation>새 프로필</translation>
         </message>
         <message>
-            <source>&amp;Language</source>
-            <translation>&amp;언어</translation>
+            <source>Language</source>
+            <translation>언어</translation>
         </message>
         <message>
-            <source>&amp;Database Location</source>
-            <translation>&amp;데이터베이스 위치</translation>
+            <source>Database Location</source>
+            <translation>데이터베이스 위치</translation>
         </message>
         <message>
-            <source>&amp;Locally (On the local machine)</source>
-            <translation>&amp;로컬 (로컬 머신에)</translation>
+            <source>Locally (On the local machine)</source>
+            <translation>로컬 (로컬 머신에)</translation>
         </message>
         <message>
-            <source>&amp;Decentralized (Inside synchronization folders)</source>
-            <translation>&amp;분산 (동기화 폴더 내)</translation>
+            <source>Decentralized (Inside synchronization folders)</source>
+            <translation>분산 (동기화 폴더 내)</translation>
         </message>
         <message>
-            <source>&amp;Versioning Format</source>
-            <translation>&amp;버전 관리 형식</translation>
+            <source>Versioning Format</source>
+            <translation>버전 관리 형식</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (Before Extension)</source>
-            <translation>&amp;파일 타임스탬프 (확장자 앞)</translation>
+            <source>File Timestamp (Before Extension)</source>
+            <translation>파일 타임스탬프 (확장자 앞)</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (After Extension)</source>
-            <translation>&amp;파일 타임스탬프 (확장자 뒤)</translation>
+            <source>File Timestamp (After Extension)</source>
+            <translation>파일 타임스탬프 (확장자 뒤)</translation>
         </message>
         <message>
-            <source>&amp;Folder Timestamp</source>
-            <translation>&amp;폴더 타임스탬프</translation>
+            <source>Folder Timestamp</source>
+            <translation>폴더 타임스탬프</translation>
         </message>
         <message>
-            <source>&amp;Last Version</source>
-            <translation>&amp;최신 버전</translation>
+            <source>Last Version</source>
+            <translation>최신 버전</translation>
         </message>
         <message>
             <source>Set Versioning Folder Postfix</source>
@@ -292,8 +284,8 @@
             <translation>버전 관리 폴더 접미사를 입력하세요:</translation>
         </message>
         <message>
-            <source>&amp;Folder Postfix: %1</source>
-            <translation>&amp;폴더 접미사: %1</translation>
+            <source>Folder Postfix: %1</source>
+            <translation>폴더 접미사: %1</translation>
         </message>
         <message>
             <source>Set Versioning Pattern</source>
@@ -308,20 +300,20 @@
             <translation>예시:</translation>
         </message>
         <message>
-            <source>&amp;Pattern: %1</source>
-            <translation>&amp;패턴: %1</translation>
+            <source>Pattern: %1</source>
+            <translation>패턴: %1</translation>
         </message>
         <message>
-            <source>&amp;Versioning Location</source>
-            <translation>&amp;버전 관리 위치</translation>
+            <source>Versioning Location</source>
+            <translation>버전 관리 위치</translation>
         </message>
         <message>
-            <source>&amp;Locally Next to Folder</source>
-            <translation>&amp;폴더 옆 로컬</translation>
+            <source>Locally Next to Folder</source>
+            <translation>폴더 옆 로컬</translation>
         </message>
         <message>
-            <source>&amp;Custom Location</source>
-            <translation>&amp;사용자 지정 위치</translation>
+            <source>Custom Location</source>
+            <translation>사용자 지정 위치</translation>
         </message>
         <message>
             <source>Custom Location: </source>
@@ -332,28 +324,28 @@
             <translation>버전 관리 폴더 찾아보기</translation>
         </message>
         <message>
-            <source>&amp;Filtering</source>
-            <translation>&amp;필터링</translation>
+            <source>Filtering</source>
+            <translation>필터링</translation>
         </message>
         <message>
-            <source>&amp;Minimum File Size: %1 bytes</source>
-            <translation>&amp;최소 파일 크기: %1 바이트</translation>
+            <source>Minimum File Size: %1 bytes</source>
+            <translation>최소 파일 크기: %1 바이트</translation>
         </message>
         <message>
-            <source>&amp;Maximum File Size: %1 bytes</source>
-            <translation>&amp;최대 파일 크기: %1 바이트</translation>
+            <source>Maximum File Size: %1 bytes</source>
+            <translation>최대 파일 크기: %1 바이트</translation>
         </message>
         <message>
-            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
-            <translation>&amp;이동된 파일의 최소 크기: %1 바이트</translation>
+            <source>Minimum Size for a Moved File: %1 bytes</source>
+            <translation>이동된 파일의 최소 크기: %1 바이트</translation>
         </message>
         <message>
-            <source>&amp;Include: %1</source>
-            <translation>&amp;포함: %1</translation>
+            <source>Include: %1</source>
+            <translation>포함: %1</translation>
         </message>
         <message>
-            <source>&amp;Exclude: %1</source>
-            <translation>&amp;제외: %1</translation>
+            <source>Exclude: %1</source>
+            <translation>제외: %1</translation>
         </message>
         <message>
             <source>Set Minimum File Size</source>
@@ -392,24 +384,24 @@
             <translation>제외 목록을 세미콜론으로 구분하여 입력하십시오. 와일드카드(예: *.txt)가 지원됩니다.</translation>
         </message>
         <message>
-            <source>&amp;Switch to two-way synchronization</source>
-            <translation>&amp;양방향 동기화로 전환</translation>
+            <source>Switch to two-way synchronization</source>
+            <translation>양방향 동기화로 전환</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way synchronization</source>
-            <translation>&amp;단방향 동기화로 전환</translation>
+            <source>Switch to one-way synchronization</source>
+            <translation>단방향 동기화로 전환</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way update synchronization</source>
-            <translation>&amp;단방향 업데이트 동기화로 전환</translation>
+            <source>Switch to one-way update synchronization</source>
+            <translation>단방향 업데이트 동기화로 전환</translation>
         </message>
         <message>
-            <source>&amp;OK</source>
-            <translation>&amp;확인</translation>
+            <source>OK</source>
+            <translation>확인</translation>
         </message>
         <message>
-            <source>&amp;Cancel</source>
-            <translation>&amp;취소</translation>
+            <source>Cancel</source>
+            <translation>취소</translation>
         </message>
     </context>
 </TS>

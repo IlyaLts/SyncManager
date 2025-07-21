@@ -20,36 +20,36 @@
             <translation>सिंक्रोनाइज करने के लिए फ़ोल्डर:</translation>
         </message>
         <message>
-            <source>&amp;Syncing Mode</source>
-            <translation>&amp;सिंक्रोनाइजेशन मोड</translation>
+            <source>Syncing Mode</source>
+            <translation>सिंक्रोनाइजेशन मोड</translation>
         </message>
         <message>
-            <source>&amp;Syncing Time</source>
-            <translation>&amp;सिंक्रोनाइजेशन समय</translation>
+            <source>Syncing Time</source>
+            <translation>सिंक्रोनाइजेशन समय</translation>
         </message>
         <message>
-            <source>&amp;Deletion Mode</source>
-            <translation>&amp;डिलीट मोड</translation>
+            <source>Deletion Mode</source>
+            <translation>डिलीट मोड</translation>
         </message>
         <message>
-            <source>&amp;Settings</source>
-            <translation>&amp;सेटिंग्स</translation>
+            <source>Settings</source>
+            <translation>सेटिंग्स</translation>
         </message>
         <message>
-            <source>&amp;Sync Now</source>
-            <translation>&amp;अब सिंक्रोनाइज करें</translation>
+            <source>Sync Now</source>
+            <translation>अब सिंक्रोनाइज करें</translation>
         </message>
         <message>
-            <source>&amp;Automatic</source>
-            <translation>&amp;स्वचालित</translation>
+            <source>Automatic</source>
+            <translation>स्वचालित</translation>
         </message>
         <message>
-            <source>&amp;Manual</source>
-            <translation>&amp;मैनुअल</translation>
+            <source>Manual</source>
+            <translation>मैनुअल</translation>
         </message>
         <message>
-            <source>&amp;Increase</source>
-            <translation>&amp;वृद्धि</translation>
+            <source>Increase</source>
+            <translation>वृद्धि</translation>
         </message>
         <message>
           <source>Average Synchronization Time: </source>
@@ -60,48 +60,48 @@
             <translation>अगली सिंक्रनाइज़ेशन: </translation>
         </message>
         <message>
-            <source>&amp;Decrease</source>
-            <translation>&amp;कमी</translation>
+            <source>Decrease</source>
+            <translation>कमी</translation>
         </message>
         <message>
-            <source>&amp;Move Files to Trash</source>
-            <translation>&amp;फ़ाइलों को ट्रैश में ले जाएं</translation>
+            <source>Move Files to Trash</source>
+            <translation>फ़ाइलों को ट्रैश में ले जाएं</translation>
         </message>
         <message>
-            <source>&amp;Versioning</source>
-            <translation>&amp;वर्जनिंग</translation>
+            <source>Versioning</source>
+            <translation>वर्जनिंग</translation>
         </message>
         <message>
-            <source>&amp;Delete Files Permanently</source>
-            <translation>&amp;फ़ाइलों को स्थायी रूप से हटाएं</translation>
+            <source>Delete Files Permanently</source>
+            <translation>फ़ाइलों को स्थायी रूप से हटाएं</translation>
         </message>
         <message>
-            <source>&amp;Launch on Startup</source>
-            <translation>&amp;स्टार्टअप पर लॉन्च करें</translation>
+            <source>Launch on Startup</source>
+            <translation>स्टार्टअप पर लॉन्च करें</translation>
         </message>
         <message>
-            <source>&amp;Show in System Tray</source>
-            <translation>&amp;सिस्टम ट्रे में दिखाएं</translation>
+            <source>Show in System Tray</source>
+            <translation>सिस्टम ट्रे में दिखाएं</translation>
         </message>
         <message>
-            <source>&amp;Disable Notifications</source>
-            <translation>&amp;नोटिफिकेशन अक्षम करें</translation>
+            <source>Disable Notifications</source>
+            <translation>नोटिफिकेशन अक्षम करें</translation>
         </message>
         <message>
-            <source>&amp;Ignore Hidden Files</source>
-            <translation>&amp;छुपे हुए फ़ाइलों को अनदेखा करें</translation>
+            <source>Ignore Hidden Files</source>
+            <translation>छुपे हुए फ़ाइलों को अनदेखा करें</translation>
         </message>
         <message>
-            <source>&amp;Detect Renamed and Moved Files</source>
-            <translation>&amp;फ़ाइलों का नाम बदलने और स्थानांतरित करने का पता लगाएं</translation>
+            <source>Detect Renamed and Moved Files</source>
+            <translation>फ़ाइलों का नाम बदलने और स्थानांतरित करने का पता लगाएं</translation>
         </message>
         <message>
-            <source>&amp;Show</source>
-            <translation>&amp;दिखाएं</translation>
+            <source>Show</source>
+            <translation>दिखाएं</translation>
         </message>
         <message>
-            <source>&amp;Quit</source>
-            <translation>&amp;बाहर निकलें</translation>
+            <source>Quit</source>
+            <translation>बाहर निकलें</translation>
         </message>
         <message>
             <source>Version: %1</source>
@@ -110,10 +110,6 @@
         <message>
             <source>Couldn't find folder</source>
             <translation>फ़ोल्डर नहीं मिल सका</translation>
-        </message>
-        <message>
-            <source>Quit</source>
-            <translation>बाहर निकलें</translation>
         </message>
         <message>
             <source>Are you sure you want to quit?</source>
@@ -180,52 +176,48 @@
             <translation>अभी तक सिंक्रोनाइज नहीं किया गया है.</translation>
         </message>
         <message>
-            <source>&amp;Resume Syncing</source>
-            <translation>&amp;सिंक्रोनाइजेशन फिर से शुरू करें</translation>
+            <source>Resume Syncing</source>
+            <translation>सिंक्रोनाइजेशन फिर से शुरू करें</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;सिंक्रोनाइजेशन रोकें</translation>
+            <source>Pause Syncing</source>
+            <translation>सिंक्रोनाइजेशन रोकें</translation>
         </message>
         <message>
             <source>Sync Manager - %1 files to synchronize</source>
             <translation>सिंक मैनेजर - %1 फ़ाइलों को सिंक्रोनाइज करने के लिए</translation>
         </message>
         <message>
-            <source>&amp;Add a new profile</source>
-            <translation>&amp;नया प्रोफाइल जोड़ें</translation>
+            <source>Add a new profile</source>
+            <translation>नया प्रोफाइल जोड़ें</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing profile</source>
-            <translation>&amp;प्रोफाइल सिंक्रोनाइजेशन फिर से शुरू करें</translation>
+            <source>Resume syncing profile</source>
+            <translation>प्रोफाइल सिंक्रोनाइजेशन फिर से शुरू करें</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing profile</source>
-            <translation>&amp;प्रोफाइल सिंक्रोनाइजेशन रोकें</translation>
+            <source>Pause syncing profile</source>
+            <translation>प्रोफाइल सिंक्रोनाइजेशन रोकें</translation>
         </message>
         <message>
-            <source>&amp;Synchronize profile</source>
-            <translation>&amp;प्रोफाइल सिंक्रोनाइज करें</translation>
+            <source>Synchronize profile</source>
+            <translation>प्रोफाइल सिंक्रोनाइज करें</translation>
         </message>
         <message>
-            <source>&amp;Remove profile</source>
-            <translation>&amp;प्रोफाइल हटाएं</translation>
+            <source>Add a new folder</source>
+            <translation>नया फ़ोल्डर जोड़ें</translation>
         </message>
         <message>
-            <source>&amp;Add a new folder</source>
-            <translation>&amp;नया फ़ोल्डर जोड़ें</translation>
+            <source>Resume syncing folder</source>
+            <translation>फ़ोल्डर सिंक्रोनाइजेशन फिर से शुरू करें</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing folder</source>
-            <translation>&amp;फ़ोल्डर सिंक्रोनाइजेशन फिर से शुरू करें</translation>
+            <source>Pause syncing folder</source>
+            <translation>फ़ोल्डर सिंक्रोनाइजेशन रोकें</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing folder</source>
-            <translation>&amp;फ़ोल्डर सिंक्रोनाइजेशन रोकें</translation>
-        </message>
-        <message>
-            <source>&amp;Remove folder</source>
-            <translation>&amp;फ़ोल्डर हटाएं</translation>
+            <source>Remove folder</source>
+            <translation>फ़ोल्डर हटाएं</translation>
         </message>
         <message>
             <source>Browse For Folder</source>
@@ -236,52 +228,52 @@
             <translation>%1 (%2) पर पर्याप्त डिस्क स्थान नहीं है</translation>
         </message>
         <message>
-            <source>&amp;Yes</source>
-            <translation>&amp;हाँ</translation>
+            <source>Yes</source>
+            <translation>हाँ</translation>
         </message>
         <message>
-            <source>&amp;No</source>
-            <translation>&amp;नहीं</translation>
+            <source>No</source>
+            <translation>नहीं</translation>
         </message>
         <message>
             <source>New profile</source>
             <translation>नया प्रोफाइल</translation>
         </message>
         <message>
-            <source>&amp;Language</source>
-            <translation>&amp;भाषा</translation>
+            <source>Language</source>
+            <translation>भाषा</translation>
         </message>
         <message>
-            <source>&amp;Database Location</source>
-            <translation>&amp;डेटाबेस स्थान</translation>
+            <source>Database Location</source>
+            <translation>डेटाबेस स्थान</translation>
         </message>
         <message>
-            <source>&amp;Locally (On the local machine)</source>
-            <translation>&amp;स्थानीय रूप से (स्थानीय मशीन पर)</translation>
+            <source>Locally (On the local machine)</source>
+            <translation>स्थानीय रूप से (स्थानीय मशीन पर)</translation>
         </message>
         <message>
-            <source>&amp;Decentralized (Inside synchronization folders)</source>
-            <translation>&amp;विकेंद्रित (सिंक्रनाइज़ेशन फ़ोल्डर्स के अंदर)</translation>
+            <source>Decentralized (Inside synchronization folders)</source>
+            <translation>विकेंद्रित (सिंक्रनाइज़ेशन फ़ोल्डर्स के अंदर)</translation>
         </message>
         <message>
-            <source>&amp;Versioning Format</source>
-            <translation>&amp;वर्जनिंग प्रारूप</translation>
+            <source>Versioning Format</source>
+            <translation>वर्जनिंग प्रारूप</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (Before Extension)</source>
-            <translation>&amp;फ़ाइल टाइमस्टैम्प (एक्सटेंशन से पहले)</translation>
+            <source>File Timestamp (Before Extension)</source>
+            <translation>फ़ाइल टाइमस्टैम्प (एक्सटेंशन से पहले)</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (After Extension)</source>
-            <translation>&amp;फ़ाइल टाइमस्टैम्प (एक्सटेंशन के बाद)</translation>
+            <source>File Timestamp (After Extension)</source>
+            <translation>फ़ाइल टाइमस्टैम्प (एक्सटेंशन के बाद)</translation>
         </message>
         <message>
-            <source>&amp;Folder Timestamp</source>
-            <translation>&amp;फ़ोल्डर टाइमस्टैम्प</translation>
+            <source>Folder Timestamp</source>
+            <translation>फ़ोल्डर टाइमस्टैम्प</translation>
         </message>
         <message>
-            <source>&amp;Last Version</source>
-            <translation>&amp;अंतिम संस्करण</translation>
+            <source>Last Version</source>
+            <translation>अंतिम संस्करण</translation>
         </message>
         <message>
             <source>Set Versioning Folder Postfix</source>
@@ -292,8 +284,8 @@
             <translation>कृपया संस्करण फ़ोल्डर प्रत्यय दर्ज करें:</translation>
         </message>
         <message>
-            <source>&amp;Folder Postfix: %1</source>
-            <translation>&amp;फ़ोल्डर प्रत्यय: %1</translation>
+            <source>Folder Postfix: %1</source>
+            <translation>फ़ोल्डर प्रत्यय: %1</translation>
         </message>
         <message>
             <source>Set Versioning Pattern</source>
@@ -308,20 +300,20 @@
             <translation>उदाहरण:</translation>
         </message>
         <message>
-            <source>&amp;Pattern: %1</source>
-            <translation>&amp;पैटर्न: %1</translation>
+            <source>Pattern: %1</source>
+            <translation>पैटर्न: %1</translation>
         </message>
         <message>
-            <source>&amp;Versioning Location</source>
-            <translation>&amp;वर्जनिंग स्थान</translation>
+            <source>Versioning Location</source>
+            <translation>वर्जनिंग स्थान</translation>
         </message>
         <message>
-            <source>&amp;Locally Next to Folder</source>
-            <translation>&amp;स्थानीय रूप से फ़ोल्डर के बगल में</translation>
+            <source>Locally Next to Folder</source>
+            <translation>स्थानीय रूप से फ़ोल्डर के बगल में</translation>
         </message>
         <message>
-            <source>&amp;Custom Location</source>
-            <translation>&amp;कस्टम स्थान</translation>
+            <source>Custom Location</source>
+            <translation>कस्टम स्थान</translation>
         </message>
         <message>
             <source>Custom Location: </source>
@@ -332,28 +324,28 @@
             <translation>वर्जनिंग फ़ोल्डर के लिए ब्राउज़ करें</translation>
         </message>
         <message>
-            <source>&amp;Filtering</source>
-            <translation>&amp;फ़िल्टरिंग</translation>
+            <source>Filtering</source>
+            <translation>फ़िल्टरिंग</translation>
         </message>
         <message>
-            <source>&amp;Minimum File Size: %1 bytes</source>
-            <translation>&amp;न्यूनतम फ़ाइल आकार: %1 बाइट्स</translation>
+            <source>Minimum File Size: %1 bytes</source>
+            <translation>न्यूनतम फ़ाइल आकार: %1 बाइट्स</translation>
         </message>
         <message>
-            <source>&amp;Maximum File Size: %1 bytes</source>
-            <translation>&amp;अधिकतम फ़ाइल आकार: %1 बाइट्स</translation>
+            <source>Maximum File Size: %1 bytes</source>
+            <translation>अधिकतम फ़ाइल आकार: %1 बाइट्स</translation>
         </message>
         <message>
-            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
-            <translation>&amp;स्थानांतरित फ़ाइल के लिए न्यूनतम आकार: %1 बाइट्स</translation>
+            <source>Minimum Size for a Moved File: %1 bytes</source>
+            <translation>स्थानांतरित फ़ाइल के लिए न्यूनतम आकार: %1 बाइट्स</translation>
         </message>
         <message>
-            <source>&amp;Include: %1</source>
-            <translation>&amp;शामिल करें: %1</translation>
+            <source>Include: %1</source>
+            <translation>शामिल करें: %1</translation>
         </message>
         <message>
-            <source>&amp;Exclude: %1</source>
-            <translation>&amp;बाहर निकालें: %1</translation>
+            <source>Exclude: %1</source>
+            <translation>बाहर निकालें: %1</translation>
         </message>
         <message>
             <source>Set Minimum File Size</source>
@@ -392,24 +384,24 @@
             <translation>कृपया बाहर निकालें सूची दर्ज करें, अर्धविराम से अलग करें। वाइल्डकार्ड (जैसे, *.txt) समर्थित हैं।</translation>
         </message>
         <message>
-            <source>&amp;Switch to two-way synchronization</source>
-            <translation>&amp;दो-तरफ़ा सिंक्रनाइज़ेशन पर स्विच करें</translation>
+            <source>Switch to two-way synchronization</source>
+            <translation>दो-तरफ़ा सिंक्रनाइज़ेशन पर स्विच करें</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way synchronization</source>
-            <translation>&amp;एक-तरफ़ा सिंक्रनाइज़ेशन पर स्विच करें</translation>
+            <source>Switch to one-way synchronization</source>
+            <translation>एक-तरफ़ा सिंक्रनाइज़ेशन पर स्विच करें</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way update synchronization</source>
-            <translation>&amp;एक-तरफ़ा अपडेट सिंक्रनाइज़ेशन पर स्विच करें</translation>
+            <source>Switch to one-way update synchronization</source>
+            <translation>एक-तरफ़ा अपडेट सिंक्रनाइज़ेशन पर स्विच करें</translation>
         </message>
         <message>
-            <source>&amp;OK</source>
-            <translation>&amp;ठीक है</translation>
+            <source>OK</source>
+            <translation>ठीक है</translation>
         </message>
         <message>
-            <source>&amp;Cancel</source>
-            <translation>&amp;रद्द करें</translation>
+            <source>Cancel</source>
+            <translation>रद्द करें</translation>
         </message>
     </context>
 </TS>

@@ -909,7 +909,7 @@ void MainWindow::setVersioningPostfix()
         return;
 
     manager.setVersioningFolder(postfix);
-    versioningPostfixAction->setText(QString(tr("&Folder Postfix: %1")).arg(manager.versioningFolder()));
+    versioningPostfixAction->setText(QString("&" + tr("Folder Postfix: %1")).arg(manager.versioningFolder()));
 }
 
 /*
@@ -934,7 +934,7 @@ void MainWindow::setVersioningPattern()
         return;
 
     manager.setVersioningPattern(pattern);
-    versioningPatternAction->setText(QString(tr("&Pattern: %1")).arg(manager.versioningPattern()));
+    versioningPatternAction->setText(QString("&" + tr("Pattern: %1")).arg(manager.versioningPattern()));
 }
 
 /*
@@ -955,7 +955,7 @@ void MainWindow::setFileMinSize()
         size = manager.fileMaxSize();
 
     manager.setFileMinSize(size);
-    fileMinSizeAction->setText(tr("&Minimum File Size: %1 bytes").arg(manager.fileMinSize()));
+    fileMinSizeAction->setText("&" + tr("Minimum File Size: %1 bytes").arg(manager.fileMinSize()));
 }
 
 /*
@@ -976,7 +976,7 @@ void MainWindow::setFileMaxSize()
         size = manager.fileMinSize();
 
     manager.setFileMaxSize(size);
-    fileMaxSizeAction->setText(tr("&Maximum File Size: %1 bytes").arg(manager.fileMaxSize()));
+    fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1 bytes").arg(manager.fileMaxSize()));
 }
 
 /*
@@ -994,7 +994,7 @@ void MainWindow::setMovedFileMinSize()
         return;
 
     manager.setMovedFileMinSize(size);
-    movedFileMinSizeAction->setText(tr("&Minimum Size for a Moved File: %1 bytes").arg(manager.movedFileMinSize()));
+    movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1 bytes").arg(manager.movedFileMinSize()));
 }
 
 /*
@@ -1018,7 +1018,7 @@ void MainWindow::setIncludeList()
 
     includeString = includeList.join("; ");
     manager.setIncludeList(includeList);
-    includeAction->setText(tr("&Include: %1").arg(includeString));
+    includeAction->setText("&" + tr("Include: %1").arg(includeString));
 }
 
 /*
@@ -1042,7 +1042,7 @@ void MainWindow::setExcludeList()
 
     excludeString = excludeList.join("; ");
     manager.setExcludeList(excludeList);
-    excludeAction->setText(tr("&Exclude: %1").arg(excludeString));
+    excludeAction->setText("&" + tr("Exclude: %1").arg(excludeString));
 }
 
 /*
@@ -1080,7 +1080,7 @@ void MainWindow::showContextMenu(const QPoint &pos)
     // Profiles
     if (ui->syncProfilesView->hasFocus())
     {
-        menu.addAction(iconAdd, tr("&Add a new profile"), this, SLOT(addProfile()));
+        menu.addAction(iconAdd, "&" + tr("Add a new profile"), this, SLOT(addProfile()));
 
         if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
         {
@@ -1092,17 +1092,17 @@ void MainWindow::showContextMenu(const QPoint &pos)
 
             if (profile->paused)
             {
-                menu.addAction(iconResume, tr("&Resume syncing profile"), this, SLOT(pauseSelected()));
+                menu.addAction(iconResume, "&" + tr("Resume syncing profile"), this, SLOT(pauseSelected()));
             }
             else
             {
-                menu.addAction(iconPause, tr("&Pause syncing profile"), this, SLOT(pauseSelected()));
+                menu.addAction(iconPause, "&" + tr("Pause syncing profile"), this, SLOT(pauseSelected()));
 
-                QAction *action = menu.addAction(iconSync, tr("&Synchronize profile"), this, [=, this](){ sync(profile, false); });
+                QAction *action = menu.addAction(iconSync, "&" + tr("Synchronize profile"), this, [=, this](){ sync(profile, false); });
                 action->setDisabled(manager.queue().contains(profile));
             }
 
-            menu.addAction(iconRemove, tr("&Remove profile"), this, SLOT(removeProfile()));
+            menu.addAction(iconRemove, "&" + tr("Remove profile"), this, SLOT(removeProfile()));
         }
 
         menu.popup(ui->syncProfilesView->mapToGlobal(pos));
@@ -1113,7 +1113,7 @@ void MainWindow::showContextMenu(const QPoint &pos)
         if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
             return;
 
-        menu.addAction(iconAdd, tr("&Add a new folder"), this, SLOT(addFolder()));
+        menu.addAction(iconAdd, "&" + tr("Add a new folder"), this, SLOT(addFolder()));
 
         if (!ui->folderListView->selectionModel()->selectedIndexes().isEmpty())
         {
@@ -1126,22 +1126,22 @@ void MainWindow::showContextMenu(const QPoint &pos)
                 return;
 
             if (folder->paused)
-                menu.addAction(iconResume, tr("&Resume syncing folder"), this, SLOT(pauseSelected()));
+                menu.addAction(iconResume, "&" + tr("Resume syncing folder"), this, SLOT(pauseSelected()));
             else
-                menu.addAction(iconPause, tr("&Pause syncing folder"), this, SLOT(pauseSelected()));
+                menu.addAction(iconPause, "&" + tr("Pause syncing folder"), this, SLOT(pauseSelected()));
 
-            menu.addAction(iconRemove, tr("&Remove folder"), this, SLOT(removeFolder()));
+            menu.addAction(iconRemove, "&" + tr("Remove folder"), this, SLOT(removeFolder()));
 
             menu.addSeparator();
 
             if (folder->syncType != SyncFolder::TWO_WAY)
-                menu.addAction(iconTwoWay, tr("&Switch to two-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
+                menu.addAction(iconTwoWay, "&" + tr("Switch to two-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
 
             if (folder->syncType != SyncFolder::ONE_WAY)
-                menu.addAction(iconOneWay, tr("&Switch to one-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
+                menu.addAction(iconOneWay, "&" + tr("Switch to one-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
 
             if (folder->syncType != SyncFolder::ONE_WAY_UPDATE)
-                menu.addAction(iconOneWayUpdate, tr("&Switch to one-way update synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY_UPDATE); });
+                menu.addAction(iconOneWayUpdate, "&" + tr("Switch to one-way update synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY_UPDATE); });
         }
 
         menu.popup(ui->folderListView->mapToGlobal(pos));
@@ -1344,7 +1344,7 @@ void MainWindow::updateStatus()
                     if (folder->toBeRemoved)
                         continue;
 
-                    QIcon *icon;
+                    QIcon *icon = nullptr;
 
                     if (folder->syncType == SyncFolder::TWO_WAY)
                         icon = &iconTwoWay;
@@ -1389,7 +1389,7 @@ void MainWindow::updateStatus()
         if (pauseSyncingAction->icon().cacheKey() != iconResume.cacheKey())
             pauseSyncingAction->setIcon(iconResume);
 
-        pauseSyncingAction->setText(tr("&Resume Syncing"));
+        pauseSyncingAction->setText("&" + tr("Resume Syncing"));
     }
     else
     {
@@ -1424,7 +1424,7 @@ void MainWindow::updateStatus()
         if (pauseSyncingAction->icon().cacheKey() != iconPause.cacheKey())
             pauseSyncingAction->setIcon(iconPause);
 
-        pauseSyncingAction->setText(tr("&Pause Syncing"));
+        pauseSyncingAction->setText("&" + tr("Pause Syncing"));
     }
 
     // Title
@@ -1703,32 +1703,32 @@ void MainWindow::setupMenus()
     trayIconWarning.addFile(":/Images/TrayIconWarning.png");
     animSync.setFileName(":/Images/AnimSync.gif");
 
-    syncNowAction = new QAction(iconSync, tr("&Sync Now"), this);
-    pauseSyncingAction = new QAction(iconPause, tr("&Pause Syncing"), this);
-    automaticAction = new QAction(tr("&Automatic"), this);
-    manualAction = new QAction(tr("&Manual"), this);
-    increaseSyncTimeAction = new QAction(tr("&Increase"), this);
+    syncNowAction = new QAction(iconSync, "&" + tr("Sync Now"), this);
+    pauseSyncingAction = new QAction(iconPause, "&" + tr("Pause Syncing"), this);
+    automaticAction = new QAction("&" + tr("Automatic"), this);
+    manualAction = new QAction("&" + tr("Manual"), this);
+    increaseSyncTimeAction = new QAction("&" + tr("Increase"), this);
     syncingTimeAction = new QAction(tr("Synchronize Every: "), this);
-    decreaseSyncTimeAction = new QAction(tr("&Decrease"), this);
-    moveToTrashAction = new QAction(tr("&Move Files to Trash"), this);
-    versioningAction = new QAction(tr("&Versioning"), this);
-    deletePermanentlyAction = new QAction(tr("&Delete Files Permanently"), this);
-    fileTimestampBeforeAction = new QAction(tr("&File Timestamp (Before Extension)"), this);
-    fileTimestampAfterAction = new QAction(tr("&File Timestamp (After Extension)"), this);
-    folderTimestampAction = new QAction(tr("&Folder Timestamp"), this);
-    lastVersionAction = new QAction(tr("&Last Version"), this);
-    versioningPostfixAction = new QAction(QString(tr("&Folder Postfix: %1")).arg(manager.versioningFolder()), this);
-    versioningPatternAction = new QAction(QString(tr("&Pattern: %1")).arg(manager.versioningPattern()), this);
-    locallyNextToFolderAction = new QAction(tr("&Locally Next to Folder"), this);
-    customLocationAction = new QAction(tr("&Custom Location"), this);
+    decreaseSyncTimeAction = new QAction("&" + tr("Decrease"), this);
+    moveToTrashAction = new QAction("&" + tr("Move Files to Trash"), this);
+    versioningAction = new QAction("&" + tr("Versioning"), this);
+    deletePermanentlyAction = new QAction("&" + tr("Delete Files Permanently"), this);
+    fileTimestampBeforeAction = new QAction("&" + tr("File Timestamp (Before Extension)"), this);
+    fileTimestampAfterAction = new QAction("&" + tr("File Timestamp (After Extension)"), this);
+    folderTimestampAction = new QAction("&" + tr("Folder Timestamp"), this);
+    lastVersionAction = new QAction("&" + tr("Last Version"), this);
+    versioningPostfixAction = new QAction(QString("&" + tr("Folder Postfix: %1")).arg(manager.versioningFolder()), this);
+    versioningPatternAction = new QAction(QString("&" + tr("Pattern: %1")).arg(manager.versioningPattern()), this);
+    locallyNextToFolderAction = new QAction("&" + tr("Locally Next to Folder"), this);
+    customLocationAction = new QAction("&" + tr("Custom Location"), this);
     customLocationPathAction = new QAction(tr("Custom Location: ") + manager.versioningPath(), this);
-    saveDatabaseLocallyAction = new QAction(tr("&Locally (On the local machine)"), this);
-    saveDatabaseDecentralizedAction = new QAction(tr("&Decentralized (Inside synchronization folders)"), this);
-    fileMinSizeAction = new QAction(QString(tr("&Minimum File Size: %1 bytes")).arg(manager.fileMinSize()), this);
-    fileMaxSizeAction = new QAction(QString(tr("&Maximum File Size: %1 bytes")).arg(manager.fileMaxSize()), this);
-    movedFileMinSizeAction = new QAction(QString(tr("&Minimum Size for a Moved File: %1 bytes")).arg(manager.movedFileMinSize()), this);
-    includeAction = new QAction(QString(tr("&Include: %1")).arg(manager.includeList().join("; ")), this);
-    excludeAction = new QAction(QString(tr("&Exclude: %1")).arg(manager.excludeList().join("; ")), this);
+    saveDatabaseLocallyAction = new QAction("&" + tr("Locally (On the local machine)"), this);
+    saveDatabaseDecentralizedAction = new QAction("&" + tr("Decentralized (Inside synchronization folders)"), this);
+    fileMinSizeAction = new QAction(QString("&" + tr("Minimum File Size: %1 bytes")).arg(manager.fileMinSize()), this);
+    fileMaxSizeAction = new QAction(QString("&" + tr("Maximum File Size: %1 bytes")).arg(manager.fileMaxSize()), this);
+    movedFileMinSizeAction = new QAction(QString("&" + tr("Minimum Size for a Moved File: %1 bytes")).arg(manager.movedFileMinSize()), this);
+    includeAction = new QAction(QString("&" + tr("Include: %1")).arg(manager.includeList().join("; ")), this);
+    excludeAction = new QAction(QString("&" + tr("Exclude: %1")).arg(manager.excludeList().join("; ")), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
     {
@@ -1736,13 +1736,13 @@ void MainWindow::setupMenus()
         languageActions[i]->setIcon(*(new QIcon(languages[i].flagPath)));
     }
 
-    launchOnStartupAction = new QAction(tr("&Launch on Startup"), this);
-    showInTrayAction = new QAction(tr("&Show in System Tray"));
-    disableNotificationAction = new QAction(tr("&Disable Notifications"), this);
-    ignoreHiddenFilesAction = new QAction(tr("&Ignore Hidden Files"), this);
-    detectMovedFilesAction = new QAction(tr("&Detect Renamed and Moved Files"), this);
-    showAction = new QAction(tr("&Show"), this);
-    quitAction = new QAction(tr("&Quit"), this);
+    launchOnStartupAction = new QAction("&" + tr("Launch on Startup"), this);
+    showInTrayAction = new QAction("&" + tr("Show in System Tray"));
+    disableNotificationAction = new QAction("&" + tr("Disable Notifications"), this);
+    ignoreHiddenFilesAction = new QAction("&" + tr("Ignore Hidden Files"), this);
+    detectMovedFilesAction = new QAction("&" + tr("Detect Renamed and Moved Files"), this);
+    showAction = new QAction("&" + tr("Show"), this);
+    quitAction = new QAction("&" + tr("Quit"), this);
     version = new QAction(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION), this);
 
     syncingTimeAction->setDisabled(true);
@@ -1784,21 +1784,21 @@ void MainWindow::setupMenus()
     launchOnStartupAction->setChecked(QFile::exists(path));
 #endif
 
-    syncingModeMenu = new UnhidableMenu(tr("&Syncing Mode"), this);
+    syncingModeMenu = new UnhidableMenu("&" + tr("Syncing Mode"), this);
     syncingModeMenu->addAction(automaticAction);
     syncingModeMenu->addAction(manualAction);
 
-    syncingTimeMenu = new UnhidableMenu(tr("&Syncing Time"), this);
+    syncingTimeMenu = new UnhidableMenu("&" + tr("Syncing Time"), this);
     syncingTimeMenu->addAction(increaseSyncTimeAction);
     syncingTimeMenu->addAction(syncingTimeAction);
     syncingTimeMenu->addAction(decreaseSyncTimeAction);
 
-    deletionModeMenu = new UnhidableMenu(tr("&Deletion Mode"), this);
+    deletionModeMenu = new UnhidableMenu("&" + tr("Deletion Mode"), this);
     deletionModeMenu->addAction(moveToTrashAction);
     deletionModeMenu->addAction(versioningAction);
     deletionModeMenu->addAction(deletePermanentlyAction);
 
-    versioningFormatMenu = new UnhidableMenu(tr("&Versioning Format"), this);
+    versioningFormatMenu = new UnhidableMenu("&" + tr("Versioning Format"), this);
     versioningFormatMenu->addAction(fileTimestampBeforeAction);
     versioningFormatMenu->addAction(fileTimestampAfterAction);
     versioningFormatMenu->addAction(folderTimestampAction);
@@ -1807,17 +1807,17 @@ void MainWindow::setupMenus()
     versioningFormatMenu->addAction(versioningPostfixAction);
     versioningFormatMenu->addAction(versioningPatternAction);
 
-    versioningLocationMenu = new UnhidableMenu(tr("&Versioning Location"), this);
+    versioningLocationMenu = new UnhidableMenu("&" + tr("Versioning Location"), this);
     versioningLocationMenu->addAction(locallyNextToFolderAction);
     versioningLocationMenu->addAction(customLocationAction);
     versioningLocationMenu->addSeparator();
     versioningLocationMenu->addAction(customLocationPathAction);
 
-    databaseLocationMenu = new UnhidableMenu(tr("&Database Location"), this);
+    databaseLocationMenu = new UnhidableMenu("&" + tr("Database Location"), this);
     databaseLocationMenu->addAction(saveDatabaseLocallyAction);
     databaseLocationMenu->addAction(saveDatabaseDecentralizedAction);
 
-    filteringMenu = new UnhidableMenu(tr("&Filtering"), this);
+    filteringMenu = new UnhidableMenu("&" + tr("Filtering"), this);
     filteringMenu->addAction(fileMinSizeAction);
     filteringMenu->addAction(fileMaxSizeAction);
     filteringMenu->addAction(movedFileMinSizeAction);
@@ -1826,12 +1826,12 @@ void MainWindow::setupMenus()
     filteringMenu->addSeparator();
     filteringMenu->addAction(ignoreHiddenFilesAction);
 
-    languageMenu = new UnhidableMenu(tr("&Language"), this);
+    languageMenu = new UnhidableMenu("&" + tr("Language"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageMenu->addAction(languageActions[i]);
 
-    settingsMenu = new UnhidableMenu(tr("&Settings"), this);
+    settingsMenu = new UnhidableMenu("&" + tr("Settings"), this);
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(syncingModeMenu);
     settingsMenu->addMenu(syncingTimeMenu);
@@ -1915,57 +1915,57 @@ MainWindow::retranslate
 */
 void MainWindow::retranslate()
 {
-    syncNowAction->setText(tr("&Sync Now"));
-    pauseSyncingAction->setText(tr("&Pause Syncing"));
-    automaticAction->setText(tr("&Automatic"));
-    manualAction->setText(tr("&Manual"));
-    increaseSyncTimeAction->setText(tr("&Increase"));
+    syncNowAction->setText("&" + tr("Sync Now"));
+    pauseSyncingAction->setText("&" + tr("Pause Syncing"));
+    automaticAction->setText("&" + tr("Automatic"));
+    manualAction->setText("&" + tr("Manual"));
+    increaseSyncTimeAction->setText("&" + tr("Increase"));
     syncingTimeAction->setText(tr("Synchronize Every:"));
-    decreaseSyncTimeAction->setText(tr("&Decrease"));
-    moveToTrashAction->setText(tr("&Move Files to Trash"));
-    versioningAction->setText(tr("&Versioning"));
-    deletePermanentlyAction->setText(tr("&Delete Files Permanently"));
-    fileTimestampBeforeAction->setText(tr("&File Timestamp (Before Extension)"));
-    fileTimestampAfterAction->setText(tr("&File Timestamp (After Extension)"));
-    folderTimestampAction->setText(tr("&Folder Timestamp"));
-    lastVersionAction->setText(tr("&Last Version"));
-    versioningPostfixAction->setText(QString(tr("&Folder Postfix: %1")).arg(manager.versioningFolder()));
-    versioningPatternAction->setText(QString(tr("&Pattern: %1")).arg(manager.versioningPattern()));
-    locallyNextToFolderAction->setText(tr("&Locally Next to Folder"));
-    customLocationAction->setText(tr("&Custom Location"));
+    decreaseSyncTimeAction->setText("&" + tr("Decrease"));
+    moveToTrashAction->setText("&" + tr("Move Files to Trash"));
+    versioningAction->setText("&" + tr("Versioning"));
+    deletePermanentlyAction->setText("&" + tr("Delete Files Permanently"));
+    fileTimestampBeforeAction->setText("&" + tr("File Timestamp (Before Extension)"));
+    fileTimestampAfterAction->setText("&" + tr("File Timestamp (After Extension)"));
+    folderTimestampAction->setText("&" + tr("Folder Timestamp"));
+    lastVersionAction->setText("&" + tr("Last Version"));
+    versioningPostfixAction->setText(QString("&" + tr("Folder Postfix: %1")).arg(manager.versioningFolder()));
+    versioningPatternAction->setText(QString("&" + tr("Pattern: %1")).arg(manager.versioningPattern()));
+    locallyNextToFolderAction->setText("&" + tr("Locally Next to Folder"));
+    customLocationAction->setText("&" + tr("Custom Location"));
     customLocationPathAction->setText(tr("Custom Location: ") + manager.versioningPath());
-    saveDatabaseLocallyAction->setText(tr("&Locally (On the local machine)"));
-    saveDatabaseDecentralizedAction->setText(tr("&Decentralized (Inside synchronization folders)"));
-    fileMinSizeAction->setText(QString(tr("&Minimum File Size: %1 bytes")).arg(manager.fileMinSize()));
-    fileMaxSizeAction->setText(QString(tr("&Maximum File Size: %1 bytes")).arg(manager.fileMaxSize()));
-    movedFileMinSizeAction->setText(QString(tr("&Minimum Size for a Moved File: %1 bytes")).arg(manager.movedFileMinSize()));
-    includeAction->setText(QString(tr("&Include: %1")).arg(manager.includeList().join("; ")));
-    excludeAction->setText(QString(tr("&Exclude: %1")).arg(manager.excludeList().join("; ")));
+    saveDatabaseLocallyAction->setText("&" + tr("Locally (On the local machine)"));
+    saveDatabaseDecentralizedAction->setText("&" + tr("Decentralized (Inside synchronization folders)"));
+    fileMinSizeAction->setText(QString("&" + tr("Minimum File Size: %1 bytes")).arg(manager.fileMinSize()));
+    fileMaxSizeAction->setText(QString("&" + tr("Maximum File Size: %1 bytes")).arg(manager.fileMaxSize()));
+    movedFileMinSizeAction->setText(QString("&" + tr("Minimum Size for a Moved File: %1 bytes")).arg(manager.movedFileMinSize()));
+    includeAction->setText(QString("&" + tr("Include: %1")).arg(manager.includeList().join("; ")));
+    excludeAction->setText(QString("&" + tr("Exclude: %1")).arg(manager.excludeList().join("; ")));
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setText(tr(languages[i].name));
 
-    launchOnStartupAction->setText(tr("&Launch on Startup"));
-    showInTrayAction->setText(tr("&Show in System Tray"));
-    disableNotificationAction->setText(tr("&Disable Notifications"));
-    ignoreHiddenFilesAction->setText(tr("&Ignore Hidden Files"));
-    detectMovedFilesAction->setText(tr("&Detect Renamed and Moved Files"));
-    showAction->setText(tr("&Show"));
-    quitAction->setText(tr("&Quit"));
+    launchOnStartupAction->setText("&" + tr("Launch on Startup"));
+    showInTrayAction->setText("&" + tr("Show in System Tray"));
+    disableNotificationAction->setText("&" + tr("Disable Notifications"));
+    ignoreHiddenFilesAction->setText("&" + tr("Ignore Hidden Files"));
+    detectMovedFilesAction->setText("&" + tr("Detect Renamed and Moved Files"));
+    showAction->setText("&" + tr("Show"));
+    quitAction->setText("&" + tr("Quit"));
     version->setText(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION));
 
-    syncingModeMenu->setTitle(tr("&Syncing Mode"));
-    syncingTimeMenu->setTitle(tr("&Syncing Time"));
-    deletionModeMenu->setTitle(tr("&Deletion Mode"));
-    versioningFormatMenu->setTitle(tr("&Versioning Format"));
-    versioningLocationMenu->setTitle(tr("&Versioning Location"));
-    databaseLocationMenu->setTitle(tr("&Database Location"));
-    filteringMenu->setTitle(tr("&Filtering"));
-    languageMenu->setTitle(tr("&Language"));
-    settingsMenu->setTitle(tr("&Settings"));
+    syncingModeMenu->setTitle("&" + tr("Syncing Mode"));
+    syncingTimeMenu->setTitle("&" + tr("Syncing Time"));
+    deletionModeMenu->setTitle("&" + tr("Deletion Mode"));
+    versioningFormatMenu->setTitle("&" + tr("Versioning Format"));
+    versioningLocationMenu->setTitle("&" + tr("Versioning Location"));
+    databaseLocationMenu->setTitle("&" + tr("Database Location"));
+    filteringMenu->setTitle("&" + tr("Filtering"));
+    languageMenu->setTitle("&" + tr("Language"));
+    settingsMenu->setTitle("&" + tr("Settings"));
 
-    syncNowAction->setToolTip(tr("&Sync Now"));
-    pauseSyncingAction->setToolTip(tr("&Pause Syncing"));
+    syncNowAction->setToolTip("&" + tr("Sync Now"));
+    pauseSyncingAction->setToolTip("&" + tr("Pause Syncing"));
     ui->SyncLabel->setText(tr("Synchronization profiles:"));
     ui->foldersLabel->setText(tr("Folders to synchronize:"));
 

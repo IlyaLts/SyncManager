@@ -20,36 +20,36 @@
             <translation>Dossiers à synchroniser :</translation>
         </message>
         <message>
-            <source>&amp;Syncing Mode</source>
-            <translation>&amp;Mode de synchronisation</translation>
+            <source>Syncing Mode</source>
+            <translation>Mode de synchronisation</translation>
         </message>
         <message>
-            <source>&amp;Syncing Time</source>
-            <translation>&amp;Heure de synchronisation</translation>
+            <source>Syncing Time</source>
+            <translation>Heure de synchronisation</translation>
         </message>
         <message>
-            <source>&amp;Deletion Mode</source>
-            <translation>&amp;Mode de suppression</translation>
+            <source>Deletion Mode</source>
+            <translation>Mode de suppression</translation>
         </message>
         <message>
-            <source>&amp;Settings</source>
-            <translation>&amp;Paramètres</translation>
+            <source>Settings</source>
+            <translation>Paramètres</translation>
         </message>
         <message>
-            <source>&amp;Sync Now</source>
-            <translation>&amp;Synchroniser maintenant</translation>
+            <source>Sync Now</source>
+            <translation>Synchroniser maintenant</translation>
         </message>
         <message>
-            <source>&amp;Automatic</source>
-            <translation>&amp;Automatique</translation>
+            <source>Automatic</source>
+            <translation>Automatique</translation>
         </message>
         <message>
-            <source>&amp;Manual</source>
-            <translation>&amp;Manuel</translation>
+            <source>Manual</source>
+            <translation>Manuel</translation>
         </message>
         <message>
-            <source>&amp;Increase</source>
-            <translation>&amp;Augmenter</translation>
+            <source>Increase</source>
+            <translation>Augmenter</translation>
         </message>
         <message>
           <source>Average Synchronization Time: </source>
@@ -60,48 +60,48 @@
             <translation>Prochaine synchronisation : </translation>
         </message>
         <message>
-            <source>&amp;Decrease</source>
-            <translation>&amp;Réduire</translation>
+            <source>Decrease</source>
+            <translation>Réduire</translation>
         </message>
         <message>
-            <source>&amp;Move Files to Trash</source>
-            <translation>&amp;Déplacer les fichiers vers la corbeille</translation>
+            <source>Move Files to Trash</source>
+            <translation>Déplacer les fichiers vers la corbeille</translation>
         </message>
         <message>
-            <source>&amp;Versioning</source>
-            <translation>&amp;Gestion des versions</translation>
+            <source>Versioning</source>
+            <translation>Gestion des versions</translation>
         </message>
         <message>
-            <source>&amp;Delete Files Permanently</source>
-            <translation>&amp;Supprimer les fichiers définitivement</translation>
+            <source>Delete Files Permanently</source>
+            <translation>Supprimer les fichiers définitivement</translation>
         </message>
         <message>
-            <source>&amp;Launch on Startup</source>
-            <translation>&amp;Lancer au démarrage</translation>
+            <source>Launch on Startup</source>
+            <translation>Lancer au démarrage</translation>
         </message>
         <message>
-            <source>&amp;Show in System Tray</source>
-            <translation>&amp;Afficher dans la barre des tâches</translation>
+            <source>Show in System Tray</source>
+            <translation>Afficher dans la barre des tâches</translation>
         </message>
         <message>
-            <source>&amp;Disable Notifications</source>
-            <translation>&amp;Désactiver les notifications</translation>
+            <source>Disable Notifications</source>
+            <translation>Désactiver les notifications</translation>
         </message>
         <message>
-            <source>&amp;Ignore Hidden Files</source>
-            <translation>&amp;Ignorer les fichiers cachés</translation>
+            <source>Ignore Hidden Files</source>
+            <translation>Ignorer les fichiers cachés</translation>
         </message>
         <message>
-            <source>&amp;Detect Renamed and Moved Files</source>
-            <translation>&amp;Détecter les fichiers renommés et déplacés</translation>
+            <source>Detect Renamed and Moved Files</source>
+            <translation>Détecter les fichiers renommés et déplacés</translation>
         </message>
         <message>
-            <source>&amp;Show</source>
-            <translation>&amp;Afficher</translation>
+            <source>Show</source>
+            <translation>Afficher</translation>
         </message>
         <message>
-            <source>&amp;Quit</source>
-            <translation>&amp;Quitter</translation>
+            <source>Quit</source>
+            <translation>Quitter</translation>
         </message>
         <message>
             <source>Version: %1</source>
@@ -110,10 +110,6 @@
         <message>
             <source>Couldn't find folder</source>
             <translation>Dossier introuvable</translation>
-        </message>
-        <message>
-            <source>Quit</source>
-            <translation>Quitter</translation>
         </message>
         <message>
             <source>Are you sure you want to quit?</source>
@@ -180,52 +176,48 @@
             <translation>N'a pas encore été synchronisé.</translation>
         </message>
         <message>
-            <source>&amp;Resume Syncing</source>
-            <translation>&amp;Reprendre la synchronisation</translation>
+            <source>Resume Syncing</source>
+            <translation>Reprendre la synchronisation</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;Mettre en pause la synchronisation</translation>
+            <source>Pause Syncing</source>
+            <translation>Mettre en pause la synchronisation</translation>
         </message>
         <message>
             <source>Sync Manager - %1 files to synchronize</source>
             <translation>Gestionnaire de synchronisation - %1 fichiers à synchroniser</translation>
         </message>
         <message>
-            <source>&amp;Add a new profile</source>
-            <translation>&amp;Ajouter un nouveau profil</translation>
+            <source>Add a new profile</source>
+            <translation>Ajouter un nouveau profil</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing profile</source>
-            <translation>&amp;Reprendre la synchronisation du profil</translation>
+            <source>Resume syncing profile</source>
+            <translation>Reprendre la synchronisation du profil</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing profile</source>
-            <translation>&amp;Mettre en pause la synchronisation du profil</translation>
+            <source>Pause syncing profile</source>
+            <translation>Mettre en pause la synchronisation du profil</translation>
         </message>
         <message>
-            <source>&amp;Synchronize profile</source>
-            <translation>&amp;Synchroniser le profil</translation>
+            <source>Synchronize profile</source>
+            <translation>Synchroniser le profil</translation>
         </message>
         <message>
-            <source>&amp;Remove profile</source>
-            <translation>&amp;Supprimer le profil</translation>
+            <source>Add a new folder</source>
+            <translation>Ajouter un nouveau dossier</translation>
         </message>
         <message>
-            <source>&amp;Add a new folder</source>
-            <translation>&amp;Ajouter un nouveau dossier</translation>
+            <source>Resume syncing folder</source>
+            <translation>Reprendre la synchronisation du dossier</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing folder</source>
-            <translation>&amp;Reprendre la synchronisation du dossier</translation>
+            <source>Pause syncing folder</source>
+            <translation>Mettre en pause la synchronisation du dossier</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing folder</source>
-            <translation>&amp;Mettre en pause la synchronisation du dossier</translation>
-        </message>
-        <message>
-            <source>&amp;Remove folder</source>
-            <translation>&amp;Supprimer le dossier</translation>
+            <source>Remove folder</source>
+            <translation>Supprimer le dossier</translation>
         </message>
         <message>
             <source>Browse For Folder</source>
@@ -236,52 +228,52 @@
             <translation>Pas assez d'espace disque sur %1 (%2)</translation>
         </message>
         <message>
-            <source>&amp;Yes</source>
-            <translation>&amp;Oui</translation>
+            <source>Yes</source>
+            <translation>Oui</translation>
         </message>
         <message>
-            <source>&amp;No</source>
-            <translation>&amp;Non</translation>
+            <source>No</source>
+            <translation>Non</translation>
         </message>
         <message>
             <source>New profile</source>
             <translation>Nouveau profil</translation>
         </message>
         <message>
-            <source>&amp;Language</source>
-            <translation>&amp;Langue</translation>
+            <source>Language</source>
+            <translation>Langue</translation>
         </message>
         <message>
-            <source>&amp;Database Location</source>
-            <translation>&amp;Emplacement de la base de données</translation>
+            <source>Database Location</source>
+            <translation>Emplacement de la base de données</translation>
         </message>
         <message>
-            <source>&amp;Locally (On the local machine)</source>
-            <translation>&amp;Localement (Sur la machine locale)</translation>
+            <source>Locally (On the local machine)</source>
+            <translation>Localement (Sur la machine locale)</translation>
         </message>
         <message>
-            <source>&amp;Decentralized (Inside synchronization folders)</source>
-            <translation>&amp;Décentralisé (Dans les dossiers de synchronisation)</translation>
+            <source>Decentralized (Inside synchronization folders)</source>
+            <translation>Décentralisé (Dans les dossiers de synchronisation)</translation>
         </message>
         <message>
-            <source>&amp;Versioning Format</source>
-            <translation>&amp;Format de versioning</translation>
+            <source>Versioning Format</source>
+            <translation>Format de versioning</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (Before Extension)</source>
-            <translation>&amp;Horodatage du fichier (avant l'extension)</translation>
+            <source>File Timestamp (Before Extension)</source>
+            <translation>Horodatage du fichier (avant l'extension)</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (After Extension)</source>
-            <translation>&amp;Horodatage du fichier (après l'extension)</translation>
+            <source>File Timestamp (After Extension)</source>
+            <translation>Horodatage du fichier (après l'extension)</translation>
         </message>
         <message>
-            <source>&amp;Folder Timestamp</source>
-            <translation>&amp;Horodatage du dossier</translation>
+            <source>Folder Timestamp</source>
+            <translation>Horodatage du dossier</translation>
         </message>
         <message>
-            <source>&amp;Last Version</source>
-            <translation>&amp;Dernière version</translation>
+            <source>Last Version</source>
+            <translation>Dernière version</translation>
         </message>
         <message>
             <source>Set Versioning Folder Postfix</source>
@@ -292,8 +284,8 @@
             <translation>Veuillez entrer le suffixe du dossier de versionnement :</translation>
         </message>
         <message>
-            <source>&amp;Folder Postfix: %1</source>
-            <translation>&amp;Suffixe du dossier : %1</translation>
+            <source>Folder Postfix: %1</source>
+            <translation>Suffixe du dossier : %1</translation>
         </message>
         <message>
             <source>Set Versioning Pattern</source>
@@ -308,20 +300,20 @@
             <translation>Exemples :</translation>
         </message>
         <message>
-            <source>&amp;Pattern: %1</source>
-            <translation>&amp;Motif : %1</translation>
+            <source>Pattern: %1</source>
+            <translation>Motif : %1</translation>
         </message>
         <message>
-            <source>&amp;Versioning Location</source>
-            <translation>&amp;Emplacement du versioning</translation>
+            <source>Versioning Location</source>
+            <translation>Emplacement du versioning</translation>
         </message>
         <message>
-            <source>&amp;Locally Next to Folder</source>
-            <translation>&amp;Localement à côté du dossier</translation>
+            <source>Locally Next to Folder</source>
+            <translation>Localement à côté du dossier</translation>
         </message>
         <message>
-            <source>&amp;Custom Location</source>
-            <translation>&amp;Emplacement personnalisé</translation>
+            <source>Custom Location</source>
+            <translation>Emplacement personnalisé</translation>
         </message>
         <message>
             <source>Custom Location: </source>
@@ -332,28 +324,28 @@
             <translation>Parcourir pour le dossier de versioning</translation>
         </message>
         <message>
-            <source>&amp;Filtering</source>
-            <translation>&amp;Filtrage</translation>
+            <source>Filtering</source>
+            <translation>Filtrage</translation>
         </message>
         <message>
-            <source>&amp;Minimum File Size: %1 bytes</source>
-            <translation>&amp;Taille minimale du fichier : %1 octets</translation>
+            <source>Minimum File Size: %1 bytes</source>
+            <translation>Taille minimale du fichier : %1 octets</translation>
         </message>
         <message>
-            <source>&amp;Maximum File Size: %1 bytes</source>
-            <translation>&amp;Taille maximale du fichier : %1 octets</translation>
+            <source>Maximum File Size: %1 bytes</source>
+            <translation>Taille maximale du fichier : %1 octets</translation>
         </message>
         <message>
-            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
-            <translation>&amp;Taille minimale pour un fichier déplacé : %1 octets</translation>
+            <source>Minimum Size for a Moved File: %1 bytes</source>
+            <translation>Taille minimale pour un fichier déplacé : %1 octets</translation>
         </message>
         <message>
-            <source>&amp;Include: %1</source>
-            <translation>&amp;Inclure : %1</translation>
+            <source>Include: %1</source>
+            <translation>Inclure : %1</translation>
         </message>
         <message>
-            <source>&amp;Exclude: %1</source>
-            <translation>&amp;Exclure : %1</translation>
+            <source>Exclude: %1</source>
+            <translation>Exclure : %1</translation>
         </message>
         <message>
             <source>Set Minimum File Size</source>
@@ -392,24 +384,24 @@
             <translation>Veuillez entrer la liste d'exclusion, séparée par des points-virgules. Les caractères génériques (par exemple, *.txt) sont pris en charge.</translation>
         </message>
         <message>
-            <source>&amp;Switch to two-way synchronization</source>
-            <translation>&amp;Passer à la synchronisation bidirectionnelle</translation>
+            <source>Switch to two-way synchronization</source>
+            <translation>Passer à la synchronisation bidirectionnelle</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way synchronization</source>
-            <translation>&amp;Passer à la synchronisation unidirectionnelle</translation>
+            <source>Switch to one-way synchronization</source>
+            <translation>Passer à la synchronisation unidirectionnelle</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way update synchronization</source>
-            <translation>&amp;Passer à la synchronisation de mise à jour unidirectionnelle</translation>
+            <source>Switch to one-way update synchronization</source>
+            <translation>Passer à la synchronisation de mise à jour unidirectionnelle</translation>
         </message>
         <message>
-            <source>&amp;OK</source>
-            <translation>&amp;OK</translation>
+            <source>OK</source>
+            <translation>OK</translation>
         </message>
         <message>
-            <source>&amp;Cancel</source>
-            <translation>&amp;Annuler</translation>
+            <source>Cancel</source>
+            <translation>Annuler</translation>
         </message>
     </context>
 </TS>

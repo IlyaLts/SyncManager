@@ -20,36 +20,36 @@
             <translation>Mapper til synkronisering:</translation>
         </message>
         <message>
-            <source>&amp;Syncing Mode</source>
-            <translation>&amp;Synkroniseringstilstand</translation>
+            <source>Syncing Mode</source>
+            <translation>Synkroniseringstilstand</translation>
         </message>
         <message>
-            <source>&amp;Syncing Time</source>
-            <translation>&amp;Synkroniseringstid</translation>
+            <source>Syncing Time</source>
+            <translation>Synkroniseringstid</translation>
         </message>
         <message>
-            <source>&amp;Deletion Mode</source>
-            <translation>&amp;Sletningstilstand</translation>
+            <source>Deletion Mode</source>
+            <translation>Sletningstilstand</translation>
         </message>
         <message>
-            <source>&amp;Settings</source>
-            <translation>&amp;Indstillinger</translation>
+            <source>Settings</source>
+            <translation>Indstillinger</translation>
         </message>
         <message>
-            <source>&amp;Sync Now</source>
-            <translation>&amp;Synkroniser nu</translation>
+            <source>Sync Now</source>
+            <translation>Synkroniser nu</translation>
         </message>
         <message>
-            <source>&amp;Automatic</source>
-            <translation>&amp;Automatisk</translation>
+            <source>Automatic</source>
+            <translation>Automatisk</translation>
         </message>
         <message>
-            <source>&amp;Manual</source>
-            <translation>&amp;Manuel</translation>
+            <source>Manual</source>
+            <translation>Manuel</translation>
         </message>
         <message>
-            <source>&amp;Increase</source>
-            <translation>&amp;Forøg</translation>
+            <source>Increase</source>
+            <translation>Forøg</translation>
         </message>
         <message>
             <source>Average Synchronization Time: </source>
@@ -60,48 +60,48 @@
             <translation>Næste synkronisering: </translation>
         </message>
         <message>
-            <source>&amp;Decrease</source>
-            <translation>&amp;Formindsk</translation>
+            <source>Decrease</source>
+            <translation>Formindsk</translation>
         </message>
         <message>
-            <source>&amp;Move Files to Trash</source>
-            <translation>&amp;Flyt filer til papirkurven</translation>
+            <source>Move Files to Trash</source>
+            <translation>Flyt filer til papirkurven</translation>
         </message>
         <message>
-            <source>&amp;Versioning</source>
-            <translation>&amp;Versionering</translation>
+            <source>Versioning</source>
+            <translation>Versionering</translation>
         </message>
         <message>
-            <source>&amp;Delete Files Permanently</source>
-            <translation>&amp;Slet filer permanent</translation>
+            <source>Delete Files Permanently</source>
+            <translation>Slet filer permanent</translation>
         </message>
         <message>
-            <source>&amp;Launch on Startup</source>
-            <translation>&amp;Start ved opstart</translation>
+            <source>Launch on Startup</source>
+            <translation>Start ved opstart</translation>
         </message>
         <message>
-            <source>&amp;Show in System Tray</source>
-            <translation>&amp;Vis i systembakke</translation>
+            <source>Show in System Tray</source>
+            <translation>Vis i systembakke</translation>
         </message>
         <message>
-            <source>&amp;Disable Notifications</source>
-            <translation>&amp;Deaktiver notifikationer</translation>
+            <source>Disable Notifications</source>
+            <translation>Deaktiver notifikationer</translation>
         </message>
         <message>
-            <source>&amp;Ignore Hidden Files</source>
-            <translation>&amp;Ignorer skjulte filer</translation>
+            <source>Ignore Hidden Files</source>
+            <translation>Ignorer skjulte filer</translation>
         </message>
         <message>
-            <source>&amp;Detect Renamed and Moved Files</source>
-            <translation>&amp;Registrer omdøbte og flyttede filer</translation>
+            <source>Detect Renamed and Moved Files</source>
+            <translation>Registrer omdøbte og flyttede filer</translation>
         </message>
         <message>
-            <source>&amp;Show</source>
-            <translation>&amp;Vis</translation>
+            <source>Show</source>
+            <translation>Vis</translation>
         </message>
         <message>
-            <source>&amp;Quit</source>
-            <translation>&amp;Afslut</translation>
+            <source>Quit</source>
+            <translation>Afslut</translation>
         </message>
         <message>
             <source>Version: %1</source>
@@ -110,10 +110,6 @@
         <message>
             <source>Couldn't find folder</source>
             <translation>Kunne ikke finde mappe</translation>
-        </message>
-        <message>
-            <source>Quit</source>
-            <translation>Afslut</translation>
         </message>
         <message>
             <source>Are you sure you want to quit?</source>
@@ -180,52 +176,48 @@
             <translation>Ikke synkroniseret endnu.</translation>
         </message>
         <message>
-            <source>&amp;Resume Syncing</source>
-            <translation>&amp;Genoptag synkronisering</translation>
+            <source>Resume Syncing</source>
+            <translation>Genoptag synkronisering</translation>
         </message>
         <message>
-            <source>&amp;Pause Syncing</source>
-            <translation>&amp;Sæt synkronisering på pause</translation>
+            <source>Pause Syncing</source>
+            <translation>Sæt synkronisering på pause</translation>
         </message>
         <message>
             <source>Sync Manager - %1 files to synchronize</source>
             <translation>Sync Manager - %1 filer til synkronisering</translation>
         </message>
         <message>
-            <source>&amp;Add a new profile</source>
-            <translation>&amp;Tilføj en ny profil</translation>
+            <source>Add a new profile</source>
+            <translation>Tilføj en ny profil</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing profile</source>
-            <translation>&amp;Genoptag synkronisering af profil</translation>
+            <source>Resume syncing profile</source>
+            <translation>Genoptag synkronisering af profil</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing profile</source>
-            <translation>&amp;Sæt synkronisering af profil på pause</translation>
+            <source>Pause syncing profile</source>
+            <translation>Sæt synkronisering af profil på pause</translation>
         </message>
         <message>
-            <source>&amp;Synchronize profile</source>
-            <translation>&amp;Synkroniser profil</translation>
+            <source>Synchronize profile</source>
+            <translation>Synkroniser profil</translation>
         </message>
         <message>
-            <source>&amp;Remove profile</source>
-            <translation>&amp;Fjern profil</translation>
+            <source>Add a new folder</source>
+            <translation>Tilføj en ny mappe</translation>
         </message>
         <message>
-            <source>&amp;Add a new folder</source>
-            <translation>&amp;Tilføj en ny mappe</translation>
+            <source>Resume syncing folder</source>
+            <translation>Genoptag synkronisering af mappe</translation>
         </message>
         <message>
-            <source>&amp;Resume syncing folder</source>
-            <translation>&amp;Genoptag synkronisering af mappe</translation>
+            <source>Pause syncing folder</source>
+            <translation>Sæt synkronisering af mappe på pause</translation>
         </message>
         <message>
-            <source>&amp;Pause syncing folder</source>
-            <translation>&amp;Sæt synkronisering af mappe på pause</translation>
-        </message>
-        <message>
-            <source>&amp;Remove folder</source>
-            <translation>&amp;Fjern mappe</translation>
+            <source>Remove folder</source>
+            <translation>Fjern mappe</translation>
         </message>
         <message>
             <source>Browse For Folder</source>
@@ -236,52 +228,52 @@
             <translation>Ikke nok diskplads på %1 (%2)</translation>
         </message>
         <message>
-            <source>&amp;Yes</source>
-            <translation>&amp;Ja</translation>
+            <source>Yes</source>
+            <translation>Ja</translation>
         </message>
         <message>
-            <source>&amp;No</source>
-            <translation>&amp;Nej</translation>
+            <source>No</source>
+            <translation>Nej</translation>
         </message>
         <message>
             <source>New profile</source>
             <translation>Ny profil</translation>
         </message>
         <message>
-            <source>&amp;Language</source>
-            <translation>&amp;Sprog</translation>
+            <source>Language</source>
+            <translation>Sprog</translation>
         </message>
         <message>
-            <source>&amp;Database Location</source>
-            <translation>&amp;Databaselokation</translation>
+            <source>Database Location</source>
+            <translation>Databaselokation</translation>
         </message>
         <message>
-            <source>&amp;Locally (On the local machine)</source>
-            <translation>&amp;Lokalt (på den lokale maskine)</translation>
+            <source>Locally (On the local machine)</source>
+            <translation>Lokalt (på den lokale maskine)</translation>
         </message>
         <message>
-            <source>&amp;Decentralized (Inside synchronization folders)</source>
-            <translation>&amp;Decentraliseret (inde i synkroniseringsmapper)</translation>
+            <source>Decentralized (Inside synchronization folders)</source>
+            <translation>Decentraliseret (inde i synkroniseringsmapper)</translation>
         </message>
         <message>
-            <source>&amp;Versioning Format</source>
-            <translation>&amp;Versioneringsformat</translation>
+            <source>Versioning Format</source>
+            <translation>Versioneringsformat</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (Before Extension)</source>
-            <translation>&amp;Fil tidsstempel (før udvidelse)</translation>
+            <source>File Timestamp (Before Extension)</source>
+            <translation>Fil tidsstempel (før udvidelse)</translation>
         </message>
         <message>
-            <source>&amp;File Timestamp (After Extension)</source>
-            <translation>&amp;Fil tidsstempel (efter udvidelse)</translation>
+            <source>File Timestamp (After Extension)</source>
+            <translation>Fil tidsstempel (efter udvidelse)</translation>
         </message>
         <message>
-            <source>&amp;Folder Timestamp</source>
-            <translation>&amp;Mappe tidsstempel</translation>
+            <source>Folder Timestamp</source>
+            <translation>Mappe tidsstempel</translation>
         </message>
         <message>
-            <source>&amp;Last Version</source>
-            <translation>&amp;Sidste version</translation>
+            <source>Last Version</source>
+            <translation>Sidste version</translation>
         </message>
         <message>
             <source>Set Versioning Folder Postfix</source>
@@ -292,8 +284,8 @@
             <translation>Indtast venligst postfix for versioneringsmappe:</translation>
         </message>
         <message>
-            <source>&amp;Folder Postfix: %1</source>
-            <translation>&amp;Mappe postfix: %1</translation>
+            <source>Folder Postfix: %1</source>
+            <translation>Mappe postfix: %1</translation>
         </message>
         <message>
             <source>Set Versioning Pattern</source>
@@ -308,20 +300,20 @@
             <translation>Eksempler:</translation>
         </message>
         <message>
-            <source>&amp;Pattern: %1</source>
-            <translation>&amp;Mønster: %1</translation>
+            <source>Pattern: %1</source>
+            <translation>Mønster: %1</translation>
         </message>
         <message>
-            <source>&amp;Versioning Location</source>
-            <translation>&amp;Versioneringslokation</translation>
+            <source>Versioning Location</source>
+            <translation>Versioneringslokation</translation>
         </message>
         <message>
-            <source>&amp;Locally Next to Folder</source>
-            <translation>&amp;Lokalt ved siden af mappen</translation>
+            <source>Locally Next to Folder</source>
+            <translation>Lokalt ved siden af mappen</translation>
         </message>
         <message>
-            <source>&amp;Custom Location</source>
-            <translation>&amp;Brugerdefineret lokation</translation>
+            <source>Custom Location</source>
+            <translation>Brugerdefineret lokation</translation>
         </message>
         <message>
             <source>Custom Location: </source>
@@ -332,28 +324,28 @@
             <translation>Gennemse for versioneringsmappe</translation>
         </message>
         <message>
-            <source>&amp;Filtering</source>
-            <translation>&amp;Filtrering</translation>
+            <source>Filtering</source>
+            <translation>Filtrering</translation>
         </message>
         <message>
-            <source>&amp;Minimum File Size: %1 bytes</source>
-            <translation>&amp;Minimum filstørrelse: %1 bytes</translation>
+            <source>Minimum File Size: %1 bytes</source>
+            <translation>Minimum filstørrelse: %1 bytes</translation>
         </message>
         <message>
-            <source>&amp;Maximum File Size: %1 bytes</source>
-            <translation>&amp;Maksimal filstørrelse: %1 bytes</translation>
+            <source>Maximum File Size: %1 bytes</source>
+            <translation>Maksimal filstørrelse: %1 bytes</translation>
         </message>
         <message>
-            <source>&amp;Minimum Size for a Moved File: %1 bytes</source>
-            <translation>&amp;Minimumstørrelse for en flyttet fil: %1 bytes</translation>
+            <source>Minimum Size for a Moved File: %1 bytes</source>
+            <translation>Minimumstørrelse for en flyttet fil: %1 bytes</translation>
         </message>
         <message>
-            <source>&amp;Include: %1</source>
-            <translation>&amp;Inkluder: %1</translation>
+            <source>Include: %1</source>
+            <translation>Inkluder: %1</translation>
         </message>
         <message>
-            <source>&amp;Exclude: %1</source>
-            <translation>&amp;Udeluk: %1</translation>
+            <source>Exclude: %1</source>
+            <translation>Udeluk: %1</translation>
         </message>
         <message>
             <source>Set Minimum File Size</source>
@@ -392,24 +384,24 @@
             <translation>Indtast venligst ekskluderingsliste, adskilt af semikoloner. Wildcards (f.eks. *.txt) understøttes.</translation>
         </message>
         <message>
-            <source>&amp;Switch to two-way synchronization</source>
-            <translation>&amp;Skift til tovejssynkronisering</translation>
+            <source>Switch to two-way synchronization</source>
+            <translation>Skift til tovejssynkronisering</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way synchronization</source>
-            <translation>&amp;Skift til envejssynkronisering</translation>
+            <source>Switch to one-way synchronization</source>
+            <translation>Skift til envejssynkronisering</translation>
         </message>
         <message>
-            <source>&amp;Switch to one-way update synchronization</source>
-            <translation>&amp;Skift til envejs opdateringssynkronisering</translation>
+            <source>Switch to one-way update synchronization</source>
+            <translation>Skift til envejs opdateringssynkronisering</translation>
         </message>
         <message>
-            <source>&amp;OK</source>
-            <translation>&amp;OK</translation>
+            <source>OK</source>
+            <translation>OK</translation>
         </message>
         <message>
-            <source>&amp;Cancel</source>
-            <translation>&amp;Annuller</translation>
+            <source>Cancel</source>
+            <translation>Annuller</translation>
         </message>
     </context>
 </TS>
