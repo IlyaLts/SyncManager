@@ -1279,6 +1279,10 @@ SyncManager::removeFile
 */
 bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QString &path, const QString &fullPath, SyncFile::Type type)
 {
+    // Prevents the deletion of a sync folder itself in case something bad happens
+    if (path.isEmpty())
+        return true;
+
     if (m_deletionMode == MoveToTrash)
     {
         // Used to make sure that moveToTrash function really moved a file/folder
@@ -1292,41 +1296,44 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         QString newLocation(folder.versioningPath);
         newLocation.append(path);
 
-        // Adds a timestamp to the end of the filename of a deleted file
-        if (versioningFormat() == FileTimestampBefore && type == SyncFile::File)
+        if (type == SyncFile::File)
         {
-            int nameEndIndex = newLocation.lastIndexOf('.');
-            int slashIndex = newLocation.lastIndexOf('/');
-            int backlashIndex = newLocation.lastIndexOf('\\');
+            // Adds a timestamp to the end of the filename of a deleted file
+            if (versioningFormat() == FileTimestampBefore)
+            {
+                int nameEndIndex = newLocation.lastIndexOf('.');
+                int slashIndex = newLocation.lastIndexOf('/');
+                int backlashIndex = newLocation.lastIndexOf('\\');
 
-            if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
-                nameEndIndex = newLocation.length();
+                if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
+                    nameEndIndex = newLocation.length();
 
-            newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(m_versioningPattern));
-        }
-        // Adds a timestamp to a deleted file before the extension
-        else if (versioningFormat() == FileTimestampAfter && type == SyncFile::File)
-        {
-            newLocation.append("_" + QDateTime::currentDateTime().toString(m_versioningPattern));
+                newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(m_versioningPattern));
+            }
+            // Adds a timestamp to a deleted file before the extension
+            else if (versioningFormat() == FileTimestampAfter)
+            {
+                newLocation.append("_" + QDateTime::currentDateTime().toString(m_versioningPattern));
 
-            // Adds a file extension after the timestamp
-            int dotIndex = path.lastIndexOf('.');
-            int slashIndex = path.lastIndexOf('/');
-            int backlashIndex = path.lastIndexOf('\\');
+                // Adds a file extension after the timestamp
+                int dotIndex = path.lastIndexOf('.');
+                int slashIndex = path.lastIndexOf('/');
+                int backlashIndex = path.lastIndexOf('\\');
 
-            if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
-                newLocation.append(path.mid(dotIndex));
-        }
+                if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
+                    newLocation.append(path.mid(dotIndex));
+            }
 
-        // As we want to have only the latest version of files,
-        // we need to delete the existing files in the versioning folder first,
-        // but only if the deleted file still exists, in case the parent folder was removed earlier.
-        if (m_versioningFormat == LastVersion && type == SyncFile::File)
-        {
-            if (!QFile(fullPath).exists())
-                return true;
+            // As we want to have only the latest version of files,
+            // we need to delete the existing files in the versioning folder first,
+            // but only if the deleted file still exists, in case the parent folder was removed earlier.
+            if (m_versioningFormat == LastVersion)
+            {
+                if (!QFile(fullPath).exists())
+                    return true;
 
-            QFile::remove(newLocation);
+                QFile::remove(newLocation);
+            }
         }
 
         createParentFolders(profile, folder, QDir::cleanPath(newLocation).toUtf8());
@@ -1336,9 +1343,9 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         // a folder might fail to move to the versioning folder if the folder
         // with the exact same filename already exists. In that case, we need
         // to check if the existing folder is empty, and if so, delete it permanently.
-        if (!renamed)
+        if (!renamed && type == SyncFile::Folder)
             if (m_versioningFormat == FileTimestampBefore || m_versioningFormat == FileTimestampAfter || m_versioningFormat == LastVersion)
-                if (type == SyncFile::Folder && QDir(fullPath).isEmpty())
+                if (QDir(fullPath).isEmpty())
                     return QDir(fullPath).removeRecursively() || !QFileInfo::exists(fullPath);
 
         return renamed;
@@ -1361,28 +1368,34 @@ Creates all necessary parent directories for a given file path
 */
 void SyncManager::createParentFolders(SyncProfile &profile, SyncFolder &folder, QByteArray path)
 {
-    QStack<QByteArray> foldersToCreate;
+    QStack<QString> foldersToCreate;
 
-    while ((path = QFileInfo(path).path().toUtf8()).length() > folder.path.length())
-    {
-        if (QDir(path).exists())
-            break;
-
+    while (!QDir(path = QFileInfo(path).path().toUtf8()).exists())
         foldersToCreate.append(path);
-    }
 
     while (!foldersToCreate.isEmpty())
     {
         if (QDir().mkdir(foldersToCreate.top()))
         {
-            QByteArray relativePath(foldersToCreate.top());
-            relativePath.remove(0, folder.path.size());
-            hash64_t hash = hash64(relativePath);
+            Qt::CaseSensitivity cs;
 
-            folder.files.insert(hash, SyncFile(SyncFile::Folder, QFileInfo(foldersToCreate.top()).lastModified()));
-            folder.foldersToCreate.remove(hash);
-            folder.foldersToUpdate.insert(foldersToCreate.top());
-            profile.addFilePath(hash, relativePath);
+            if (m_caseSensitiveSystem)
+                cs = Qt::CaseSensitive;
+            else
+                cs = Qt::CaseInsensitive;
+
+            if (foldersToCreate.top().startsWith(folder.path, cs))
+            {
+                QByteArray relativePath(foldersToCreate.top().toUtf8());
+                relativePath.remove(0, folder.path.size());
+
+                hash64_t hash = hash64(relativePath);
+
+                folder.files.insert(hash, SyncFile(SyncFile::Folder, QFileInfo(foldersToCreate.top()).lastModified()));
+                folder.foldersToCreate.remove(hash);
+                folder.foldersToUpdate.insert(foldersToCreate.top().toUtf8());
+                profile.addFilePath(hash, relativePath);
+            }
         }
 
         foldersToCreate.pop();
