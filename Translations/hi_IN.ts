@@ -48,8 +48,8 @@
             <translation>&amp;मैनुअल</translation>
         </message>
         <message>
-            <source>&amp;amp;Increase</source>
-            <translation>&amp;amp;वृद्धि</translation>
+            <source>&amp;Increase</source>
+            <translation>&amp;वृद्धि</translation>
         </message>
         <message>
           <source>Average Synchronization Time: </source>

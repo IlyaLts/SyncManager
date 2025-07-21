@@ -48,7 +48,7 @@
             <translation>&amp;Manuel</translation>
         </message>
         <message>
-            <source>&amp;amp;Increase</source>
+            <source>&amp;Increase</source>
             <translation>&amp;Forøg</translation>
         </message>
         <message>

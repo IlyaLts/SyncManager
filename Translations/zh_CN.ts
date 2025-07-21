@@ -48,8 +48,8 @@
             <translation>&amp;手动</translation>
         </message>
         <message>
-            <source>&amp;amp;Increase</source>
-            <translation>&amp;amp;增加</translation>
+            <source>&amp;Increase</source>
+            <translation>&amp;增加</translation>
         </message>
         <message>
           <source>Average Synchronization Time: </source>

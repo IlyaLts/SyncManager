@@ -48,8 +48,8 @@
             <translation>&amp;Manual</translation>
         </message>
         <message>
-            <source>&amp;amp;Increase</source>
-            <translation>&amp;amp;ampIncrease</translation>
+            <source>&amp;Increase</source>
+            <translation>&amp;Increase</translation>
         </message>
         <message>
             <source>Average Synchronization Time: </source>

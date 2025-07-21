@@ -48,8 +48,8 @@
             <translation>&amp;Ручний</translation>
         </message>
         <message>
-            <source>&amp;amp;Increase</source>
-            <translation>&amp;amp;Збільшити</translation>
+            <source>&amp;Increase</source>
+            <translation>&amp;Збільшити</translation>
         </message>
         <message>
           <source>Average Synchronization Time: </source>
