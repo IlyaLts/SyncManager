@@ -233,6 +233,8 @@ void MainWindow::addProfile()
     manager.profiles().back().paused = manager.isPaused();
     manager.profiles().back().name = newName;
 
+    rebindProfiles();
+
     connect(&manager.profiles().back().syncTimer, &QChronoTimer::timeout, this, [this](){ sync(&manager.profiles().back(), true); });
 
     QSettings profileData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
@@ -276,6 +278,7 @@ void MainWindow::removeProfile()
 
         disconnect(&profile->syncTimer, &QChronoTimer::timeout, this, nullptr);
         ui->syncProfilesView->model()->removeRow(index.row());
+        rebindProfiles();
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
         settings.remove(profile->name + QLatin1String("_profile"));
@@ -1224,6 +1227,23 @@ void MainWindow::profileSynced(SyncProfile *profile)
     updateMenuSyncTime();
     updateProfileTooltip(*profile);
     saveSettings();
+}
+
+/*
+===================
+MainWindow::rebindProfiles
+===================
+*/
+void MainWindow::rebindProfiles()
+{
+    for (int i = 0; i < profileModel->rowCount(); i++)
+    {
+        for (auto &profile : manager.profiles())
+        {
+            if (profileModel->index(i).data(Qt::DisplayRole).toString()  == profile.name)
+                profile.index = profileModel->index(i);
+        }
+    }
 }
 
 /*
