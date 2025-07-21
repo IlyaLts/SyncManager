@@ -58,6 +58,7 @@ RC_FILE = Resources.rc
 CONFIG(qml_debug): DEFINES += DEBUG
 
 TRANSLATIONS += \
+    Translations/da_DK.ts \
     Translations/de_DE.ts \
     Translations/en_US.ts \
     Translations/es_ES.ts \
