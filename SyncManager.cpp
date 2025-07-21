@@ -1492,24 +1492,25 @@ void SyncManager::moveFiles(SyncProfile &profile, SyncFolder &folder)
                 fileIt = folder.filesToMove.erase(static_cast<QHash<Hash, FileToMoveInfo>::const_iterator>(fileIt));
                 continue;
             }
-
-            QByteArray currentToPath = getCurrentFileInfo(toFullPath).absolutePath().toUtf8();
-            currentToPath.remove(0, folder.path.size());
-
-            QByteArray expectedToPath = QFileInfo(toFullPath).absolutePath().toUtf8();
-            expectedToPath.remove(0, folder.path.size());
-
-            // For case-insensitive systems, both paths should have the same case.
-            // Also, comparing the current parent folder path with the expected parent folder path allows us
-            // to postpone moving files until the parent folders have been renamed by case. If the parent folders
-            // haven't been renamed to match the expected case, the full path will have a different hash in
-            // the database compared to the expected hash. This could lead to false detection, where a moved file is considered as a new.
-            if (fromFullPath.compare(toFullPath, Qt::CaseSensitive) == 0 || currentToPath.compare(expectedToPath, Qt::CaseSensitive) == 0)
-                fileIt = folder.filesToMove.erase(static_cast<QHash<Hash, FileToMoveInfo>::const_iterator>(fileIt));
             else
-                ++fileIt;
+            {
+                QByteArray currentToPath = getCurrentFileInfo(toFullPath).absoluteFilePath().toUtf8();
+                currentToPath.remove(0, folder.path.size());
 
-            continue;
+                QByteArray expectedToPath = QFileInfo(toFullPath).absoluteFilePath().toUtf8();
+                expectedToPath.remove(0, folder.path.size());
+
+                // For case-insensitive systems, both paths should have the same case.
+                // Also, comparing the current parent folder path with the expected parent folder path allows us
+                // to postpone moving files until the parent folders have been renamed by case. If the parent folders
+                // haven't been renamed to match the expected case, the full path will have a different hash in
+                // the database compared to the expected hash. This could lead to false detection, where a moved file is considered as a new.
+                if (fromFullPath.compare(toFullPath, Qt::CaseSensitive) == 0 || currentToPath.compare(expectedToPath, Qt::CaseSensitive) == 0)
+                {
+                    fileIt = folder.filesToMove.erase(static_cast<QHash<Hash, FileToMoveInfo>::const_iterator>(fileIt));
+                    continue;
+                }
+            }
         }
 
         createParentFolders(profile, folder, QDir::cleanPath(toFullPath).toUtf8());
