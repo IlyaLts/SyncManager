@@ -1,4 +1,18 @@
 ==========================
+2.0.1 - Jul 21, 2025
+==========================
+- Added Danish language support.
+- Added flags of countries for language menu.
+- Added detection of case-sensitive or case-insensitive file systems.
+- Fixed file timestamp before/after extension being mixed up.
+- Fixed files get deleted from one-way folders when two-way folders are paused.
+- Fixed files don't get deleted if the custom versioning folder doesn't exist.
+- Fixed unnecessary folder named after profile gets created inside timestamp folder.
+- Fixed "increase" menu button being untranslated for some languages.
+- Fixed the issue where files weren't renamed with a different case filename.
+- Moved the ignore hidden files option to filtering menu.
+
+==========================
 2.0 - Jul 19, 2025
 ==========================
 - Added three types of synchronization: two-way, one-way, and one-way update synchronization.
