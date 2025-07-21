@@ -1800,6 +1800,8 @@ void MainWindow::setupMenus()
     filteringMenu->addAction(movedFileMinSizeAction);
     filteringMenu->addAction(includeAction);
     filteringMenu->addAction(excludeAction);
+    filteringMenu->addSeparator();
+    filteringMenu->addAction(ignoreHiddenFilesAction);
 
     languageMenu = new UnhidableMenu(tr("&Language"), this);
 
@@ -1819,7 +1821,6 @@ void MainWindow::setupMenus()
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(showInTrayAction);
     settingsMenu->addAction(disableNotificationAction);
-    settingsMenu->addAction(ignoreHiddenFilesAction);
     settingsMenu->addAction(detectMovedFilesAction);
     settingsMenu->addSeparator();
     settingsMenu->addAction(version);
