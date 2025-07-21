@@ -116,7 +116,6 @@ public:
     inline qint64 movedFileMinSize() const { return m_movedFileMinSize; }
     inline const QStringList &includeList() const { return m_includeList; }
     inline const QStringList &excludeList() const { return m_excludeList; }
-    inline bool isCaseSensitiveSystem() const { return m_caseSensitiveSystem; }
     inline bool isQuitting() const { return m_shouldQuit; }
     inline bool isThereIssue() const { return m_issue; }
     inline bool isThereWarning() const { return m_warning; }
@@ -175,13 +174,6 @@ private:
     QStringList m_includeList;
     QStringList m_excludeList;
     bool m_databaseChanged = false;
-
-#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-    bool m_caseSensitiveSystem = false;
-#else
-    bool m_caseSensitiveSystem = true;
-#endif
-
     bool m_shouldQuit = false;
     bool m_issue = true;
     bool m_warning = false;

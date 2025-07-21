@@ -429,18 +429,21 @@ void MainWindow::addFolder(const QMimeData *mimeData)
             folderPaths.append(folder.path);
 
     // Checks if we already have a folder for synchronization in the list
-    for (const auto &folder : folders)
+    for (const auto &folderName : folders)
     {
         bool exists = false;
 
         for (const auto &path : folderPaths)
         {
-            int n = path.size() > folder.size() ? path.size() - 1 : folder.size() - 1;
+            int n = path.size() > folderName.size() ? path.size() - 1 : folderName.size() - 1;
 
-            if ((manager.isCaseSensitiveSystem() && path.toStdString().compare(0, n, folder.toStdString()) == 0) ||
-                (!manager.isCaseSensitiveSystem() && path.toLower().toStdString().compare(0, n, folder.toLower().toStdString()) == 0))
+            if (SyncFolder *folder = profile->folderByPath(folderName))
             {
-                exists = true;
+                if ((folder->caseSensitive && path.toStdString().compare(0, n, folderName.toStdString()) == 0) ||
+                    (!folder->caseSensitive && path.toLower().toStdString().compare(0, n, folderName.toLower().toStdString()) == 0))
+                {
+                    exists = true;
+                }
             }
         }
 
@@ -448,7 +451,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         {
             profile->folders.push_back(SyncFolder());
             profile->folders.back().paused = manager.isPaused();
-            profile->folders.back().path = folder.toUtf8();
+            profile->folders.back().path = folderName.toUtf8();
             profile->folders.back().path.append("/");
             folderPaths.append(profile->folders.back().path);
 
@@ -1628,7 +1631,6 @@ void MainWindow::saveSettings() const
     settings.setValue("MovedFileMinSize", manager.movedFileMinSize());
     settings.setValue("IncludeList", manager.includeList());
     settings.setValue("ExcludeList", manager.excludeList());
-    settings.setValue("caseSensitiveSystem", manager.isCaseSensitiveSystem());
     settings.setValue("VersionFolder", manager.versioningFolder());
     settings.setValue("VersionPattern", manager.versioningPattern());
 

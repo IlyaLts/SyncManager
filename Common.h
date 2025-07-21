@@ -92,6 +92,7 @@ bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &te
 bool intInputDialog(QWidget *parent, const QString &title, const QString &label, int &returnValue, int value = 0, int minValue = -2147483647, int maxValue = 2147483647);
 bool textInputDialog(QWidget *parent, const QString &title, const QString &label, QString &returnText, const QString &text = QString());
 
+bool isPathCaseSensitive(const QString &path);
 Attributes getFileAttributes(const QString &path);
 bool setFileAttribute(const QString &path, Attributes attributes);
 void setHiddenFileAttribute(const QString &path, bool hidden);

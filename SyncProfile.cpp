@@ -250,6 +250,20 @@ bool SyncProfile::isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) co
 
 /*
 ===================
+SyncProfile::isAnyFolderCaseSensitive
+===================
+*/
+bool SyncProfile::isAnyFolderCaseSensitive() const
+{
+    for (auto &folder : folders)
+        if (folder.caseSensitive)
+            return true;
+
+    return false;
+}
+
+/*
+===================
 SyncProfile::hasExistingFolders
 ===================
 */
@@ -285,6 +299,20 @@ SyncFolder *SyncProfile::folderByIndex(QModelIndex index)
 {
     for (auto &folder : folders)
         if (folder.path == index.data(Qt::DisplayRole).toString())
+            return &folder;
+
+    return nullptr;
+}
+
+/*
+===================
+SyncProfile::folderByPath
+===================
+*/
+SyncFolder *SyncProfile::folderByPath(const QString &path)
+{
+    for (auto &folder : folders)
+        if (folder.path == path)
             return &folder;
 
     return nullptr;

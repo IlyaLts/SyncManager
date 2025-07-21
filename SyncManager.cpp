@@ -56,7 +56,6 @@ SyncManager::SyncManager()
     m_movedFileMinSize = settings.value("MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt();
     m_includeList = settings.value("IncludeList").toStringList();
     m_excludeList = settings.value("ExcludeList").toStringList();
-    m_caseSensitiveSystem = settings.value("caseSensitiveSystem", m_caseSensitiveSystem).toBool();
     m_versioningFolder = settings.value("VersionFolder", "[Deletions]").toString();
     m_versioningPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
 }
@@ -353,7 +352,13 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     timer.start();
 
     for (auto &folder : profile.folders)
+    {
+        bool existed = folder.exists;
         folder.exists = QFileInfo::exists(folder.path);
+
+        if (!existed && folder.exists)
+            folder.caseSensitive = isPathCaseSensitive(folder.path);
+    }
 
     if (!profile.isActive())
     {
@@ -574,7 +579,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         // Excludes unwanted files and folder from scanning
         for (QString &exclude : m_excludeList)
         {
-            QRegularExpression::PatternOption option = m_caseSensitiveSystem ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
+            QRegularExpression::PatternOption option = folder.caseSensitive ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
             QRegularExpression re(QRegularExpression::wildcardToRegularExpression(exclude), option);
             re.setPattern(QRegularExpression::anchoredPattern(re.pattern()));
 
@@ -755,7 +760,7 @@ Detects only changes in the case of folder names
 */
 void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 {
-    if (m_caseSensitiveSystem)
+    if (profile.isAnyFolderCaseSensitive())
         return;
 
     SET_TIME(startTime);
@@ -991,7 +996,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 if (QFileInfo::exists(newFullPath))
                 {
                     // Both paths should differ, as in the case of changing case of parent folder name, the file still exists in the destination path
-                    if (m_caseSensitiveSystem || profile.filePath(newFileIt.key()).compare(movedFilePath, Qt::CaseInsensitive) != 0)
+                    if (folderIt->caseSensitive || profile.filePath(newFileIt.key()).compare(movedFilePath, Qt::CaseInsensitive) != 0)
                         break;
                 }
 
@@ -1194,7 +1199,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
             }
 
             // Aborts if a removed file still exists, but with a different case
-            if (!m_caseSensitiveSystem)
+            if (!folderIt->caseSensitive)
             {
                 if (profile.hasFilePath(fileIt.key()))
                 {
@@ -1379,7 +1384,7 @@ void SyncManager::createParentFolders(SyncProfile &profile, SyncFolder &folder, 
         {
             Qt::CaseSensitivity cs;
 
-            if (m_caseSensitiveSystem)
+            if (folder.caseSensitive)
                 cs = Qt::CaseSensitive;
             else
                 cs = Qt::CaseInsensitive;
@@ -1482,7 +1487,7 @@ void SyncManager::moveFiles(SyncProfile &profile, SyncFolder &folder)
         // Removes from the list if the file already exists at the destination location
         if (QFileInfo::exists(toFullPath))
         {
-            if (m_caseSensitiveSystem)
+            if (folder.caseSensitive)
             {
                 fileIt = folder.filesToMove.erase(static_cast<QHash<Hash, FileToMoveInfo>::const_iterator>(fileIt));
                 continue;
@@ -1719,7 +1724,7 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
 
             // Fixes the case of two new files in two folders (one file for each folder) with the same file names but in different cases (e.g. filename vs. FILENAME)
             // Without this, copy operation causes undefined behavior as some file systems, such as Windows, are case insensitive.
-            if (!m_caseSensitiveSystem)
+            if (!folder.caseSensitive)
             {
                 QByteArray fromFileName = fileIt->fromFullPath;
                 fromFileName.remove(0, fromFileName.lastIndexOf("/") + 1);

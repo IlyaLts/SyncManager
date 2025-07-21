@@ -27,6 +27,7 @@
 #include <QMessageBox>
 #include <QInputDialog>
 #include <QPushButton>
+#include <QRandomGenerator>
 #include <stdio.h>
 #include <cstdarg>
 
@@ -219,6 +220,50 @@ bool textInputDialog(QWidget *parent, const QString &title, const QString &label
     }
 
     return false;
+}
+
+/*
+===================
+isPathCaseSensitive
+===================
+*/
+bool isPathCaseSensitive(const QString &path)
+{
+    QDir dir(path);
+
+    if (!dir.exists())
+        return false;
+
+    QString uniqueFilename;
+    QString letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    int numberOfLetters = letters.length();
+
+    for (int i = 0; i < 10; ++i)
+        uniqueFilename.append(letters.at(QRandomGenerator::global()->bounded(numberOfLetters)));
+
+    uniqueFilename.append(".tmp");
+
+    QString lowerCaseFilename = uniqueFilename.toLower();
+    QString upperCaseFilename = uniqueFilename.toUpper();
+    QString fullPath = dir.absoluteFilePath(uniqueFilename);
+    bool caseSensitive = true;
+
+    QFile file(fullPath);
+    if (!file.open(QIODevice::WriteOnly))
+        return false;
+
+    file.close();
+
+    if (uniqueFilename != lowerCaseFilename)
+        if (QFile::exists(dir.absoluteFilePath(lowerCaseFilename)))
+            caseSensitive = false;
+
+    if (caseSensitive && uniqueFilename != upperCaseFilename)
+        if (QFile::exists(dir.absoluteFilePath(upperCaseFilename)))
+            caseSensitive = false;
+
+    QFile::remove(fullPath);
+    return caseSensitive;
 }
 
 /*

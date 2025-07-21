@@ -100,6 +100,7 @@ public:
     bool syncing = false;
     bool paused = false;
     bool toBeRemoved = false;
+    bool caseSensitive = false;
 };
 
 #endif // SYNCFOLDER_H

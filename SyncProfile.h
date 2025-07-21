@@ -74,9 +74,11 @@ public:
     inline bool hasFilePath(Hash hash) const { return filePaths.contains(hash); }
     bool isActive() const;
     bool isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) const;
+    bool isAnyFolderCaseSensitive() const;
     bool hasExistingFolders() const;
     bool hasMissingFolders() const;
     SyncFolder *folderByIndex(QModelIndex index);
+    SyncFolder *folderByPath(const QString &path);
 
     std::list<SyncFolder> folders;
 
