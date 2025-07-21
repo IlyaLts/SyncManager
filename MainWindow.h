@@ -121,6 +121,7 @@ private:
     DecoratedStringListModel *profileModel;
     DecoratedStringListModel *folderModel;
 
+    QList<QAction *> countryIcons;
     QIcon iconAdd;
     QIcon iconDone;
     QIcon iconPause;

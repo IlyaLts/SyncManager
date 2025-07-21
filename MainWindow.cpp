@@ -1731,7 +1731,10 @@ void MainWindow::setupMenus()
     excludeAction = new QAction(QString(tr("&Exclude: %1")).arg(manager.excludeList().join("; ")), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
+    {
         languageActions.append(new QAction(tr(languages[i].name), this));
+        languageActions[i]->setIcon(*(new QIcon(languages[i].flagPath)));
+    }
 
     launchOnStartupAction = new QAction(tr("&Launch on Startup"), this);
     showInTrayAction = new QAction(tr("&Show in System Tray"));

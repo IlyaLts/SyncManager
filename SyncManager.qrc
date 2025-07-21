@@ -18,5 +18,18 @@
         <file>Images/IconOneWay.png</file>
         <file>Images/IconTwoWay.png</file>
         <file>Images/IconOneWayUpdate.png</file>
+        <file>Images/Flags/de.svg</file>
+        <file>Images/Flags/dk.svg</file>
+        <file>Images/Flags/es.svg</file>
+        <file>Images/Flags/in.svg</file>
+        <file>Images/Flags/it.svg</file>
+        <file>Images/Flags/jp.svg</file>
+        <file>Images/Flags/kr.svg</file>
+        <file>Images/Flags/pt.svg</file>
+        <file>Images/Flags/ru.svg</file>
+        <file>Images/Flags/ua.svg</file>
+        <file>Images/Flags/us.svg</file>
+        <file>Images/Flags/cn.svg</file>
+        <file>Images/Flags/fr.svg</file>
     </qresource>
 </RCC>

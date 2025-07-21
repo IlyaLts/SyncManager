@@ -24,23 +24,23 @@
 #include <QFile>
 #include <QSettings>
 
-Language defaultLanguage = { QLocale::English, QLocale::UnitedStates, ":/i18n/en_US.qm", "&English" };
+Language defaultLanguage = { QLocale::English, QLocale::UnitedStates, ":/i18n/en_US.qm", ":/Images/flags/us.svg", "&English" };
 
 Language languages[] =
     {
-        {QLocale::Chinese,      QLocale::China,         ":/i18n/zh_CN.qm", "&Chinese"},
-        {QLocale::Danish,       QLocale::Denmark,       ":/i18n/da_DK.qm", "&Danish"},
-        {QLocale::English,      QLocale::UnitedStates,  ":/i18n/en_US.qm", "&English"},
-        {QLocale::French,       QLocale::France,        ":/i18n/fr_FR.qm", "&French"},
-        {QLocale::German,       QLocale::Germany,       ":/i18n/de_DE.qm", "&German"},
-        {QLocale::Hindi,        QLocale::India,         ":/i18n/hi_IN.qm", "&Hindi"},
-        {QLocale::Italian,      QLocale::Italy,         ":/i18n/it_IT.qm", "&Italian"},
-        {QLocale::Japanese,     QLocale::Japan,         ":/i18n/ja_JP.qm", "&Japanese"},
-        {QLocale::Korean,       QLocale::SouthKorea,    ":/i18n/ko_KR.qm", "&Korean"},
-        {QLocale::Portuguese,   QLocale::Portugal,      ":/i18n/pt_PT.qm", "&Portuguese"},
-        {QLocale::Russian,      QLocale::Russia,        ":/i18n/ru_RU.qm", "&Russian"},
-        {QLocale::Spanish,      QLocale::Spain,         ":/i18n/es_ES.qm", "&Spanish"},
-        {QLocale::Ukrainian,    QLocale::Ukraine,       ":/i18n/uk_UA.qm", "&Ukrainian"},
+        {QLocale::Chinese,      QLocale::China,         ":/i18n/zh_CN.qm",  ":/Images/Flags/cn.svg", "&Chinese"},
+        {QLocale::Danish,       QLocale::Denmark,       ":/i18n/da_DK.qm",  ":/Images/Flags/dk.svg", "&Danish"},
+        {QLocale::English,      QLocale::UnitedStates,  ":/i18n/en_US.qm",  ":/Images/Flags/us.svg", "&English"},
+        {QLocale::French,       QLocale::France,        ":/i18n/fr_FR.qm",  ":/Images/Flags/fr.svg", "&French"},
+        {QLocale::German,       QLocale::Germany,       ":/i18n/de_DE.qm",  ":/Images/Flags/de.svg", "&German"},
+        {QLocale::Hindi,        QLocale::India,         ":/i18n/hi_IN.qm",  ":/Images/Flags/in.svg", "&Hindi"},
+        {QLocale::Italian,      QLocale::Italy,         ":/i18n/it_IT.qm",  ":/Images/Flags/it.svg", "&Italian"},
+        {QLocale::Japanese,     QLocale::Japan,         ":/i18n/ja_JP.qm",  ":/Images/Flags/jp.svg", "&Japanese"},
+        {QLocale::Korean,       QLocale::SouthKorea,    ":/i18n/ko_KR.qm",  ":/Images/Flags/kr.svg", "&Korean"},
+        {QLocale::Portuguese,   QLocale::Portugal,      ":/i18n/pt_PT.qm",  ":/Images/Flags/pt.svg", "&Portuguese"},
+        {QLocale::Russian,      QLocale::Russia,        ":/i18n/ru_RU.qm",  ":/Images/Flags/ru.svg", "&Russian"},
+        {QLocale::Spanish,      QLocale::Spain,         ":/i18n/es_ES.qm",  ":/Images/Flags/es.svg", "&Spanish"},
+        {QLocale::Ukrainian,    QLocale::Ukraine,       ":/i18n/uk_UA.qm",  ":/Images/Flags/ua.svg", "&Ukrainian"},
 };
 
 /*
@@ -125,7 +125,7 @@ void Application::setTranslator(QLocale::Language language)
         if (languages[i].language != language)
             continue;
 
-        result = translator.load(languages[i].path);
+        result = translator.load(languages[i].tsPath);
         locale = QLocale(languages[i].language, languages[i].country);
 
         if (!result)
@@ -137,7 +137,7 @@ void Application::setTranslator(QLocale::Language language)
     // Loads English by default if the specified language is not in the list
     if (!result)
     {
-        result = translator.load(defaultLanguage.path);
+        result = translator.load(defaultLanguage.tsPath);
         locale = QLocale(defaultLanguage.language, defaultLanguage.country);
 
         if (!result)

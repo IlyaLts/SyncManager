@@ -43,7 +43,8 @@ struct Language
 {
     QLocale::Language language;
     QLocale::Country country;
-    const char *path;
+    const char *tsPath;
+    const char *flagPath;
     const char *name;
 };
 
