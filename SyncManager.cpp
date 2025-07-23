@@ -41,23 +41,6 @@ SyncManager::SyncManager
 */
 SyncManager::SyncManager()
 {
-    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-
-    m_paused = settings.value(QLatin1String("Paused"), false).toBool();
-    m_notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
-    m_ignoreHiddenFiles = settings.value("IgnoreHiddenFiles", true).toBool();
-    m_versioningPath = settings.value("VersioningPath", "").toString();
-    m_databaseLocation = static_cast<SyncManager::DatabaseLocation>(settings.value("DatabaseLocation", SyncManager::Decentralized).toInt());
-    m_detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
-    m_syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
-    if (m_syncTimeMultiplier <= 0) m_syncTimeMultiplier = 1;
-    m_fileMinSize = settings.value("FileMinSize", 0).toInt();
-    m_fileMaxSize = settings.value("FileMaxSize", 0).toInt();
-    m_movedFileMinSize = settings.value("MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt();
-    m_includeList = settings.value("IncludeList").toStringList();
-    m_excludeList = settings.value("ExcludeList").toStringList();
-    m_versioningFolder = settings.value("VersionFolder", "[Deletions]").toString();
-    m_versioningPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();
 }
 
 /*
@@ -73,7 +56,7 @@ void SyncManager::addToQueue(SyncProfile *profile)
     // Adds the passed profile number to the sync queue
     if (profile)
     {
-        if ((!profile->paused || m_syncingMode != Automatic) && !profile->toBeRemoved)
+        if ((!profile->paused || profile->m_syncingMode != SyncProfile::Automatic) && !profile->toBeRemoved)
         {
             m_queue.enqueue(profile);
         }
@@ -82,7 +65,7 @@ void SyncManager::addToQueue(SyncProfile *profile)
     else
     {
         for (auto &profile : profiles())
-            if ((!profile.paused || m_syncingMode != Automatic) && !profile.toBeRemoved && !m_queue.contains(&profile))
+            if ((!profile.paused || profile.m_syncingMode != SyncProfile::Automatic) && !profile.toBeRemoved && !m_queue.contains(&profile))
                 m_queue.enqueue(&profile);
     }
 }
@@ -226,7 +209,7 @@ void SyncManager::updateTimer(SyncProfile &profile)
     using namespace std;
     using namespace std::chrono;
 
-    if (m_syncingMode != SyncManager::Automatic)
+    if (profile.m_syncingMode != SyncProfile::Automatic)
         return;
 
     QDateTime dateToSync(profile.lastSyncDate);
@@ -261,31 +244,28 @@ void SyncManager::updateTimer(SyncProfile &profile)
 SyncManager::updateNextSyncingTime
 ===================
 */
-void SyncManager::updateNextSyncingTime()
+void SyncManager::updateNextSyncingTime(SyncProfile &profile)
 {
-    for (auto &profile : profiles())
+    quint64 time = profile.syncTime;
+
+    // Multiplies sync time by 2
+    for (int i = 0; i < profile.m_syncTimeMultiplier - 1; i++)
     {
-        quint64 time = profile.syncTime;
+        time <<= 1;
+        quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
 
-        // Multiplies sync time by 2
-        for (int i = 0; i < m_syncTimeMultiplier - 1; i++)
+        // If exceeds the maximum value of an qint64
+        if (time > max)
         {
-            time <<= 1;
-            quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
-
-            // If exceeds the maximum value of an qint64
-            if (time > max)
-            {
-                time = max;
-                break;
-            }
+            time = max;
+            break;
         }
-
-        if (time < SYNC_MIN_DELAY)
-            time = SYNC_MIN_DELAY;
-
-        profile.syncEvery = time;
     }
+
+    if (time < SYNC_MIN_DELAY)
+        time = SYNC_MIN_DELAY;
+
+    profile.syncEvery = time;
 }
 
 /*
@@ -313,10 +293,10 @@ void SyncManager::removeAllDatabases()
 SyncManager::setSyncTimeMultiplier
 ===================
 */
-void SyncManager::setSyncTimeMultiplier(int multiplier)
+void SyncManager::setSyncTimeMultiplier(SyncProfile &profile, int multiplier)
 {
-    m_syncTimeMultiplier = multiplier;
-    updateNextSyncingTime();
+    profile.m_syncTimeMultiplier = multiplier;
+    updateNextSyncingTime(profile);
 }
 
 /*
@@ -331,6 +311,20 @@ bool SyncManager::isThereProfileWithHiddenSync() const
             return true;
 
     return false;
+}
+
+/*
+===================
+SyncManager::isInAutomaticPausedState
+===================
+*/
+bool SyncManager::isInAutomaticPausedState() const
+{
+    for (auto &profile : profiles())
+        if (profile.syncingMode() != SyncProfile::Automatic || !isPaused())
+            return false;
+
+    return true;
 }
 
 /*
@@ -372,7 +366,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     qDebug() << "=======================================";
 #endif
 
-    if (m_databaseLocation == Decentralized)
+    if (profile.m_databaseLocation == SyncProfile::Decentralized)
         profile.loadDatebasesDecentralised();
     else
         profile.loadDatabasesLocally();
@@ -483,7 +477,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
     if (m_databaseChanged)
     {
-        if (m_databaseLocation == Decentralized)
+        if (profile.m_databaseLocation == SyncProfile::Decentralized)
             profile.saveDatabasesDecentralised();
         else
             profile.saveDatabasesLocally();
@@ -507,7 +501,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             folder.lastSyncDate = QDateTime::currentDateTime();
 
     updateStatus();
-    updateNextSyncingTime();
+    updateNextSyncingTime(profile);
     emit profileSynced(&profile);
 
     TIMESTAMP(syncTime, "Syncing is complete.");
@@ -522,7 +516,7 @@ SyncManager::scanFiles
 int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
 {
     int totalNumOfFiles = 0;
-    QStringList nameFilters(m_includeList);
+    QStringList nameFilters(profile.m_includeList);
     nameFilters.removeAll(""); // It's important for proper iteration because the include list may contain empty strings
 
     if (nameFilters.isEmpty())
@@ -548,11 +542,11 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
             fileSize = 0;
 
         // Skips hidden files
-        if (ignoreHiddenFilesEnabled() && fileInfo.isHidden())
+        if (profile.ignoreHiddenFilesEnabled() && fileInfo.isHidden())
             continue;
 
         // Skips database files
-        if (databaseLocation() == Decentralized)
+        if (profile.databaseLocation() == SyncProfile::Decentralized)
         {
             if (fileInfo.isHidden())
             {
@@ -564,10 +558,10 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
             }
         }
 
-        if (m_fileMinSize > fileSize)
+        if (profile.m_fileMinSize > fileSize)
             continue;
 
-        if (m_fileMaxSize > 0 && fileSize > m_fileMaxSize)
+        if (profile.m_fileMaxSize > 0 && fileSize > profile.m_fileMaxSize)
             continue;
 
         QByteArray absoluteFilePath = fileInfo.filePath().toUtf8();
@@ -577,7 +571,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         bool shouldExclude = false;
 
         // Excludes unwanted files and folder from scanning
-        for (QString &exclude : m_excludeList)
+        for (QString &exclude : profile.m_excludeList)
         {
             QRegularExpression::PatternOption option = folder.caseSensitive ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
             QRegularExpression re(QRegularExpression::wildcardToRegularExpression(exclude), option);
@@ -927,7 +921,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
         // Finds files that no longer exist in our sync folder
         for (QHash<Hash, SyncFile>::iterator missingFileIt = folderIt->files.begin(); missingFileIt != folderIt->files.end(); ++missingFileIt)
-            if (missingFileIt.value().type == SyncFile::File && !missingFileIt.value().exists() && missingFileIt->size >= m_movedFileMinSize)
+            if (missingFileIt.value().type == SyncFile::File && !missingFileIt.value().exists() && missingFileIt->size >= profile.m_movedFileMinSize)
                 missingFiles.insert(missingFileIt.key(), &missingFileIt.value());
 
         removeDuplicatesBySizeAndDate(missingFiles);
@@ -937,7 +931,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
         // Finds files that are new in our sync folder
         for (QHash<Hash, SyncFile>::iterator newFileIt = folderIt->files.begin(); newFileIt != folderIt->files.end(); ++newFileIt)
-            if (newFileIt->type == SyncFile::File && newFileIt->newlyAdded() && newFileIt->exists() && newFileIt->size >= m_movedFileMinSize)
+            if (newFileIt->type == SyncFile::File && newFileIt->newlyAdded() && newFileIt->exists() && newFileIt->size >= profile.m_movedFileMinSize)
                 newFiles.insert(newFileIt.key(), &newFileIt.value());
 
         removeDuplicatesBySizeAndDate(newFiles);
@@ -1270,7 +1264,7 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
     checkForRenamedFolders(profile);
 
-    if (m_detectMovedFiles)
+    if (profile.detectMovedFilesEnabled())
         checkForMovedFiles(profile);
 
     checkForAddedFiles(profile);
@@ -1288,7 +1282,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
     if (path.isEmpty())
         return true;
 
-    if (m_deletionMode == MoveToTrash)
+    if (profile.m_deletionMode == SyncProfile::MoveToTrash)
     {
         // Used to make sure that moveToTrash function really moved a file/folder
         // to the trash as it can return true even though it failed to do so
@@ -1296,7 +1290,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
 
         return QFile::moveToTrash(fullPath, &pathInTrash) && !pathInTrash.isEmpty();
     }
-    else if (m_deletionMode == Versioning)
+    else if (profile.m_deletionMode == SyncProfile::Versioning)
     {
         QString newLocation(folder.versioningPath);
         newLocation.append(path);
@@ -1304,7 +1298,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         if (type == SyncFile::File)
         {
             // Adds a timestamp to the end of the filename of a deleted file
-            if (versioningFormat() == FileTimestampBefore)
+            if (profile.versioningFormat() == FileTimestampBefore)
             {
                 int nameEndIndex = newLocation.lastIndexOf('.');
                 int slashIndex = newLocation.lastIndexOf('/');
@@ -1313,12 +1307,12 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
                 if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
                     nameEndIndex = newLocation.length();
 
-                newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(m_versioningPattern));
+                newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(profile.m_versioningPattern));
             }
             // Adds a timestamp to a deleted file before the extension
-            else if (versioningFormat() == FileTimestampAfter)
+            else if (profile.versioningFormat() == FileTimestampAfter)
             {
-                newLocation.append("_" + QDateTime::currentDateTime().toString(m_versioningPattern));
+                newLocation.append("_" + QDateTime::currentDateTime().toString(profile.m_versioningPattern));
 
                 // Adds a file extension after the timestamp
                 int dotIndex = path.lastIndexOf('.');
@@ -1332,7 +1326,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
             // As we want to have only the latest version of files,
             // we need to delete the existing files in the versioning folder first,
             // but only if the deleted file still exists, in case the parent folder was removed earlier.
-            if (m_versioningFormat == LastVersion)
+            if (profile.m_versioningFormat == LastVersion)
             {
                 if (!QFile(fullPath).exists())
                     return true;
@@ -1349,7 +1343,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         // with the exact same filename already exists. In that case, we need
         // to check if the existing folder is empty, and if so, delete it permanently.
         if (!renamed && type == SyncFile::Folder)
-            if (m_versioningFormat == FileTimestampBefore || m_versioningFormat == FileTimestampAfter || m_versioningFormat == LastVersion)
+            if (profile.m_versioningFormat == FileTimestampBefore || profile.m_versioningFormat == FileTimestampAfter || profile.m_versioningFormat == LastVersion)
                 if (QDir(fullPath).isEmpty())
                     return QDir(fullPath).removeRecursively() || !QFileInfo::exists(fullPath);
 
@@ -1805,7 +1799,7 @@ void SyncManager::removeUniqueFiles(SyncProfile &profile, SyncFolder &folder)
     // we still have that empty folder remaining. Also, in case if we use file timestamp format
     // we want to avoid adding timestamps to each file individually after placing the parent folder
     // in the versioning folder, as it would impact performance.
-    if (m_deletionMode == Versioning && (m_versioningFormat == FileTimestampBefore || m_versioningFormat == FileTimestampAfter || m_versioningFormat == LastVersion))
+    if (profile.m_deletionMode == SyncProfile::Versioning && (profile.m_versioningFormat == FileTimestampBefore || profile.m_versioningFormat == FileTimestampAfter || profile.m_versioningFormat == LastVersion))
     {
         types[0] = SyncFile::File;
         types[1] = SyncFile::Folder;
@@ -1885,8 +1879,8 @@ void SyncManager::syncFiles(SyncProfile &profile)
         if (!folder.isActive())
             continue;
 
-        if (m_deletionMode == Versioning)
-            folder.updateVersioningPath(m_versioningFormat, m_versioningLocation, m_versioningPath, profile.name, m_versioningFolder, m_versioningPattern);
+        if (profile.m_deletionMode == SyncProfile::Versioning)
+            folder.updateVersioningPath(profile.m_versioningFormat, profile.m_versioningLocation, profile.m_versioningPath, profile.name, profile.m_versioningFolder, profile.m_versioningPattern);
 
         renameFolders(profile, folder);
         moveFiles(profile, folder);
@@ -1897,7 +1891,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
         // we still have that empty folder remaining. Also, in case if we use file timestamp format
         // we want to avoid adding timestamps to each file individually after placing the parent folder
         // in the versioning folder, as it would impact performance.
-        if (m_deletionMode == Versioning && (m_versioningFormat == FileTimestampBefore || m_versioningFormat == FileTimestampAfter || m_versioningFormat == LastVersion))
+        if (profile.m_deletionMode == SyncProfile::Versioning && (profile.m_versioningFormat == FileTimestampBefore || profile.m_versioningFormat == FileTimestampAfter || profile.m_versioningFormat == LastVersion))
         {
             removeFiles(profile, folder);
             removeFolders(profile, folder);

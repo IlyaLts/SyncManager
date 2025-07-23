@@ -20,7 +20,6 @@
 #ifndef SYNCFOLDER_H
 #define SYNCFOLDER_H
 
-#include "SyncProfile.h"
 #include "SyncFile.h"
 #include "Common.h"
 #include <QByteArray>
@@ -52,6 +51,20 @@ struct FileToCopyInfo
     QByteArray toPath;
     QByteArray fromFullPath;
     QDateTime modifiedDate;
+};
+
+enum VersioningFormat
+{
+    FileTimestampBefore,    // Before extension
+    FileTimestampAfter,     // After extension
+    FolderTimestamp,
+    LastVersion
+};
+
+enum VersioningLocation
+{
+    LocallyNextToFolder,
+    CustomLocation
 };
 
 /*

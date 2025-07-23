@@ -50,25 +50,6 @@ class SyncManager : public QObject
 
 public:
 
-    enum SyncingMode
-    {
-        Automatic,
-        Manual
-    };
-
-    enum DeletionMode
-    {
-        MoveToTrash,
-        Versioning,
-        DeletePermanently
-    };
-
-    enum DatabaseLocation
-    {
-        Locally,
-        Decentralized
-    };
-
     SyncManager();
 
     void addToQueue(SyncProfile *profile);
@@ -76,46 +57,20 @@ public:
 
     void updateTimer(SyncProfile &profile);
     void updateStatus();
-    void updateNextSyncingTime();
+    void updateNextSyncingTime(SyncProfile &profile);
     void removeAllDatabases();
 
-    inline void setSyncingMode(SyncingMode mode) { m_syncingMode = mode; }
-    inline void setDeletionMode(DeletionMode mode) { m_deletionMode = mode; }
-    inline void setVersioningFormat(VersioningFormat format) { m_versioningFormat = format; }
-    inline void setVersioningLocation(VersioningLocation location) { m_versioningLocation = location; }
-    inline void setVersioningPath(QString path) { m_versioningPath = path; }
-    inline SyncingMode syncingMode() const { return m_syncingMode; }
-    inline DeletionMode deletionMode() const { return m_deletionMode; }
-    inline VersioningFormat versioningFormat() const { return m_versioningFormat; }
-    inline VersioningLocation versioningLocation() const { return m_versioningLocation; }
-    inline QString versioningPath() const { return m_versioningPath; }
     inline const QQueue<SyncProfile *> &queue() const { return m_queue; }
     inline const std::list<SyncProfile> &profiles() const { return m_profiles; }
     inline std::list<SyncProfile> &profiles() { return m_profiles; }
 
     inline void shouldQuit() { m_shouldQuit = true; }
-    void setSyncTimeMultiplier(int multiplier);
-    inline void setFileMinSize(qint64 size) { m_fileMinSize = size; }
-    inline void setFileMaxSize(qint64 size) { m_fileMaxSize = size; }
-    inline void setMovedFileMinSize(qint64 size) { m_movedFileMinSize = size; }
-    inline void setIncludeList(const QStringList &list) { m_includeList = list; }
-    inline void setExcludeList(const QStringList &list) { m_excludeList = list; }
+    void setSyncTimeMultiplier(SyncProfile &profile, int multiplier);
     inline void setPaused(bool paused) { m_paused = paused; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }
-    inline void enableIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
-    inline void setDatabaseLocation(DatabaseLocation location) { m_databaseLocation = location; }
-    inline void enableDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
-    inline void setVersioningFolder(const QString &name) { m_versioningFolder = name; }
-    inline void setVersioningPattern(const QString &pattern) { m_versioningPattern = pattern; }
 
     inline int filesToSync() const { return m_filesToSync; }
-    inline int syncTimeMultiplier() const { return m_syncTimeMultiplier; }
     inline int existingProfiles() const { return m_existingProfiles; }
-    inline qint64 fileMinSize() const { return m_fileMinSize; }
-    inline qint64 fileMaxSize() const { return m_fileMaxSize; }
-    inline qint64 movedFileMinSize() const { return m_movedFileMinSize; }
-    inline const QStringList &includeList() const { return m_includeList; }
-    inline const QStringList &excludeList() const { return m_excludeList; }
     inline bool isQuitting() const { return m_shouldQuit; }
     inline bool isThereIssue() const { return m_issue; }
     inline bool isThereWarning() const { return m_warning; }
@@ -123,12 +78,8 @@ public:
     inline bool isPaused() const { return m_paused; }
     inline bool isSyncing() const { return m_syncing; }
     bool isThereProfileWithHiddenSync() const;
+    bool isInAutomaticPausedState() const;
     inline bool notificationsEnabled() const { return m_notifications; }
-    inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
-    inline bool ignoreHiddenFilesEnabled() const { return m_ignoreHiddenFiles; }
-    inline bool detectMovedFilesEnabled() const { return m_detectMovedFiles; }
-    inline const QString &versioningFolder() const { return m_versioningFolder; }
-    inline const QString &versioningPattern() const { return m_versioningPattern; }
 
 Q_SIGNALS:
 
@@ -156,23 +107,11 @@ private:
     void removeUniqueFiles(SyncProfile &profile, SyncFolder &folder);
     void syncFiles(SyncProfile &profile);
 
-    SyncingMode m_syncingMode;
-    DeletionMode m_deletionMode;
-    VersioningFormat m_versioningFormat;
-    VersioningLocation m_versioningLocation;
-    QString m_versioningPath;
-
     QQueue<SyncProfile *> m_queue;
     std::list<SyncProfile> m_profiles;
 
     int m_filesToSync = 0;
-    int m_syncTimeMultiplier = 1;
     int m_existingProfiles = 0;
-    qint64 m_fileMinSize = 0;
-    qint64 m_fileMaxSize = 0;
-    qint64 m_movedFileMinSize = 0;
-    QStringList m_includeList;
-    QStringList m_excludeList;
     bool m_databaseChanged = false;
     bool m_shouldQuit = false;
     bool m_issue = true;
@@ -181,16 +120,10 @@ private:
     bool m_paused = false;
     bool m_syncing = false;
     bool m_notifications = true;
-    DatabaseLocation m_databaseLocation = Decentralized;
-    bool m_ignoreHiddenFiles = false;
-    bool m_detectMovedFiles = false;
 
     QMap<QString, QTimer *> m_notificationList;
     QSet<hash64_t> m_usedDevices;
     QMutex usedDevicesMutex;
-
-    QString m_versioningFolder;
-    QString m_versioningPattern;
 };
 
 #endif // SYNCMANAGER_H

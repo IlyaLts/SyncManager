@@ -26,7 +26,10 @@
 #include <QStandardPaths>
 #include <QSharedMemory>
 #include <QMessageBox>
+
+#ifdef Q_OS_WIN
 #include <synchapi.h>
+#endif
 
 /*
 ===================
