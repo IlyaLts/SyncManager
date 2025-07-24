@@ -37,6 +37,7 @@
 #include <QTimer>
 #include <QtConcurrent/QtConcurrent>
 #include <QInputDialog>
+#include <QDesktopServices>
 
 /*
 ===================
@@ -778,7 +779,7 @@ void MainWindow::switchVersioningFormat(SyncProfile &profile, VersioningFormat f
 MainWindow::switchVersioningLocation
 ===================
 */
-void MainWindow::switchVersioningLocation(SyncProfile &profile, VersioningLocation location, bool init)
+void MainWindow::switchVersioningLocation(SyncProfile &profile, VersioningLocation location)
 {
     if (location < LocallyNextToFolder || location > CustomLocation)
         location = LocallyNextToFolder;
@@ -787,7 +788,7 @@ void MainWindow::switchVersioningLocation(SyncProfile &profile, VersioningLocati
     profile.customLocationAction->setChecked(location == CustomLocation);
     profile.setVersioningLocation(location);
 
-    if (location == CustomLocation && !init)
+    if (location == CustomLocation && appInitiated)
     {
         QString title(tr("Browse for Versioning Folder"));
         QString path = QFileDialog::getExistingDirectory(this, title, QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
@@ -955,7 +956,7 @@ MainWindow::setFixedTime
 void MainWindow::setFixedTime(SyncProfile &profile)
 {
     QString title(tr("Synchronize Every"));
-    QString text(tr("Please enter the synchronization interval in seconds."));
+    QString text(tr("Please enter the synchronization interval in seconds:"));
     int size;
 
     if (!intInputDialog(this, title, text, size, profile.syncEveryFixed / 1000, 0))
@@ -1743,7 +1744,7 @@ void MainWindow::readSettings()
         switchSyncingMode(profile, static_cast<SyncProfile::SyncingMode>(settings.value(profileKeyname + "SyncingMode", SyncProfile::AutomaticAdaptive).toInt()));
         switchDeletionMode(profile, static_cast<SyncProfile::DeletionMode>(settings.value(profileKeyname + "DeletionMode", SyncProfile::MoveToTrash).toInt()));
         switchVersioningFormat(profile, static_cast<VersioningFormat>(settings.value(profileKeyname + "VersioningFormat", FolderTimestamp).toInt()));
-        switchVersioningLocation(profile, static_cast<VersioningLocation>(settings.value(profileKeyname + "VersioningLocation", LocallyNextToFolder).toInt()), true);
+        switchVersioningLocation(profile, static_cast<VersioningLocation>(settings.value(profileKeyname + "VersioningLocation", LocallyNextToFolder).toInt()));
 
         manager.updateNextSyncingTime(profile);
     }
@@ -1829,9 +1830,10 @@ void MainWindow::setupMenus()
     disableNotificationAction = new QAction("&" + tr("Disable Notifications"), this);
     showAction = new QAction("&" + tr("Show"), this);
     quitAction = new QAction("&" + tr("Quit"), this);
-    version = new QAction(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION), this);
+    reportBugAction = new QAction(tr("Report a Bug"), this);
+    versionAction = new QAction(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION), this);
 
-    version->setDisabled(true);
+    versionAction->setDisabled(true);
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setCheckable(true);
@@ -1854,7 +1856,8 @@ void MainWindow::setupMenus()
     settingsMenu->addAction(showInTrayAction);
     settingsMenu->addAction(disableNotificationAction);
     settingsMenu->addSeparator();
-    settingsMenu->addAction(version);
+    settingsMenu->addAction(reportBugAction);
+    settingsMenu->addAction(versionAction);
 
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(syncNowAction);
@@ -1893,6 +1896,7 @@ void MainWindow::setupMenus()
     connect(showAction, &QAction::triggered, this, [this](){ trayIconActivated(QSystemTrayIcon::DoubleClick); });
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
+    connect(reportBugAction, &QAction::triggered, this, [this](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_LINK)); });
 
     for (auto &profile : manager.profiles())
     {
@@ -1943,7 +1947,8 @@ void MainWindow::updateStrings()
     disableNotificationAction->setText("&" + tr("Disable Notifications"));
     showAction->setText("&" + tr("Show"));
     quitAction->setText("&" + tr("Quit"));
-    version->setText(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION));
+    reportBugAction->setText(tr("Report a Bug"));
+    versionAction->setText(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION));
 
     languageMenu->setTitle("&" + tr("Language"));
     settingsMenu->setTitle("&" + tr("Settings"));

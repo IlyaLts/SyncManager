@@ -77,7 +77,7 @@ private Q_SLOTS:
     void switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMode mode);
     void switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionMode mode);
     void switchVersioningFormat(SyncProfile &profile, VersioningFormat format);
-    void switchVersioningLocation(SyncProfile &profile, VersioningLocation location, bool init = false);
+    void switchVersioningLocation(SyncProfile &profile, VersioningLocation location);
     void switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::SyncType type);
     void increaseSyncTime(SyncProfile &profile);
     void decreaseSyncTime(SyncProfile &profile);
@@ -151,7 +151,8 @@ private:
     QAction *disableNotificationAction;
     QAction *showAction;
     QAction *quitAction;
-    QAction *version;
+    QAction *reportBugAction;
+    QAction *versionAction;
 
     QSystemTrayIcon *trayIcon;
     QMenu *trayIconMenu;

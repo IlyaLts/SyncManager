@@ -30,6 +30,7 @@
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
 #define UPDATE_DELAY            40
+#define BUG_TRACKER_LINK        "https://github.com/IlyaLts/SyncManager/issues"
 
 extern Language defaultLanguage;
 extern Language languages[];
