@@ -78,7 +78,7 @@ private Q_SLOTS:
     void switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionMode mode);
     void switchVersioningFormat(SyncProfile &profile, VersioningFormat format);
     void switchVersioningLocation(SyncProfile &profile, VersioningLocation location, bool init = false);
-    void switchSyncingType(SyncFolder &folder, SyncFolder::SyncType type);
+    void switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::SyncType type);
     void increaseSyncTime(SyncProfile &profile);
     void decreaseSyncTime(SyncProfile &profile);
     void switchLanguage(QLocale::Language language);
