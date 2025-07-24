@@ -172,7 +172,9 @@ void MainWindow::setTrayVisible(bool visible)
         showInTray = false;
 
     show();
-    saveSettings();
+
+    if (appInitiated)
+        saveSettings();
 }
 
 /*
@@ -555,11 +557,14 @@ void MainWindow::pauseSyncing()
         else
             manager.updateTimer(profile);
 
-        profile.saveSettings();
+        if (appInitiated)
+            profile.saveSettings();
     }
 
     updateStatus();
-    saveSettings();
+
+    if (appInitiated)
+        saveSettings();
 }
 
 /*
@@ -596,7 +601,8 @@ void MainWindow::pauseSelected()
                 if (!folder.paused)
                     profile->paused = false;
 
-            profile->saveSettings();
+            if (appInitiated)
+                profile->saveSettings();
         }
         // Profiles are selected
         else if (ui->syncProfilesView->hasFocus())
@@ -618,7 +624,8 @@ void MainWindow::pauseSelected()
                 else
                     manager.updateTimer(*profile);
 
-                profile->saveSettings();
+                if (appInitiated)
+                    profile->saveSettings();
             }
         }
 
@@ -708,7 +715,9 @@ void MainWindow::switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMod
     }
 
     updateStatus();
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -736,7 +745,9 @@ void MainWindow::switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionM
     profile.deletePermanentlyAction->setChecked(mode == SyncProfile::DeletePermanently);
     profile.versioningFormatMenu->menuAction()->setVisible(mode == SyncProfile::Versioning);
     profile.versioningLocationMenu->menuAction()->setVisible(mode == SyncProfile::Versioning);
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -754,7 +765,9 @@ void MainWindow::switchVersioningFormat(SyncProfile &profile, VersioningFormat f
     profile.folderTimestampAction->setChecked(format == FolderTimestamp);
     profile.lastVersionAction->setChecked(format == LastVersion);
     profile.setVersioningFormat(format);
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -783,7 +796,8 @@ void MainWindow::switchVersioningLocation(SyncProfile &profile, VersioningLocati
         }
     }
 
-    profile.saveSettings();
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -798,7 +812,9 @@ void MainWindow::switchSyncingType(SyncProfile &profile, SyncFolder &folder, Syn
 
     folder.syncType = type;
     updateStatus();
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -834,7 +850,8 @@ void MainWindow::increaseSyncTime(SyncProfile &profile)
         updateProfileTooltip(profile);
     }
 
-    profile.saveSettings();
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -862,7 +879,8 @@ void MainWindow::decreaseSyncTime(SyncProfile &profile)
         updateProfileTooltip(profile);
     }
 
-    profile.saveSettings();
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -878,7 +896,9 @@ void MainWindow::switchLanguage(QLocale::Language language)
     syncApp->setTranslator(language);
     this->language = language;
     updateStrings();
-    saveSettings();
+
+    if (appInitiated)
+        saveSettings();
 
     for (auto &profile : manager.profiles())
         profile.updateStrings();
@@ -892,8 +912,10 @@ MainWindow::launchOnStartup
 void MainWindow::toggleLaunchOnStartup()
 {
     syncApp->setLaunchOnStartup(launchOnStartupAction->isChecked());
-    saveSettings();
     updateLaunchOnStartupState();
+
+    if (appInitiated)
+        saveSettings();
 }
 
 /*
@@ -904,7 +926,9 @@ MainWindow::showInTray
 void MainWindow::toggleShowInTray()
 {
     setTrayVisible(!showInTray);
-    saveSettings();
+
+    if (appInitiated)
+        saveSettings();
 }
 
 /*
@@ -915,7 +939,9 @@ MainWindow::disableNotification
 void MainWindow::toggleNotification()
 {
     manager.enableNotifications(!manager.notificationsEnabled());
-    saveSettings();
+
+    if (appInitiated)
+        saveSettings();
 }
 
 /*
@@ -931,7 +957,9 @@ void MainWindow::setDatabaseLocation(SyncProfile &profile, SyncProfile::Database
     profile.saveDatabaseLocallyAction->setChecked(location == false);
     profile.saveDatabaseDecentralizedAction->setChecked(location == true);
     profile.setDatabaseLocation(location);
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -950,7 +978,9 @@ void MainWindow::setVersioningPostfix(SyncProfile &profile)
 
     profile.setVersioningFolder(postfix);
     profile.versioningPostfixAction->setText(QString("&" + tr("Folder Postfix: %1")).arg(profile.versioningFolder()));
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -976,7 +1006,9 @@ void MainWindow::setVersioningPattern(SyncProfile &profile)
 
     profile.setVersioningPattern(pattern);
     profile.versioningPatternAction->setText(QString("&" + tr("Pattern: %1")).arg(profile.versioningPattern()));
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -998,7 +1030,9 @@ void MainWindow::setFileMinSize(SyncProfile &profile)
 
     profile.setFileMinSize(size);
     profile.fileMinSizeAction->setText("&" + tr("Minimum File Size: %1 bytes").arg(profile.fileMinSize()));
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -1020,7 +1054,9 @@ void MainWindow::setFileMaxSize(SyncProfile &profile)
 
     profile.setFileMaxSize(size);
     profile.fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1 bytes").arg(profile.fileMaxSize()));
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -1039,7 +1075,9 @@ void MainWindow::setMovedFileMinSize(SyncProfile &profile)
 
     profile.setMovedFileMinSize(size);
     profile.movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1 bytes").arg(profile.movedFileMinSize()));
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -1064,7 +1102,9 @@ void MainWindow::setIncludeList(SyncProfile &profile)
     includeString = includeList.join("; ");
     profile.setIncludeList(includeList);
     profile.includeAction->setText("&" + tr("Include: %1").arg(includeString));
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -1089,7 +1129,9 @@ void MainWindow::setExcludeList(SyncProfile &profile)
     excludeString = excludeList.join("; ");
     profile.setExcludeList(excludeList);
     profile.excludeAction->setText("&" + tr("Exclude: %1").arg(excludeString));
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -1100,7 +1142,9 @@ MainWindow::toggleIgnoreHiddenFiles
 void MainWindow::toggleIgnoreHiddenFiles(SyncProfile &profile)
 {
     profile.enableIgnoreHiddenFiles(!profile.ignoreHiddenFilesEnabled());
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -1111,7 +1155,9 @@ MainWindow::detectMovedFiles
 void MainWindow::toggleDetectMoved(SyncProfile &profile)
 {
     profile.enableDetectMovedFiles(!profile.detectMovedFilesEnabled());
-    profile.saveSettings();
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
