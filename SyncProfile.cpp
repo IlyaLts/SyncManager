@@ -468,6 +468,49 @@ void SyncProfile::setupMenus(QWidget *parent)
 
 /*
 ===================
+SyncProfile::destroyMenus
+===================
+*/
+void SyncProfile::destroyMenus()
+{
+    automaticAction->deleteLater();
+    manualAction->deleteLater();
+    detectMovedFilesAction->deleteLater();
+    increaseSyncTimeAction->deleteLater();
+    syncingTimeAction->deleteLater();
+    decreaseSyncTimeAction->deleteLater();
+    moveToTrashAction->deleteLater();
+    versioningAction->deleteLater();
+    deletePermanentlyAction->deleteLater();
+    fileTimestampBeforeAction->deleteLater();
+    fileTimestampAfterAction->deleteLater();
+    folderTimestampAction->deleteLater();
+    lastVersionAction->deleteLater();
+    versioningPostfixAction->deleteLater();
+    versioningPatternAction->deleteLater();
+    locallyNextToFolderAction->deleteLater();
+    customLocationAction->deleteLater();
+    customLocationPathAction->deleteLater();
+    saveDatabaseLocallyAction->deleteLater();
+    saveDatabaseDecentralizedAction->deleteLater();
+    fileMinSizeAction->deleteLater();
+    fileMaxSizeAction->deleteLater();
+    movedFileMinSizeAction->deleteLater();
+    includeAction->deleteLater();
+    excludeAction->deleteLater();
+    ignoreHiddenFilesAction->deleteLater();
+
+    syncingModeMenu->deleteLater();
+    syncingTimeMenu->deleteLater();
+    deletionModeMenu->deleteLater();
+    versioningFormatMenu->deleteLater();
+    versioningLocationMenu->deleteLater();
+    databaseLocationMenu->deleteLater();
+    filteringMenu->deleteLater();
+}
+
+/*
+===================
 SyncProfile::saveSettings
 ===================
 */

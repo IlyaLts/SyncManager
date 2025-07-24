@@ -239,6 +239,7 @@ void MainWindow::addProfile()
     folderModel->setStringList(QStringList());
     manager.profiles().push_back(SyncProfile(newName, profileIndexByName(newName)));
     manager.profiles().back().paused = manager.isPaused();
+    manager.profiles().back().setupMenus(this);
 
     rebindProfiles();
 
@@ -295,6 +296,7 @@ void MainWindow::removeProfile()
 
         profile->paused = true;
         profile->toBeRemoved = true;
+        profile->destroyMenus();
 
         for (auto &folder : profile->folders)
         {

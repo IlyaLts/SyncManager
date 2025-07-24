@@ -123,6 +123,7 @@ public:
     SyncFolder *folderByPath(const QString &path);
 
     void setupMenus(QWidget *parent = nullptr);
+    void destroyMenus();
     void saveSettings() const;
     void updateStrings();
 
