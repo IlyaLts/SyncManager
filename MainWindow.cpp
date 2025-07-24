@@ -683,6 +683,9 @@ MainWindow::switchSyncingMode
 */
 void MainWindow::switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMode mode)
 {
+    if (mode < SyncProfile::Automatic || mode > SyncProfile::Manual)
+        mode = SyncProfile::Automatic;
+
     profile.setSyncingMode(mode);
     profile.automaticAction->setChecked(mode == SyncProfile::Automatic);
     profile.manualAction->setChecked(mode == SyncProfile::Manual);
@@ -715,6 +718,9 @@ MainWindow::switchDeletionMode
 */
 void MainWindow::switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionMode mode)
 {
+    if (mode < SyncProfile::MoveToTrash || mode > SyncProfile::DeletePermanently)
+        mode = SyncProfile::MoveToTrash;
+
     if (appInitiated && mode == SyncProfile::DeletePermanently && mode != profile.deletionMode())
     {
         QString title(tr("Switch deletion mode to delete files permanently?"));
@@ -740,6 +746,9 @@ MainWindow::switchVersioningFormat
 */
 void MainWindow::switchVersioningFormat(SyncProfile &profile, VersioningFormat format)
 {
+    if (format < FileTimestampBefore || format > LastVersion)
+        format = FileTimestampAfter;
+
     profile.fileTimestampBeforeAction->setChecked(format == FileTimestampBefore);
     profile.fileTimestampAfterAction->setChecked(format == FileTimestampAfter);
     profile.folderTimestampAction->setChecked(format == FolderTimestamp);
@@ -755,6 +764,9 @@ MainWindow::switchVersioningLocation
 */
 void MainWindow::switchVersioningLocation(SyncProfile &profile, VersioningLocation location, bool init)
 {
+    if (location < LocallyNextToFolder || location > CustomLocation)
+        location = LocallyNextToFolder;
+
     profile.locallyNextToFolderAction->setChecked(location== LocallyNextToFolder);
     profile.customLocationAction->setChecked(location == CustomLocation);
     profile.setVersioningLocation(location);
@@ -781,6 +793,9 @@ MainWindow::switchSyncingType
 */
 void MainWindow::switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::SyncType type)
 {
+    if (type < SyncFolder::TWO_WAY || type > SyncFolder::ONE_WAY_UPDATE)
+        type = SyncFolder::TWO_WAY;
+
     folder.syncType = type;
     updateStatus();
     profile.saveSettings();
@@ -910,6 +925,9 @@ MainWindow::setDatabaseLocation
 */
 void MainWindow::setDatabaseLocation(SyncProfile &profile, SyncProfile::DatabaseLocation location)
 {
+    if (location < SyncProfile::Locally || location > SyncProfile::Decentralized)
+        location = SyncProfile::Decentralized;
+
     profile.saveDatabaseLocallyAction->setChecked(location == false);
     profile.saveDatabaseDecentralizedAction->setChecked(location == true);
     profile.setDatabaseLocation(location);
