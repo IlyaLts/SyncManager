@@ -859,9 +859,9 @@ MainWindow::launchOnStartup
 */
 void MainWindow::toggleLaunchOnStartup()
 {
-    launchOnStartupAction->setChecked(!launchOnStartupAction->isChecked());
     syncApp->setLaunchOnStartup(launchOnStartupAction->isChecked());
     saveSettings();
+    updateLaunchOnStartupState();
 }
 
 /*
@@ -1734,13 +1734,7 @@ void MainWindow::setupMenus()
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
 
-#ifdef Q_OS_WIN
-    QString path(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk");
-    launchOnStartupAction->setChecked(QFile::exists(path));
-#else
-    QString path(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop");
-    launchOnStartupAction->setChecked(QFile::exists(path));
-#endif
+    updateLaunchOnStartupState();
 
     languageMenu = new UnhidableMenu("&" + tr("Language"), this);
 
@@ -1859,6 +1853,22 @@ void MainWindow::updateStrings()
         profile.updateStrings();
         updateProfileTooltip(profile);
     }
+}
+
+/*
+===================
+MainWindow::updateLaunchOnStartupState
+===================
+*/
+void MainWindow::updateLaunchOnStartupState()
+{
+#ifdef Q_OS_WIN
+    QString path(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk");
+    launchOnStartupAction->setChecked(QFile::exists(path));
+#else
+    QString path(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop");
+    launchOnStartupAction->setChecked(QFile::exists(path));
+#endif
 }
 
 /*
