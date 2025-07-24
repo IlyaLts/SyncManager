@@ -178,8 +178,8 @@ public:
     QStringList m_includeList;
     QStringList m_excludeList;
     int m_syncTimeMultiplier = 1;
-    bool m_ignoreHiddenFiles = false;
     bool m_detectMovedFiles = false;
+    bool m_ignoreHiddenFiles = false;
 
     bool syncing = false;
     bool paused = false;
