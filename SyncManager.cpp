@@ -56,7 +56,7 @@ void SyncManager::addToQueue(SyncProfile *profile)
     // Adds the passed profile number to the sync queue
     if (profile)
     {
-        if ((!profile->paused || profile->m_syncingMode != SyncProfile::Automatic) && !profile->toBeRemoved)
+        if ((!profile->paused || !profile->isAutomatic()) && !profile->toBeRemoved)
         {
             m_queue.enqueue(profile);
         }
@@ -65,7 +65,7 @@ void SyncManager::addToQueue(SyncProfile *profile)
     else
     {
         for (auto &profile : profiles())
-            if ((!profile.paused || profile.m_syncingMode != SyncProfile::Automatic) && !profile.toBeRemoved && !m_queue.contains(&profile))
+            if ((!profile.paused || !profile.isAutomatic()) && !profile.toBeRemoved && !m_queue.contains(&profile))
                 m_queue.enqueue(&profile);
     }
 }
@@ -209,11 +209,16 @@ void SyncManager::updateTimer(SyncProfile &profile)
     using namespace std;
     using namespace std::chrono;
 
-    if (profile.m_syncingMode != SyncProfile::Automatic)
+    if (!profile.isAutomatic())
         return;
 
     QDateTime dateToSync(profile.lastSyncDate);
-    dateToSync = dateToSync.addMSecs(profile.syncEvery);
+
+    if (profile.m_syncingMode == SyncProfile::AutomaticAdaptive)
+        dateToSync = dateToSync.addMSecs(profile.syncEvery);
+    else if (profile.m_syncingMode == SyncProfile::AutomaticFixed)
+        dateToSync = dateToSync.addMSecs(profile.syncEveryFixed);
+
     qint64 syncTime = 0;
 
     if (dateToSync >= QDateTime::currentDateTime())
@@ -246,20 +251,29 @@ SyncManager::updateNextSyncingTime
 */
 void SyncManager::updateNextSyncingTime(SyncProfile &profile)
 {
-    quint64 time = profile.syncTime;
+    quint64 time;
 
-    // Multiplies sync time by 2
-    for (int i = 0; i < profile.m_syncTimeMultiplier - 1; i++)
+    if (profile.m_syncingMode == SyncProfile::AutomaticAdaptive)
     {
-        time <<= 1;
-        quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
+        time = profile.syncTime;
 
-        // If exceeds the maximum value of an qint64
-        if (time > max)
+        // Multiplies sync time by 2
+        for (int i = 0; i < profile.m_syncTimeMultiplier - 1; i++)
         {
-            time = max;
-            break;
+            time <<= 1;
+            quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
+
+            // If exceeds the maximum value of an qint64
+            if (time > max)
+            {
+                time = max;
+                break;
+            }
         }
+    }
+    else if (profile.m_syncingMode == SyncProfile::AutomaticFixed)
+    {
+        time = profile.syncEveryFixed;
     }
 
     if (time < SYNC_MIN_DELAY)
@@ -321,7 +335,7 @@ SyncManager::isInAutomaticPausedState
 bool SyncManager::isInAutomaticPausedState() const
 {
     for (auto &profile : profiles())
-        if (profile.syncingMode() != SyncProfile::Automatic || !isPaused())
+        if (!profile.isAutomatic() || !isPaused())
             return false;
 
     return true;

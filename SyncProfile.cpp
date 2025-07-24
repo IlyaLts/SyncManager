@@ -48,6 +48,8 @@ SyncProfile::SyncProfile(const QString &name, const QModelIndex &index)
     m_databaseLocation = static_cast<SyncProfile::DatabaseLocation>(settings.value(keyName + "DatabaseLocation", SyncProfile::Decentralized).toInt());
     m_syncTimeMultiplier = settings.value(keyName + "SyncTimeMultiplier", 1).toInt();
     if (m_syncTimeMultiplier <= 0) m_syncTimeMultiplier = 1;
+    syncEveryFixed = settings.value(keyName + "FixedSyncTime", 1).toInt();
+    if (syncEveryFixed <= 0) syncEveryFixed = 1;
     m_versioningFolder = settings.value(keyName + "VersionFolder", "[Deletions]").toString();
     m_versioningPattern = settings.value(keyName + "VersionPattern", "yyyy_M_d_h_m_s_z").toString();
     m_versioningPath = settings.value(keyName + "VersioningPath", "").toString();
@@ -281,6 +283,16 @@ bool SyncProfile::isActive() const
 
 /*
 ===================
+SyncProfile::isAutomatic
+===================
+*/
+bool SyncProfile::isAutomatic() const
+{
+    return m_syncingMode == AutomaticAdaptive || m_syncingMode == AutomaticFixed;
+}
+
+/*
+===================
 SyncProfile::isTopFolderUpdated
 ===================
 */
@@ -367,12 +379,14 @@ SyncProfile::setupMenus
 */
 void SyncProfile::setupMenus(QWidget *parent)
 {
-    automaticAction = new QAction("&" + qApp->translate("MainWindow", "Automatic"), parent);
     manualAction = new QAction("&" + qApp->translate("MainWindow", "Manual"), parent);
+    automaticAdaptiveAction = new QAction("&" + qApp->translate("MainWindow", "Automatic (Adaptive)"), parent);
+    automaticFixedAction = new QAction("&" + qApp->translate("MainWindow", "Automatic (Fixed)"), parent);
     detectMovedFilesAction = new QAction("&" + qApp->translate("MainWindow", "Detect Renamed and Moved Files"), parent);
     increaseSyncTimeAction = new QAction("&" + qApp->translate("MainWindow", "Increase"), parent);
     syncingTimeAction = new QAction(qApp->translate("MainWindow", "Synchronize Every: "), parent);
     decreaseSyncTimeAction = new QAction("&" + qApp->translate("MainWindow", "Decrease"), parent);
+    fixedSyncingTimeAction = new QAction("&" + qApp->translate("MainWindow", "Synchronize Every: "), parent);
     moveToTrashAction = new QAction("&" + qApp->translate("MainWindow", "Move Files to Trash"), parent);
     versioningAction = new QAction("&" + qApp->translate("MainWindow", "Versioning"), parent);
     deletePermanentlyAction = new QAction("&" + qApp->translate("MainWindow", "Delete Files Permanently"), parent);
@@ -400,8 +414,9 @@ void SyncProfile::setupMenus(QWidget *parent)
     increaseSyncTimeAction->setEnabled(true);
     decreaseSyncTimeAction->setEnabled(m_syncTimeMultiplier > 1);
 
-    automaticAction->setCheckable(true);
     manualAction->setCheckable(true);
+    automaticAdaptiveAction->setCheckable(true);
+    automaticFixedAction->setCheckable(true);
     detectMovedFilesAction->setCheckable(true);
     deletePermanentlyAction->setCheckable(true);
     moveToTrashAction->setCheckable(true);
@@ -418,15 +433,18 @@ void SyncProfile::setupMenus(QWidget *parent)
     ignoreHiddenFilesAction->setCheckable(true);
 
     syncingModeMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Syncing Mode"), parent);
-    syncingModeMenu->addAction(automaticAction);
     syncingModeMenu->addAction(manualAction);
+    syncingModeMenu->addAction(automaticAdaptiveAction);
+    syncingModeMenu->addAction(automaticFixedAction);
+
+    syncingModeMenu->addSeparator();
+    syncingModeMenu->addAction(increaseSyncTimeAction);
+    syncingModeMenu->addAction(syncingTimeAction);
+    syncingModeMenu->addAction(decreaseSyncTimeAction);
+    syncingModeMenu->addAction(fixedSyncingTimeAction);
+
     syncingModeMenu->addSeparator();
     syncingModeMenu->addAction(detectMovedFilesAction);
-
-    syncingTimeMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Syncing Time"), parent);
-    syncingTimeMenu->addAction(increaseSyncTimeAction);
-    syncingTimeMenu->addAction(syncingTimeAction);
-    syncingTimeMenu->addAction(decreaseSyncTimeAction);
 
     deletionModeMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Deletion Mode"), parent);
     deletionModeMenu->addAction(moveToTrashAction);
@@ -473,12 +491,14 @@ SyncProfile::destroyMenus
 */
 void SyncProfile::destroyMenus()
 {
-    automaticAction->deleteLater();
     manualAction->deleteLater();
+    automaticAdaptiveAction->deleteLater();
+    automaticFixedAction->deleteLater();
     detectMovedFilesAction->deleteLater();
     increaseSyncTimeAction->deleteLater();
     syncingTimeAction->deleteLater();
     decreaseSyncTimeAction->deleteLater();
+    fixedSyncingTimeAction->deleteLater();
     moveToTrashAction->deleteLater();
     versioningAction->deleteLater();
     deletePermanentlyAction->deleteLater();
@@ -501,12 +521,40 @@ void SyncProfile::destroyMenus()
     ignoreHiddenFilesAction->deleteLater();
 
     syncingModeMenu->deleteLater();
-    syncingTimeMenu->deleteLater();
     deletionModeMenu->deleteLater();
     versioningFormatMenu->deleteLater();
     versioningLocationMenu->deleteLater();
     databaseLocationMenu->deleteLater();
     filteringMenu->deleteLater();
+}
+
+/*
+===================
+SyncProfile::loadSettings
+===================
+*/
+void SyncProfile::loadSettings()
+{
+    if (toBeRemoved)
+        return;
+/*
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+
+    m_paused = settings.value(QLatin1String("Paused"), false).toBool();
+    m_notifications = QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool();
+    m_ignoreHiddenFiles = settings.value("IgnoreHiddenFiles", true).toBool();
+    m_versioningPath = settings.value("VersioningPath", "").toString();
+    m_databaseLocation = static_cast<SyncManager::DatabaseLocation>(settings.value("DatabaseLocation", SyncManager::Decentralized).toInt());
+    m_detectMovedFiles = settings.value("DetectMovedFiles", false).toBool();
+    m_syncTimeMultiplier = settings.value("SyncTimeMultiplier", 1).toInt();
+    if (m_syncTimeMultiplier <= 0) m_syncTimeMultiplier = 1;
+    m_fileMinSize = settings.value("FileMinSize", 0).toInt();
+    m_fileMaxSize = settings.value("FileMaxSize", 0).toInt();
+    m_movedFileMinSize = settings.value("MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt();
+    m_includeList = settings.value("IncludeList").toStringList();
+    m_excludeList = settings.value("ExcludeList").toStringList();
+    m_versioningFolder = settings.value("VersionFolder", "[Deletions]").toString();
+    m_versioningPattern = settings.value("VersionPattern", "yyyy_M_d_h_m_s_z").toString();*/
 }
 
 /*
@@ -523,6 +571,8 @@ void SyncProfile::saveSettings() const
     QString keyName(name + QLatin1String("_profile/"));
 
     settings.setValue(keyName + "SyncingMode", syncingMode());
+    settings.setValue(keyName + "SyncTimeMultiplier", syncTimeMultiplier());
+    settings.setValue(keyName + "FixedSyncTime", syncEveryFixed);
     settings.setValue(keyName + "DeletionMode", deletionMode());
     settings.setValue(keyName + "VersioningFormat", versioningFormat());
     settings.setValue(keyName + "VersioningLocation", versioningLocation());
@@ -530,7 +580,6 @@ void SyncProfile::saveSettings() const
     settings.setValue(keyName + "DatabaseLocation", databaseLocation());
     settings.setValue(keyName + "IgnoreHiddenFiles", ignoreHiddenFilesEnabled());
     settings.setValue(keyName + "DetectMovedFiles", detectMovedFilesEnabled());
-    settings.setValue(keyName + "SyncTimeMultiplier", syncTimeMultiplier());
     settings.setValue(keyName + "FileMinSize", fileMinSize());
     settings.setValue(keyName + "FileMaxSize", fileMaxSize());
     settings.setValue(keyName + "MovedFileMinSize", movedFileMinSize());
@@ -561,12 +610,14 @@ SyncProfile::updateStrings
 */
 void SyncProfile::updateStrings()
 {
-    automaticAction->setText("&" + qApp->translate("MainWindow", "Automatic"));
     manualAction->setText("&" + qApp->translate("MainWindow", "Manual"));
+    automaticAdaptiveAction->setText("&" + qApp->translate("MainWindow", "Automatic (Adaptive)"));
+    automaticFixedAction->setText("&" + qApp->translate("MainWindow", "Automatic (Fixed)"));
     detectMovedFilesAction->setText("&" + qApp->translate("MainWindow", "Detect Renamed and Moved Files"));
     increaseSyncTimeAction->setText("&" + qApp->translate("MainWindow", "Increase"));
     syncingTimeAction->setText(qApp->translate("MainWindow", "Synchronize Every:"));
     decreaseSyncTimeAction->setText("&" + qApp->translate("MainWindow", "Decrease"));
+    fixedSyncingTimeAction->setText(QString("&" + qApp->translate("MainWindow", "Synchronize every %1")).arg(0));
     moveToTrashAction->setText("&" + qApp->translate("MainWindow", "Move Files to Trash"));
     versioningAction->setText("&" + qApp->translate("MainWindow", "Versioning"));
     deletePermanentlyAction->setText("&" + qApp->translate("MainWindow", "Delete Files Permanently"));
@@ -588,7 +639,6 @@ void SyncProfile::updateStrings()
     excludeAction->setText(QString("&" + qApp->translate("MainWindow", "Exclude: %1")).arg(excludeList().join("; ")));
     ignoreHiddenFilesAction->setText("&" + qApp->translate("MainWindow", "Ignore Hidden Files"));
     syncingModeMenu->setTitle("&" + qApp->translate("MainWindow", "Syncing Mode"));
-    syncingTimeMenu->setTitle("&" + qApp->translate("MainWindow", "Syncing Time"));
     deletionModeMenu->setTitle("&" + qApp->translate("MainWindow", "Deletion Mode"));
     versioningFormatMenu->setTitle("&" + qApp->translate("MainWindow", "Versioning Format"));
     versioningLocationMenu->setTitle("&" + qApp->translate("MainWindow", "Versioning Location"));

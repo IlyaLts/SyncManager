@@ -85,6 +85,7 @@ private Q_SLOTS:
     void toggleLaunchOnStartup();
     void toggleShowInTray();
     void toggleNotification();
+    void setFixedTime(SyncProfile &profile);
     void setDatabaseLocation(SyncProfile &profile, SyncProfile::DatabaseLocation location);
     void setVersioningPostfix(SyncProfile &profile);
     void setVersioningPattern(SyncProfile &profile);

@@ -45,8 +45,9 @@ public:
 
     enum SyncingMode
     {
-        Automatic,
-        Manual
+        Manual,
+        AutomaticAdaptive,
+        AutomaticFixed
     };
 
     enum DeletionMode
@@ -115,6 +116,7 @@ public:
     inline QByteArray filePath(Hash hash) const { return filePaths.value(hash); }
     inline bool hasFilePath(Hash hash) const { return filePaths.contains(hash); }
     bool isActive() const;
+    bool isAutomatic() const;
     bool isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) const;
     bool isAnyFolderCaseSensitive() const;
     bool hasExistingFolders() const;
@@ -124,17 +126,20 @@ public:
 
     void setupMenus(QWidget *parent = nullptr);
     void destroyMenus();
+    void loadSettings();
     void saveSettings() const;
     void updateStrings();
 
     std::list<SyncFolder> folders;
 
-    QAction *automaticAction;
     QAction *manualAction;
+    QAction *automaticAdaptiveAction;
+    QAction *automaticFixedAction;
     QAction *detectMovedFilesAction;
     QAction *increaseSyncTimeAction;
     QAction *syncingTimeAction;
     QAction *decreaseSyncTimeAction;
+    QAction *fixedSyncingTimeAction;
     QAction *moveToTrashAction;
     QAction *versioningAction;
     QAction *deletePermanentlyAction;
@@ -157,7 +162,6 @@ public:
     QAction *ignoreHiddenFilesAction;
 
     UnhidableMenu *syncingModeMenu;
-    UnhidableMenu *syncingTimeMenu;
     UnhidableMenu *deletionModeMenu;
     UnhidableMenu *versioningFormatMenu;
     UnhidableMenu *versioningLocationMenu;
@@ -187,6 +191,7 @@ public:
     bool toBeRemoved = false;
     bool syncHidden = false;
     quint64 syncEvery = 0;
+    quint64 syncEveryFixed = 0;
     quint64 syncTime = 0;
     QChronoTimer syncTimer;
     QDateTime lastSyncDate;

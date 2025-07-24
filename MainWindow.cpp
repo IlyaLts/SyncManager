@@ -690,19 +690,22 @@ MainWindow::switchSyncingMode
 */
 void MainWindow::switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMode mode)
 {
-    if (mode < SyncProfile::Automatic || mode > SyncProfile::Manual)
-        mode = SyncProfile::Automatic;
+    if (mode < SyncProfile::Manual || mode > SyncProfile::AutomaticFixed)
+        mode = SyncProfile::AutomaticAdaptive;
 
     profile.setSyncingMode(mode);
-    profile.automaticAction->setChecked(mode == SyncProfile::Automatic);
     profile.manualAction->setChecked(mode == SyncProfile::Manual);
-    pauseSyncingAction->setVisible(mode == SyncProfile::Automatic);
-    profile.syncingTimeMenu->menuAction()->setVisible(mode == SyncProfile::Automatic);
+    profile.automaticAdaptiveAction->setChecked(mode == SyncProfile::AutomaticAdaptive);
+    profile.automaticFixedAction->setChecked(mode == SyncProfile::AutomaticFixed);
+    profile.increaseSyncTimeAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
+    profile.syncingTimeAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
+    profile.decreaseSyncTimeAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
+    profile.fixedSyncingTimeAction->setVisible(mode == SyncProfile::AutomaticFixed);
+    pauseSyncingAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
 
     if (mode == SyncProfile::Manual)
     {
-        for (auto &profile : manager.profiles())
-            profile.syncTimer.stop();
+        profile.syncTimer.stop();
     }
     // Otherwise, automatic
     else
@@ -942,6 +945,27 @@ void MainWindow::toggleNotification()
 
     if (appInitiated)
         saveSettings();
+}
+
+/*
+===================
+MainWindow::setFixedTime
+===================
+*/
+void MainWindow::setFixedTime(SyncProfile &profile)
+{
+    QString title(tr("Synchronize Every"));
+    QString text(tr("Please enter the synchronization interval in seconds."));
+    int size;
+
+    if (!intInputDialog(this, title, text, size, profile.syncEveryFixed / 1000, 0))
+        return;
+
+    profile.syncEveryFixed = size * 1000;
+    updateMenuSyncTime(profile);
+
+    if (appInitiated)
+        profile.saveSettings();
 }
 
 /*
@@ -1199,7 +1223,6 @@ void MainWindow::showContextMenu(const QPoint &pos)
 
             menu.addSeparator();
             menu.addMenu(profile->syncingModeMenu);
-            menu.addMenu(profile->syncingTimeMenu);
             menu.addMenu(profile->deletionModeMenu);
             menu.addMenu(profile->versioningFormatMenu);
             menu.addMenu(profile->versioningLocationMenu);
@@ -1551,8 +1574,27 @@ MainWindow::updateMenuSyncTime
 */
 void MainWindow::updateMenuSyncTime(SyncProfile &profile)
 {
-    quint64 syncEvery = profile.syncEvery;
-    QString text(tr("Average Synchronization Time: "));
+    if (profile.m_syncingMode == SyncProfile::Manual)
+        return;
+
+    quint64 syncEvery;
+    QString text;
+    QAction *action;
+
+    if (profile.m_syncingMode == SyncProfile::AutomaticAdaptive)
+    {
+        syncEvery = profile.syncEvery;
+        text.assign(tr("Average Synchronization Time: "));
+
+        action = profile.syncingTimeAction;
+    }
+    else if (profile.m_syncingMode == SyncProfile::AutomaticFixed)
+    {
+        syncEvery = profile.syncEveryFixed;
+        text.assign(tr("Synchronization Every: "));
+
+        action = profile.fixedSyncingTimeAction;
+    }
 
     quint64 seconds = (syncEvery / 1000) % 60;
     quint64 minutes = (syncEvery / 1000 / 60) % 60;
@@ -1568,7 +1610,7 @@ void MainWindow::updateMenuSyncTime(SyncProfile &profile)
     else if (seconds)
         text.append(QString(tr("%1 seconds")).arg(seconds));
 
-    profile.syncingTimeAction->setText(text);
+    action->setText(text);
 }
 
 /*
@@ -1698,7 +1740,7 @@ void MainWindow::readSettings()
 
         QString profileKeyname(profile.name + QLatin1String("_profile/"));
 
-        switchSyncingMode(profile, static_cast<SyncProfile::SyncingMode>(settings.value(profileKeyname + "SyncingMode", SyncProfile::Automatic).toInt()));
+        switchSyncingMode(profile, static_cast<SyncProfile::SyncingMode>(settings.value(profileKeyname + "SyncingMode", SyncProfile::AutomaticAdaptive).toInt()));
         switchDeletionMode(profile, static_cast<SyncProfile::DeletionMode>(settings.value(profileKeyname + "DeletionMode", SyncProfile::MoveToTrash).toInt()));
         switchVersioningFormat(profile, static_cast<VersioningFormat>(settings.value(profileKeyname + "VersioningFormat", FolderTimestamp).toInt()));
         switchVersioningLocation(profile, static_cast<VersioningLocation>(settings.value(profileKeyname + "VersioningLocation", LocallyNextToFolder).toInt()), true);
@@ -1854,8 +1896,12 @@ void MainWindow::setupMenus()
 
     for (auto &profile : manager.profiles())
     {
-        connect(profile.automaticAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::Automatic); });
         connect(profile.manualAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::Manual); });
+        connect(profile.automaticAdaptiveAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticAdaptive); });
+        connect(profile.automaticFixedAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticFixed); });
+        connect(profile.increaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ increaseSyncTime(profile); });
+        connect(profile.decreaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ decreaseSyncTime(profile); });
+        connect(profile.fixedSyncingTimeAction, &QAction::triggered, this, [this, &profile](){ setFixedTime(profile); });
         connect(profile.detectMovedFilesAction, &QAction::triggered, this, [this, &profile](){ toggleDetectMoved(profile); });
         connect(profile.moveToTrashAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::MoveToTrash); });
         connect(profile.versioningAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::Versioning); });
@@ -1868,8 +1914,6 @@ void MainWindow::setupMenus()
         connect(profile.versioningPatternAction, &QAction::triggered, this, [this, &profile](){ setVersioningPattern(profile); });
         connect(profile.locallyNextToFolderAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, LocallyNextToFolder); });
         connect(profile.customLocationAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, CustomLocation); });
-        connect(profile.increaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ increaseSyncTime(profile); });
-        connect(profile.decreaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ decreaseSyncTime(profile); });
         connect(profile.saveDatabaseLocallyAction, &QAction::triggered, this, [this, &profile](){ setDatabaseLocation(profile, SyncProfile::Locally); });
         connect(profile.saveDatabaseDecentralizedAction, &QAction::triggered, this, [this, &profile](){ setDatabaseLocation(profile, SyncProfile::Decentralized); });
         connect(profile.fileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMinSize(profile); });
