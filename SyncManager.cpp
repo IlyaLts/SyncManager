@@ -251,7 +251,7 @@ SyncManager::updateNextSyncingTime
 */
 void SyncManager::updateNextSyncingTime(SyncProfile &profile)
 {
-    quint64 time;
+    quint64 time = 0;
 
     if (profile.syncingMode() == SyncProfile::AutomaticAdaptive)
     {

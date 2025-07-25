@@ -1578,9 +1578,9 @@ void MainWindow::updateMenuSyncTime(SyncProfile &profile)
     if (profile.syncingMode() == SyncProfile::Manual)
         return;
 
-    quint64 syncEvery;
+    quint64 syncEvery = 0;
     QString text(tr("Synchronize Every"));
-    QAction *action;
+    QAction *action = nullptr;
 
     if (profile.syncingMode() == SyncProfile::AutomaticAdaptive)
     {
