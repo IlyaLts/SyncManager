@@ -334,11 +334,14 @@ SyncManager::isInAutomaticPausedState
 */
 bool SyncManager::isInAutomaticPausedState() const
 {
-    for (auto &profile : profiles())
-        if (!profile.isAutomatic() || !isPaused())
-            return false;
+    if (isPaused())
+        return true;
 
-    return true;
+    for (auto &profile : profiles())
+        if (profile.isAutomatic() && isPaused())
+            return true;
+
+    return false;
 }
 
 /*
