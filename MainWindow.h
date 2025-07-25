@@ -103,6 +103,7 @@ private Q_SLOTS:
 private:
 
     void rebindProfiles();
+    void connectProfileMenu(SyncProfile &profile);
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
     bool updateApp();
     void updateStatus();

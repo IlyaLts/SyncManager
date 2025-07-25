@@ -39,6 +39,9 @@ SyncProfile::SyncProfile(const QString &name, const QModelIndex &index)
     this->name = name;
     syncTimer.setSingleShot(true);
     syncTimer.setTimerType(Qt::VeryCoarseTimer);
+
+    setVersioningFolder("[Deletions]");
+    setVersioningPattern("yyyy_M_d_h_m_s_z");
 }
 
 /*
@@ -524,9 +527,48 @@ void SyncProfile::setupMenus(QWidget *parent)
     filteringMenu->addSeparator();
     filteringMenu->addAction(ignoreHiddenFilesAction);
 
+    updateMenuStates();
+}
+
+/*
+===================
+SyncProfile::updateMenuStates
+===================
+*/
+void SyncProfile::updateMenuStates()
+{
+    manualAction->setChecked(syncingMode() == Manual);
+    automaticAdaptiveAction->setChecked(syncingMode() == AutomaticAdaptive);
+    automaticFixedAction->setChecked(syncingMode() == AutomaticFixed);
     detectMovedFilesAction->setChecked(detectMovedFiles());
-    databaseLocationMenu->setEnabled(databaseLocation());
+    syncingTimeAction->setVisible(syncingMode() == AutomaticAdaptive);
+    syncingTimeAction->setText(tr("Synchronize Every"));
+    fixedSyncingTimeAction->setVisible(syncingMode() == AutomaticFixed);
+    fixedSyncingTimeAction->setText(tr("Synchronize Every"));
+    moveToTrashAction->setChecked(deletionMode() == MoveToTrash);
+    versioningAction->setChecked(deletionMode() == Versioning);
+    deletePermanentlyAction->setChecked(deletionMode() == DeletePermanently);
+    fileTimestampBeforeAction->setChecked(versioningFormat() == FileTimestampBefore);
+    fileTimestampAfterAction->setChecked(versioningFormat() == FileTimestampAfter);
+    folderTimestampAction->setChecked(versioningFormat() == FolderTimestamp);
+    lastVersionAction->setChecked(versioningFormat() == LastVersion);
+    versioningPostfixAction->setText(QString("&" + tr("Folder Postfix: %1")).arg(versioningFolder()));
+    versioningPatternAction->setText(QString("&" + tr("Pattern: %1")).arg(versioningPattern()));
+    locallyNextToFolderAction->setChecked(VersioningLocation() == LocallyNextToFolder);
+    customLocationAction->setChecked(VersioningLocation() == CustomLocation);
+    customLocationPathAction->setText(tr("Custom Location: ") + versioningPath());
+    saveDatabaseLocallyAction->setChecked(databaseLocation() == Locally);
+    saveDatabaseDecentralizedAction->setChecked(databaseLocation() == Decentralized);
+    fileMinSizeAction->setText("&" + tr("Minimum File Size: %1 bytes").arg(fileMinSize()));
+    fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1 bytes").arg(fileMaxSize()));
+    movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1 bytes").arg(movedFileMinSize()));
+    includeAction->setText("&" + tr("Include: %1").arg(includeList().join("; ")));
+    excludeAction->setText("&" + tr("Exclude: %1").arg(excludeList().join("; ")));
     ignoreHiddenFilesAction->setChecked(ignoreHiddenFiles());
+
+    versioningFormatMenu->setVisible(deletionMode() == Versioning);
+    versioningLocationMenu->setVisible(deletionMode() == Versioning);
+    filteringMenu->setVisible(deletionMode() == Versioning);
 }
 
 /*

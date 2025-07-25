@@ -233,7 +233,7 @@ void MainWindow::addProfile()
 
     for (int i = 2; profileNames.contains(newName); i++)
     {
-        newName = QString(tr(" (%1)")).arg(i);
+        newName = tr(" (%1)").arg(i);
         newName.insert(0, tr("New profile"));
     }
 
@@ -243,6 +243,7 @@ void MainWindow::addProfile()
     manager.profiles().push_back(SyncProfile(newName, profileIndexByName(newName)));
     manager.profiles().back().paused = manager.isPaused();
     manager.profiles().back().setupMenus(this);
+    connectProfileMenu(manager.profiles().back());
 
     rebindProfiles();
 
@@ -1376,6 +1377,41 @@ void MainWindow::rebindProfiles()
 
 /*
 ===================
+MainWindow::connectProfileMenu
+===================
+*/
+void MainWindow::connectProfileMenu(SyncProfile &profile)
+{
+    connect(profile.manualAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::Manual); });
+    connect(profile.automaticAdaptiveAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticAdaptive); });
+    connect(profile.automaticFixedAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticFixed); });
+    connect(profile.increaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ increaseSyncTime(profile); });
+    connect(profile.decreaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ decreaseSyncTime(profile); });
+    connect(profile.fixedSyncingTimeAction, &QAction::triggered, this, [this, &profile](){ setFixedInterval(profile); });
+    connect(profile.detectMovedFilesAction, &QAction::triggered, this, [this, &profile](){ toggleDetectMoved(profile); });
+    connect(profile.moveToTrashAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::MoveToTrash); });
+    connect(profile.versioningAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::Versioning); });
+    connect(profile.deletePermanentlyAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::DeletePermanently); });
+    connect(profile.fileTimestampBeforeAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FileTimestampBefore); });
+    connect(profile.fileTimestampAfterAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FileTimestampAfter); });
+    connect(profile.folderTimestampAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FolderTimestamp); });
+    connect(profile.lastVersionAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::LastVersion); });
+    connect(profile.versioningPostfixAction, &QAction::triggered, this, [this, &profile](){ setVersioningPostfix(profile); });
+    connect(profile.versioningPatternAction, &QAction::triggered, this, [this, &profile](){ setVersioningPattern(profile); });
+    connect(profile.locallyNextToFolderAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::LocallyNextToFolder); });
+    connect(profile.customLocationAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::CustomLocation); });
+    connect(profile.saveDatabaseLocallyAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Locally); });
+    connect(profile.saveDatabaseDecentralizedAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Decentralized); });
+    connect(profile.fileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMinSize(profile); });
+    connect(profile.fileMaxSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMaxSize(profile); });
+    connect(profile.movedFileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setMovedFileMinSize(profile); });
+    connect(profile.includeAction, &QAction::triggered, this, [this, &profile](){ setIncludeList(profile); });
+    connect(profile.excludeAction, &QAction::triggered, this, [this, &profile](){ setExcludeList(profile); });
+    connect(profile.ignoreHiddenFilesAction, &QAction::triggered, this, [this, &profile](){ toggleIgnoreHiddenFiles(profile); });
+}
+
+/*
+===================
 MainWindow::notify
 
 QSystemTrayIcon doesn't display messages when hidden.
@@ -1558,8 +1594,8 @@ void MainWindow::updateStatus()
     // Title
     if (manager.filesToSync())
     {
-        trayIcon->setToolTip(QString(tr("Sync Manager - %1 files to synchronize")).arg(manager.filesToSync()));
-        setWindowTitle(QString(tr("Sync Manager - %1 files to synchronize")).arg(manager.filesToSync()));
+        trayIcon->setToolTip(tr("Sync Manager - %1 files to synchronize").arg(manager.filesToSync()));
+        setWindowTitle(tr("Sync Manager - %1 files to synchronize").arg(manager.filesToSync()));
     }
     else
     {
@@ -1601,13 +1637,13 @@ void MainWindow::updateMenuSyncTime(SyncProfile &profile)
     text.append(": ");
 
     if (days)
-        text.append(QString(tr("%1 days")).arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
+        text.append(tr("%1 days").arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
     else if (hours)
-        text.append(QString(tr("%1 hours")).arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
+        text.append(tr("%1 hours").arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
     else if (minutes)
-        text.append(QString(tr("%1 minutes")).arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
+        text.append(tr("%1 minutes").arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
     else if (seconds)
-        text.append(QString(tr("%1 seconds")).arg(seconds));
+        text.append(tr("%1 seconds").arg(seconds));
 
     action->setText(text);
 }
@@ -1639,7 +1675,7 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
     else if (!profile.lastSyncDate.isNull())
     {
         QString time(syncApp->toLocalizedDateTime(profile.lastSyncDate, dateFormat));
-        QString text = QString(tr("Last synchronization: %1.")).arg(time) + nextSyncText;
+        QString text = tr("Last synchronization: %1.").arg(time) + nextSyncText;
         profileModel->setData(index, text, Qt::ToolTipRole);
     }
     else
@@ -1829,7 +1865,7 @@ void MainWindow::setupMenus()
     showAction = new QAction("&" + tr("Show"), this);
     quitAction = new QAction("&" + tr("Quit"), this);
     reportBugAction = new QAction("&" + tr("Report a Bug"), this);
-    versionAction = new QAction(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION), this);
+    versionAction = new QAction(tr("Version: %1").arg(SYNCMANAGER_VERSION), this);
 
     versionAction->setDisabled(true);
 
@@ -1900,34 +1936,7 @@ void MainWindow::setupMenus()
     connect(reportBugAction, &QAction::triggered, this, [this](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_LINK)); });
 
     for (auto &profile : manager.profiles())
-    {
-        connect(profile.manualAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::Manual); });
-        connect(profile.automaticAdaptiveAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticAdaptive); });
-        connect(profile.automaticFixedAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticFixed); });
-        connect(profile.increaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ increaseSyncTime(profile); });
-        connect(profile.decreaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ decreaseSyncTime(profile); });
-        connect(profile.fixedSyncingTimeAction, &QAction::triggered, this, [this, &profile](){ setFixedInterval(profile); });
-        connect(profile.detectMovedFilesAction, &QAction::triggered, this, [this, &profile](){ toggleDetectMoved(profile); });
-        connect(profile.moveToTrashAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::MoveToTrash); });
-        connect(profile.versioningAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::Versioning); });
-        connect(profile.deletePermanentlyAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::DeletePermanently); });
-        connect(profile.fileTimestampBeforeAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FileTimestampBefore); });
-        connect(profile.fileTimestampAfterAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FileTimestampAfter); });
-        connect(profile.folderTimestampAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FolderTimestamp); });
-        connect(profile.lastVersionAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::LastVersion); });
-        connect(profile.versioningPostfixAction, &QAction::triggered, this, [this, &profile](){ setVersioningPostfix(profile); });
-        connect(profile.versioningPatternAction, &QAction::triggered, this, [this, &profile](){ setVersioningPattern(profile); });
-        connect(profile.locallyNextToFolderAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::LocallyNextToFolder); });
-        connect(profile.customLocationAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::CustomLocation); });
-        connect(profile.saveDatabaseLocallyAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Locally); });
-        connect(profile.saveDatabaseDecentralizedAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Decentralized); });
-        connect(profile.fileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMinSize(profile); });
-        connect(profile.fileMaxSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMaxSize(profile); });
-        connect(profile.movedFileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setMovedFileMinSize(profile); });
-        connect(profile.includeAction, &QAction::triggered, this, [this, &profile](){ setIncludeList(profile); });
-        connect(profile.excludeAction, &QAction::triggered, this, [this, &profile](){ setExcludeList(profile); });
-        connect(profile.ignoreHiddenFilesAction, &QAction::triggered, this, [this, &profile](){ toggleIgnoreHiddenFiles(profile); });
-    }
+        connectProfileMenu(profile);
 }
 
 /*
@@ -1949,7 +1958,7 @@ void MainWindow::updateStrings()
     showAction->setText("&" + tr("Show"));
     quitAction->setText("&" + tr("Quit"));
     reportBugAction->setText("&" + tr("Report a Bug"));
-    versionAction->setText(QString(tr("Version: %1")).arg(SYNCMANAGER_VERSION));
+    versionAction->setText(tr("Version: %1").arg(SYNCMANAGER_VERSION));
 
     languageMenu->setTitle("&" + tr("Language"));
     settingsMenu->setTitle("&" + tr("Settings"));

@@ -27,6 +27,8 @@
 #include <QMutex>
 #include <QModelIndex>
 
+#define MOVED_FILES_MIN_SIZE    0
+
 class SyncFolder;
 class UnhidableMenu;
 
@@ -141,6 +143,7 @@ public:
     SyncFolder *folderByPath(const QString &path);
 
     void setupMenus(QWidget *parent = nullptr);
+    void updateMenuStates();
     void destroyMenus();
     void loadSettings();
     void saveSettings() const;
@@ -197,22 +200,22 @@ public:
 
 private:
 
-    SyncingMode m_syncingMode;
-    quint64 m_syncIntervalFixed = 0;
-    DeletionMode m_deletionMode;
-    VersioningLocation m_versioningLocation;
-    VersioningFormat m_versioningFormat;
+    SyncingMode m_syncingMode = AutomaticAdaptive;
+    quint64 m_syncIntervalFixed = 1;
+    DeletionMode m_deletionMode = MoveToTrash;
+    VersioningLocation m_versioningLocation = LocallyNextToFolder;
+    VersioningFormat m_versioningFormat = FileTimestampAfter;
     QString m_versioningFolder;
     QString m_versioningPattern;
     QString m_versioningPath;
     DatabaseLocation m_databaseLocation = Decentralized;
     quint64 m_fileMinSize = 0;
     quint64 m_fileMaxSize = 0;
-    quint64 m_movedFileMinSize = 0;
+    quint64 m_movedFileMinSize = MOVED_FILES_MIN_SIZE;
     QStringList m_includeList;
     QStringList m_excludeList;
     quint32 m_syncTimeMultiplier = 1;
-    bool m_detectMovedFiles = false;
+    bool m_detectMovedFiles = true;
     bool m_ignoreHiddenFiles = false;
 
     QHash<Hash, QByteArray> filePaths;
