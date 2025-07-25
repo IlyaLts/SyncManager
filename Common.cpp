@@ -184,8 +184,8 @@ bool intInputDialog(QWidget *parent, const QString &title, const QString &label,
     dialog->setWindowTitle(title);
     dialog->setLabelText(label);
     dialog->setIntValue(value);
-    dialog->setOkButtonText(qApp->translate("MainWindow", "&OK"));
-    dialog->setCancelButtonText(qApp->translate("MainWindow", "&Cancel"));
+    dialog->setOkButtonText("&" + qApp->translate("MainWindow", "OK"));
+    dialog->setCancelButtonText("&" + qApp->translate("MainWindow", "Cancel"));
     dialog->deleteLater();
 
     if (dialog->exec())
@@ -209,8 +209,8 @@ bool textInputDialog(QWidget *parent, const QString &title, const QString &label
     dialog->setWindowTitle(title);
     dialog->setLabelText(label);
     dialog->setTextValue(text);
-    dialog->setOkButtonText(qApp->translate("MainWindow", "&OK"));
-    dialog->setCancelButtonText(qApp->translate("MainWindow", "&Cancel"));
+    dialog->setOkButtonText("&" + qApp->translate("MainWindow", "OK"));
+    dialog->setCancelButtonText("&" + qApp->translate("MainWindow", "Cancel"));
     dialog->deleteLater();
 
     if (dialog->exec())

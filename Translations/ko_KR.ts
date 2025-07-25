@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
-    <context>
+    <context>
         <name>MainWindow</name>
         <message>
             <source>Couldn't launch!</source>
@@ -24,10 +24,6 @@
             <translation>동기화 모드</translation>
         </message>
         <message>
-            <source>Syncing Time</source>
-            <translation>동기화 시간</translation>
-        </message>
-        <message>
             <source>Deletion Mode</source>
             <translation>삭제 모드</translation>
         </message>
@@ -40,20 +36,20 @@
             <translation>지금 동기화</translation>
         </message>
         <message>
-            <source>Automatic</source>
-            <translation>자동</translation>
-        </message>
-        <message>
             <source>Manual</source>
             <translation>수동</translation>
         </message>
         <message>
-            <source>Increase</source>
-            <translation>증가</translation>
+            <source>Automatic (Adaptive)</source>
+            <translation>자동 (적응형)</translation>
         </message>
         <message>
-            <source>Average Synchronization Time: </source>
-            <translation>평균 동기화 시간: </translation>
+            <source>Automatic (Fixed)</source>
+            <translation>자동 (고정)</translation>
+        </message>
+        <message>
+            <source>Increase</source>
+            <translation>증가</translation>
         </message>
         <message>
             <source>Next Synchronization: </source>
@@ -73,7 +69,7 @@
         </message>
         <message>
             <source>Delete Files Permanently</source>
-            <translation>파일 영구 삭제</translation>
+            <translation>파일을 영구적으로 삭제</translation>
         </message>
         <message>
             <source>Launch on Startup</source>
@@ -89,11 +85,11 @@
         </message>
         <message>
             <source>Ignore Hidden Files</source>
-            <translation>숨김 파일 무시</translation>
+            <translation>숨겨진 파일 무시</translation>
         </message>
         <message>
             <source>Detect Renamed and Moved Files</source>
-            <translation>이름 변경 및 이동된 파일 감지</translation>
+            <translation>이름이 변경되거나 이동된 파일 감지</translation>
         </message>
         <message>
             <source>Show</source>
@@ -113,11 +109,11 @@
         </message>
         <message>
             <source>Are you sure you want to quit?</source>
-            <translation>정말 종료하시겠습니까?</translation>
+            <translation>정말로 종료하시겠습니까?</translation>
         </message>
         <message>
             <source>Currently syncing. Are you sure you want to quit?</source>
-            <translation>현재 동기화 중입니다. 정말 종료하시겠습니까?</translation>
+            <translation>현재 동기화 중입니다. 정말로 종료하시겠습니까?</translation>
         </message>
         <message>
             <source>Remove profile</source>
@@ -125,15 +121,15 @@
         </message>
         <message>
             <source>Are you sure you want to remove profile?</source>
-            <translation>프로필을 제거하시겠습니까?</translation>
+            <translation>정말로 프로필을 제거하시겠습니까?</translation>
         </message>
         <message>
             <source>Switch deletion mode to delete files permanently?</source>
-            <translation>파일을 영구적으로 삭제하도록 삭제 모드를 전환하시겠습니까?</translation>
+            <translation>삭제 모드를 영구 삭제로 전환하시겠습니까?</translation>
         </message>
         <message>
             <source>Are you sure? Beware: this could lead to data loss!</source>
-            <translation>확실합니까? 주의: 데이터 손실로 이어질 수 있습니다!</translation>
+            <translation>확실합니까? 경고: 데이터 손실로 이어질 수 있습니다!</translation>
         </message>
         <message>
             <source>Disable database saving?</source>
@@ -141,7 +137,7 @@
         </message>
         <message>
             <source>Are you sure? Beware: without database files, SyncManager will not detect removed and moved files on startup!</source>
-            <translation>확실합니까? 주의: 데이터베이스 파일이 없으면 SyncManager는 시작 시 제거되거나 이동된 파일을 감지하지 못합니다!</translation>
+            <translation>확실합니까? 경고: 데이터베이스 파일이 없으면 SyncManager는 시작 시 제거되거나 이동된 파일을 감지하지 못합니다!</translation>
         </message>
         <message>
             <source>%1 days</source>
@@ -225,7 +221,7 @@
         </message>
         <message>
             <source>Not enough disk space on %1 (%2)</source>
-            <translation>%1에 디스크 공간이 부족합니다 (%2)</translation>
+            <translation>%1(%2)에 디스크 공간이 부족합니다</translation>
         </message>
         <message>
             <source>Yes</source>
@@ -233,7 +229,7 @@
         </message>
         <message>
             <source>No</source>
-            <translation>아니요</translation>
+            <translation>아니오</translation>
         </message>
         <message>
             <source>New profile</source>
@@ -253,155 +249,171 @@
         </message>
         <message>
             <source>Decentralized (Inside synchronization folders)</source>
-            <translation>분산 (동기화 폴더 내)</translation>
+            <translation>분산형 (동기화 폴더 내)</translation>
         </message>
-        <message>
-            <source>Versioning Format</source>
-            <translation>버전 관리 형식</translation>
-        </message>
-        <message>
-            <source>File Timestamp (Before Extension)</source>
-            <translation>파일 타임스탬프 (확장자 앞)</translation>
-        </message>
-        <message>
-            <source>File Timestamp (After Extension)</source>
-            <translation>파일 타임스탬프 (확장자 뒤)</translation>
-        </message>
-        <message>
-            <source>Folder Timestamp</source>
-            <translation>폴더 타임스탬프</translation>
-        </message>
-        <message>
-            <source>Last Version</source>
-            <translation>최신 버전</translation>
-        </message>
-        <message>
-            <source>Set Versioning Folder Postfix</source>
-            <translation>버전 관리 폴더 접미사 설정</translation>
-        </message>
-        <message>
-            <source>Please enter versioning folder postfix:</source>
-            <translation>버전 관리 폴더 접미사를 입력하세요:</translation>
-        </message>
-        <message>
-            <source>Folder Postfix: %1</source>
-            <translation>폴더 접미사: %1</translation>
-        </message>
-        <message>
-            <source>Set Versioning Pattern</source>
-            <translation>버전 관리 패턴 설정</translation>
-        </message>
-        <message>
-            <source>Please enter versioning pattern:</source>
-            <translation>버전 관리 패턴을 입력하세요:</translation>
-        </message>
-        <message>
-            <source>Examples:</source>
-            <translation>예시:</translation>
-        </message>
-        <message>
-            <source>Pattern: %1</source>
-            <translation>패턴: %1</translation>
-        </message>
-        <message>
-            <source>Versioning Location</source>
-            <translation>버전 관리 위치</translation>
-        </message>
-        <message>
-            <source>Locally Next to Folder</source>
-            <translation>폴더 옆 로컬</translation>
-        </message>
-        <message>
-            <source>Custom Location</source>
-            <translation>사용자 지정 위치</translation>
-        </message>
-        <message>
-            <source>Custom Location: </source>
-            <translation>사용자 지정 위치: </translation>
-        </message>
-        <message>
-            <source>Browse for Versioning Folder</source>
-            <translation>버전 관리 폴더 찾아보기</translation>
-        </message>
-        <message>
-            <source>Filtering</source>
-            <translation>필터링</translation>
-        </message>
-        <message>
-            <source>Minimum File Size: %1 bytes</source>
-            <translation>최소 파일 크기: %1 바이트</translation>
-        </message>
-        <message>
-            <source>Maximum File Size: %1 bytes</source>
-            <translation>최대 파일 크기: %1 바이트</translation>
-        </message>
-        <message>
-            <source>Minimum Size for a Moved File: %1 bytes</source>
-            <translation>이동된 파일의 최소 크기: %1 바이트</translation>
-        </message>
-        <message>
-            <source>Include: %1</source>
-            <translation>포함: %1</translation>
-        </message>
-        <message>
-            <source>Exclude: %1</source>
-            <translation>제외: %1</translation>
-        </message>
-        <message>
-            <source>Set Minimum File Size</source>
-            <translation>최소 파일 크기 설정</translation>
-        </message>
-        <message>
-            <source>Please enter the minimum size in bytes:</source>
-            <translation>최소 크기를 바이트 단위로 입력하십시오:</translation>
-        </message>
-        <message>
-            <source>Set Maximum File Size</source>
-            <translation>최대 파일 크기 설정</translation>
-        </message>
-        <message>
-            <source>Please enter the maximum size in bytes:</source>
-            <translation>최대 크기를 바이트 단위로 입력하십시오:</translation>
-        </message>
-        <message>
-            <source>Set Minimum Size for Moved File</source>
-            <translation>이동된 파일의 최소 크기 설정</translation>
-        </message>
-        <message>
-            <source>Set Include List</source>
-            <translation>포함 목록 설정</translation>
-        </message>
-        <message>
-            <source>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
-            <translation>포함 목록을 세미콜론으로 구분하여 입력하십시오. 와일드카드(예: *.txt)가 지원됩니다.</translation>
-        </message>
-        <message>
-            <source>Set Exclude List</source>
-            <translation>제외 목록 설정</translation>
-        </message>
-        <message>
-            <source>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
-            <translation>제외 목록을 세미콜론으로 구분하여 입력하십시오. 와일드카드(예: *.txt)가 지원됩니다.</translation>
-        </message>
-        <message>
-            <source>Switch to two-way synchronization</source>
-            <translation>양방향 동기화로 전환</translation>
-        </message>
-        <message>
-            <source>Switch to one-way synchronization</source>
-            <translation>단방향 동기화로 전환</translation>
-        </message>
-        <message>
-            <source>Switch to one-way update synchronization</source>
-            <translation>단방향 업데이트 동기화로 전환</translation>
-        </message>
-        <message>
-            <source>OK</source>
-            <translation>확인</translation>
-        </message>
-        <message>
-            <source>Cancel</source>
-            <translation>취소</translation>
-        </message>
-    </context>
+        <message>
+            <source>Versioning Format</source>
+            <translation>버전 관리 형식</translation>
+        </message>
+        <message>
+            <source>File Timestamp (Before Extension)</source>
+            <translation>파일 타임스탬프 (확장자 앞)</translation>
+        </message>
+        <message>
+            <source>File Timestamp (After Extension)</source>
+            <translation>파일 타임스탬프 (확장자 뒤)</translation>
+        </message>
+        <message>
+            <source>Folder Timestamp</source>
+            <translation>폴더 타임스탬프</translation>
+        </message>
+        <message>
+            <source>Last Version</source>
+            <translation>최신 버전</translation>
+        </message>
+        <message>
+            <source>Synchronize Every</source>
+            <translation>매번 동기화</translation>
+        </message>
+        <message>
+            <source>Please enter the synchronization interval in seconds:</source>
+            <translation>동기화 간격을 초 단위로 입력하십시오:</translation>
+        </message>
+        <message>
+            <source>Versioning Folder Postfix</source>
+            <translation>버전 관리 폴더 접미사</translation>
+        </message>
+        <message>
+            <source>Please enter the versioning folder postfix:</source>
+            <translation>버전 관리 폴더 접미사를 입력하십시오:</translation>
+        </message>
+        <message>
+            <source>Folder Postfix: %1</source>
+            <translation>폴더 접미사: %1</translation>
+        </message>
+        <message>
+            <source>Versioning Pattern</source>
+            <translation>버전 관리 패턴</translation>
+        </message>
+        <message>
+            <source>Please enter the versioning pattern:</source>
+            <translation>버전 관리 패턴을 입력하십시오:</translation>
+        </message>
+        <message>
+            <source>Examples:</source>
+            <translation>예시:</translation>
+        </message>
+        <message>
+            <source>Pattern: %1</source>
+            <translation>패턴: %1</translation>
+        </message>
+        <message>
+            <source>Versioning Location</source>
+            <translation>버전 관리 위치</translation>
+        </message>
+        <message>
+            <source>Locally Next to Folder</source>
+            <translation>폴더 옆 로컬에</translation>
+        </message>
+        <message>
+            <source>Custom Location</source>
+            <translation>사용자 지정 위치</translation>
+        </message>
+        <message>
+            <source>Custom Location: </source>
+            <translation>사용자 지정 위치: </translation>
+        </message>
+        <message>
+            <source>Browse for Versioning Folder</source>
+            <translation>버전 관리 폴더 찾아보기</translation>
+        </message>
+        <message>
+            <source>Filtering</source>
+            <translation>필터링</translation>
+        </message>
+        <message>
+            <source>Minimum File Size: %1 bytes</source>
+            <translation>최소 파일 크기: %1 바이트</translation>
+        </message>
+        <message>
+            <source>Maximum File Size: %1 bytes</source>
+            <translation>최대 파일 크기: %1 바이트</translation>
+        </message>
+        <message>
+            <source>Minimum Size for a Moved File: %1 bytes</source>
+            <translation>이동된 파일의 최소 크기: %1 바이트</translation>
+        </message>
+        <message>
+            <source>Include: %1</source>
+            <translation>포함: %1</translation>
+        </message>
+        <message>
+            <source>Exclude: %1</source>
+            <translation>제외: %1</translation>
+        </message>
+        <message>
+            <source>Minimum File Size</source>
+            <translation>최소 파일 크기</translation>
+        </message>
+        <message>
+            <source>Please enter the minimum size in bytes:</source>
+            <translation>최소 크기를 바이트 단위로 입력하십시오:</translation>
+        </message>
+        <message>
+            <source>Maximum File Size</source>
+            <translation>최대 파일 크기</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum size in bytes:</source>
+            <translation>최대 크기를 바이트 단위로 입력하십시오:</translation>
+        </message>
+        <message>
+            <source>Minimum Size for Moved File</source>
+            <translation>이동된 파일의 최소 크기</translation>
+        </message>
+        <message>
+            <source>Please enter the minimum size for a moved file in bytes:</source>
+            <translation>이동된 파일의 최소 크기를 바이트 단위로 입력하십시오:</translation>
+        </message>
+        <message>
+            <source>Include List</source>
+            <translation>포함 목록</translation>
+        </message>
+        <message>
+            <source>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>세미콜론으로 구분된 포함 목록을 입력하십시오. 와일드카드(예: *.txt)가 지원됩니다.</translation>
+        </message>
+        <message>
+            <source>Exclude List</source>
+            <translation>제외 목록</translation>
+        </message>
+        <message>
+            <source>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
+            <translation>세미콜론으로 구분된 제외 목록을 입력하십시오. 와일드카드(예: *.txt)가 지원됩니다.</translation>
+        </message>
+        <message>
+            <source>Switch to two-way synchronization</source>
+            <translation>양방향 동기화로 전환</translation>
+        </message>
+        <message>
+            <source>Switch to one-way synchronization</source>
+            <translation>단방향 동기화로 전환</translation>
+        </message>
+        <message>
+            <source>Switch to one-way update synchronization</source>
+            <translation>단방향 업데이트 동기화로 전환</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>확인</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>취소</translation>
+        </message>
+        <message>
+            <source>Report a Bug</source>
+            <translation>버그 보고</translation>
+        </message>
+    </context>
 </TS>

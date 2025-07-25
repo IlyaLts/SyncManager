@@ -24,10 +24,6 @@
             <translation>Syncing Mode</translation>
         </message>
         <message>
-            <source>Syncing Time</source>
-            <translation>Syncing Time</translation>
-        </message>
-        <message>
             <source>Deletion Mode</source>
             <translation>Deletion Mode</translation>
         </message>
@@ -40,20 +36,20 @@
             <translation>Sync Now</translation>
         </message>
         <message>
-            <source>Automatic</source>
-            <translation>Automatic</translation>
-        </message>
-        <message>
             <source>Manual</source>
             <translation>Manual</translation>
         </message>
         <message>
-            <source>Increase</source>
-            <translation>Increase</translation>
+            <source>Automatic (Adaptive)</source>
+            <translation>Automatic (Adaptive)</translation>
         </message>
         <message>
-            <source>Average Synchronization Time: </source>
-            <translation>Average Synchronization Time: </translation>
+            <source>Automatic (Fixed)</source>
+            <translation>Automatic (Fixed)</translation>
+        </message>
+        <message>
+            <source>Increase</source>
+            <translation>Increase</translation>
         </message>
         <message>
             <source>Next Synchronization: </source>
@@ -276,24 +272,32 @@
             <translation>Last Version</translation>
         </message>
         <message>
-            <source>Set Versioning Folder Postfix</source>
-            <translation>Set Versioning Folder Postfix</translation>
+            <source>Synchronize Every</source>
+            <translation>Synchronize Every</translation>
         </message>
         <message>
-            <source>Please enter versioning folder postfix:</source>
-            <translation>Please enter versioning folder postfix:</translation>
+            <source>Please enter the synchronization interval in seconds:</source>
+            <translation>Please enter the synchronization interval in seconds:</translation>
+        </message>
+        <message>
+            <source>Versioning Folder Postfix</source>
+            <translation>Versioning Folder Postfix</translation>
+        </message>
+        <message>
+            <source>Please enter the versioning folder postfix:</source>
+            <translation>Please enter the versioning folder postfix:</translation>
         </message>
         <message>
             <source>Folder Postfix: %1</source>
             <translation>Folder Postfix: %1</translation>
         </message>
         <message>
-            <source>Set Versioning Pattern</source>
-            <translation>Set Versioning Pattern</translation>
+            <source>Versioning Pattern</source>
+            <translation>Versioning Pattern</translation>
         </message>
         <message>
-            <source>Please enter versioning pattern:</source>
-            <translation>Please enter versioning pattern:</translation>
+            <source>Please enter the versioning pattern:</source>
+            <translation>Please enter the versioning pattern:</translation>
         </message>
         <message>
             <source>Examples:</source>
@@ -348,36 +352,40 @@
             <translation>Exclude: %1</translation>
         </message>
         <message>
-            <source>Set Minimum File Size</source>
-            <translation>Set Minimum File Size</translation>
+            <source>Minimum File Size</source>
+            <translation>Minimum File Size</translation>
         </message>
         <message>
             <source>Please enter the minimum size in bytes:</source>
             <translation>Please enter the minimum size in bytes:</translation>
         </message>
         <message>
-            <source>Set Maximum File Size</source>
-            <translation>Set Maximum File Size</translation>
+            <source>Maximum File Size</source>
+            <translation>Maximum File Size</translation>
         </message>
         <message>
             <source>Please enter the maximum size in bytes:</source>
             <translation>Please enter the maximum size in bytes:</translation>
         </message>
         <message>
-            <source>Set Minimum Size for Moved File</source>
-            <translation>Set Minimum Size for Moved File</translation>
+            <source>Minimum Size for Moved File</source>
+            <translation>Minimum Size for Moved File</translation>
         </message>
         <message>
-            <source>Set Include List</source>
-            <translation>Set Include List</translation>
+            <source>Please enter the minimum size for a moved file in bytes:</source>
+            <translation>Please enter the minimum size for a moved file in bytes:</translation>
+        </message>
+        <message>
+            <source>Include List</source>
+            <translation>Include List</translation>
         </message>
         <message>
             <source>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
             <translation>Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</translation>
         </message>
         <message>
-            <source>Set Exclude List</source>
-            <translation>Set Exclude List</translation>
+            <source>Exclude List</source>
+            <translation>Exclude List</translation>
         </message>
         <message>
             <source>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</source>
@@ -402,6 +410,10 @@
         <message>
             <source>Cancel</source>
             <translation>Cancel</translation>
+        </message>
+        <message>
+            <source>Report a Bug</source>
+            <translation>Report a Bug</translation>
         </message>
     </context>
 </TS>

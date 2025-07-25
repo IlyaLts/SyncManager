@@ -429,9 +429,9 @@ void SyncProfile::setupMenus(QWidget *parent)
     automaticFixedAction = new QAction("&" + qApp->translate("MainWindow", "Automatic (Fixed)"), parent);
     detectMovedFilesAction = new QAction("&" + qApp->translate("MainWindow", "Detect Renamed and Moved Files"), parent);
     increaseSyncTimeAction = new QAction("&" + qApp->translate("MainWindow", "Increase"), parent);
-    syncingTimeAction = new QAction(qApp->translate("MainWindow", "Synchronize Every: "), parent);
+    syncingTimeAction = new QAction(qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncEvery), parent);
     decreaseSyncTimeAction = new QAction("&" + qApp->translate("MainWindow", "Decrease"), parent);
-    fixedSyncingTimeAction = new QAction("&" + qApp->translate("MainWindow", "Synchronize Every: "), parent);
+    fixedSyncingTimeAction = new QAction("&" + qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncIntervalFixed()), parent);
     moveToTrashAction = new QAction("&" + qApp->translate("MainWindow", "Move Files to Trash"), parent);
     versioningAction = new QAction("&" + qApp->translate("MainWindow", "Versioning"), parent);
     deletePermanentlyAction = new QAction("&" + qApp->translate("MainWindow", "Delete Files Permanently"), parent);
@@ -590,7 +590,7 @@ void SyncProfile::loadSettings()
     setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
     setDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(keyName + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
     setSyncTimeMultiplier(settings.value(keyName + "SyncTimeMultiplier", 1).toInt());
-    setSyncEveryFixed(settings.value(keyName + "FixedSyncTime", 1).toInt());
+    setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", 1).toInt());
     setVersioningFolder(settings.value(keyName + "VersionFolder", "[Deletions]").toString());
     setVersioningPattern(settings.value(keyName + "VersionPattern", "yyyy_M_d_h_m_s_z").toString());
     setVersioningPath(settings.value(keyName + "VersioningPath", "").toString());
@@ -617,7 +617,7 @@ void SyncProfile::saveSettings() const
 
     settings.setValue(keyName + "SyncingMode", syncingMode());
     settings.setValue(keyName + "SyncTimeMultiplier", syncTimeMultiplier());
-    settings.setValue(keyName + "FixedSyncTime", syncEveryFixed());
+    settings.setValue(keyName + "FixedSyncTime", syncIntervalFixed());
     settings.setValue(keyName + "DetectMovedFiles", detectMovedFiles());
     settings.setValue(keyName + "DeletionMode", deletionMode());
     settings.setValue(keyName + "VersioningFormat", versioningFormat());
@@ -660,9 +660,9 @@ void SyncProfile::updateStrings()
     automaticFixedAction->setText("&" + qApp->translate("MainWindow", "Automatic (Fixed)"));
     detectMovedFilesAction->setText("&" + qApp->translate("MainWindow", "Detect Renamed and Moved Files"));
     increaseSyncTimeAction->setText("&" + qApp->translate("MainWindow", "Increase"));
-    syncingTimeAction->setText(qApp->translate("MainWindow", "Synchronize Every:"));
+    syncingTimeAction->setText(qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncEvery));
     decreaseSyncTimeAction->setText("&" + qApp->translate("MainWindow", "Decrease"));
-    fixedSyncingTimeAction->setText(QString("&" + qApp->translate("MainWindow", "Synchronize every %1")).arg(0));
+    fixedSyncingTimeAction->setText("&" + qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncIntervalFixed()));
     moveToTrashAction->setText("&" + qApp->translate("MainWindow", "Move Files to Trash"));
     versioningAction->setText("&" + qApp->translate("MainWindow", "Versioning"));
     deletePermanentlyAction->setText("&" + qApp->translate("MainWindow", "Delete Files Permanently"));

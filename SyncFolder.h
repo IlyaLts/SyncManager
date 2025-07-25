@@ -55,20 +55,6 @@ struct FileToCopyInfo
     QDateTime modifiedDate;
 };
 
-enum VersioningFormat
-{
-    FileTimestampBefore,    // Before extension
-    FileTimestampAfter,     // After extension
-    FolderTimestamp,
-    LastVersion
-};
-
-enum VersioningLocation
-{
-    LocallyNextToFolder,
-    CustomLocation
-};
-
 /*
 ===========================================================
 

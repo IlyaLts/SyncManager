@@ -63,6 +63,20 @@ public:
         Decentralized
     };
 
+    enum VersioningFormat
+    {
+        FileTimestampBefore,    // Before extension
+        FileTimestampAfter,     // After extension
+        FolderTimestamp,
+        LastVersion
+    };
+
+    enum VersioningLocation
+    {
+        LocallyNextToFolder,
+        CustomLocation
+    };
+
     explicit SyncProfile(const QString &name, const QModelIndex &index);
     explicit SyncProfile(const SyncProfile &other) : SyncProfile(other.name, other.index) { *this = other; }
     explicit SyncProfile(SyncProfile &&other) : SyncProfile(other.name, other.index) { *this = other; }
@@ -72,7 +86,7 @@ public:
 
     void setSyncingMode(SyncingMode mode);
     inline void setSyncTimeMultiplier(quint32 multiplier) { m_syncTimeMultiplier = multiplier; }
-    inline void setSyncEveryFixed(quint64 interval) { m_syncEveryFixed = interval; }
+    inline void setSyncIntervalFixed(quint64 interval) { m_syncIntervalFixed = interval; }
     inline void setDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
     void setDeletionMode(DeletionMode mode);
     void setDatabaseLocation(DatabaseLocation location);
@@ -90,7 +104,7 @@ public:
 
     inline SyncingMode syncingMode() const { return m_syncingMode; }
     inline quint32 syncTimeMultiplier() const { return m_syncTimeMultiplier; }
-    inline quint64 syncEveryFixed() const { return m_syncEveryFixed; }
+    inline quint64 syncIntervalFixed() const { return m_syncIntervalFixed; }
     inline bool detectMovedFiles() const { return m_detectMovedFiles; }
     inline DeletionMode deletionMode() const { return m_deletionMode; }
     inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
@@ -184,7 +198,7 @@ public:
 private:
 
     SyncingMode m_syncingMode;
-    quint64 m_syncEveryFixed = 0;
+    quint64 m_syncIntervalFixed = 0;
     DeletionMode m_deletionMode;
     VersioningLocation m_versioningLocation;
     VersioningFormat m_versioningFormat;

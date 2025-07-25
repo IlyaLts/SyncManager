@@ -217,7 +217,7 @@ void SyncManager::updateTimer(SyncProfile &profile)
     if (profile.syncingMode() == SyncProfile::AutomaticAdaptive)
         dateToSync = dateToSync.addMSecs(profile.syncEvery);
     else if (profile.syncingMode() == SyncProfile::AutomaticFixed)
-        dateToSync = dateToSync.addMSecs(profile.syncEveryFixed());
+        dateToSync = dateToSync.addMSecs(profile.syncIntervalFixed());
 
     qint64 syncTime = 0;
 
@@ -273,7 +273,7 @@ void SyncManager::updateNextSyncingTime(SyncProfile &profile)
     }
     else if (profile.syncingMode() == SyncProfile::AutomaticFixed)
     {
-        time = profile.syncEveryFixed();
+        time = profile.syncIntervalFixed();
     }
 
     if (time < SYNC_MIN_DELAY)
@@ -1312,7 +1312,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         if (type == SyncFile::File)
         {
             // Adds a timestamp to the end of the filename of a deleted file
-            if (profile.versioningFormat() == FileTimestampBefore)
+            if (profile.versioningFormat() == SyncProfile::FileTimestampBefore)
             {
                 int nameEndIndex = newLocation.lastIndexOf('.');
                 int slashIndex = newLocation.lastIndexOf('/');
@@ -1324,7 +1324,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
                 newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(profile.versioningPattern()));
             }
             // Adds a timestamp to a deleted file before the extension
-            else if (profile.versioningFormat() == FileTimestampAfter)
+            else if (profile.versioningFormat() == SyncProfile::FileTimestampAfter)
             {
                 newLocation.append("_" + QDateTime::currentDateTime().toString(profile.versioningPattern()));
 
@@ -1340,7 +1340,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
             // As we want to have only the latest version of files,
             // we need to delete the existing files in the versioning folder first,
             // but only if the deleted file still exists, in case the parent folder was removed earlier.
-            if (profile.versioningFormat() == LastVersion)
+            if (profile.versioningFormat() == SyncProfile::LastVersion)
             {
                 if (!QFile(fullPath).exists())
                     return true;
@@ -1357,7 +1357,7 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
         // with the exact same filename already exists. In that case, we need
         // to check if the existing folder is empty, and if so, delete it permanently.
         if (!renamed && type == SyncFile::Folder)
-            if (profile.versioningFormat() == FileTimestampBefore || profile.versioningFormat() == FileTimestampAfter || profile.versioningFormat() == LastVersion)
+            if (profile.versioningFormat() == SyncProfile::FileTimestampBefore || profile.versioningFormat() == SyncProfile::FileTimestampAfter || profile.versioningFormat() == SyncProfile::LastVersion)
                 if (QDir(fullPath).isEmpty())
                     return QDir(fullPath).removeRecursively() || !QFileInfo::exists(fullPath);
 
@@ -1813,7 +1813,7 @@ void SyncManager::removeUniqueFiles(SyncProfile &profile, SyncFolder &folder)
     // we still have that empty folder remaining. Also, in case if we use file timestamp format
     // we want to avoid adding timestamps to each file individually after placing the parent folder
     // in the versioning folder, as it would impact performance.
-    if (profile.deletionMode() == SyncProfile::Versioning && (profile.versioningFormat() == FileTimestampBefore || profile.versioningFormat() == FileTimestampAfter || profile.versioningFormat() == LastVersion))
+    if (profile.deletionMode() == SyncProfile::Versioning && (profile.versioningFormat() == SyncProfile::FileTimestampBefore || profile.versioningFormat() == SyncProfile::FileTimestampAfter || profile.versioningFormat() == SyncProfile::LastVersion))
     {
         types[0] = SyncFile::File;
         types[1] = SyncFile::Folder;
@@ -1905,7 +1905,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
         // we still have that empty folder remaining. Also, in case if we use file timestamp format
         // we want to avoid adding timestamps to each file individually after placing the parent folder
         // in the versioning folder, as it would impact performance.
-        if (profile.deletionMode() == SyncProfile::Versioning && (profile.versioningFormat() == FileTimestampBefore || profile.versioningFormat() == FileTimestampAfter || profile.versioningFormat() == LastVersion))
+        if (profile.deletionMode() == SyncProfile::Versioning && (profile.versioningFormat() == SyncProfile::FileTimestampBefore || profile.versioningFormat() == SyncProfile::FileTimestampAfter || profile.versioningFormat() == SyncProfile::LastVersion))
         {
             removeFiles(profile, folder);
             removeFolders(profile, folder);

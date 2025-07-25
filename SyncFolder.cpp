@@ -63,7 +63,7 @@ SyncFolder::updateVersioningPath
 */
 void SyncFolder::updateVersioningPath(const SyncProfile &profile)
 {
-    if (profile.versioningLocation() == CustomLocation)
+    if (profile.versioningLocation() == SyncProfile::CustomLocation)
     {
         versioningPath.assign(path);
     }
@@ -77,10 +77,10 @@ void SyncFolder::updateVersioningPath(const SyncProfile &profile)
 
     versioningPath.append("/");
 
-    if (profile.versioningLocation() == CustomLocation)
+    if (profile.versioningLocation() == SyncProfile::CustomLocation)
         versioningPath.append(profile.name + "/");
 
-    if (profile.versioningFormat() == FolderTimestamp)
+    if (profile.versioningFormat() == SyncProfile::FolderTimestamp)
         versioningPath.append(QDateTime::currentDateTime().toString(profile.versioningPattern()) + "/");
 }
 
