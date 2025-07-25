@@ -61,9 +61,9 @@ void SyncFolder::optimizeMemoryUsage()
 SyncFolder::updateVersioningPath
 ===================
 */
-void SyncFolder::updateVersioningPath(VersioningFormat format, VersioningLocation location, QString path, const QString &profileName, const QString &folder, const QString &pattern)
+void SyncFolder::updateVersioningPath(const SyncProfile &profile)
 {
-    if (location == CustomLocation)
+    if (profile.versioningLocation() == CustomLocation)
     {
         versioningPath.assign(path);
     }
@@ -72,16 +72,16 @@ void SyncFolder::updateVersioningPath(VersioningFormat format, VersioningLocatio
         versioningPath.assign(this->path);
         versioningPath.remove(versioningPath.lastIndexOf("/", 1), versioningPath.size());
         versioningPath.append("_");
-        versioningPath.append(folder);
+        versioningPath.append(profile.versioningFolder());
     }
 
     versioningPath.append("/");
 
-    if (location == CustomLocation)
-        versioningPath.append(profileName + "/");
+    if (profile.versioningLocation() == CustomLocation)
+        versioningPath.append(profile.name + "/");
 
-    if (format == FolderTimestamp)
-        versioningPath.append(QDateTime::currentDateTime().toString(pattern) + "/");
+    if (profile.versioningFormat() == FolderTimestamp)
+        versioningPath.append(QDateTime::currentDateTime().toString(profile.versioningPattern()) + "/");
 }
 
 /*

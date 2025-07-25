@@ -959,10 +959,10 @@ void MainWindow::setFixedTime(SyncProfile &profile)
     QString text(tr("Please enter the synchronization interval in seconds:"));
     int size;
 
-    if (!intInputDialog(this, title, text, size, profile.syncEveryFixed / 1000, 0))
+    if (!intInputDialog(this, title, text, size, profile.syncEveryFixed() / 1000, 0))
         return;
 
-    profile.syncEveryFixed = size * 1000;
+    profile.setSyncEveryFixed(size * 1000);
     updateMenuSyncTime(profile);
 
     if (appInitiated)
@@ -1050,7 +1050,7 @@ void MainWindow::setFileMinSize(SyncProfile &profile)
     if (!intInputDialog(this, title, text, size, profile.fileMinSize(), 0))
         return;
 
-    if (size && profile.fileMaxSize() && size > profile.fileMaxSize())
+    if (size && profile.fileMaxSize() && static_cast<quint64>(size) > profile.fileMaxSize())
         size = profile.fileMaxSize();
 
     profile.setFileMinSize(size);
@@ -1074,7 +1074,7 @@ void MainWindow::setFileMaxSize(SyncProfile &profile)
     if (!intInputDialog(this, title, text, size, profile.fileMaxSize(), 0))
         return;
 
-    if (size && size < profile.fileMinSize())
+    if (size && static_cast<quint64>(size) < profile.fileMinSize())
         size = profile.fileMinSize();
 
     profile.setFileMaxSize(size);
@@ -1166,7 +1166,7 @@ MainWindow::toggleIgnoreHiddenFiles
 */
 void MainWindow::toggleIgnoreHiddenFiles(SyncProfile &profile)
 {
-    profile.enableIgnoreHiddenFiles(!profile.ignoreHiddenFilesEnabled());
+    profile.setIgnoreHiddenFiles(!profile.ignoreHiddenFiles());
 
     if (appInitiated)
         profile.saveSettings();
@@ -1179,7 +1179,7 @@ MainWindow::detectMovedFiles
 */
 void MainWindow::toggleDetectMoved(SyncProfile &profile)
 {
-    profile.enableDetectMovedFiles(!profile.detectMovedFilesEnabled());
+    profile.setDetectMovedFiles(!profile.detectMovedFiles());
 
     if (appInitiated)
         profile.saveSettings();
@@ -1575,23 +1575,23 @@ MainWindow::updateMenuSyncTime
 */
 void MainWindow::updateMenuSyncTime(SyncProfile &profile)
 {
-    if (profile.m_syncingMode == SyncProfile::Manual)
+    if (profile.syncingMode() == SyncProfile::Manual)
         return;
 
     quint64 syncEvery;
     QString text;
     QAction *action;
 
-    if (profile.m_syncingMode == SyncProfile::AutomaticAdaptive)
+    if (profile.syncingMode() == SyncProfile::AutomaticAdaptive)
     {
         syncEvery = profile.syncEvery;
         text.assign(tr("Average Synchronization Time: "));
 
         action = profile.syncingTimeAction;
     }
-    else if (profile.m_syncingMode == SyncProfile::AutomaticFixed)
+    else if (profile.syncingMode() == SyncProfile::AutomaticFixed)
     {
-        syncEvery = profile.syncEveryFixed;
+        syncEvery = profile.syncEveryFixed();
         text.assign(tr("Synchronization Every: "));
 
         action = profile.fixedSyncingTimeAction;
@@ -1736,8 +1736,8 @@ void MainWindow::readSettings()
     for (auto &profile : manager.profiles())
     {
         profile.databaseLocationMenu->setEnabled(profile.databaseLocation());
-        profile.ignoreHiddenFilesAction->setChecked(profile.ignoreHiddenFilesEnabled());
-        profile.detectMovedFilesAction->setChecked(profile.detectMovedFilesEnabled());
+        profile.ignoreHiddenFilesAction->setChecked(profile.ignoreHiddenFiles());
+        profile.detectMovedFilesAction->setChecked(profile.detectMovedFiles());
 
         QString profileKeyname(profile.name + QLatin1String("_profile/"));
 
@@ -1882,7 +1882,10 @@ void MainWindow::setupMenus()
     this->menuBar()->setStyle(new MenuProxyStyle);
 
     for (auto &profile : manager.profiles())
+    {
+        profile.loadSettings();
         profile.setupMenus(this);
+    }
 
     connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));

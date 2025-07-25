@@ -78,7 +78,7 @@ public:
     inline bool scanned() const { return flags & Scanned; }
 
     QDateTime modifiedDate;
-    qint64 size = 0;
+    quint64 size = 0;
     Type type = Unknown;
     LockedFlag lockedFlag = Unlocked;
     qint8 flags = 0;

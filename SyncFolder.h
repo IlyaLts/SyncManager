@@ -26,6 +26,8 @@
 #include <QHash>
 #include <QSet>
 
+class SyncProfile;
+
 struct FolderToRenameInfo
 {
     QByteArray toPath;
@@ -89,7 +91,7 @@ public:
 
     void clearData();
     void optimizeMemoryUsage();
-    void updateVersioningPath(VersioningFormat format, VersioningLocation location, QString path, const QString &profileName, const QString &folder, const QString &pattern);
+    void updateVersioningPath(const SyncProfile &profile);
     void saveToDatabase(const QString &path) const;
     void loadFromDatabase(const QString &path);
     void removeDatabase() const;

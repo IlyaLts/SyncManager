@@ -66,43 +66,45 @@ public:
     explicit SyncProfile(const QString &name, const QModelIndex &index);
     explicit SyncProfile(const SyncProfile &other) : SyncProfile(other.name, other.index) { *this = other; }
     explicit SyncProfile(SyncProfile &&other) : SyncProfile(other.name, other.index) { *this = other; }
-    virtual ~SyncProfile(){}
 
     void operator =(const SyncProfile &other);
     inline bool operator ==(const SyncProfile &other) { return name == other.name; }
 
-    inline void setSyncingMode(SyncingMode mode) { m_syncingMode = mode; }
-    inline void setDeletionMode(DeletionMode mode) { m_deletionMode = mode; }
-    inline void setDatabaseLocation(SyncProfile::DatabaseLocation location) { m_databaseLocation = location; }
-    inline void setVersioningFormat(VersioningFormat format) { m_versioningFormat = format; }
-    inline void setVersioningLocation(VersioningLocation location) { m_versioningLocation = location; }
+    void setSyncingMode(SyncingMode mode);
+    inline void setSyncTimeMultiplier(quint32 multiplier) { m_syncTimeMultiplier = multiplier; }
+    inline void setSyncEveryFixed(quint64 interval) { m_syncEveryFixed = interval; }
+    inline void setDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
+    void setDeletionMode(DeletionMode mode);
+    void setDatabaseLocation(DatabaseLocation location);
+    void setVersioningFormat(VersioningFormat format);
+    void setVersioningLocation(VersioningLocation location);
     inline void setVersioningPath(QString path) { m_versioningPath = path; }
     inline void setVersioningFolder(const QString &name) { m_versioningFolder = name; }
     inline void setVersioningPattern(const QString &pattern) { m_versioningPattern = pattern; }
-    inline void setFileMinSize(qint64 size) { m_fileMinSize = size; }
-    inline void setFileMaxSize(qint64 size) { m_fileMaxSize = size; }
-    inline void setMovedFileMinSize(qint64 size) { m_movedFileMinSize = size; }
+    inline void setFileMinSize(quint64 size) { m_fileMinSize = size; }
+    inline void setFileMaxSize(quint64 size) { m_fileMaxSize = size; }
+    inline void setMovedFileMinSize(quint64 size) { m_movedFileMinSize = size; }
     inline void setIncludeList(const QStringList &list) { m_includeList = list; }
     inline void setExcludeList(const QStringList &list) { m_excludeList = list; }
-    inline void enableIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
-    inline void enableDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
+    inline void setIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
 
     inline SyncingMode syncingMode() const { return m_syncingMode; }
-    inline int syncTimeMultiplier() const { return m_syncTimeMultiplier; }
+    inline quint32 syncTimeMultiplier() const { return m_syncTimeMultiplier; }
+    inline quint64 syncEveryFixed() const { return m_syncEveryFixed; }
+    inline bool detectMovedFiles() const { return m_detectMovedFiles; }
     inline DeletionMode deletionMode() const { return m_deletionMode; }
-    inline SyncProfile::DatabaseLocation databaseLocation() const { return m_databaseLocation; }
+    inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
     inline VersioningFormat versioningFormat() const { return m_versioningFormat; }
     inline VersioningLocation versioningLocation() const { return m_versioningLocation; }
     inline QString versioningPath() const { return m_versioningPath; }
     inline const QString &versioningFolder() const { return m_versioningFolder; }
     inline const QString &versioningPattern() const { return m_versioningPattern; }
-    inline qint64 fileMinSize() const { return m_fileMinSize; }
-    inline qint64 fileMaxSize() const { return m_fileMaxSize; }
-    inline qint64 movedFileMinSize() const { return m_movedFileMinSize; }
+    inline quint64 fileMinSize() const { return m_fileMinSize; }
+    inline quint64 fileMaxSize() const { return m_fileMaxSize; }
+    inline quint64 movedFileMinSize() const { return m_movedFileMinSize; }
     inline const QStringList &includeList() const { return m_includeList; }
     inline const QStringList &excludeList() const { return m_excludeList; }
-    inline bool ignoreHiddenFilesEnabled() const { return m_ignoreHiddenFiles; }
-    inline bool detectMovedFilesEnabled() const { return m_detectMovedFiles; }
+    inline bool ignoreHiddenFiles() const { return m_ignoreHiddenFiles; }
 
     bool resetLocks();
     void removeInvalidFileData();
@@ -130,6 +132,7 @@ public:
     void saveSettings() const;
     void updateStrings();
 
+    QModelIndex index;
     std::list<SyncFolder> folders;
 
     QAction *manualAction;
@@ -168,8 +171,20 @@ public:
     UnhidableMenu *databaseLocationMenu;
     UnhidableMenu *filteringMenu;
 
-    QModelIndex index;
+    bool syncing = false;
+    bool paused = false;
+    bool toBeRemoved = false;
+    bool syncHidden = false;
+    quint64 syncEvery = 0;
+    quint64 syncTime = 0;
+    QChronoTimer syncTimer;
+    QDateTime lastSyncDate;
+    QString name;
+
+private:
+
     SyncingMode m_syncingMode;
+    quint64 m_syncEveryFixed = 0;
     DeletionMode m_deletionMode;
     VersioningLocation m_versioningLocation;
     VersioningFormat m_versioningFormat;
@@ -177,27 +192,14 @@ public:
     QString m_versioningPattern;
     QString m_versioningPath;
     DatabaseLocation m_databaseLocation = Decentralized;
-    qint64 m_fileMinSize = 0;
-    qint64 m_fileMaxSize = 0;
-    qint64 m_movedFileMinSize = 0;
+    quint64 m_fileMinSize = 0;
+    quint64 m_fileMaxSize = 0;
+    quint64 m_movedFileMinSize = 0;
     QStringList m_includeList;
     QStringList m_excludeList;
-    int m_syncTimeMultiplier = 1;
+    quint32 m_syncTimeMultiplier = 1;
     bool m_detectMovedFiles = false;
     bool m_ignoreHiddenFiles = false;
-
-    bool syncing = false;
-    bool paused = false;
-    bool toBeRemoved = false;
-    bool syncHidden = false;
-    quint64 syncEvery = 0;
-    quint64 syncEveryFixed = 0;
-    quint64 syncTime = 0;
-    QChronoTimer syncTimer;
-    QDateTime lastSyncDate;
-    QString name;
-
-private:
 
     QHash<Hash, QByteArray> filePaths;
     QMutex mutex;
