@@ -922,7 +922,10 @@ void MainWindow::switchLanguage(QLocale::Language language)
         saveSettings();
 
     for (auto &profile : manager.profiles())
+    {
         profile.updateStrings();
+        updateMenuSyncTime(profile);
+    }
 }
 
 /*
