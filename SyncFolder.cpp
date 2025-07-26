@@ -65,7 +65,7 @@ void SyncFolder::updateVersioningPath(const SyncProfile &profile)
 {
     if (profile.versioningLocation() == SyncProfile::CustomLocation)
     {
-        versioningPath.assign(path);
+        versioningPath.assign(profile.versioningPath());
     }
     else
     {

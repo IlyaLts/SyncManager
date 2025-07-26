@@ -20,6 +20,7 @@
 #include "SyncManager.h"
 #include "Application.h"
 #include "MainWindow.h"
+#include "UnhidableMenu.h"
 #include "Common.h"
 #include <QStringListModel>
 #include <QSettings>
@@ -85,33 +86,49 @@ void SyncManager::sync()
 
     while (!m_queue.empty())
     {
-        if (!syncProfile(*m_queue.head()))
+        for (auto &action : m_queue.head()->syncingModeMenu->actions())
+            action->setEnabled(false);
+
+        for (auto &action : m_queue.head()->deletionModeMenu->actions())
+            action->setEnabled(false);
+
+        for (auto &action : m_queue.head()->versioningFormatMenu->actions())
+            action->setEnabled(false);
+
+        for (auto &action : m_queue.head()->versioningLocationMenu->actions())
+            action->setEnabled(false);
+
+        for (auto &action : m_queue.head()->databaseLocationMenu->actions())
+            action->setEnabled(false);
+
+        for (auto &action : m_queue.head()->filteringMenu->actions())
+            action->setEnabled(false);
+
+        bool success = syncProfile(*m_queue.head());
+
+        for (auto &action : m_queue.head()->syncingModeMenu->actions())
+            action->setEnabled(true);
+
+        for (auto &action : m_queue.head()->deletionModeMenu->actions())
+            action->setEnabled(true);
+
+        for (auto &action : m_queue.head()->versioningFormatMenu->actions())
+            action->setEnabled(true);
+
+        for (auto &action : m_queue.head()->versioningLocationMenu->actions())
+            action->setEnabled(true);
+
+        for (auto &action : m_queue.head()->databaseLocationMenu->actions())
+            action->setEnabled(true);
+
+        for (auto &action : m_queue.head()->filteringMenu->actions())
+            action->setEnabled(true);
+
+        if (!success)
             return;
 
         m_queue.head()->syncHidden = false;
         m_queue.dequeue();
-    }
-
-    // Removes profiles/folders completely if we remove them during syncing
-    for (auto profileIt = m_profiles.begin(); profileIt != m_profiles.end();)
-    {
-        // Profiles
-        if (profileIt->toBeRemoved)
-        {
-            profileIt = m_profiles.erase(static_cast<std::list<SyncProfile>::const_iterator>(profileIt));
-            continue;
-        }
-
-        // Folders
-        for (auto folderIt = profileIt->folders.begin(); folderIt != profileIt->folders.end();)
-        {
-            if (folderIt->toBeRemoved)
-                folderIt = profileIt->folders.erase(static_cast<std::list<SyncFolder>::const_iterator>(folderIt));
-            else
-                folderIt++;
-        }
-
-        profileIt++;
     }
 
     m_busy = false;
@@ -304,6 +321,37 @@ void SyncManager::removeAllDatabases()
 
 /*
 ===================
+SyncManager::PurgeRemovedProfiles
+===================
+*/
+void SyncManager::PurgeRemovedProfiles()
+{
+    // Removes profiles/folders completely if we remove them during syncing
+    for (auto profileIt = m_profiles.begin(); profileIt != m_profiles.end();)
+    {
+        // Profiles
+        if (profileIt->toBeRemoved)
+        {
+            profileIt->destroyMenus();
+            profileIt = m_profiles.erase(static_cast<std::list<SyncProfile>::const_iterator>(profileIt));
+            continue;
+        }
+
+        // Folders
+        for (auto folderIt = profileIt->folders.begin(); folderIt != profileIt->folders.end();)
+        {
+            if (folderIt->toBeRemoved)
+                folderIt = profileIt->folders.erase(static_cast<std::list<SyncFolder>::const_iterator>(folderIt));
+            else
+                folderIt++;
+        }
+
+        profileIt++;
+    }
+}
+
+/*
+===================
 SyncManager::setSyncTimeMultiplier
 ===================
 */
@@ -337,11 +385,23 @@ bool SyncManager::isInAutomaticPausedState() const
     if (isPaused())
         return true;
 
-    for (auto &profile : profiles())
-        if (profile.isAutomatic() && isPaused())
-            return true;
+    if (profiles().empty())
+        return false;
 
-    return false;
+    bool paused = false;
+
+    for (auto &profile : profiles())
+    {
+        if (!profile.isAutomatic() || profile.toBeRemoved)
+            continue;
+
+        if (!profile.paused)
+            return false;
+        else
+            paused = true;
+    }
+
+    return paused;
 }
 
 /*

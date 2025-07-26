@@ -104,12 +104,13 @@ private:
 
     void rebindProfiles();
     void connectProfileMenu(SyncProfile &profile);
+    void disconnectProfileMenu(SyncProfile &profile);
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
     bool updateApp();
     void updateStatus();
     void updateMenuSyncTime(SyncProfile &profile);
     void updateProfileTooltip(const SyncProfile &profile);
-    void readSettings();
+    void loadSettings();
     void saveSettings() const;
     void setupMenus();
     void updateStrings();

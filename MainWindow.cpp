@@ -105,7 +105,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
 
     setupMenus();
-    readSettings();
+    loadSettings();
     updateStrings();
     switchLanguage(language);
 
@@ -300,7 +300,6 @@ void MainWindow::removeProfile()
 
         profile->paused = true;
         profile->toBeRemoved = true;
-        profile->destroyMenus();
 
         for (auto &folder : profile->folders)
         {
@@ -703,7 +702,6 @@ void MainWindow::switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMod
     profile.syncingTimeAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
     profile.decreaseSyncTimeAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
     profile.fixedSyncingTimeAction->setVisible(mode == SyncProfile::AutomaticFixed);
-    pauseSyncingAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
 
     if (mode == SyncProfile::Manual)
     {
@@ -1300,46 +1298,16 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
     if (!manager.isBusy())
     {
         animSync.start();
-// TODO
-        for (auto &action : profile->syncingModeMenu->actions())
-            action->setEnabled(false);
-
-        for (auto &action : profile->deletionModeMenu->actions())
-            action->setEnabled(false);
-
-        for (auto &action : profile->versioningFormatMenu->actions())
-            action->setEnabled(false);
-
-        for (auto &action : profile->versioningLocationMenu->actions())
-            action->setEnabled(false);
-
-        for (auto &action : profile->databaseLocationMenu->actions())
-            action->setEnabled(false);
 
         QFuture<void> future = QtConcurrent::run([&]() { manager.sync(); });
 
         while (!future.isFinished())
             updateApp();
 
-        for (auto &action : profile->syncingModeMenu->actions())
-            action->setEnabled(true);
-
-        for (auto &action : profile->deletionModeMenu->actions())
-            action->setEnabled(true);
-
-        for (auto &action : profile->versioningFormatMenu->actions())
-            action->setEnabled(true);
-
-        for (auto &action : profile->versioningLocationMenu->actions())
-            action->setEnabled(true);
-
-        for (auto &action : profile->databaseLocationMenu->actions())
-            action->setEnabled(true);
-
         animSync.stop();
 
         updateStatus();
-        updateMenuSyncTime(*profile);
+        manager.PurgeRemovedProfiles();
     }
 }
 
@@ -1381,6 +1349,42 @@ MainWindow::connectProfileMenu
 ===================
 */
 void MainWindow::connectProfileMenu(SyncProfile &profile)
+{
+    connect(profile.manualAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::Manual); });
+    connect(profile.automaticAdaptiveAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticAdaptive); });
+    connect(profile.automaticFixedAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticFixed); });
+    connect(profile.increaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ increaseSyncTime(profile); });
+    connect(profile.decreaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ decreaseSyncTime(profile); });
+    connect(profile.fixedSyncingTimeAction, &QAction::triggered, this, [this, &profile](){ setFixedInterval(profile); });
+    connect(profile.detectMovedFilesAction, &QAction::triggered, this, [this, &profile](){ toggleDetectMoved(profile); });
+    connect(profile.moveToTrashAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::MoveToTrash); });
+    connect(profile.versioningAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::Versioning); });
+    connect(profile.deletePermanentlyAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::DeletePermanently); });
+    connect(profile.fileTimestampBeforeAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FileTimestampBefore); });
+    connect(profile.fileTimestampAfterAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FileTimestampAfter); });
+    connect(profile.folderTimestampAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FolderTimestamp); });
+    connect(profile.lastVersionAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::LastVersion); });
+    connect(profile.versioningPostfixAction, &QAction::triggered, this, [this, &profile](){ setVersioningPostfix(profile); });
+    connect(profile.versioningPatternAction, &QAction::triggered, this, [this, &profile](){ setVersioningPattern(profile); });
+    connect(profile.locallyNextToFolderAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::LocallyNextToFolder); });
+    connect(profile.customLocationAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::CustomLocation); });
+    connect(profile.saveDatabaseLocallyAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Locally); });
+    connect(profile.saveDatabaseDecentralizedAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Decentralized); });
+    connect(profile.fileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMinSize(profile); });
+    connect(profile.fileMaxSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMaxSize(profile); });
+    connect(profile.movedFileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setMovedFileMinSize(profile); });
+    connect(profile.includeAction, &QAction::triggered, this, [this, &profile](){ setIncludeList(profile); });
+    connect(profile.excludeAction, &QAction::triggered, this, [this, &profile](){ setExcludeList(profile); });
+    connect(profile.ignoreHiddenFilesAction, &QAction::triggered, this, [this, &profile](){ toggleIgnoreHiddenFiles(profile); });
+}
+
+
+/*
+===================
+MainWindow::disconnectProfileMenu
+===================
+*/
+void MainWindow::disconnectProfileMenu(SyncProfile &profile)
 {
     connect(profile.manualAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::Manual); });
     connect(profile.automaticAdaptiveAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticAdaptive); });
@@ -1534,14 +1538,25 @@ void MainWindow::updateStatus()
         }
     }
 
+    bool paused = manager.isPaused();
+
     // Pause status
     for (const auto &profile : manager.profiles())
     {
-        manager.setPaused(profile.paused);
+        if (profile.toBeRemoved)
+            continue;
+
+        if (manager.isPaused())
+            paused = true;
 
         if (!manager.isPaused())
+        {
+            paused = false;
             break;
+        }
     }
+
+    manager.setPaused(paused);
 
     // Tray & Icon
     if (manager.isInAutomaticPausedState())
@@ -1710,10 +1725,10 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
 
 /*
 ===================
-MainWindow::readSettings
+MainWindow::loadSettings
 ===================
 */
-void MainWindow::readSettings()
+void MainWindow::loadSettings()
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
 

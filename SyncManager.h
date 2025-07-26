@@ -58,6 +58,7 @@ public:
     void updateStatus();
     void updateNextSyncingTime(SyncProfile &profile);
     void removeAllDatabases();
+    void PurgeRemovedProfiles();
 
     inline const QQueue<SyncProfile *> &queue() const { return m_queue; }
     inline const std::list<SyncProfile> &profiles() const { return m_profiles; }
