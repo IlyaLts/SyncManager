@@ -1,9 +1,11 @@
 ==========================
-2.1 - Jul 25, 2025
+2.1 - Jul 26, 2025
 ==========================
 - Separated settings for all profiles and folders.
 - Added the fixed automatic syncing mode.
+- Added "Report a Bug" button to the menu.
 - Fixed non-functional "Launch on Startup" button in menu.
+- Fixed incorrect pause state when no profiles are added.
 
 ==========================
 2.0.1 - Jul 21, 2025
