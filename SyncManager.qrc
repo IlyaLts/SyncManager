@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file>Icon.ico</file>
+        <file>Source/Icon.ico</file>
         <file>Images/TrayIconDone.png</file>
         <file>Images/TrayIconIssue.png</file>
         <file>Images/TrayIconSync.png</file>

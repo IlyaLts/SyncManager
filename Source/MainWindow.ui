@@ -115,12 +115,12 @@
   <customwidget>
    <class>RemovableListView</class>
    <extends>QListView</extends>
-   <header>RemovableListView.h</header>
+   <header>Source/RemovableListView.h</header>
   </customwidget>
   <customwidget>
    <class>FolderListView</class>
    <extends>QListView</extends>
-   <header>FolderListView.h</header>
+   <header>Source/FolderListView.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

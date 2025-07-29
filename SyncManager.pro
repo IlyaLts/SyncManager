@@ -5,40 +5,40 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++20 lrelease embed_translations
 
 SOURCES += \
-    Application.cpp \
-    Common.cpp \
-    CpuUsage.cpp \
-    DecoratedStringListModel.cpp \
-    FolderListView.cpp \
-    FolderStyleDelegate.cpp \
-    Main.cpp \
-    MainWindow.cpp \
-    MenuProxyStyle.cpp \
-    RemovableListView.cpp \
-    SyncFile.cpp \
-    SyncFolder.cpp \
-    SyncManager.cpp \
-    SyncProfile.cpp \
-    UnhidableMenu.cpp
+    Source/Application.cpp \
+    Source/Common.cpp \
+    Source/CpuUsage.cpp \
+    Source/DecoratedStringListModel.cpp \
+    Source/FolderListView.cpp \
+    Source/FolderStyleDelegate.cpp \
+    Source/Main.cpp \
+    Source/MainWindow.cpp \
+    Source/MenuProxyStyle.cpp \
+    Source/RemovableListView.cpp \
+    Source/SyncFile.cpp \
+    Source/SyncFolder.cpp \
+    Source/SyncManager.cpp \
+    Source/SyncProfile.cpp \
+    Source/UnhidableMenu.cpp
 
 HEADERS += \
-    Application.h \
-    Common.h \
-    CpuUsage.h \
-    DecoratedStringListModel.h \
-    FolderListView.h \
-    FolderStyleDelegate.h \
-    MainWindow.h \
-    MenuProxyStyle.h \
-    RemovableListView.h \
-    SyncFile.h \
-    SyncFolder.h \
-    SyncManager.h \
-    SyncProfile.h \
-    UnhidableMenu.h
+    Source/Application.h \
+    Source/Common.h \
+    Source/CpuUsage.h \
+    Source/DecoratedStringListModel.h \
+    Source/FolderListView.h \
+    Source/FolderStyleDelegate.h \
+    Source/MainWindow.h \
+    Source/MenuProxyStyle.h \
+    Source/RemovableListView.h \
+    Source/SyncFile.h \
+    Source/SyncFolder.h \
+    Source/SyncManager.h \
+    Source/SyncProfile.h \
+    Source/UnhidableMenu.h
 
 FORMS += \
-    MainWindow.ui
+    Source/MainWindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -46,15 +46,15 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
-    Icon.ico \
-    Resources.rc \
+    Source/Icon.ico \
+    Source/Resources.rc \
     LICENSE.txt \
     README.md
 
 RESOURCES += \
     SyncManager.qrc
 
-RC_FILE = Resources.rc
+RC_FILE = Source/Resources.rc
 
 # qml_debug flag for debug and profile build configurations
 CONFIG(qml_debug): DEFINES += DEBUG
