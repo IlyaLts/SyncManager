@@ -26,7 +26,7 @@
 
 #define syncApp (static_cast<Application *>(QCoreApplication::instance()))
 
-#define SYNCMANAGER_VERSION     "2.1"
+#define SYNCMANAGER_VERSION     "2.1.1"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
 #define UPDATE_DELAY            40

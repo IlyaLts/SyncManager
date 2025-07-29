@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "SyncManager"
-#define MyAppVersion "2.1"
+#define MyAppVersion "2.1.1"
 #define MyAppURL "https://github.com/IlyaLts/SyncManager"
 #define MyAppExeName "SyncManager.exe"
 
@@ -39,7 +39,7 @@ LicenseFile=packages\SyncManager\meta\LICENSE.txt
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=build
 OutputBaseFilename=SyncManagerInstaller
-SetupIconFile=..\Icon.ico
+SetupIconFile=..\Source\Icon.ico
 SolidCompression=yes
 WizardStyle=modern
 
