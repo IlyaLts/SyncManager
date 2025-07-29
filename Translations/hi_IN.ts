@@ -415,5 +415,17 @@
             <source>Report a Bug</source>
             <translation>बग की रिपोर्ट करें</translation>
         </message>
+        <message>
+            <source>Performance</source>
+            <translation>प्रदर्शन</translation>
+        </message>
+        <message>
+            <source>Maximum CPU Usage</source>
+            <translation>अधिकतम सीपीयू उपयोग</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum CPU usage in percentage:</source>
+            <translation>कृपया सीपीयू का अधिकतम उपयोग प्रतिशत में दर्ज करें:</translation>
+        </message>
     </context>
 </TS>

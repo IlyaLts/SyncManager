@@ -415,5 +415,17 @@
             <source>Report a Bug</source>
             <translation>Reportar um Erro</translation>
         </message>
+        <message>
+            <source>Performance</source>
+            <translation>Desempenho</translation>
+        </message>
+        <message>
+            <source>Maximum CPU Usage</source>
+            <translation>Uso Máximo da CPU</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum CPU usage in percentage:</source>
+            <translation>Por favor, insira o uso máximo da CPU em porcentagem:</translation>
+        </message>
     </context>
 </TS>

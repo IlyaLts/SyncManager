@@ -7,6 +7,7 @@ CONFIG += c++20 lrelease embed_translations
 SOURCES += \
     Application.cpp \
     Common.cpp \
+    CpuUsage.cpp \
     DecoratedStringListModel.cpp \
     FolderListView.cpp \
     FolderStyleDelegate.cpp \
@@ -23,6 +24,7 @@ SOURCES += \
 HEADERS += \
     Application.h \
     Common.h \
+    CpuUsage.h \
     DecoratedStringListModel.h \
     FolderListView.h \
     FolderStyleDelegate.h \

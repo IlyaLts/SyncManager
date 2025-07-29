@@ -415,5 +415,17 @@
             <source>Report a Bug</source>
             <translation>버그 보고</translation>
         </message>
+        <message>
+            <source>Performance</source>
+            <translation>성능</translation>
+        </message>
+        <message>
+            <source>Maximum CPU Usage</source>
+            <translation>최대 CPU 사용량</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum CPU usage in percentage:</source>
+            <translation>최대 CPU 사용량을 백분율로 입력해주세요:</translation>
+        </message>
     </context>
 </TS>

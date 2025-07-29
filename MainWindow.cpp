@@ -970,6 +970,25 @@ void MainWindow::toggleNotification()
 
 /*
 ===================
+MainWindow::setMaximumCpuUsage
+===================
+*/
+void MainWindow::setMaximumCpuUsage()
+{
+    QString title(tr("Maximum CPU Usage"));
+    QString text(tr("Please enter the maximum CPU usage in percentage:"));
+    int usage;
+
+    if (!intInputDialog(this, title, text, usage, manager.maxCpuUsage, 1, 100))
+        return;
+
+    manager.maxCpuUsage = usage;
+    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage));
+    saveSettings();
+}
+
+/*
+===================
 MainWindow::setFixedInterval
 ===================
 */
@@ -1305,12 +1324,17 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         QFuture<void> future = QtConcurrent::run([&]() { manager.sync(); });
 
         while (!future.isFinished())
+        {
+            if (manager.shouldThrottleDown())
+                QThread::msleep(CPU_UPDATE_TIME);
+
             updateApp();
+        }
 
         animSync.stop();
 
         updateStatus();
-        manager.PurgeRemovedProfiles();
+        manager.purgeRemovedProfiles();
     }
 }
 
@@ -1746,6 +1770,7 @@ void MainWindow::loadSettings()
     ui->horizontalSplitter->setStretchFactor(0, 0);
     ui->horizontalSplitter->setStretchFactor(1, 1);
 
+    manager.maxCpuUsage = static_cast<quint32>(settings.value("MaximumCpuUsage", 100).toInt());
     language = static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt());
     showInTray = settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool();
     manager.enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
@@ -1837,10 +1862,11 @@ void MainWindow::saveSettings() const
 
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("HorizontalSplitter", hSizes);
+    settings.setValue("MaximumCpuUsage", manager.maxCpuUsage);
+    settings.setValue("Language", language);
     settings.setValue("ShowInTray", showInTray);
     settings.setValue("Paused", manager.isPaused());
     settings.setValue("Notifications", manager.notificationsEnabled());
-    settings.setValue("Language", language);
 }
 
 /*
@@ -1870,6 +1896,7 @@ void MainWindow::setupMenus()
 
     syncNowAction = new QAction(iconSync, "&" + tr("Sync Now"), this);
     pauseSyncingAction = new QAction(iconPause, "&" + tr("Pause Syncing"), this);
+    maximumCpuUsageAction = new QAction("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
     {
@@ -1901,8 +1928,12 @@ void MainWindow::setupMenus()
     for (int i = 0; i < Application::languageCount(); i++)
         languageMenu->addAction(languageActions[i]);
 
+    performanceMenu = new UnhidableMenu("&" + tr("Performance"), this);
+    performanceMenu->addAction(maximumCpuUsageAction);
+
     settingsMenu = new UnhidableMenu("&" + tr("Settings"), this);
     settingsMenu->setIcon(iconSettings);
+    settingsMenu->addMenu(performanceMenu);
     settingsMenu->addMenu(languageMenu);
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(showInTrayAction);
@@ -1941,6 +1972,7 @@ void MainWindow::setupMenus()
 
     connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
+    connect(maximumCpuUsageAction, SIGNAL(triggered()), this, SLOT(setMaximumCpuUsage()));
 
     for (int i = 0; i < Application::languageCount(); i++)
         connect(languageActions[i], &QAction::triggered, this, [i, this](){ switchLanguage(languages[i].language); });
@@ -1966,6 +1998,7 @@ void MainWindow::updateStrings()
 {
     syncNowAction->setText("&" + tr("Sync Now"));
     pauseSyncingAction->setText("&" + tr("Pause Syncing"));
+    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage));
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setText(tr(languages[i].name));
@@ -1978,6 +2011,7 @@ void MainWindow::updateStrings()
     reportBugAction->setText("&" + tr("Report a Bug"));
     versionAction->setText(tr("Version: %1").arg(SYNCMANAGER_VERSION));
 
+    performanceMenu->setTitle("&" + tr("Performance"));
     languageMenu->setTitle("&" + tr("Language"));
     settingsMenu->setTitle("&" + tr("Settings"));
 

@@ -415,5 +415,17 @@
             <source>Report a Bug</source>
             <translation>报告错误</translation>
         </message>
+        <message>
+            <source>Performance</source>
+            <translation>性能</translation>
+        </message>
+        <message>
+            <source>Maximum CPU Usage</source>
+            <translation>最大 CPU 使用率</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum CPU usage in percentage:</source>
+            <translation>请输入最大 CPU 使用率百分比：</translation>
+        </message>
     </context>
 </TS>

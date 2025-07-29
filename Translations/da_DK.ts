@@ -415,5 +415,17 @@
             <source>Report a Bug</source>
             <translation>Rapporter en fejl</translation>
         </message>
+        <message>
+            <source>Performance</source>
+            <translation>Ydeevne</translation>
+        </message>
+        <message>
+            <source>Maximum CPU Usage</source>
+            <translation>Maksimal CPU-anvendelse</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum CPU usage in percentage:</source>
+            <translation>Indtast venligst den maksimale CPU-anvendelse i procent:</translation>
+        </message>
     </context>
 </TS>

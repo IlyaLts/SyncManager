@@ -35,6 +35,9 @@
 #define DATABASE_VERSION        3
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_COOLDOWN   300000
+#define CPU_UPDATE_TIME         50
+
+class CpuUsage;
 
 /*
 ===========================================================
@@ -58,7 +61,8 @@ public:
     void updateStatus();
     void updateNextSyncingTime(SyncProfile &profile);
     void removeAllDatabases();
-    void PurgeRemovedProfiles();
+    void purgeRemovedProfiles();
+    bool shouldThrottleDown();
 
     inline const QQueue<SyncProfile *> &queue() const { return m_queue; }
     inline const std::list<SyncProfile> &profiles() const { return m_profiles; }
@@ -80,6 +84,14 @@ public:
     bool isThereProfileWithHiddenSync() const;
     bool isInAutomaticPausedState() const;
     inline bool notificationsEnabled() const { return m_notifications; }
+
+    quint32 maxCpuUsage = 100;
+    quint32 processUsage = 0;
+    quint32 systemUsage = 0;
+
+public Q_SLOTS:
+
+    void updateCpuUsage(float appPercentage, float systemPercentage);
 
 Q_SIGNALS:
 
@@ -124,6 +136,7 @@ private:
     QMap<QString, QTimer *> m_notificationList;
     QSet<hash64_t> m_usedDevices;
     QMutex usedDevicesMutex;
+    CpuUsage *m_cpuUsage;
 };
 
 #endif // SYNCMANAGER_H

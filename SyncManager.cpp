@@ -22,6 +22,7 @@
 #include "MainWindow.h"
 #include "UnhidableMenu.h"
 #include "Common.h"
+#include "CpuUsage.h"
 #include <QStringListModel>
 #include <QSettings>
 #include <QCloseEvent>
@@ -42,6 +43,10 @@ SyncManager::SyncManager
 */
 SyncManager::SyncManager()
 {
+    m_cpuUsage = new CpuUsage(this);
+
+    connect(m_cpuUsage, &CpuUsage::cpuUsageUpdated, this, &SyncManager::updateCpuUsage);
+    m_cpuUsage->startMonitoring(CPU_UPDATE_TIME);
 }
 
 /*
@@ -321,10 +326,10 @@ void SyncManager::removeAllDatabases()
 
 /*
 ===================
-SyncManager::PurgeRemovedProfiles
+SyncManager::purgeRemovedProfiles
 ===================
 */
-void SyncManager::PurgeRemovedProfiles()
+void SyncManager::purgeRemovedProfiles()
 {
     // Removes profiles/folders completely if we remove them during syncing
     for (auto profileIt = m_profiles.begin(); profileIt != m_profiles.end();)
@@ -348,6 +353,16 @@ void SyncManager::PurgeRemovedProfiles()
 
         profileIt++;
     }
+}
+
+/*
+===================
+SyncManager::shouldThrottleDown
+===================
+*/
+bool SyncManager::shouldThrottleDown()
+{
+    return processUsage > maxCpuUsage;
 }
 
 /*
@@ -402,6 +417,19 @@ bool SyncManager::isInAutomaticPausedState() const
     }
 
     return paused;
+}
+
+/*
+===================
+SyncManager::updateCpuUsage
+===================
+*/
+void SyncManager::updateCpuUsage(float appPercentage, float systemPercentage)
+{
+    processUsage = appPercentage;
+    systemUsage = systemPercentage;
+
+    //qDebug(qUtf8Printable(QString("CPU process usage: %1% --- CPU system usage: %2%").arg(appPercentage).arg(systemPercentage)));
 }
 
 /*
@@ -487,6 +515,9 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
             usedDevicesMutex.unlock();
         }
+
+        while (shouldThrottleDown())
+            QThread::msleep(CPU_UPDATE_TIME);
 
         if (m_shouldQuit)
             return false;
@@ -608,6 +639,9 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
     {
         if (m_shouldQuit || !folder.isActive())
             return -1;
+
+        while (shouldThrottleDown())
+            QThread::msleep(CPU_UPDATE_TIME);
 
         dir.next();
 

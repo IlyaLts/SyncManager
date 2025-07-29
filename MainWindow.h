@@ -86,6 +86,7 @@ private Q_SLOTS:
     void toggleLaunchOnStartup();
     void toggleShowInTray();
     void toggleNotification();
+    void setMaximumCpuUsage();
     void setFixedInterval(SyncProfile &profile);
     void setVersioningPostfix(SyncProfile &profile);
     void setVersioningPattern(SyncProfile &profile);
@@ -147,6 +148,7 @@ private:
 
     QAction *syncNowAction;
     QAction *pauseSyncingAction;
+    QAction *maximumCpuUsageAction;
     QList<QAction *> languageActions;
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
@@ -159,6 +161,7 @@ private:
     QSystemTrayIcon *trayIcon;
     QMenu *trayIconMenu;
     UnhidableMenu *settingsMenu;
+    UnhidableMenu *performanceMenu;
     UnhidableMenu *languageMenu;
 
     QLocale::Language language;

@@ -415,5 +415,17 @@
             <source>Report a Bug</source>
             <translation>バグを報告</translation>
         </message>
+        <message>
+            <source>Performance</source>
+            <translation>パフォーマンス</translation>
+        </message>
+        <message>
+            <source>Maximum CPU Usage</source>
+            <translation>最大CPU使用率</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum CPU usage in percentage:</source>
+            <translation>最大CPU使用率をパーセンテージで入力してください:</translation>
+        </message>
     </context>
 </TS>

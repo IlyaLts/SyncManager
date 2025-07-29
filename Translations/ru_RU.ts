@@ -415,5 +415,17 @@
             <source>Report a Bug</source>
             <translation>Сообщить об ошибке</translation>
         </message>
+        <message>
+            <source>Performance</source>
+            <translation>Производительность</translation>
+        </message>
+        <message>
+            <source>Maximum CPU Usage</source>
+            <translation>Максимальная загрузка ЦП</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum CPU usage in percentage:</source>
+            <translation>Пожалуйста, введите максимальную загрузку ЦП в процентах:</translation>
+        </message>
     </context>
 </TS>

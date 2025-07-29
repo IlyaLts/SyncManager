@@ -415,5 +415,17 @@
             <source>Report a Bug</source>
             <translation>Повідомити про помилку</translation>
         </message>
+        <message>
+            <source>Performance</source>
+            <translation>Продуктивність</translation>
+        </message>
+        <message>
+            <source>Maximum CPU Usage</source>
+            <translation>Максимальне використання ЦП</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum CPU usage in percentage:</source>
+            <translation>Будь ласка, введіть максимальне використання ЦП у відсотках:</translation>
+        </message>
     </context>
 </TS>
