@@ -378,14 +378,19 @@ void SyncManager::setSyncTimeMultiplier(SyncProfile &profile, int multiplier)
 
 /*
 ===================
-SyncManager::isThereProfileWithHiddenSync
+SyncManager::isThereProfileWithManualSync
 ===================
 */
-bool SyncManager::isThereProfileWithHiddenSync() const
+bool SyncManager::isThereProfileWithManualSync() const
 {
     for (auto &profile : profiles())
-        if (profile.syncHidden)
+    {
+        if (!queue().contains(&profile))
+            continue;
+
+        if (!profile.syncHidden)
             return true;
+    }
 
     return false;
 }

@@ -81,6 +81,7 @@ public:
     inline bool isBusy() const { return m_busy; }
     inline bool isPaused() const { return m_paused; }
     inline bool isSyncing() const { return m_syncing; }
+    bool isThereProfileWithManualSync() const;
     bool isThereProfileWithHiddenSync() const;
     bool isInAutomaticPausedState() const;
     inline bool notificationsEnabled() const { return m_notifications; }
