@@ -397,10 +397,10 @@ bool SyncManager::hasManualSyncProfile() const
 
 /*
 ===================
-SyncManager::isInAutomaticPausedState
+SyncManager::inPausedState
 ===================
 */
-bool SyncManager::isInAutomaticPausedState() const
+bool SyncManager::inPausedState() const
 {
     if (paused())
         return true;
@@ -412,7 +412,7 @@ bool SyncManager::isInAutomaticPausedState() const
 
     for (auto &profile : profiles())
     {
-        if (!profile.isAutomatic() || profile.toBeRemoved)
+        if (profile.toBeRemoved)
             continue;
 
         if (!profile.paused)

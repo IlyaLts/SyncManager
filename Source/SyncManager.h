@@ -82,7 +82,7 @@ public:
     inline bool paused() const { return m_paused; }
     inline bool syncing() const { return m_syncing; }
     bool hasManualSyncProfile() const;
-    bool isInAutomaticPausedState() const;
+    bool inPausedState() const;
     inline bool notificationsEnabled() const { return m_notifications; }
 
     quint32 maxCpuUsage = 100;

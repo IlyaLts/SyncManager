@@ -1615,7 +1615,7 @@ void MainWindow::updateStatus()
     manager.setPaused(paused);
 
     // Tray & Icon
-    if (manager.isInAutomaticPausedState())
+    if (manager.inPausedState())
     {
         trayIcon->setIcon(trayIconPause);
         setWindowIcon(trayIconPause);
