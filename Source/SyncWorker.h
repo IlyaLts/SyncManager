@@ -31,6 +31,10 @@ public:
 
     explicit SyncWorker(QObject *parent = nullptr) : QObject(parent){};
 
+Q_SIGNALS:
+
+    void finished();
+
 public slots:
 
     void run(SyncManager &manager);

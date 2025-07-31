@@ -28,4 +28,5 @@ SyncWorker::run
 void SyncWorker::run(SyncManager &manager)
 {
     manager.sync();
+    emit finished();
 }

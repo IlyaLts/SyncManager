@@ -53,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     syncWorker->moveToThread(syncThread);
     connect(syncThread, &QThread::started, syncWorker, [this](){ syncWorker->run(manager); });
-    connect(syncThread, &QThread::finished, syncWorker, [this](){ syncDone(); });
+    connect(syncWorker, &SyncWorker::finished, this, [this](){ syncDone(); });
 
     ui->setupUi(this);
     ui->centralWidget->setLayout(ui->mainLayout);
