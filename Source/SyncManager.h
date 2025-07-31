@@ -75,14 +75,13 @@ public:
 
     inline int filesToSync() const { return m_filesToSync; }
     inline int existingProfiles() const { return m_existingProfiles; }
-    inline bool isQuitting() const { return m_shouldQuit; }
-    inline bool isThereIssue() const { return m_issue; }
-    inline bool isThereWarning() const { return m_warning; }
-    inline bool isBusy() const { return m_busy; }
-    inline bool isPaused() const { return m_paused; }
-    inline bool isSyncing() const { return m_syncing; }
-    bool isThereProfileWithManualSync() const;
-    bool isThereProfileWithHiddenSync() const;
+    inline bool quitting() const { return m_shouldQuit; }
+    inline bool issue() const { return m_issue; }
+    inline bool warning() const { return m_warning; }
+    inline bool busy() const { return m_busy; }
+    inline bool paused() const { return m_paused; }
+    inline bool syncing() const { return m_syncing; }
+    bool hasManualSyncProfile() const;
     bool isInAutomaticPausedState() const;
     inline bool notificationsEnabled() const { return m_notifications; }
 
@@ -96,7 +95,7 @@ public Q_SLOTS:
 
 Q_SIGNALS:
 
-    void warning(const QString &title, const QString &message);
+    void message(const QString &title, const QString &message);
     void profileSynced(SyncProfile *profile);
 
 private:

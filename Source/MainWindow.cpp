@@ -35,9 +35,9 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QTimer>
-#include <QtConcurrent/QtConcurrent>
 #include <QInputDialog>
 #include <QDesktopServices>
+#include <QMimeData>
 
 /*
 ===================
@@ -46,6 +46,15 @@ MainWindow::MainWindow
 */
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
+    connect(&updateTimer, &QTimer::timeout, this, &MainWindow::updateStatus);
+
+    syncThread = new QThread(this);
+    syncWorker = new SyncWorker();
+
+    syncWorker->moveToThread(syncThread);
+    connect(syncThread, &QThread::started, syncWorker, [this](){ syncWorker->run(manager); });
+    connect(syncThread, &QThread::finished, syncWorker, [this](){ syncDone(); });
+
     ui->setupUi(this);
     ui->centralWidget->setLayout(ui->mainLayout);
     setWindowTitle("Sync Manager");
@@ -74,7 +83,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         manager.profiles().push_back(SyncProfile(name, profileIndexByName(name)));
 
         SyncProfile &profile = manager.profiles().back();
-        profile.paused = manager.isPaused();
+        profile.paused = manager.paused();
         profile.name = name;
 
         QStringList paths = profilesData.value(name).toStringList();
@@ -83,7 +92,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         for (auto &path : paths)
         {
             profile.folders.push_back(SyncFolder());
-            profile.folders.back().paused = manager.isPaused();
+            profile.folders.back().paused = manager.paused();
             profile.folders.back().path = path.toUtf8();
         }
     }
@@ -95,13 +104,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->folderListView, SIGNAL(deletePressed()), SLOT(removeFolder()));
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
-    connect(&manager, &SyncManager::warning, this, [this](QString title, QString message){ notify(title, message, QSystemTrayIcon::Critical); });
+    connect(&manager, &SyncManager::message, this, [this](QString title, QString message){ notify(title, message, QSystemTrayIcon::Critical); });
     connect(&manager, &SyncManager::profileSynced, this, &MainWindow::profileSynced);
 
     for (auto &profile : manager.profiles())
     {
-        connect(&profile.syncTimer, &QChronoTimer::timeout, this, [&profile, this](){ sync(&const_cast<SyncProfile &>(profile), true); });
         profile.syncTimer.setSingleShot(true);
+        connect(&profile.syncTimer, &QChronoTimer::timeout, this, [&profile, this](){ sync(&const_cast<SyncProfile &>(profile), true); });
     }
 
     setupMenus();
@@ -117,7 +126,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     updateStatus();
 
-    updateTimer.setSingleShot(true);
     appInitiated = true;
 
     for (auto &profile : manager.profiles())
@@ -138,6 +146,18 @@ MainWindow::~MainWindow()
 
     saveSettings();
     delete ui;
+
+    if (syncThread->isRunning())
+    {
+        syncThread->requestInterruption();
+        syncThread->quit();
+
+        if (syncThread->isRunning())
+        {
+            syncThread->terminate();
+            syncThread->wait();
+        }
+    }
 }
 
 /*
@@ -196,7 +216,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         QString title(tr("Quit"));
         QString text(tr("Currently syncing. Are you sure you want to quit?"));
 
-        if (manager.isBusy() && !questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
+        if (manager.busy() && !questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
         {
             event->ignore();
             return;
@@ -241,7 +261,7 @@ void MainWindow::addProfile()
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
     manager.profiles().push_back(SyncProfile(newName, profileIndexByName(newName)));
-    manager.profiles().back().paused = manager.isPaused();
+    manager.profiles().back().paused = manager.paused();
     manager.profiles().back().setupMenus(this);
     connectProfileMenu(manager.profiles().back());
 
@@ -308,7 +328,7 @@ void MainWindow::removeProfile()
             folder.removeDatabase();
         }
 
-        if (!manager.isBusy())
+        if (!manager.busy())
             manager.profiles().remove(*profile);
 
         folderModel->setStringList(QStringList());
@@ -465,7 +485,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         if (!exists)
         {
             profile->folders.push_back(SyncFolder());
-            profile->folders.back().paused = manager.isPaused();
+            profile->folders.back().paused = manager.paused();
             profile->folders.back().path = folderName.toUtf8();
             profile->folders.back().path.append("/");
             folderPaths.append(profile->folders.back().path);
@@ -518,7 +538,7 @@ void MainWindow::removeFolder()
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
         settings.remove(profile->name + QLatin1String("_profile/") + folder->path + QLatin1String("_Paused"));
 
-        if (!manager.isBusy())
+        if (!manager.busy())
             profile->folders.remove(*folder);
 
         QStringList foldersPaths;
@@ -544,14 +564,14 @@ MainWindow::pauseSyncing
 */
 void MainWindow::pauseSyncing()
 {
-    manager.setPaused(!manager.isPaused());
+    manager.setPaused(!manager.paused());
 
     for (auto &profile : manager.profiles())
     {
-        profile.paused = manager.isPaused();
+        profile.paused = manager.paused();
 
         for (auto &folder : profile.folders)
-            folder.paused = manager.isPaused();
+            folder.paused = manager.paused();
 
         if (profile.paused)
             profile.syncTimer.stop();
@@ -645,8 +665,8 @@ void MainWindow::quit()
     QString text(tr("Are you sure you want to quit?"));
     QString syncText(tr("Currently syncing. Are you sure you want to quit?"));
 
-    if ((!manager.isBusy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No, this)) ||
-        (manager.isBusy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, this)))
+    if ((!manager.busy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No, this)) ||
+        (manager.busy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, this)))
     {
         manager.shouldQuit();
         syncApp->quit();
@@ -836,6 +856,25 @@ void MainWindow::switchDatabaseLocation(SyncProfile &profile, SyncProfile::Datab
 
     if (appInitiated)
         profile.saveSettings();
+}
+
+/*
+===================
+MainWindow::switchPriority
+===================
+*/
+void MainWindow::switchPriority(QThread::Priority priority)
+{
+    idlePriorityAction->setChecked(priority == QThread::IdlePriority);
+    lowestPriorityAction->setChecked(priority == QThread::LowestPriority);
+    lowPriorityAction->setChecked(priority == QThread::LowPriority);
+    normalPriorityAction->setChecked(priority == QThread::NormalPriority);
+    highPriorityAction->setChecked(priority == QThread::HighPriority);
+    highestPriorityAction->setChecked(priority == QThread::HighestPriority);
+    timeCriticalPriorityAction->setChecked(priority == QThread::TimeCriticalPriority);
+
+    if (syncThread->isRunning())
+        syncThread->setPriority(priority);
 }
 
 /*
@@ -1317,25 +1356,32 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
 
     manager.addToQueue(profile);
 
-    if (!manager.isBusy())
+    if (!manager.busy())
     {
         animSync.start();
 
-        QFuture<void> future = QtConcurrent::run([&]() { manager.sync(); });
-
-        while (!future.isFinished())
+        if (!syncThread->isRunning())
         {
-            if (manager.shouldThrottleDown())
-                QThread::msleep(CPU_UPDATE_TIME);
-
-            updateApp();
+            syncThread->start();
+            syncThread->setPriority(QThread::LowestPriority);
+            updateTimer.start(UPDATE_DELAY);
         }
-
-        animSync.stop();
-
-        updateStatus();
-        manager.purgeRemovedProfiles();
     }
+}
+
+/*
+===================
+MainWindow::syncDone
+===================
+*/
+void MainWindow::syncDone()
+{
+    syncThread->quit();
+    updateTimer.stop();
+    animSync.stop();
+
+    updateStatus();
+    manager.purgeRemovedProfiles();
 }
 
 /*
@@ -1467,23 +1513,6 @@ void MainWindow::notify(const QString &title, const QString &message, QSystemTra
 
 /*
 ===================
-MainWindow::updateApp
-===================
-*/
-bool MainWindow::updateApp()
-{
-    if (updateTimer.remainingTime() <= 0)
-    {
-        updateStatus();
-        updateTimer.start(UPDATE_DELAY);
-    }
-
-    QApplication::processEvents();
-    return manager.isQuitting();
-}
-
-/*
-===================
 MainWindow::updateStatus
 ===================
 */
@@ -1552,7 +1581,7 @@ void MainWindow::updateStatus()
 
                     if (folder->paused)
                         folderModel->setData(index, iconPause, Qt::DecorationRole);
-                    else if (folder->syncing || (manager.queue().contains(profile) && !manager.isSyncing() && !profile->syncHidden))
+                    else if (folder->syncing || (manager.queue().contains(profile) && !manager.syncing() && !profile->syncHidden))
                         folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
                     else if (!folder->exists)
                         folderModel->setData(index, iconRemove, Qt::DecorationRole);
@@ -1565,7 +1594,7 @@ void MainWindow::updateStatus()
         }
     }
 
-    bool paused = manager.isPaused();
+    bool paused = manager.paused();
 
     // Pause status
     for (const auto &profile : manager.profiles())
@@ -1573,10 +1602,10 @@ void MainWindow::updateStatus()
         if (profile.toBeRemoved)
             continue;
 
-        if (manager.isPaused())
+        if (manager.paused())
             paused = true;
 
-        if (!manager.isPaused())
+        if (!manager.paused())
         {
             paused = false;
             break;
@@ -1599,7 +1628,7 @@ void MainWindow::updateStatus()
     }
     else
     {
-        if (manager.isSyncing() || (!manager.isThereProfileWithHiddenSync() && !manager.queue().empty()))
+        if (manager.syncing() || manager.hasManualSyncProfile())
         {
             if (trayIcon->icon().cacheKey() != trayIconSync.cacheKey())
                 trayIcon->setIcon(trayIconSync);
@@ -1607,9 +1636,9 @@ void MainWindow::updateStatus()
             if (windowIcon().cacheKey() != trayIconSync.cacheKey())
                 setWindowIcon(trayIconSync);
         }
-        else if (manager.isThereWarning())
+        else if (manager.warning())
         {
-            if (manager.isThereIssue())
+            if (manager.issue())
             {
                 trayIcon->setIcon(trayIconIssue);
                 setWindowIcon(trayIconIssue);
@@ -1771,6 +1800,7 @@ void MainWindow::loadSettings()
     ui->horizontalSplitter->setStretchFactor(1, 1);
 
     manager.maxCpuUsage = static_cast<quint32>(settings.value("MaximumCpuUsage", 100).toInt());
+    switchPriority(static_cast<QThread::Priority>(settings.value("Priority", QThread::NormalPriority).toInt()));
     language = static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt());
     showInTray = settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool();
     manager.enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
@@ -1863,9 +1893,10 @@ void MainWindow::saveSettings() const
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("MaximumCpuUsage", manager.maxCpuUsage);
+    settings.setValue("Priority", priority);
     settings.setValue("Language", language);
     settings.setValue("ShowInTray", showInTray);
-    settings.setValue("Paused", manager.isPaused());
+    settings.setValue("Paused", manager.paused());
     settings.setValue("Notifications", manager.notificationsEnabled());
 }
 
@@ -1897,6 +1928,13 @@ void MainWindow::setupMenus()
     syncNowAction = new QAction(iconSync, "&" + tr("Sync Now"), this);
     pauseSyncingAction = new QAction(iconPause, "&" + tr("Pause Syncing"), this);
     maximumCpuUsageAction = new QAction("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage), this);
+    idlePriorityAction = new QAction("&" + tr("Idle Priority"), this);
+    lowestPriorityAction = new QAction("&" + tr("Lowest Priority"), this);
+    lowPriorityAction = new QAction("&" + tr("Low Priority"), this);
+    normalPriorityAction = new QAction("&" + tr("Normal Priority"), this);
+    highPriorityAction = new QAction("&" + tr("High Priority"), this);
+    highestPriorityAction = new QAction("&" + tr("Highest P0riority"), this);
+    timeCriticalPriorityAction = new QAction("&" + tr("Time Critical Priority"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
     {
@@ -1917,6 +1955,13 @@ void MainWindow::setupMenus()
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setCheckable(true);
 
+    idlePriorityAction->setCheckable(true);
+    lowestPriorityAction->setCheckable(true);
+    lowPriorityAction->setCheckable(true);
+    normalPriorityAction->setCheckable(true);
+    highPriorityAction->setCheckable(true);
+    highestPriorityAction->setCheckable(true);
+    timeCriticalPriorityAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
@@ -1928,8 +1973,22 @@ void MainWindow::setupMenus()
     for (int i = 0; i < Application::languageCount(); i++)
         languageMenu->addAction(languageActions[i]);
 
+    priorityMenu = new UnhidableMenu("&" + tr("Priority"), this);
+    priorityMenu->addAction(idlePriorityAction);
+    priorityMenu->addAction(lowestPriorityAction);
+    priorityMenu->addAction(lowPriorityAction);
+    priorityMenu->addAction(normalPriorityAction);
+    priorityMenu->addAction(highPriorityAction);
+    priorityMenu->addAction(highestPriorityAction);
+    priorityMenu->addAction(timeCriticalPriorityAction);
+
     performanceMenu = new UnhidableMenu("&" + tr("Performance"), this);
     performanceMenu->addAction(maximumCpuUsageAction);
+    performanceMenu->addMenu(priorityMenu);
+
+#ifndef Q_OS_WIN
+    priorityMenu->setVisible(false);
+#endif
 
     settingsMenu = new UnhidableMenu("&" + tr("Settings"), this);
     settingsMenu->setIcon(iconSettings);
@@ -1973,6 +2032,13 @@ void MainWindow::setupMenus()
     connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(maximumCpuUsageAction, SIGNAL(triggered()), this, SLOT(setMaximumCpuUsage()));
+    connect(idlePriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::IdlePriority); });
+    connect(lowestPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::LowestPriority); });
+    connect(lowPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::LowPriority); });
+    connect(normalPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::NormalPriority); });
+    connect(highPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::HighPriority); });
+    connect(highestPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::HighestPriority); });
+    connect(timeCriticalPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::TimeCriticalPriority); });
 
     for (int i = 0; i < Application::languageCount(); i++)
         connect(languageActions[i], &QAction::triggered, this, [i, this](){ switchLanguage(languages[i].language); });

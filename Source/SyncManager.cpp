@@ -378,10 +378,10 @@ void SyncManager::setSyncTimeMultiplier(SyncProfile &profile, int multiplier)
 
 /*
 ===================
-SyncManager::isThereProfileWithManualSync
+SyncManager::hasManualSyncProfile
 ===================
 */
-bool SyncManager::isThereProfileWithManualSync() const
+bool SyncManager::hasManualSyncProfile() const
 {
     for (auto &profile : profiles())
     {
@@ -402,7 +402,7 @@ SyncManager::isInAutomaticPausedState
 */
 bool SyncManager::isInAutomaticPausedState() const
 {
-    if (isPaused())
+    if (paused())
         return true;
 
     if (profiles().empty())
@@ -1889,7 +1889,7 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
 
                 shouldNotify = false;
                 m_notificationList.value(rootPath)->start(NOTIFICATION_COOLDOWN);
-                emit warning(tr("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "");
+                emit message(tr("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "");
             }
 
             ++fileIt;

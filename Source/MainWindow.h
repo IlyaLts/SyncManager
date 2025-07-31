@@ -22,10 +22,12 @@
 
 #include "SyncManager.h"
 #include "SyncProfile.h"
+#include "SyncWorker.h"
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include <QTimer>
 #include <QMovie>
+#include <QThread>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -80,6 +82,7 @@ private Q_SLOTS:
     void switchVersioningLocation(SyncProfile &profile, SyncProfile::VersioningLocation location);
     void switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::SyncType type);
     void switchDatabaseLocation(SyncProfile &profile, SyncProfile::DatabaseLocation location);
+    void switchPriority(QThread::Priority priority);
     void increaseSyncTime(SyncProfile &profile);
     void decreaseSyncTime(SyncProfile &profile);
     void switchLanguage(QLocale::Language language);
@@ -99,6 +102,7 @@ private Q_SLOTS:
     void toggleDetectMoved(SyncProfile &profile);
     void showContextMenu(const QPoint &pos);
     void sync(SyncProfile *profile, bool hidden = false);
+    void syncDone();
     void profileSynced(SyncProfile *profile);
 
 private:
@@ -107,7 +111,6 @@ private:
     void connectProfileMenu(SyncProfile &profile);
     void disconnectProfileMenu(SyncProfile &profile);
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
-    bool updateApp();
     void updateStatus();
     void updateMenuSyncTime(SyncProfile &profile);
     void updateProfileTooltip(const SyncProfile &profile);
@@ -149,6 +152,13 @@ private:
     QAction *syncNowAction;
     QAction *pauseSyncingAction;
     QAction *maximumCpuUsageAction;
+    QAction *idlePriorityAction;
+    QAction *lowestPriorityAction;
+    QAction *lowPriorityAction;
+    QAction *normalPriorityAction;
+    QAction *highPriorityAction;
+    QAction *highestPriorityAction;
+    QAction *timeCriticalPriorityAction;
     QList<QAction *> languageActions;
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
@@ -162,8 +172,12 @@ private:
     QMenu *trayIconMenu;
     UnhidableMenu *settingsMenu;
     UnhidableMenu *performanceMenu;
+    UnhidableMenu *priorityMenu;
     UnhidableMenu *languageMenu;
 
+    QThread::Priority priority = QThread::NormalPriority;
+    QThread *syncThread;
+    SyncWorker *syncWorker;
     QLocale::Language language;
     QTimer updateTimer;
     bool showInTray;
