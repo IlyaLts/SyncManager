@@ -89,6 +89,7 @@ private Q_SLOTS:
     void toggleLaunchOnStartup();
     void toggleShowInTray();
     void toggleNotification();
+    void setMaximumTransferRateUsage();
     void setMaximumCpuUsage();
     void setFixedInterval(SyncProfile &profile);
     void setVersioningPostfix(SyncProfile &profile);
@@ -112,6 +113,7 @@ private:
     void disconnectProfileMenu(SyncProfile &profile);
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
     void updateStatus();
+    void updateMenuMaxDiskTransferRate();
     void updateMenuSyncTime(SyncProfile &profile);
     void updateProfileTooltip(const SyncProfile &profile);
     void loadSettings();
@@ -151,6 +153,7 @@ private:
 
     QAction *syncNowAction;
     QAction *pauseSyncingAction;
+    QAction *maximumDiskTransferRateAction;
     QAction *maximumCpuUsageAction;
     QAction *idlePriorityAction;
     QAction *lowestPriorityAction;

@@ -70,9 +70,13 @@ public:
 
     inline void shouldQuit() { m_shouldQuit = true; }
     void setSyncTimeMultiplier(SyncProfile &profile, int multiplier);
+    inline void setMaxDiskTransferRate(quint64 rate) { m_maxDiskTransferRate = rate; }
+    inline void setMaxCpuUsage(quint32 percentage) { m_maxCpuUsage = percentage; }
     inline void setPaused(bool paused) { m_paused = paused; }
-    inline void enableNotifications(bool enable) { m_notifications = enable; }
+    inline void enableNotifications(bool enable) { m_notifications = enable; }    
 
+    inline quint64 maxDiskTransferRate() const { return m_maxDiskTransferRate; }
+    inline quint32 maxCpuUsage() const { return m_maxCpuUsage; }
     inline int filesToSync() const { return m_filesToSync; }
     inline int existingProfiles() const { return m_existingProfiles; }
     inline bool quitting() const { return m_shouldQuit; }
@@ -84,10 +88,6 @@ public:
     bool hasManualSyncProfile() const;
     bool inPausedState() const;
     inline bool notificationsEnabled() const { return m_notifications; }
-
-    quint32 maxCpuUsage = 100;
-    quint32 processUsage = 0;
-    quint32 systemUsage = 0;
 
 public Q_SLOTS:
 
@@ -109,6 +109,7 @@ private:
     void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);
     bool removeFile(SyncProfile &profile, SyncFolder &folder, const QString &path, const QString &fullPath, SyncFile::Type type);
+    bool copyFile(quint64 &deviceRead, const QString &fileName, const QString &newName);
     void renameFolders(SyncProfile &profile, SyncFolder &folder);
     void moveFiles(SyncProfile &profile, SyncFolder &folder);
     void createParentFolders(SyncProfile &profile, SyncFolder &folder, QByteArray path);
@@ -133,9 +134,14 @@ private:
     bool m_syncing = false;
     bool m_notifications = true;
 
+    quint64 m_maxDiskTransferRate = 0;
+    quint32 m_maxCpuUsage = 100;
+    quint32 m_processUsage = 0;
+    quint32 m_systemUsage = 0;
+    QTimer m_diskUsageResetTimer;
     QMap<QString, QTimer *> m_notificationList;
-    QSet<hash64_t> m_usedDevices;
-    QMutex usedDevicesMutex;
+    QMap<hash64_t, quint64> m_usedDevices;
+    QMutex m_usedDevicesMutex;
     CpuUsage *m_cpuUsage;
 };
 

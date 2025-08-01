@@ -459,5 +459,13 @@
             <source>Time Critical Priority</source>
             <translation>Tidskritisk prioritet</translation>
         </message>
+        <message>
+            <source>Maximum Disk Transfer Rate</source>
+            <translation>Maksimal diskhastighed</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum disk transfer rate in bytes per second:</source>
+            <translation>Indtast den maksimale diskhastighed i bytes pr. sekund:</translation>
+        </message>
     </context>
 </TS>

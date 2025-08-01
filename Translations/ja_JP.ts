@@ -459,5 +459,13 @@
             <source>Time Critical Priority</source>
             <translation>時間的制約のある優先度</translation>
         </message>
+        <message>
+            <source>Maximum Disk Transfer Rate</source>
+            <translation>最大ディスク転送速度</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum disk transfer rate in bytes per second:</source>
+            <translation>最大ディスク転送速度を1秒あたりのバイト数で入力してください:</translation>
+        </message>
     </context>
 </TS>

@@ -459,5 +459,13 @@
             <source>Time Critical Priority</source>
             <translation>समय महत्वपूर्ण प्राथमिकता</translation>
         </message>
+        <message>
+            <source>Maximum Disk Transfer Rate</source>
+            <translation>अधिकतम डिस्क स्थानांतरण दर</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum disk transfer rate in bytes per second:</source>
+            <translation>कृपया प्रति सेकंड बाइट्स में अधिकतम डिस्क स्थानांतरण दर दर्ज करें:</translation>
+        </message>
     </context>
 </TS>

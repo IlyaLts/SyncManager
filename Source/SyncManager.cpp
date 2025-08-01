@@ -45,7 +45,9 @@ SyncManager::SyncManager()
 {
     m_cpuUsage = new CpuUsage(this);
 
+    connect(&m_diskUsageResetTimer, &QTimer::timeout, this, [this](){ for (auto &device : m_usedDevices) device = 0; });
     connect(m_cpuUsage, &CpuUsage::cpuUsageUpdated, this, &SyncManager::updateCpuUsage);
+    m_diskUsageResetTimer.start(1000);
     m_cpuUsage->startMonitoring(CPU_UPDATE_TIME);
 }
 
@@ -362,7 +364,7 @@ SyncManager::shouldThrottleDown
 */
 bool SyncManager::shouldThrottleDown()
 {
-    return processUsage > maxCpuUsage;
+    return m_processUsage > m_maxCpuUsage;
 }
 
 /*
@@ -431,8 +433,8 @@ SyncManager::updateCpuUsage
 */
 void SyncManager::updateCpuUsage(float appPercentage, float systemPercentage)
 {
-    processUsage = appPercentage;
-    systemUsage = systemPercentage;
+    m_processUsage = appPercentage;
+    m_systemUsage = systemPercentage;
 
     //qDebug(qUtf8Printable(QString("CPU process usage: %1% --- CPU system usage: %2%").arg(appPercentage).arg(systemPercentage)));
 }
@@ -499,11 +501,11 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     {
         for (auto futureIt = futureList.begin(); futureIt != futureList.end();)
         {
-            usedDevicesMutex.lock();
+            m_usedDevicesMutex.lock();
 
             if (!m_usedDevices.contains(futureIt->first.data))
             {
-                m_usedDevices.insert(futureIt->first.data);
+                m_usedDevices.insert(futureIt->first.data, 0);
                 futureIt->second.resume();
             }
 
@@ -518,7 +520,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
                 futureIt++;
             }
 
-            usedDevicesMutex.unlock();
+            m_usedDevicesMutex.unlock();
         }
 
         QThread::msleep(UPDATE_TIME);
@@ -630,6 +632,8 @@ SyncManager::scanFiles
 */
 int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
 {
+    hash64_t deviceHash = hash64(QStorageInfo(folder.path).device());
+    quint64 &deviceRead = m_usedDevices[deviceHash];
     int totalNumOfFiles = 0;
     QStringList nameFilters(profile.includeList());
     nameFilters.removeAll(""); // It's important for proper iteration because the include list may contain empty strings
@@ -654,6 +658,16 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
 
         QFileInfo fileInfo(dir.fileInfo());
         qint64 fileSize = fileInfo.size();
+
+        m_usedDevicesMutex.lock();
+        deviceRead += fileSize;
+        m_usedDevicesMutex.unlock();
+
+        /*while (maxDiskUsage && deviceRead >= maxDiskUsage)
+        {
+            int sleep = diskUsageResetTimer.remainingTime() < 0 ? 50 : diskUsageResetTimer.remainingTime();
+            QThread::msleep(sleep);
+        }*/
 
         // If the file is a symlink, this function returns information about the target, not the symlink
         if (fileInfo.isSymLink())
@@ -796,9 +810,9 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         folder.removeNonExistentFiles();
 
     folder.optimizeMemoryUsage();
-    usedDevicesMutex.lock();
-    m_usedDevices.remove(hash64(QStorageInfo(folder.path).device()));
-    usedDevicesMutex.unlock();
+    m_usedDevicesMutex.lock();
+    m_usedDevices.remove(deviceHash);
+    m_usedDevicesMutex.unlock();
     return totalNumOfFiles;
 }
 
@@ -1478,6 +1492,83 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
 
 /*
 ===================
+SyncManager::copyFile
+===================
+*/
+bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const QString &newName)
+{
+    if (!m_maxDiskTransferRate)
+        return QFile::copy(fileName, newName);
+
+    QFile file(fileName);
+
+    if (file.fileName().isEmpty())
+        return false;
+
+    if (QFile(newName).exists())
+        return false;
+
+    if(!file.open(QFile::ReadOnly))
+        return false;
+
+    QString fileTemplate = QLatin1String("%1/qt_temp.XXXXXX");
+    QTemporaryFile out(fileTemplate.arg(QFileInfo(newName).path()));
+
+    if (!out.open())
+    {
+        out.setFileTemplate(fileTemplate.arg(QDir::tempPath()));
+
+        if (!out.open())
+        {
+            return false;
+            out.close();
+        }
+    }
+
+    char block[4096];
+    qint64 totalRead = 0;
+
+    while(!file.atEnd())
+    {
+        qint64 in = file.read(block, sizeof(block));
+
+        if (in <= 0)
+            break;
+
+        totalRead += in;
+
+        m_usedDevicesMutex.lock();
+        deviceRead += in;
+        m_usedDevicesMutex.unlock();
+
+        while (deviceRead >= m_maxDiskTransferRate)
+        {
+            int sleep = m_diskUsageResetTimer.remainingTime();
+
+            if (sleep < 0)
+                sleep = 0;
+
+            QThread::msleep(sleep);
+        }
+
+        if(in != out.write(block, in))
+            return false;
+    }
+
+    if (totalRead != file.size())
+        return false;
+
+    if (!out.rename(newName))
+        return false;
+
+    file.close();
+    out.setAutoRemove(false);
+    QFile::setPermissions(newName, file.permissions());
+    return true;
+}
+
+/*
+===================
 SyncManager::createParentFolders
 
 Creates all necessary parent directories for a given file path
@@ -1803,6 +1894,8 @@ SyncManager::copyFiles
 */
 void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
 {
+    hash64_t deviceHash = hash64(QStorageInfo(folder.path).device());
+    quint64 &deviceRead = m_usedDevices[deviceHash];
     QString rootPath = QStorageInfo(folder.path).rootPath();
     bool shouldNotify = m_notificationList.contains(rootPath) ? !m_notificationList.value(rootPath)->isActive() : true;
 
@@ -1862,7 +1955,7 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
         if (toFileInfo.exists())
             removeFile(profile, folder, fileIt->toPath, toFullPath, toFile.type);
 
-        if (QFile::copy(fileIt->fromFullPath, toFullPath))
+        if (copyFile(deviceRead, fileIt->fromFullPath, toFullPath))
         {
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
             setFileModificationDate(filePath, fileIt->modifiedDate);

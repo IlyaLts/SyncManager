@@ -1009,6 +1009,25 @@ void MainWindow::toggleNotification()
 
 /*
 ===================
+MainWindow::setMaximumTransferRateUsage
+===================
+*/
+void MainWindow::setMaximumTransferRateUsage()
+{
+    QString title(tr("Maximum Disk Transfer Rate"));
+    QString text(tr("Please enter the maximum disk transfer rate in bytes per second:"));
+    int usage;
+
+    if (!intInputDialog(this, title, text, usage, manager.maxDiskTransferRate(), 0, std::numeric_limits<int>::max()))
+        return;
+
+    manager.setMaxDiskTransferRate(usage);
+    updateMenuMaxDiskTransferRate();
+    saveSettings();
+}
+
+/*
+===================
 MainWindow::setMaximumCpuUsage
 ===================
 */
@@ -1018,11 +1037,11 @@ void MainWindow::setMaximumCpuUsage()
     QString text(tr("Please enter the maximum CPU usage in percentage:"));
     int usage;
 
-    if (!intInputDialog(this, title, text, usage, manager.maxCpuUsage, 1, 100))
+    if (!intInputDialog(this, title, text, usage, manager.maxCpuUsage(), 1, 100))
         return;
 
-    manager.maxCpuUsage = usage;
-    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage));
+    manager.setMaxCpuUsage(usage);
+    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage()));
     saveSettings();
 }
 
@@ -1677,6 +1696,35 @@ void MainWindow::updateStatus()
 
 /*
 ===================
+MainWindow::updateMenuMaxDiskTransferRate
+===================
+*/
+void MainWindow::updateMenuMaxDiskTransferRate()
+{
+    QString text;
+
+    if (manager.maxDiskTransferRate())
+    {
+        quint64 bytes = manager.maxDiskTransferRate() % 1024;
+        quint64 kilobytes = (manager.maxDiskTransferRate() / 1024) % 1024;
+        quint64 megabytes = (manager.maxDiskTransferRate() / 1024 / 1024) % 1024;
+        quint64 gigabytes = (manager.maxDiskTransferRate() / 1024 / 1024/ 1024) % 1024;
+
+        if (gigabytes)
+            text.append(tr("%1 GB/s").arg(QString::number(static_cast<float>(gigabytes) + static_cast<float>(megabytes) / 1024.0f, 'f', 1)));
+        else if (megabytes)
+            text.append(tr("%1 MB/s").arg(QString::number(static_cast<float>(megabytes) + static_cast<float>(kilobytes) / 1024.0f, 'f', 1)));
+        else if (kilobytes)
+            text.append(tr("%1 KB/s").arg(QString::number(static_cast<float>(kilobytes) + static_cast<float>(bytes) / 1024.0f, 'f', 1)));
+        else if (bytes)
+            text.append(tr("%1 B/s").arg(bytes));
+    }
+
+    maximumDiskTransferRateAction->setText("&" + tr("Maximum Disk Transfer Rate") + QString(": ") + text);
+}
+
+/*
+===================
 MainWindow::updateMenuSyncTime
 ===================
 */
@@ -1799,7 +1847,8 @@ void MainWindow::loadSettings()
     ui->horizontalSplitter->setStretchFactor(0, 0);
     ui->horizontalSplitter->setStretchFactor(1, 1);
 
-    manager.maxCpuUsage = static_cast<quint32>(settings.value("MaximumCpuUsage", 100).toInt());
+    manager.setMaxDiskTransferRate(settings.value("MaximumDiskUsage", 0).toULongLong());
+    manager.setMaxCpuUsage(settings.value("MaximumCpuUsage", 100).toUInt());
     switchPriority(static_cast<QThread::Priority>(settings.value("Priority", QThread::NormalPriority).toInt()));
     language = static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt());
     showInTray = settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool();
@@ -1839,6 +1888,8 @@ void MainWindow::loadSettings()
 
     showInTrayAction->setChecked(showInTray);
     disableNotificationAction->setChecked(!manager.notificationsEnabled());
+
+    updateMenuMaxDiskTransferRate();
 
     for (auto &profile : manager.profiles())
     {
@@ -1892,7 +1943,8 @@ void MainWindow::saveSettings() const
 
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("HorizontalSplitter", hSizes);
-    settings.setValue("MaximumCpuUsage", manager.maxCpuUsage);
+    settings.setValue("MaximumDiskUsage", manager.maxDiskTransferRate());
+    settings.setValue("MaximumCpuUsage", manager.maxCpuUsage());
     settings.setValue("Priority", priority);
     settings.setValue("Language", language);
     settings.setValue("ShowInTray", showInTray);
@@ -1927,7 +1979,8 @@ void MainWindow::setupMenus()
 
     syncNowAction = new QAction(iconSync, "&" + tr("Sync Now"), this);
     pauseSyncingAction = new QAction(iconPause, "&" + tr("Pause Syncing"), this);
-    maximumCpuUsageAction = new QAction("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage), this);
+    maximumDiskTransferRateAction = new QAction("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(manager.maxDiskTransferRate()), this);
+    maximumCpuUsageAction = new QAction("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage()), this);
     idlePriorityAction = new QAction("&" + tr("Idle Priority"), this);
     lowestPriorityAction = new QAction("&" + tr("Lowest Priority"), this);
     lowPriorityAction = new QAction("&" + tr("Low Priority"), this);
@@ -1983,6 +2036,7 @@ void MainWindow::setupMenus()
     priorityMenu->addAction(timeCriticalPriorityAction);
 
     performanceMenu = new UnhidableMenu("&" + tr("Performance"), this);
+    performanceMenu->addAction(maximumDiskTransferRateAction);
     performanceMenu->addAction(maximumCpuUsageAction);
     performanceMenu->addMenu(priorityMenu);
 
@@ -2031,6 +2085,7 @@ void MainWindow::setupMenus()
 
     connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
+    connect(maximumDiskTransferRateAction, SIGNAL(triggered()), this, SLOT(setMaximumTransferRateUsage()));
     connect(maximumCpuUsageAction, SIGNAL(triggered()), this, SLOT(setMaximumCpuUsage()));
     connect(idlePriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::IdlePriority); });
     connect(lowestPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::LowestPriority); });
@@ -2064,7 +2119,8 @@ void MainWindow::updateStrings()
 {
     syncNowAction->setText("&" + tr("Sync Now"));
     pauseSyncingAction->setText("&" + tr("Pause Syncing"));
-    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage));
+    maximumDiskTransferRateAction->setText("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(manager.maxDiskTransferRate()));
+    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage()));
     idlePriorityAction->setText("&" + tr("Idle Priority"));
     lowestPriorityAction->setText("&" + tr("Lowest Priority"));
     lowPriorityAction->setText("&" + tr("Low Priority"));
@@ -2095,6 +2151,7 @@ void MainWindow::updateStrings()
     ui->foldersLabel->setText(tr("Folders to synchronize:"));
 
     updateStatus();
+    updateMenuMaxDiskTransferRate();
 
     for (auto &profile : manager.profiles())
     {

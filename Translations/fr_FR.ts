@@ -459,5 +459,13 @@
             <source>Time Critical Priority</source>
             <translation>Priorité critique</translation>
         </message>
+        <message>
+            <source>Maximum Disk Transfer Rate</source>
+            <translation>Taux de transfert maximum du disque</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum disk transfer rate in bytes per second:</source>
+            <translation>Veuillez entrer le taux de transfert maximum du disque en octets par seconde :</translation>
+        </message>
     </context>
 </TS>

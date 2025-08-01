@@ -459,5 +459,13 @@
             <source>Time Critical Priority</source>
             <translation>时间关键优先级</translation>
         </message>
+        <message>
+            <source>Maximum Disk Transfer Rate</source>
+            <translation>最大磁盘传输速率</translation>
+        </message>
+        <message>
+            <source>Please enter the maximum disk transfer rate in bytes per second:</source>
+            <translation>请输入最大磁盘传输速率，单位为字节/秒：</translation>
+        </message>
     </context>
 </TS>
