@@ -427,5 +427,37 @@
             <source>Please enter the maximum CPU usage in percentage:</source>
             <translation>कृपया सीपीयू का अधिकतम उपयोग प्रतिशत में दर्ज करें:</translation>
         </message>
+        <message>
+            <source>Priority</source>
+            <translation>प्राथमिकता</translation>
+        </message>
+        <message>
+            <source>Idle Priority</source>
+            <translation>निष्क्रिय प्राथमिकता</translation>
+        </message>
+        <message>
+            <source>Lowest Priority</source>
+            <translation>सबसे कम प्राथमिकता</translation>
+        </message>
+        <message>
+            <source>Low Priority</source>
+            <translation>कम प्राथमिकता</translation>
+        </message>
+        <message>
+            <source>Normal Priority</source>
+            <translation>सामान्य प्राथमिकता</translation>
+        </message>
+        <message>
+            <source>High Priority</source>
+            <translation>उच्च प्राथमिकता</translation>
+        </message>
+        <message>
+            <source>Highest Priority</source>
+            <translation>सबसे अधिक प्राथमिकता</translation>
+        </message>
+        <message>
+            <source>Time Critical Priority</source>
+            <translation>समय महत्वपूर्ण प्राथमिकता</translation>
+        </message>
     </context>
 </TS>

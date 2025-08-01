@@ -427,5 +427,37 @@
             <source>Please enter the maximum CPU usage in percentage:</source>
             <translation>请输入最大 CPU 使用率百分比：</translation>
         </message>
+        <message>
+            <source>Priority</source>
+            <translation>优先级</translation>
+        </message>
+        <message>
+            <source>Idle Priority</source>
+            <translation>空闲优先级</translation>
+        </message>
+        <message>
+            <source>Lowest Priority</source>
+            <translation>最低优先级</translation>
+        </message>
+        <message>
+            <source>Low Priority</source>
+            <translation>低优先级</translation>
+        </message>
+        <message>
+            <source>Normal Priority</source>
+            <translation>正常优先级</translation>
+        </message>
+        <message>
+            <source>High Priority</source>
+            <translation>高优先级</translation>
+        </message>
+        <message>
+            <source>Highest Priority</source>
+            <translation>最高优先级</translation>
+        </message>
+        <message>
+            <source>Time Critical Priority</source>
+            <translation>时间关键优先级</translation>
+        </message>
     </context>
 </TS>

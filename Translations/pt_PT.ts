@@ -427,5 +427,37 @@
             <source>Please enter the maximum CPU usage in percentage:</source>
             <translation>Por favor, insira o uso máximo da CPU em porcentagem:</translation>
         </message>
+        <message>
+            <source>Priority</source>
+            <translation>Prioridade</translation>
+        </message>
+        <message>
+            <source>Idle Priority</source>
+            <translation>Prioridade de inatividade</translation>
+        </message>
+        <message>
+            <source>Lowest Priority</source>
+            <translation>Prioridade mais baixa</translation>
+        </message>
+        <message>
+            <source>Low Priority</source>
+            <translation>Prioridade baixa</translation>
+        </message>
+        <message>
+            <source>Normal Priority</source>
+            <translation>Prioridade normal</translation>
+        </message>
+        <message>
+            <source>High Priority</source>
+            <translation>Prioridade alta</translation>
+        </message>
+        <message>
+            <source>Highest Priority</source>
+            <translation>Prioridade mais alta</translation>
+        </message>
+        <message>
+            <source>Time Critical Priority</source>
+            <translation>Prioridade crítica de tempo</translation>
+        </message>
     </context>
 </TS>

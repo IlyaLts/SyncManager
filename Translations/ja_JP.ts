@@ -427,5 +427,37 @@
             <source>Please enter the maximum CPU usage in percentage:</source>
             <translation>最大CPU使用率をパーセンテージで入力してください:</translation>
         </message>
+        <message>
+            <source>Priority</source>
+            <translation>優先度</translation>
+        </message>
+        <message>
+            <source>Idle Priority</source>
+            <translation>アイドル状態の優先度</translation>
+        </message>
+        <message>
+            <source>Lowest Priority</source>
+            <translation>最も低い優先度</translation>
+        </message>
+        <message>
+            <source>Low Priority</source>
+            <translation>低い優先度</translation>
+        </message>
+        <message>
+            <source>Normal Priority</source>
+            <translation>通常の優先度</translation>
+        </message>
+        <message>
+            <source>High Priority</source>
+            <translation>高い優先度</translation>
+        </message>
+        <message>
+            <source>Highest Priority</source>
+            <translation>最も高い優先度</translation>
+        </message>
+        <message>
+            <source>Time Critical Priority</source>
+            <translation>時間的制約のある優先度</translation>
+        </message>
     </context>
 </TS>

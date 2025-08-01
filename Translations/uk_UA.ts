@@ -427,5 +427,37 @@
             <source>Please enter the maximum CPU usage in percentage:</source>
             <translation>Будь ласка, введіть максимальне використання ЦП у відсотках:</translation>
         </message>
+        <message>
+            <source>Priority</source>
+            <translation>Пріоритет</translation>
+        </message>
+        <message>
+            <source>Idle Priority</source>
+            <translation>Пріоритет простою</translation>
+        </message>
+        <message>
+            <source>Lowest Priority</source>
+            <translation>Найнижчий пріоритет</translation>
+        </message>
+        <message>
+            <source>Low Priority</source>
+            <translation>Низький пріоритет</translation>
+        </message>
+        <message>
+            <source>Normal Priority</source>
+            <translation>Нормальний пріоритет</translation>
+        </message>
+        <message>
+            <source>High Priority</source>
+            <translation>Високий пріоритет</translation>
+        </message>
+        <message>
+            <source>Highest Priority</source>
+            <translation>Найвищий пріоритет</translation>
+        </message>
+        <message>
+            <source>Time Critical Priority</source>
+            <translation>Часовий критичний пріоритет</translation>
+        </message>
     </context>
 </TS>

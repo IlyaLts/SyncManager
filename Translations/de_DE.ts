@@ -427,5 +427,37 @@
             <source>Please enter the maximum CPU usage in percentage:</source>
             <translation>Bitte geben Sie die maximale CPU-Auslastung in Prozent ein:</translation>
         </message>
+        <message>
+            <source>Priority</source>
+            <translation>Priorität</translation>
+        </message>
+        <message>
+            <source>Idle Priority</source>
+            <translation>Leerlauf-Priorität</translation>
+        </message>
+        <message>
+            <source>Lowest Priority</source>
+            <translation>Niedrigste Priorität</translation>
+        </message>
+        <message>
+            <source>Low Priority</source>
+            <translation>Niedrige Priorität</translation>
+        </message>
+        <message>
+            <source>Normal Priority</source>
+            <translation>Normale Priorität</translation>
+        </message>
+        <message>
+            <source>High Priority</source>
+            <translation>Hohe Priorität</translation>
+        </message>
+        <message>
+            <source>Highest Priority</source>
+            <translation>Höchste Priorität</translation>
+        </message>
+        <message>
+            <source>Time Critical Priority</source>
+            <translation>Zeitkritische Priorität</translation>
+        </message>
     </context>
 </TS>
