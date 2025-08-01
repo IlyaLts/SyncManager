@@ -1364,7 +1364,7 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         {
             syncThread->start();
             syncThread->setPriority(QThread::LowestPriority);
-            updateTimer.start(UPDATE_DELAY);
+            updateTimer.start(UPDATE_TIME);
         }
     }
 }

@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
         QSettings(localDataPath + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
     }
 
+    // Used by installers to make it launch on startup
     if (QCoreApplication::arguments().contains("launchOnStartup", Qt::CaseInsensitive))
         app.setLaunchOnStartup(true);
 

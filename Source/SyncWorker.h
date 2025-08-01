@@ -17,8 +17,8 @@
 ===============================================================================
 */
 
-#ifndef MANAGERWORKER_H
-#define MANAGERWORKER_H
+#ifndef SYNCWORKER_H
+#define SYNCWORKER_H
 
 #include "Source/SyncManager.h"
 #include <QObject>
@@ -40,4 +40,4 @@ public slots:
     void run(SyncManager &manager);
 };
 
-#endif // MANAGERWORKER_H
+#endif // SYNCWORKER_H

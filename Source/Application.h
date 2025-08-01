@@ -29,8 +29,8 @@
 #define SYNCMANAGER_VERSION     "2.1.1"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
-#define UPDATE_DELAY            40
 #define BUG_TRACKER_LINK        "https://github.com/IlyaLts/SyncManager/issues"
+#define UPDATE_TIME             40
 
 extern Language defaultLanguage;
 extern Language languages[];
