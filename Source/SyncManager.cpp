@@ -521,6 +521,8 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             usedDevicesMutex.unlock();
         }
 
+        QThread::msleep(UPDATE_TIME);
+
         while (shouldThrottleDown())
             QThread::msleep(CPU_UPDATE_TIME);
 
