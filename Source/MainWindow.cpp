@@ -1933,7 +1933,7 @@ void MainWindow::setupMenus()
     lowPriorityAction = new QAction("&" + tr("Low Priority"), this);
     normalPriorityAction = new QAction("&" + tr("Normal Priority"), this);
     highPriorityAction = new QAction("&" + tr("High Priority"), this);
-    highestPriorityAction = new QAction("&" + tr("Highest P0riority"), this);
+    highestPriorityAction = new QAction("&" + tr("Highest Priority"), this);
     timeCriticalPriorityAction = new QAction("&" + tr("Time Critical Priority"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
@@ -2065,6 +2065,13 @@ void MainWindow::updateStrings()
     syncNowAction->setText("&" + tr("Sync Now"));
     pauseSyncingAction->setText("&" + tr("Pause Syncing"));
     maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage));
+    idlePriorityAction->setText("&" + tr("Idle Priority"));
+    lowestPriorityAction->setText("&" + tr("Lowest Priority"));
+    lowPriorityAction->setText("&" + tr("Low Priority"));
+    normalPriorityAction->setText("&" + tr("Normal Priority"));
+    highPriorityAction->setText("&" + tr("High Priority"));
+    highestPriorityAction->setText("&" + tr("Highest Priority"));
+    timeCriticalPriorityAction->setText("&" + tr("Time Critical Priority"));
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setText(tr(languages[i].name));
@@ -2078,6 +2085,7 @@ void MainWindow::updateStrings()
     versionAction->setText(tr("Version: %1").arg(SYNCMANAGER_VERSION));
 
     performanceMenu->setTitle("&" + tr("Performance"));
+    priorityMenu->setTitle("&" + tr("Priority"));
     languageMenu->setTitle("&" + tr("Language"));
     settingsMenu->setTitle("&" + tr("Settings"));
 
