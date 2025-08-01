@@ -1,4 +1,11 @@
 ==========================
+2.1.2 - Aug 1, 2025
+==========================
+- Add synchronization thread priority.
+- Lowered CPU usage, especially when copying files.
+- Fixed tray icon not indicating syncing when manually synchronizing a profile.
+
+==========================
 2.1.1 - Jul 29, 2025
 ==========================
 - Add the maximum CPU usage option.

@@ -26,7 +26,7 @@
 
 #define syncApp (static_cast<Application *>(QCoreApplication::instance()))
 
-#define SYNCMANAGER_VERSION     "2.1.1"
+#define SYNCMANAGER_VERSION     "2.1.2"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
 #define BUG_TRACKER_LINK        "https://github.com/IlyaLts/SyncManager/issues"
