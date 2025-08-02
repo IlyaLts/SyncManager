@@ -159,8 +159,8 @@ bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &te
 {
     QMessageBox messageBox(icon, title, text, QMessageBox::NoButton, parent);
 
-    QPushButton *yes = new QPushButton(qApp->translate("MainWindow", "&Yes"), parent);
-    QPushButton *no = new QPushButton(qApp->translate("MainWindow", "&No"), parent);
+    QPushButton *yes = new QPushButton("&" + qApp->translate("MainWindow", "Yes"), parent);
+    QPushButton *no = new QPushButton("&" + qApp->translate("MainWindow", "No"), parent);
 
     messageBox.addButton(yes, QMessageBox::YesRole);
     messageBox.addButton(no, QMessageBox::NoRole);
