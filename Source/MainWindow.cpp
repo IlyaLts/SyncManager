@@ -803,7 +803,8 @@ void MainWindow::switchVersioningLocation(SyncProfile &profile, SyncProfile::Ver
     if (location < SyncProfile::LocallyNextToFolder || location > SyncProfile::CustomLocation)
         location = SyncProfile::LocallyNextToFolder;
 
-    profile.locallyNextToFolderAction->setChecked(location== SyncProfile::LocallyNextToFolder);
+    profile.versioningPostfixAction->setVisible(location == SyncProfile::LocallyNextToFolder);
+    profile.locallyNextToFolderAction->setChecked(location == SyncProfile::LocallyNextToFolder);
     profile.customLocationAction->setChecked(location == SyncProfile::CustomLocation);
     profile.setVersioningLocation(location);
 
@@ -1893,7 +1894,6 @@ void MainWindow::loadSettings()
 
     for (auto &profile : manager.profiles())
     {
-        profile.databaseLocationMenu->setEnabled(profile.databaseLocation());
         profile.ignoreHiddenFilesAction->setChecked(profile.ignoreHiddenFiles());
         profile.detectMovedFilesAction->setChecked(profile.detectMovedFiles());
 
@@ -1903,6 +1903,7 @@ void MainWindow::loadSettings()
         switchDeletionMode(profile, static_cast<SyncProfile::DeletionMode>(settings.value(profileKeyname + "DeletionMode", SyncProfile::MoveToTrash).toInt()));
         switchVersioningFormat(profile, static_cast<SyncProfile::VersioningFormat>(settings.value(profileKeyname + "VersioningFormat", SyncProfile::FolderTimestamp).toInt()));
         switchVersioningLocation(profile, static_cast<SyncProfile::VersioningLocation>(settings.value(profileKeyname + "VersioningLocation", SyncProfile::LocallyNextToFolder).toInt()));
+        switchDatabaseLocation(profile, static_cast<SyncProfile::DatabaseLocation>(settings.value(profileKeyname + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
 
         manager.updateNextSyncingTime(profile);
     }
