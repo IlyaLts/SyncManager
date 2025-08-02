@@ -173,8 +173,8 @@ public:
     QAction *locallyNextToFolderAction;
     QAction *customLocationAction;
     QAction *customLocationPathAction;
-    QAction *saveDatabaseLocallyAction;
-    QAction *saveDatabaseDecentralizedAction;
+    QAction *databaseLocallyAction;
+    QAction *databaseDecentralizedAction;
     QAction *fileMinSizeAction;
     QAction *fileMaxSizeAction;
     QAction *movedFileMinSizeAction;

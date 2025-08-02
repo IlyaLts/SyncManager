@@ -94,6 +94,7 @@ private Q_SLOTS:
     void setFixedInterval(SyncProfile &profile);
     void setVersioningPostfix(SyncProfile &profile);
     void setVersioningPattern(SyncProfile &profile);
+    void setVersioningLocationPath(SyncProfile &profile);
     void setFileMinSize(SyncProfile &profile);
     void setFileMaxSize(SyncProfile &profile);
     void setMovedFileMinSize(SyncProfile &profile);

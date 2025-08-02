@@ -447,8 +447,8 @@ void SyncProfile::setupMenus(QWidget *parent)
     locallyNextToFolderAction = new QAction("&" + qApp->translate("MainWindow", "Locally Next to Folder"), parent);
     customLocationAction = new QAction("&" + qApp->translate("MainWindow", "Custom Location"), parent);
     customLocationPathAction = new QAction(qApp->translate("MainWindow", "Custom Location: ") + m_versioningPath, parent);
-    saveDatabaseLocallyAction = new QAction("&" + qApp->translate("MainWindow", "Locally (On the local machine)"), parent);
-    saveDatabaseDecentralizedAction = new QAction("&" + qApp->translate("MainWindow", "Decentralized (Inside synchronization folders)"), parent);
+    databaseLocallyAction = new QAction("&" + qApp->translate("MainWindow", "Locally (On the local machine)"), parent);
+    databaseDecentralizedAction = new QAction("&" + qApp->translate("MainWindow", "Decentralized (Inside synchronization folders)"), parent);
     fileMinSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Minimum File Size: %1 bytes")).arg(m_fileMinSize), parent);
     fileMaxSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Maximum File Size: %1 bytes")).arg(m_fileMaxSize), parent);
     movedFileMinSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Minimum Size for a Moved File: %1 bytes")).arg(m_movedFileMinSize), parent);
@@ -475,9 +475,8 @@ void SyncProfile::setupMenus(QWidget *parent)
     lastVersionAction->setCheckable(true);
     locallyNextToFolderAction->setCheckable(true);
     customLocationAction->setCheckable(true);
-    customLocationPathAction->setDisabled(true);
-    saveDatabaseLocallyAction->setCheckable(true);
-    saveDatabaseDecentralizedAction->setCheckable(true);
+    databaseLocallyAction->setCheckable(true);
+    databaseDecentralizedAction->setCheckable(true);
     ignoreHiddenFilesAction->setCheckable(true);
 
     syncingModeMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Syncing Mode"), parent);
@@ -515,8 +514,8 @@ void SyncProfile::setupMenus(QWidget *parent)
     versioningLocationMenu->addAction(customLocationPathAction);
 
     databaseLocationMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Database Location"), parent);
-    databaseLocationMenu->addAction(saveDatabaseLocallyAction);
-    databaseLocationMenu->addAction(saveDatabaseDecentralizedAction);
+    databaseLocationMenu->addAction(databaseLocallyAction);
+    databaseLocationMenu->addAction(databaseDecentralizedAction);
 
     filteringMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Filtering"), parent);
     filteringMenu->addAction(fileMinSizeAction);
@@ -557,8 +556,8 @@ void SyncProfile::updateMenuStates()
     locallyNextToFolderAction->setChecked(VersioningLocation() == LocallyNextToFolder);
     customLocationAction->setChecked(VersioningLocation() == CustomLocation);
     customLocationPathAction->setText(tr("Custom Location: ") + versioningPath());
-    saveDatabaseLocallyAction->setChecked(databaseLocation() == Locally);
-    saveDatabaseDecentralizedAction->setChecked(databaseLocation() == Decentralized);
+    databaseLocallyAction->setChecked(databaseLocation() == Locally);
+    databaseDecentralizedAction->setChecked(databaseLocation() == Decentralized);
     fileMinSizeAction->setText("&" + tr("Minimum File Size: %1 bytes").arg(fileMinSize()));
     fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1 bytes").arg(fileMaxSize()));
     movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1 bytes").arg(movedFileMinSize()));
@@ -598,8 +597,8 @@ void SyncProfile::destroyMenus()
     locallyNextToFolderAction->deleteLater();
     customLocationAction->deleteLater();
     customLocationPathAction->deleteLater();
-    saveDatabaseLocallyAction->deleteLater();
-    saveDatabaseDecentralizedAction->deleteLater();
+    databaseLocallyAction->deleteLater();
+    databaseDecentralizedAction->deleteLater();
     fileMinSizeAction->deleteLater();
     fileMaxSizeAction->deleteLater();
     movedFileMinSizeAction->deleteLater();
@@ -717,8 +716,8 @@ void SyncProfile::updateStrings()
     locallyNextToFolderAction->setText("&" + qApp->translate("MainWindow", "Locally Next to Folder"));
     customLocationAction->setText("&" + qApp->translate("MainWindow", "Custom Location"));
     customLocationPathAction->setText(qApp->translate("MainWindow", "Custom Location: ") + versioningPath());
-    saveDatabaseLocallyAction->setText("&" + qApp->translate("MainWindow", "Locally (On the local machine)"));
-    saveDatabaseDecentralizedAction->setText("&" + qApp->translate("MainWindow", "Decentralized (Inside synchronization folders)"));
+    databaseLocallyAction->setText("&" + qApp->translate("MainWindow", "Locally (On the local machine)"));
+    databaseDecentralizedAction->setText("&" + qApp->translate("MainWindow", "Decentralized (Inside synchronization folders)"));
     fileMinSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Minimum File Size: %1 bytes")).arg(fileMinSize()));
     fileMaxSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Maximum File Size: %1 bytes")).arg(fileMaxSize()));
     movedFileMinSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Minimum Size for a Moved File: %1 bytes")).arg(movedFileMinSize()));

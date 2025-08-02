@@ -806,19 +806,8 @@ void MainWindow::switchVersioningLocation(SyncProfile &profile, SyncProfile::Ver
     profile.versioningPostfixAction->setVisible(location == SyncProfile::LocallyNextToFolder);
     profile.locallyNextToFolderAction->setChecked(location == SyncProfile::LocallyNextToFolder);
     profile.customLocationAction->setChecked(location == SyncProfile::CustomLocation);
+    profile.customLocationPathAction->setVisible(location == SyncProfile::CustomLocation);
     profile.setVersioningLocation(location);
-
-    if (location == SyncProfile::CustomLocation && appInitiated)
-    {
-        QString title(tr("Browse for Versioning Folder"));
-        QString path = QFileDialog::getExistingDirectory(this, title, QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
-
-        if (!path.isEmpty())
-        {
-            profile.setVersioningPath(path);
-            profile.customLocationPathAction->setText(tr("Custom Location: ") + path);
-        }
-    }
 
     if (appInitiated)
         profile.saveSettings();
@@ -851,8 +840,8 @@ void MainWindow::switchDatabaseLocation(SyncProfile &profile, SyncProfile::Datab
     if (location < SyncProfile::Locally || location > SyncProfile::Decentralized)
         location = SyncProfile::Decentralized;
 
-    profile.saveDatabaseLocallyAction->setChecked(location == false);
-    profile.saveDatabaseDecentralizedAction->setChecked(location == true);
+    profile.databaseLocallyAction->setChecked(location == false);
+    profile.databaseDecentralizedAction->setChecked(location == true);
     profile.setDatabaseLocation(location);
 
     if (appInitiated)
@@ -1111,6 +1100,29 @@ void MainWindow::setVersioningPattern(SyncProfile &profile)
 
     profile.setVersioningPattern(pattern);
     profile.versioningPatternAction->setText(QString("&" + tr("Pattern: %1")).arg(profile.versioningPattern()));
+
+    if (appInitiated)
+        profile.saveSettings();
+}
+
+/*
+===================
+MainWindow::setVersioningLocationPath
+===================
+*/
+void MainWindow::setVersioningLocationPath(SyncProfile &profile)
+{
+    if (profile.versioningLocation() == SyncProfile::CustomLocation && appInitiated)
+    {
+        QString title(tr("Browse for Versioning Folder"));
+        QString path = QFileDialog::getExistingDirectory(this, title, QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
+
+        if (!path.isEmpty())
+        {
+            profile.setVersioningPath(path);
+            profile.customLocationPathAction->setText(tr("Custom Location: ") + path);
+        }
+    }
 
     if (appInitiated)
         profile.saveSettings();
@@ -1461,8 +1473,9 @@ void MainWindow::connectProfileMenu(SyncProfile &profile)
     connect(profile.versioningPatternAction, &QAction::triggered, this, [this, &profile](){ setVersioningPattern(profile); });
     connect(profile.locallyNextToFolderAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::LocallyNextToFolder); });
     connect(profile.customLocationAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::CustomLocation); });
-    connect(profile.saveDatabaseLocallyAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Locally); });
-    connect(profile.saveDatabaseDecentralizedAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Decentralized); });
+    connect(profile.customLocationPathAction, &QAction::triggered, this, [this, &profile](){ setVersioningLocationPath(profile); });
+    connect(profile.databaseLocallyAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Locally); });
+    connect(profile.databaseDecentralizedAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Decentralized); });
     connect(profile.fileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMinSize(profile); });
     connect(profile.fileMaxSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMaxSize(profile); });
     connect(profile.movedFileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setMovedFileMinSize(profile); });
@@ -1497,8 +1510,8 @@ void MainWindow::disconnectProfileMenu(SyncProfile &profile)
     connect(profile.versioningPatternAction, &QAction::triggered, this, [this, &profile](){ setVersioningPattern(profile); });
     connect(profile.locallyNextToFolderAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::LocallyNextToFolder); });
     connect(profile.customLocationAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::CustomLocation); });
-    connect(profile.saveDatabaseLocallyAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Locally); });
-    connect(profile.saveDatabaseDecentralizedAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Decentralized); });
+    connect(profile.databaseLocallyAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Locally); });
+    connect(profile.databaseDecentralizedAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Decentralized); });
     connect(profile.fileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMinSize(profile); });
     connect(profile.fileMaxSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMaxSize(profile); });
     connect(profile.movedFileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setMovedFileMinSize(profile); });
