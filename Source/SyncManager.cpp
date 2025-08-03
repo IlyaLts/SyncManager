@@ -1560,7 +1560,7 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
         deviceRead += in;
         m_usedDevicesMutex.unlock();
 
-        while (deviceRead >= m_maxDiskTransferRate)
+        while (deviceRead >= m_maxDiskTransferRate && !quitting())
         {
             int sleep = m_diskUsageResetTimer.remainingTime();
 
