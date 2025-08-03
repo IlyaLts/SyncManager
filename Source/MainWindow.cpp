@@ -876,29 +876,23 @@ void MainWindow::increaseSyncTime(SyncProfile &profile)
 {
     quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
 
-    for (auto &profile : manager.profiles())
+    // If exceeds the maximum value of an qint64
+    if (profile.syncEvery >= max)
     {
-        // If exceeds the maximum value of an qint64
-        if (profile.syncEvery >= max)
-        {
-            profile.increaseSyncTimeAction->setEnabled(false);
-            return;
-        }
+        profile.increaseSyncTimeAction->setEnabled(false);
+        return;
     }
 
     manager.setSyncTimeMultiplier(profile, profile.syncTimeMultiplier() + 1);
     profile.decreaseSyncTimeAction->setEnabled(true);
     updateMenuSyncTime(profile);
 
-    for (auto &profile : manager.profiles())
-    {
-        // If exceeds the maximum value of an qint64
-        if (profile.syncEvery >= max)
-            profile.increaseSyncTimeAction->setEnabled(false);
+    // If exceeds the maximum value of an qint64
+    if (profile.syncEvery >= max)
+        profile.increaseSyncTimeAction->setEnabled(false);
 
-        manager.updateTimer(profile);
-        updateProfileTooltip(profile);
-    }
+    manager.updateTimer(profile);
+    updateProfileTooltip(profile);
 
     if (appInitiated)
         profile.saveSettings();
@@ -914,20 +908,17 @@ void MainWindow::decreaseSyncTime(SyncProfile &profile)
     manager.setSyncTimeMultiplier(profile, profile.syncTimeMultiplier() - 1);
     updateMenuSyncTime(profile);
 
-    for (auto &profile : manager.profiles())
-    {
-        quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
+    quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
 
-        // If exceeds the maximum value of an qint64
-        if (profile.syncEvery < max)
-            profile.increaseSyncTimeAction->setEnabled(true);
+    // If exceeds the maximum value of an qint64
+    if (profile.syncEvery < max)
+        profile.increaseSyncTimeAction->setEnabled(true);
 
-        if (profile.syncTimeMultiplier() <= 1)
-            profile.decreaseSyncTimeAction->setEnabled(false);
+    if (profile.syncTimeMultiplier() <= 1)
+        profile.decreaseSyncTimeAction->setEnabled(false);
 
-        manager.updateTimer(profile);
-        updateProfileTooltip(profile);
-    }
+    manager.updateTimer(profile);
+    updateProfileTooltip(profile);
 
     if (appInitiated)
         profile.saveSettings();
