@@ -257,10 +257,7 @@ void SyncManager::updateTimer(SyncProfile &profile)
     if ((!m_busy && profileActive) || (!profileActive || (duration<qint64, milli>(syncTime) < profile.syncTimer.remainingTime())))
     {
         quint64 interval = syncTime;
-        quint64 max = numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
-
-        // Reduced the maximum value to prevent overflow when converting from milliseconds to nanoseconds
-        max /= 1000000;
+        quint64 max = SyncManager::maxInterval();
 
         // If exceeds the maximum value of an qint64
         if (interval > max)
@@ -288,7 +285,7 @@ void SyncManager::updateNextSyncingTime(SyncProfile &profile)
         for (quint32 i = 0; i < profile.syncTimeMultiplier() - 1; i++)
         {
             time <<= 1;
-            quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
+            quint64 max = SyncManager::maxInterval();
 
             // If exceeds the maximum value of an qint64
             if (time > max)
@@ -427,6 +424,21 @@ bool SyncManager::inPausedState() const
     }
 
     return paused;
+}
+
+/*
+===================
+SyncManager::maxInterval
+===================
+*/
+quint64 SyncManager::maxInterval()
+{
+    quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
+
+    // Reduced the maximum value to prevent overflow when converting from milliseconds to nanoseconds
+    max /= 1000000;
+
+    return max;
 }
 
 /*
@@ -666,12 +678,6 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         deviceRead += fileSize;
         m_usedDevicesMutex.unlock();
 
-        /*while (maxDiskUsage && deviceRead >= maxDiskUsage)
-        {
-            int sleep = diskUsageResetTimer.remainingTime() < 0 ? 50 : diskUsageResetTimer.remainingTime();
-            QThread::msleep(sleep);
-        }*/
-
         // If the file is a symlink, this function returns information about the target, not the symlink
         if (fileInfo.isSymLink())
             fileSize = 0;
@@ -703,7 +709,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         QByteArray filePath(absoluteFilePath);
         filePath.remove(0, folder.path.size());
 
-        if (fileInfo.isFile() && fileInfo.suffix().compare("sm_temp", Qt::CaseInsensitive) == 0)
+        if (fileInfo.isFile() && fileInfo.suffix().compare(TEMP_EXTENSION, Qt::CaseInsensitive) == 0)
             QFile::remove(absoluteFilePath);;
 
         bool shouldExclude = false;
@@ -1508,7 +1514,7 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
 {
     if (!m_maxDiskTransferRate)
     {
-        QString tempName = newName + ".sm_temp";
+        QString tempName = newName + "." + TEMP_EXTENSION;
 
         if (!QFile::copy(fileName, tempName))
             return false;
@@ -1527,7 +1533,7 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
     if(!file.open(QFile::ReadOnly))
         return false;
 
-    QString fileTemplate = QLatin1String("%1/.XXXXXX.sm_temp");
+    QString fileTemplate = QString("%1/.XXXXXX.") + TEMP_EXTENSION;
     QTemporaryFile out(fileTemplate.arg(QFileInfo(newName).path()));
 
     if (!out.open())

@@ -32,6 +32,7 @@
 
 #define DATA_FOLDER_PATH        ".SyncManager"
 #define DATABASE_FILENAME       "db"
+#define TEMP_EXTENSION          "sm_temp"
 #define DATABASE_VERSION        3
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_COOLDOWN   300000
@@ -88,6 +89,8 @@ public:
     bool hasManualSyncProfile() const;
     bool inPausedState() const;
     inline bool notificationsEnabled() const { return m_notifications; }
+
+    static quint64 maxInterval();
 
 public Q_SLOTS:
 
