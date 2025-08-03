@@ -876,6 +876,9 @@ void MainWindow::increaseSyncTime(SyncProfile &profile)
 {
     quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
 
+    // Reduced the maximum value to prevent overflow when converting from milliseconds to nanoseconds
+    max /= 1000000;
+
     // If exceeds the maximum value of an qint64
     if (profile.syncEvery >= max)
     {
@@ -909,6 +912,9 @@ void MainWindow::decreaseSyncTime(SyncProfile &profile)
     updateMenuSyncTime(profile);
 
     quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
+
+    // Reduced the maximum value to prevent overflow when converting from milliseconds to nanoseconds
+    max /= 1000000;
 
     // If exceeds the maximum value of an qint64
     if (profile.syncEvery < max)

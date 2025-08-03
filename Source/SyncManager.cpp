@@ -259,6 +259,9 @@ void SyncManager::updateTimer(SyncProfile &profile)
         quint64 interval = syncTime;
         quint64 max = numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
 
+        // Reduced the maximum value to prevent overflow when converting from milliseconds to nanoseconds
+        max /= 1000000;
+
         // If exceeds the maximum value of an qint64
         if (interval > max)
             interval = max;
