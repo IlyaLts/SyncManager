@@ -703,6 +703,9 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         QByteArray filePath(absoluteFilePath);
         filePath.remove(0, folder.path.size());
 
+        if (fileInfo.isFile() && fileInfo.suffix().compare("sm_temp", Qt::CaseInsensitive) == 0)
+            QFile::remove(absoluteFilePath);;
+
         bool shouldExclude = false;
 
         // Excludes unwanted files and folder from scanning
@@ -1500,8 +1503,8 @@ SyncManager::copyFile
 */
 bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const QString &newName)
 {
-    if (!m_maxDiskTransferRate)
-        return QFile::copy(fileName, newName);
+    //if (!m_maxDiskTransferRate)
+    //    return QFile::copy(fileName, newName);
 
     QFile file(fileName);
 
@@ -1514,7 +1517,7 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
     if(!file.open(QFile::ReadOnly))
         return false;
 
-    QString fileTemplate = QLatin1String("%1/qt_temp.XXXXXX");
+    QString fileTemplate = QLatin1String("%1/.XXXXXX.sm_temp");
     QTemporaryFile out(fileTemplate.arg(QFileInfo(newName).path()));
 
     if (!out.open())
@@ -1537,6 +1540,9 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
 
         if (in <= 0)
             break;
+
+        if (quitting())
+            return false;
 
         totalRead += in;
 
