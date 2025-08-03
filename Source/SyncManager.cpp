@@ -1499,12 +1499,22 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
 /*
 ===================
 SyncManager::copyFile
+
+The custom implementation of QFile::copy allows the reduction of disk transfer rate.
+Currently, it is ~5% slower than QFile::copy.
 ===================
 */
 bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const QString &newName)
 {
-    //if (!m_maxDiskTransferRate)
-    //    return QFile::copy(fileName, newName);
+    if (!m_maxDiskTransferRate)
+    {
+        QString tempName = newName + ".sm_temp";
+
+        if (!QFile::copy(fileName, tempName))
+            return false;
+
+        return QFile::rename(tempName, newName);
+    }
 
     QFile file(fileName);
 
