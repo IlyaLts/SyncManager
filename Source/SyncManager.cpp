@@ -34,7 +34,7 @@
 #include <QDirIterator>
 #include <QTimer>
 #include <QStack>
-#include <QtConcurrent/QtConcurrent>
+#include <QtConcurrent>
 
 /*
 ===================
@@ -205,7 +205,7 @@ void SyncManager::updateStatus()
 
     if (m_busy)
     {
-        for (auto &folder : m_queue.head()->folders)
+        for (const auto &folder : m_queue.head()->folders)
         {
             if (folder.isActive())
             {
@@ -321,8 +321,8 @@ void SyncManager::removeAllDatabases()
         QFile::remove(it.filePath());
     }
 
-    for (auto &profile : m_profiles)
-        for (auto &folder : profile.folders)
+    for (const auto &profile : m_profiles)
+        for (const auto &folder : profile.folders)
             QDir(folder.path + DATA_FOLDER_PATH).removeRecursively();
 }
 
@@ -410,9 +410,9 @@ bool SyncManager::inPausedState() const
     if (profiles().empty())
         return false;
 
-    bool paused = false;
+    bool profilePaused = false;
 
-    for (auto &profile : profiles())
+    for (const auto &profile : profiles())
     {
         if (profile.toBeRemoved)
             continue;
@@ -420,10 +420,10 @@ bool SyncManager::inPausedState() const
         if (!profile.paused)
             return false;
         else
-            paused = true;
+            profilePaused = true;
     }
 
-    return paused;
+    return profilePaused;
 }
 
 /*
@@ -433,7 +433,7 @@ SyncManager::maxInterval
 */
 quint64 SyncManager::maxInterval()
 {
-    quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentDateTime().toMSecsSinceEpoch();
+    quint64 max = std::numeric_limits<qint64>::max() - QDateTime::currentMSecsSinceEpoch();
 
     // Reduced the maximum value to prevent overflow when converting from milliseconds to nanoseconds
     max /= 1000000;
@@ -564,7 +564,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     int numOfFoldersToRemove = 0;
     int numOfFilesToRemove = 0;
 
-    for (auto &folder : profile.folders)
+    for (const auto &folder : profile.folders)
     {
         numOfFoldersToRename += folder.foldersToRename.size();
         numOfFilesToMove += folder.filesToMove.size();
@@ -933,7 +933,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 QByteArray otherFolderFullPath(otherFolderIt->path);
                 otherFolderFullPath.append(renamedFolderPath);
 
-                if (!QFileInfo(otherFolderFullPath).exists())
+                if (!QFileInfo::exists(otherFolderFullPath))
                 {
                     abort = true;
                     break;
@@ -1083,7 +1083,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
         for (QHash<Hash, SyncFile *>::iterator newFileIt = newFiles.begin(); newFileIt != newFiles.end(); ++newFileIt)
         {
             bool abort = false;
-            SyncFile *movedFile = nullptr;
+            const SyncFile *movedFile = nullptr;
             hash64_t movedFileHash;
             hash64_t newFileHash;
             QByteArray movedFilePath;
@@ -1541,10 +1541,7 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
         out.setFileTemplate(fileTemplate.arg(QDir::tempPath()));
 
         if (!out.open())
-        {
             return false;
-            out.close();
-        }
     }
 
     char block[4096];

@@ -95,7 +95,7 @@ public:
     void setDatabaseLocation(DatabaseLocation location);
     void setVersioningFormat(VersioningFormat format);
     void setVersioningLocation(VersioningLocation location);
-    inline void setVersioningPath(QString path) { m_versioningPath = path; }
+    inline void setVersioningPath(const QString &path) { m_versioningPath = path; }
     inline void setVersioningFolder(const QString &name) { m_versioningFolder = name; }
     inline void setVersioningPattern(const QString &pattern) { m_versioningPattern = pattern; }
     inline void setFileMinSize(quint64 size) { m_fileMinSize = size; }
@@ -113,7 +113,7 @@ public:
     inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
     inline VersioningFormat versioningFormat() const { return m_versioningFormat; }
     inline VersioningLocation versioningLocation() const { return m_versioningLocation; }
-    inline QString versioningPath() const { return m_versioningPath; }
+    inline const QString &versioningPath() const { return m_versioningPath; }
     inline const QString &versioningFolder() const { return m_versioningFolder; }
     inline const QString &versioningPattern() const { return m_versioningPattern; }
     inline quint64 fileMinSize() const { return m_fileMinSize; }

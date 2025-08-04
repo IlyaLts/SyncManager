@@ -115,7 +115,7 @@ private:
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
     void updateStatus();
     void updateMenuMaxDiskTransferRate();
-    void updateMenuSyncTime(SyncProfile &profile);
+    void updateMenuSyncTime(const SyncProfile &profile);
     void updateProfileTooltip(const SyncProfile &profile);
     void loadSettings();
     void saveSettings() const;

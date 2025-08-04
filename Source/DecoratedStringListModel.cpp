@@ -96,12 +96,12 @@ QStringList DecoratedStringListModel::stringList()
 
     for (int row = 0; row < rowCount; ++row)
     {
-        QModelIndex index = QStandardItemModel::index(row, 0);
+        QModelIndex modelIndex = QStandardItemModel::index(row, 0);
 
-        if (!index.isValid())
+        if (!modelIndex.isValid())
             continue;
 
-        stringList.append(data(index, Qt::DisplayRole).toString());
+        stringList.append(data(modelIndex, Qt::DisplayRole).toString());
     }
 
     return stringList;

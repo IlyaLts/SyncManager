@@ -51,10 +51,20 @@ SyncProfile::operator =
 */
 void SyncProfile::operator =(const SyncProfile &other)
 {
+    index = other.index;
     folders = other.folders;
 
-    index = other.index;
+    syncing = other.syncing;
+    paused = other.paused;
+    toBeRemoved = other.toBeRemoved;
+    syncHidden = other.syncHidden;
+    syncEvery = other.syncEvery;
+    syncTime = other.syncTime;
+    lastSyncDate = other.lastSyncDate;
+    name = other.name;
+
     m_syncingMode = other.m_syncingMode;
+    m_syncIntervalFixed = other.m_syncIntervalFixed;
     m_deletionMode = other.m_deletionMode;
     m_versioningLocation = other.m_versioningLocation;
     m_versioningFormat = other.m_versioningFormat;
@@ -68,17 +78,8 @@ void SyncProfile::operator =(const SyncProfile &other)
     m_includeList = other.m_includeList;
     m_excludeList = other.m_excludeList;
     m_syncTimeMultiplier = other.m_syncTimeMultiplier;
-    m_ignoreHiddenFiles = other.m_ignoreHiddenFiles;
     m_detectMovedFiles = other.m_detectMovedFiles;
-
-    syncing = other.syncing;
-    paused = other.paused;
-    toBeRemoved = other.toBeRemoved;
-    syncEvery = other.syncEvery;
-    syncTime = other.syncTime;
-    lastSyncDate = other.lastSyncDate;
-    name = other.name;
-    index = other.index;
+    m_ignoreHiddenFiles = other.m_ignoreHiddenFiles;
 }
 
 /*
@@ -226,7 +227,7 @@ SyncProfile::saveDatabasesLocally
 */
 void SyncProfile::saveDatabasesLocally() const
 {
-    for (auto &folder : folders)
+    for (const auto &folder : folders)
     {
         if (!folder.isActive() || folder.toBeRemoved)
             continue;
@@ -322,7 +323,7 @@ bool SyncProfile::isActive() const
 {
     int activeFolders = 0;
 
-    for (auto &folder : folders)
+    for (const auto &folder : folders)
         if (folder.isActive())
             activeFolders++;
 
@@ -357,7 +358,7 @@ SyncProfile::isAnyFolderCaseSensitive
 */
 bool SyncProfile::isAnyFolderCaseSensitive() const
 {
-    for (auto &folder : folders)
+    for (const auto &folder : folders)
         if (folder.caseSensitive)
             return true;
 
@@ -678,7 +679,7 @@ void SyncProfile::saveSettings() const
     settings.setValue(keyName + QLatin1String("Paused"), paused);
     settings.setValue(keyName + QLatin1String("SyncTime"), syncTime);
 
-    for (auto &folder : folders)
+    for (const auto &folder : folders)
     {
         if (folder.toBeRemoved)
             continue;
