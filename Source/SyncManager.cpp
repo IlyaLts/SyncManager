@@ -1506,8 +1506,16 @@ bool SyncManager::removeFile(SyncProfile &profile, SyncFolder &folder, const QSt
 ===================
 SyncManager::copyFile
 
-The custom implementation of QFile::copy allows the reduction of disk transfer rate.
-Currently, it is ~5% slower than QFile::copy.
+If the maximum disk transfer rate is set, then the custom implementation is used,
+which allows control of the disk transfer rate. Currently, it is ~5% slower than QFile::copy.
+
+Otherwise, we use QFile::copy, which has two implementations inside: a native one and a custom one.
+It first tries to copy a file using the native, platform-dependent function. If that fails,
+it then tries to copy the file using the custom implementation, which reads from the file and
+writes to a new file with a new name using a buffer of 4096 bytes. If the custom implementation
+is used, it does not copy the modified date, and we need to account for that. However, if we copy read-only files,
+we cannot change their modification date after copying. Therefore, we will need a workaround to achieve this,
+or avoid using QFile::copy altogether.
 ===================
 */
 bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const QString &newName)
@@ -1515,78 +1523,92 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
     if (!m_maxDiskTransferRate)
     {
         QString tempName = newName + "." + TEMP_EXTENSION;
+        QFile from(fileName);
 
         if (!QFile::copy(fileName, tempName))
             return false;
 
+        if (!from.open(QFile::ReadOnly))
+            return false;
+
+        setFileModificationDate(tempName, from.fileTime(QFileDevice::FileModificationTime));
+
+        from.close();
         return QFile::rename(tempName, newName);
     }
-
-    QFile file(fileName);
-
-    if (file.fileName().isEmpty())
-        return false;
-
-    if (QFile(newName).exists())
-        return false;
-
-    if(!file.open(QFile::ReadOnly))
-        return false;
-
-    QString fileTemplate = QString("%1/.XXXXXX.") + TEMP_EXTENSION;
-    QTemporaryFile out(fileTemplate.arg(QFileInfo(newName).path()));
-
-    if (!out.open())
+    else
     {
-        out.setFileTemplate(fileTemplate.arg(QDir::tempPath()));
+        QFile file(fileName);
+
+        if (file.fileName().isEmpty())
+            return false;
+
+        if (QFile(newName).exists())
+            return false;
+
+        if(!file.open(QFile::ReadOnly))
+            return false;
+
+        QString fileTemplate = QString("%1/.XXXXXX.") + TEMP_EXTENSION;
+        QTemporaryFile out(fileTemplate.arg(QFileInfo(newName).path()));
 
         if (!out.open())
-            return false;
-    }
-
-    char block[4096];
-    qint64 totalRead = 0;
-
-    while(!file.atEnd())
-    {
-        qint64 in = file.read(block, sizeof(block));
-
-        if (in <= 0)
-            break;
-
-        if (quitting())
-            return false;
-
-        totalRead += in;
-
-        m_usedDevicesMutex.lock();
-        deviceRead += in;
-        m_usedDevicesMutex.unlock();
-
-        while (deviceRead >= m_maxDiskTransferRate && !quitting())
         {
-            int sleep = m_diskUsageResetTimer.remainingTime();
+            out.setFileTemplate(fileTemplate.arg(QDir::tempPath()));
 
-            if (sleep < 0)
-                sleep = 0;
-
-            QThread::msleep(sleep);
+            if (!out.open())
+                return false;
         }
 
-        if(in != out.write(block, in))
+        char block[4096];
+        qint64 totalRead = 0;
+
+        while(!file.atEnd())
+        {
+            qint64 in = file.read(block, sizeof(block));
+
+            if (in <= 0)
+                break;
+
+            if (quitting())
+                return false;
+
+            totalRead += in;
+
+            m_usedDevicesMutex.lock();
+            deviceRead += in;
+            m_usedDevicesMutex.unlock();
+
+            while (deviceRead >= m_maxDiskTransferRate && !quitting())
+            {
+                int sleep = m_diskUsageResetTimer.remainingTime();
+
+                if (sleep < 0)
+                    sleep = 0;
+
+                QThread::msleep(sleep);
+            }
+
+            if(in != out.write(block, in))
+                return false;
+        }
+
+        if (totalRead != file.size())
             return false;
+
+        // It must be done before renaming, otherwise it won't work.
+        out.setFileTime(file.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
+
+        if (!out.rename(newName))
+            return false;
+
+        if (!out.setPermissions(file.permissions()))
+            return false;
+
+        file.close();
+        out.setAutoRemove(false);
+        return true;
     }
-
-    if (totalRead != file.size())
-        return false;
-
-    if (!out.rename(newName))
-        return false;
-
-    file.close();
-    out.setAutoRemove(false);
-    QFile::setPermissions(newName, file.permissions());
-    return true;
 }
 
 /*

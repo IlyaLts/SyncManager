@@ -97,9 +97,6 @@ bool isPathCaseSensitive(const QString &path);
 Attributes getFileAttributes(const QString &path);
 bool setFileAttribute(const QString &path, Attributes attributes);
 void setHiddenFileAttribute(const QString &path, bool hidden);
-
-#ifndef Q_OS_WIN
-void setFileModificationDate(const QString &path, const QDateTime &dateTime);
-#endif
+bool setFileModificationDate(const QString &path, const QDateTime &dateTime);
 
 #endif // COMMON_H
