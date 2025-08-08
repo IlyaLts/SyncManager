@@ -54,6 +54,7 @@ public:
         Updated = 0x1,
         Exists = 0x2,
         NewlyAdded = 0x8,
+        ReadOnly = 0x10,
         AttributesUpdated = 0x20,
         Scanned = 0x40
     };
@@ -68,12 +69,14 @@ public:
     void setUpdated(bool value) { flags = value ? (flags | Updated) : (flags & ~Updated); }
     void setExists(bool value) { flags = value ? (flags | Exists) : (flags & ~Exists); }
     void setNewlyAdded(bool value) { flags = value ? (flags | NewlyAdded) : (flags & ~NewlyAdded); }
+    void setReadOnly(bool value) { flags = value ? (flags | ReadOnly) : (flags & ~ReadOnly); }
     void setAttributesUpdated(bool value) { flags = value ? (flags | AttributesUpdated) : (flags & ~AttributesUpdated); }
     void setScanned(bool value) { flags = value ? (flags | Scanned) : (flags & ~Scanned); }
 
     inline bool updated() const { return flags & Updated; }
     inline bool exists() const { return flags & Exists; }
     inline bool newlyAdded() const { return flags & NewlyAdded; }
+    inline bool readOnly() const { return flags & ReadOnly; }
     inline bool attributesUpdated() const { return flags & AttributesUpdated; }
     inline bool scanned() const { return flags & Scanned; }
 

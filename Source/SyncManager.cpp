@@ -798,6 +798,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
             file.attributes = getFileAttributes(absoluteFilePath);
             file.setExists(true);
             file.setScanned(true);
+            file.setReadOnly(!fileInfo.isWritable());
         }
         // If a file is new
         else
@@ -807,6 +808,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
             file->attributes = getFileAttributes(absoluteFilePath);
             file->setNewlyAdded(true);
             file->setScanned(true);
+            file->setReadOnly(!fileInfo.isWritable());
 
             m_databaseChanged = true;
         }
@@ -1123,6 +1125,9 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 if (!fileToMove.exists())
                     break;
 
+                if (fileToMove.readOnly())
+                    break;
+
                 // If a file already exists at the destination location in the database
                 if (otherFolderIt->files.contains(newFileIt.key()))
                     break;
@@ -1376,6 +1381,9 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
 
                 if (fileToRemove.exists())
                 {
+                    if (fileToRemove.readOnly())
+                        continue;
+
                     QByteArray path = profile.filePath(fileIt.key());
 
                     if (fileIt.value().type == SyncFile::Folder)
