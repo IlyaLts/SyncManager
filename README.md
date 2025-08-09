@@ -6,21 +6,21 @@
 
 # How It Works
 Here's an overview of how it works:
-1. Loads its databases from disk, if available, to restore prior file information.
-1. Scans the designated folders for files and folders, looking for changes in file modified dates and file sizes.
+1. Loads its databases from disk to remember what your files looked like during the last sync.
+1. Scans the designated folders for files and folders, checking for any changes in file modification dates or sizes.
 1. Detects changes and the type of synchronization that should be performed between folders.
 1. Based on the detected changes, synchronizes files across all folders.
 1. Updates its databases on disk, saving the latest file information for the next synchronization.
-### Syncing Modes
-Synchronization can be triggered using the following modes:
-- **Manual** - *(Lets you decide when to synchronize certain profiles)*
-- **Automatic (Adaptive)** - *(Synchronizes data based on its average synchronization time, multiplied by the frequency multiplier, with a minimum interval of 1 second)*
-- **Automatic (Fixed)** - *(Synchronizes data based on a fixed interval)*
 ### Synchronization Types
 There are three synchronization types that determine how a folder should be synchronized.
-- **Two-way** - *(Synchronizes files in both direction)*
-- **One-way** - *(Basically, mirrors two-way folders, removing anything that doesn't exist in that folders)*
-- **One-way update** - *(Synchronizes files from two-way folders only once, and they can be freely deleted from the folder. Files don't get deleted if they have been deleted from two-way folders)*
+- **Two-way** - *The most common type. It keeps all files and folders identical in both locations. If you add, delete, or change a file in one folder, the same change will happen in the other.*
+- **One-way** - *A mirror image. It copies all files and folders from a "source" folder to a "destination" folder. Any files in the destination that don't exist in the source are deleted.*
+- **One-way update** - *This type is for simple updates. Files are only copied once from a source folder to a destination folder. Unlike One-way, files that are deleted from the source folder are not deleted from the destination. This is useful for backups where you don't want to lose old data.*
+### Syncing Modes
+Synchronization can be triggered using the following modes:
+- **Manual** - *Will only sync your files when you tell it to.*
+- **Automatic (Adaptive)** - *This is a smart, automatic mode. SyncManager learns the average time it takes to sync your files and uses that to determine the next sync interval. This interval is multiplied by a user-defined frequency multiplier. The minimum interval is 1 second.*
+- **Automatic (Fixed)** - *This is a simple, scheduled mode. SyncManager will sync your files at a specific, regular time interval that you set.*
 ### Change Detection Order
 SyncManager uses sophisticated algorithms to detect changes since the last synchronization to determine which files and folders must be synchronized in the following order:
 1. **File attribute changes**
@@ -33,11 +33,6 @@ SyncManager uses sophisticated algorithms to detect changes since the last synch
 Since SyncManager doesn't store the original paths of files in a database, it relies on a filepath comparison-based approach between synchronization folders to detect case changes in folder names. It compares the current filename of a newly renamed folder in one location with the corresponding folder's filenames in other locations (if they exist), checking for differences in case naming. If a difference is found, SyncManager considers the case of the folder was changed and renames folders accordingly, matching the folder's filename in the source location.
 ### Detection of Moved and Renamed Files
 SyncManager searches for matches between removed and new files based on their modified date and size. If a match is found, the file is considered to be the same, and SyncManager renames or moves the corresponding file to other locations to match the new location in the source. In cases where there are multiple matches with the same modified date and size, SyncManager falls back to the standard synchronization method, copying files from one location to another.
-### Conflict Resolution
-In cases where conflicts arise, SyncManager resolves them according to the following rules:
-- **Latest modification date wins:** If a file has been modified in both locations, SyncManager will synchronize the file with the latest modification date.
-- **Modified files take precedence:** If a file has been modified in one location and deleted in another, SyncManager will synchronize the modified file, effectively ignoring the deletion.
-- **Folder content changes take precedence:** If a folder has had new files added or existing files removed in one location, and the same folder has been deleted in another, SyncManager will synchronize the folder with the updated content, effectively ignoring the deletion. Single changes to existing files within the folder do not trigger this precedence.
 ### Synchronization Order
 Based on the changes detected, SyncManager performs the synchronization operations in the following order:
 1. **Synchronizes file attributes**
@@ -69,9 +64,18 @@ Files can be filtered from synchronization using the following options:
 - **Minimum size for a moved file** - *(The size at which files are allowed to be detected as moved or renamed)*
 - **Include** - *(Whitelist)*
 - **Exclude** - *(Blacklist)*
-
+### Database Location
+SyncManager stores a database file to keep track of your files in the following locations:
+- **Locally** - *The database is saved on your computer in a dedicated application data folder. It keeps your sync data separate from your actual synchronized files.*
+- **Decentralized** - *The database is stored inside each of your synchronization folders, within a special hidden folder named .SyncManager. This is useful if you need to move your entire sync setup to another computer, as the database files will travel with your folders.*
+### Conflict Resolution
+In cases where conflicts arise, SyncManager resolves them according to the following rules:
+- **Latest modification date wins:** If a file has been modified in both locations, SyncManager will synchronize the file with the latest modification date.
+- **Modified files take precedence:** If a file has been modified in one location and deleted in another, SyncManager will synchronize the modified file, effectively ignoring the deletion.
+- **Folder content changes take precedence:** If a folder has had new files added or existing files removed in one location, and the same folder has been deleted in another, SyncManager will synchronize the folder with the updated content, effectively ignoring the deletion. Single changes to existing files within the folder do not trigger this precedence.
 # Building
 Requires Qt 6.9 or newer. Buildable with Qt Creator.
 
 # License
 SyncManager is licensed under the GPL-3.0 license, see LICENSE.txt for more information.
+
