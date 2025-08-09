@@ -169,6 +169,7 @@ private:
     QAction *disableNotificationAction;
     QAction *showAction;
     QAction *quitAction;
+    QAction *userManualAction;
     QAction *reportBugAction;
     QAction *versionAction;
 

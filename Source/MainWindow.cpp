@@ -2008,6 +2008,7 @@ void MainWindow::setupMenus()
     disableNotificationAction = new QAction("&" + tr("Disable Notifications"), this);
     showAction = new QAction("&" + tr("Show"), this);
     quitAction = new QAction("&" + tr("Quit"), this);
+    userManualAction = new QAction("&" + tr("User Manual"), this);
     reportBugAction = new QAction("&" + tr("Report a Bug"), this);
     versionAction = new QAction(tr("Version: %1").arg(SYNCMANAGER_VERSION), this);
 
@@ -2060,7 +2061,9 @@ void MainWindow::setupMenus()
     settingsMenu->addAction(showInTrayAction);
     settingsMenu->addAction(disableNotificationAction);
     settingsMenu->addSeparator();
+    settingsMenu->addAction(userManualAction);
     settingsMenu->addAction(reportBugAction);
+    settingsMenu->addSeparator();
     settingsMenu->addAction(versionAction);
 
     trayIconMenu = new QMenu(this);
@@ -2112,6 +2115,7 @@ void MainWindow::setupMenus()
     connect(showAction, &QAction::triggered, this, [this](){ trayIconActivated(QSystemTrayIcon::DoubleClick); });
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
+    connect(userManualAction, &QAction::triggered, this, [this](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_LINK)); });
     connect(reportBugAction, &QAction::triggered, this, [this](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_LINK)); });
 
     for (auto &profile : manager.profiles())
@@ -2145,6 +2149,7 @@ void MainWindow::updateStrings()
     disableNotificationAction->setText("&" + tr("Disable Notifications"));
     showAction->setText("&" + tr("Show"));
     quitAction->setText("&" + tr("Quit"));
+    userManualAction->setText("&" + tr("User Manual"));
     reportBugAction->setText("&" + tr("Report a Bug"));
     versionAction->setText(tr("Version: %1").arg(SYNCMANAGER_VERSION));
 

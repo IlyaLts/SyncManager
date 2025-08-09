@@ -467,5 +467,9 @@
             <source>Please enter the maximum disk transfer rate in bytes per second:</source>
             <translation>请输入最大磁盘传输速率，单位为字节/秒：</translation>
         </message>
+        <message>
+            <source>User Manual</source>
+            <translation>用户手册</translation>
+        </message>
     </context>
 </TS>

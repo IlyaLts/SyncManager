@@ -467,5 +467,9 @@
             <source>Please enter the maximum disk transfer rate in bytes per second:</source>
             <translation>Please enter the maximum disk transfer rate in bytes per second:</translation>
         </message>
+        <message>
+            <source>User Manual</source>
+            <translation>User Manual</translation>
+        </message>
     </context>
 </TS>

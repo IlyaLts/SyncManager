@@ -467,5 +467,9 @@
             <source>Please enter the maximum disk transfer rate in bytes per second:</source>
             <translation>最大ディスク転送速度を1秒あたりのバイト数で入力してください:</translation>
         </message>
+        <message>
+            <source>User Manual</source>
+            <translation>ユーザーマニュアル</translation>
+        </message>
     </context>
 </TS>

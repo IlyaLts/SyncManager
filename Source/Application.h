@@ -29,6 +29,7 @@
 #define SYNCMANAGER_VERSION     "2.1.2"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
+#define USER_MANUAL_LINK        "SyncManagerUserManual.pdf"
 #define BUG_TRACKER_LINK        "https://github.com/IlyaLts/SyncManager/issues"
 #define UPDATE_TIME             40
 

@@ -467,5 +467,9 @@
             <source>Please enter the maximum disk transfer rate in bytes per second:</source>
             <translation>초당 바이트 단위로 최대 디스크 전송 속도를 입력하십시오:</translation>
         </message>
+        <message>
+            <source>User Manual</source>
+            <translation>사용자 매뉴얼</translation>
+        </message>
     </context>
 </TS>

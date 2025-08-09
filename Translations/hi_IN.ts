@@ -467,5 +467,9 @@
             <source>Please enter the maximum disk transfer rate in bytes per second:</source>
             <translation>कृपया प्रति सेकंड बाइट्स में अधिकतम डिस्क स्थानांतरण दर दर्ज करें:</translation>
         </message>
+        <message>
+            <source>User Manual</source>
+            <translation>उपयोगकर्ता पुस्तिका</translation>
+        </message>
     </context>
 </TS>
