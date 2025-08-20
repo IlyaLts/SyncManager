@@ -35,6 +35,7 @@
 #include <QTimer>
 #include <QStack>
 #include <QtConcurrent>
+#include <QFutureWatcher>
 
 /*
 ===================
@@ -45,7 +46,7 @@ SyncManager::SyncManager()
 {
     m_cpuUsage = new CpuUsage(this);
 
-    connect(&m_diskUsageResetTimer, &QTimer::timeout, this, [this](){ for (auto &device : m_usedDevices) device = 0; });
+    connect(&m_diskUsageResetTimer, &QTimer::timeout, this, [this](){ for (auto &device : m_deviceRead) device = 0; });
     connect(m_cpuUsage, &CpuUsage::cpuUsageUpdated, this, &SyncManager::updateCpuUsage);
     m_diskUsageResetTimer.start(1000);
     m_cpuUsage->startMonitoring(CPU_UPDATE_TIME);
@@ -466,6 +467,9 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     debugSetTime(syncTime);
 #endif
 
+    if (!profile.isActive())
+        return false;
+
     if (m_paused)
         return true;
 
@@ -502,46 +506,52 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     SET_TIME(startTime);
 
     int result = 0;
-    QList<QPair<Hash, QFuture<int>>> futureList;
+    QEventLoop scanLoop;
+    QHash<SyncFolder *, QSharedPointer<QFutureWatcher<int>>> scanList;
 
     for (auto &folder : profile.folders)
-    {
-        hash64_t requiredDevice = hash64(QStorageInfo(folder.path).device());
-        QPair<Hash, QFuture<int>> pair(requiredDevice, QFuture(QtConcurrent::run([&](){ return scanFiles(profile, folder); })));
-        pair.second.suspend();
-        futureList.append(pair);
-    }
+        if (!folder.paused)
+            scanList.insert(&folder, QSharedPointer<QFutureWatcher<int>>::create());
 
-    while (!futureList.isEmpty())
+    while (!scanList.isEmpty())
     {
-        for (auto futureIt = futureList.begin(); futureIt != futureList.end();)
+        for (auto scanListIt = scanList.begin(); scanListIt != scanList.end();)
         {
             m_usedDevicesMutex.lock();
+            hash64_t requiredDevice = hash64(QStorageInfo(scanListIt.key()->path).device());
 
-            if (!m_usedDevices.contains(futureIt->first.data))
+            if (!m_usedDevices.contains(requiredDevice))
             {
-                m_usedDevices.insert(futureIt->first.data, 0);
-                futureIt->second.resume();
+                m_usedDevices.insert(requiredDevice);
+                SyncFolder &folder = *scanListIt.key();
+                QObject::connect(scanListIt->data(), &QFutureWatcher<int>::finished, &scanLoop, &QEventLoop::quit);
+
+                // To avoid a race condition, it is important to call this function after doing the connections
+                scanListIt->data()->setFuture(QFuture(QtConcurrent::run([&](){ return scanFiles(profile, folder); })));
             }
 
-            if (futureIt->second.isFinished())
-            {
-                result += futureIt->second.result();
-                m_usedDevices.remove(futureIt->first.data);
-                futureIt = futureList.erase(static_cast<QList<QPair<Hash, QFuture<int>>>::const_iterator>(futureIt));
-            }
-            else
-            {
-                futureIt++;
-            }
-
+            scanListIt++;
             m_usedDevicesMutex.unlock();
         }
 
-        QThread::msleep(UPDATE_TIME);
+        scanLoop.exec();
 
-        while (shouldThrottleDown())
-            QThread::msleep(CPU_UPDATE_TIME);
+        for (auto scanListIt = scanList.begin(); scanListIt != scanList.end();)
+        {
+            if (scanListIt->data()->isFinished())
+            {
+                m_usedDevicesMutex.lock();
+                m_usedDevices.remove(hash64(QStorageInfo(scanListIt.key()->path).device()));
+                m_usedDevicesMutex.unlock();
+
+                result += scanListIt->data()->result();
+                scanListIt = scanList.erase(static_cast<QHash<SyncFolder *, QSharedPointer<QFutureWatcher<int>>>::const_iterator>(scanListIt));
+            }
+            else
+            {
+                scanListIt++;
+            }
+        }
 
         if (m_shouldQuit)
             return false;
@@ -648,7 +658,7 @@ SyncManager::scanFiles
 int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
 {
     hash64_t deviceHash = hash64(QStorageInfo(folder.path).device());
-    quint64 &deviceRead = m_usedDevices[deviceHash];
+    quint64 &deviceRead = m_deviceRead[deviceHash];
     int totalNumOfFiles = 0;
     QStringList nameFilters(profile.includeList());
     nameFilters.removeAll(""); // It's important for proper iteration because the include list may contain empty strings
@@ -1947,7 +1957,7 @@ SyncManager::copyFiles
 void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
 {
     hash64_t deviceHash = hash64(QStorageInfo(folder.path).device());
-    quint64 &deviceRead = m_usedDevices[deviceHash];
+    quint64 &deviceRead = m_deviceRead[deviceHash];
     QString rootPath = QStorageInfo(folder.path).rootPath();
     bool shouldNotify = m_notificationList.contains(rootPath) ? !m_notificationList.value(rootPath)->isActive() : true;
 

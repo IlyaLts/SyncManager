@@ -143,7 +143,8 @@ private:
     quint32 m_systemUsage = 0;
     QTimer m_diskUsageResetTimer;
     QMap<QString, QTimer *> m_notificationList;
-    QMap<hash64_t, quint64> m_usedDevices;
+    QSet<hash64_t> m_usedDevices;
+    QMap<hash64_t, quint64> m_deviceRead;
     QMutex m_usedDevicesMutex;
     CpuUsage *m_cpuUsage;
 };
