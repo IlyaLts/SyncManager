@@ -471,5 +471,13 @@
             <source>User Manual</source>
             <translation>用户手册</translation>
         </message>
+        <message>
+            <source>System Tray is not available!</source>
+            <translation>系统托盘不可用！</translation>
+        </message>
+        <message>
+            <source>Your system does not support the system tray.</source>
+            <translation>您的系统不支持系统托盘。</translation>
+        </message>
     </context>
 </TS>

@@ -471,5 +471,13 @@
             <source>User Manual</source>
             <translation>Brugermanual</translation>
         </message>
+        <message>
+            <source>System Tray is not available!</source>
+            <translation>Systembakken er ikke tilgængelig!</translation>
+        </message>
+        <message>
+            <source>Your system does not support the system tray.</source>
+            <translation>Dit system understøtter ikke systembakken.</translation>
+        </message>
     </context>
 </TS>

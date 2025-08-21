@@ -471,5 +471,13 @@
             <source>User Manual</source>
             <translation>Посібник користувача</translation>
         </message>
+        <message>
+            <source>System Tray is not available!</source>
+            <translation>Системний лоток недоступний!</translation>
+        </message>
+        <message>
+            <source>Your system does not support the system tray.</source>
+            <translation>Ваша система не підтримує системний лоток.</translation>
+        </message>
     </context>
 </TS>

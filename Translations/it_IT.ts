@@ -471,5 +471,13 @@
             <source>User Manual</source>
             <translation>Manuale utente</translation>
         </message>
+        <message>
+            <source>System Tray is not available!</source>
+            <translation>La barra di sistema non è disponibile!</translation>
+        </message>
+        <message>
+            <source>Your system does not support the system tray.</source>
+            <translation>Il tuo sistema non supporta la barra di sistema.</translation>
+        </message>
     </context>
 </TS>

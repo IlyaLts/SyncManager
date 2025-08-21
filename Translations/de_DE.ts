@@ -471,5 +471,13 @@
             <source>User Manual</source>
             <translation>Benutzerhandbuch</translation>
         </message>
-    </context>
+        <message>
+            <source>System Tray is not available!</source>
+            <translation>System-Tray ist nicht verfügbar!</translation>
+        </message>
+        <message>
+            <source>Your system does not support the system tray.</source>
+            <translation>Ihr System unterstützt das System-Tray nicht.</translation>
+        </message>
+    </context>
 </TS>

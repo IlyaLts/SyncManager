@@ -195,6 +195,10 @@ void MainWindow::setTrayVisible(bool visible)
     {
         showInTray = false;
         showInTrayAction->setChecked(false);
+
+        QString title = tr("System Tray is not available!");
+        QString text = tr("Your system does not support the system tray.");
+        QMessageBox::warning(NULL, title, text);
     }
 
     show();

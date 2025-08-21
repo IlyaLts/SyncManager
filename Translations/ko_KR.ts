@@ -471,5 +471,13 @@
             <source>User Manual</source>
             <translation>사용자 매뉴얼</translation>
         </message>
+        <message>
+            <source>System Tray is not available!</source>
+            <translation>시스템 트레이를 사용할 수 없습니다!</translation>
+        </message>
+        <message>
+            <source>Your system does not support the system tray.</source>
+            <translation>사용자의 시스템은 시스템 트레이를 지원하지 않습니다.</translation>
+        </message>
     </context>
 </TS>

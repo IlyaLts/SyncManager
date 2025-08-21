@@ -471,5 +471,13 @@
             <source>User Manual</source>
             <translation>ユーザーマニュアル</translation>
         </message>
+        <message>
+            <source>System Tray is not available!</source>
+            <translation>システムトレイは利用できません！</translation>
+        </message>
+        <message>
+            <source>Your system does not support the system tray.</source>
+            <translation>お使いのシステムはシステムトレイをサポートしていません。</translation>
+        </message>
     </context>
 </TS>
