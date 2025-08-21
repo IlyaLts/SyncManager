@@ -186,11 +186,16 @@ MainWindow::setTrayVisible
 ===================
 */
 void MainWindow::setTrayVisible(bool visible)
-{
+{    
     if (QSystemTrayIcon::isSystemTrayAvailable())
+    {
         showInTray = visible;
+    }
     else
+    {
         showInTray = false;
+        showInTrayAction->setChecked(false);
+    }
 
     show();
 
