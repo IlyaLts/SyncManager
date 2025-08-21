@@ -38,7 +38,7 @@ public:
     QVariant data(const QModelIndex &index, int role) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
 
-    QModelIndex index(int row, const QModelIndex &parent = QModelIndex()) const;
+    QModelIndex indexByRow(int row, const QModelIndex &parent = QModelIndex()) const;
 
     void setStringList(const QStringList &list);
     QStringList stringList();
