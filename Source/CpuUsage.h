@@ -56,8 +56,10 @@ private Q_SLOTS:
 
 private:
 
+#ifdef Q_OS_WIN
     bool GetProcessTimes(ULONGLONG &kernelTime, ULONGLONG &userTime);
     bool GetSystemTimes(ULONGLONG &idleTime, ULONGLONG &kernelTime, ULONGLONG &userTime);
+
     ULONGLONG FileTimeToULONGLONG(const FILETIME &ft);
 
     // Process CPU usage
@@ -69,6 +71,7 @@ private:
     ULONGLONG lastSystemIdleTime = 0;
     ULONGLONG lastSystemKernelTime = 0;
     ULONGLONG lastSystemUserTime = 0;
+#endif
 
     QTimer *timer;
     int processors = 0;

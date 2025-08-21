@@ -18,7 +18,10 @@
 */
 
 #include "CpuUsage.h"
+
+#ifdef Q_OS_WIN
 #include <processthreadsapi.h>
+#endif
 
 /*
 ===================
@@ -27,6 +30,7 @@ CpuUsage::CpuUsage
 */
 CpuUsage::CpuUsage(QObject *parent) : QObject(parent)
 {
+#ifdef Q_OS_WIN
     process = GetCurrentProcess();
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &CpuUsage::updateCpuUsage);
@@ -37,6 +41,7 @@ CpuUsage::CpuUsage(QObject *parent) : QObject(parent)
 
     if (!processors)
         processors = 1;
+#endif
 }
 
 /*
@@ -46,8 +51,10 @@ CpuUsage::~CpuUsage
 */
 CpuUsage::~CpuUsage()
 {
+#ifdef Q_OS_WIN
     if (process)
         CloseHandle(process);
+#endif
 }
 
 /*
@@ -57,10 +64,12 @@ CpuUsage::startMonitoring
 */
 void CpuUsage::startMonitoring(int interval)
 {
+#ifdef Q_OS_WIN
     this->interval = interval;
     GetProcessTimes(lastProcessKernelTime, lastProcessUserTime);
     GetSystemTimes(lastSystemIdleTime, lastSystemKernelTime, lastSystemUserTime);
     timer->start(interval);
+#endif
 }
 
 /*
@@ -80,6 +89,7 @@ CpuUsage::updateCpuUsage
 */
 void CpuUsage::updateCpuUsage()
 {
+#ifdef Q_OS_WIN
     ULONGLONG currentProcessKernelTime;
     ULONGLONG currentProcessUserTime;
     ULONGLONG currentSystemIdleTime;
@@ -126,8 +136,10 @@ void CpuUsage::updateCpuUsage()
     lastSystemIdleTime = currentSystemIdleTime;
     lastSystemKernelTime = currentSystemKernelTime;
     lastSystemUserTime = currentSystemUserTime;
+#endif
 }
 
+#ifdef Q_OS_WIN
 /*
 ===================
 CpuUsage::GetProcessTimes
@@ -173,7 +185,9 @@ bool CpuUsage::GetSystemTimes(ULONGLONG &idleTime, ULONGLONG &kernelTime, ULONGL
 
     return false;
 }
+#endif
 
+#ifdef Q_OS_WIN
 /*
 ===================
 CpuUsage::FileTimeToULONGLONG
@@ -184,3 +198,4 @@ ULONGLONG CpuUsage::FileTimeToULONGLONG(const FILETIME &ft)
     // FILETIME contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
     return (static_cast<ULONGLONG>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
 }
+#endif
