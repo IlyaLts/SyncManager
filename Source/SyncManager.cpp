@@ -538,7 +538,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
         for (auto scanListIt = scanList.begin(); scanListIt != scanList.end();)
         {
-            if (scanListIt->data()->isFinished())
+            if (scanListIt->data()->future().isValid() && scanListIt->data()->isFinished())
             {
                 m_usedDevicesMutex.lock();
                 m_usedDevices.remove(hash64(QStorageInfo(scanListIt.key()->path).device()));
