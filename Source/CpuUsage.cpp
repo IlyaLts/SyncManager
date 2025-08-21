@@ -21,6 +21,9 @@
 
 #ifdef Q_OS_WIN
 #include <processthreadsapi.h>
+#else
+#include <QFile>
+#include <QCoreApplication>
 #endif
 
 /*
@@ -30,10 +33,11 @@ CpuUsage::CpuUsage
 */
 CpuUsage::CpuUsage(QObject *parent) : QObject(parent)
 {
-#ifdef Q_OS_WIN
-    process = GetCurrentProcess();
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &CpuUsage::updateCpuUsage);
+
+#ifdef Q_OS_WIN
+    process = GetCurrentProcess();
 
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
@@ -41,6 +45,9 @@ CpuUsage::CpuUsage(QObject *parent) : QObject(parent)
 
     if (!processors)
         processors = 1;
+#else
+    m_numCores = sysconf(_SC_NPROCESSORS_ONLN);
+    m_pid = QCoreApplication::applicationPid();
 #endif
 }
 
@@ -64,12 +71,11 @@ CpuUsage::startMonitoring
 */
 void CpuUsage::startMonitoring(int interval)
 {
-#ifdef Q_OS_WIN
     this->interval = interval;
+    timer->start(interval);
+
     GetProcessTimes(lastProcessKernelTime, lastProcessUserTime);
     GetSystemTimes(lastSystemIdleTime, lastSystemKernelTime, lastSystemUserTime);
-    timer->start(interval);
-#endif
 }
 
 /*
@@ -89,12 +95,11 @@ CpuUsage::updateCpuUsage
 */
 void CpuUsage::updateCpuUsage()
 {
-#ifdef Q_OS_WIN
-    ULONGLONG currentProcessKernelTime;
-    ULONGLONG currentProcessUserTime;
-    ULONGLONG currentSystemIdleTime;
-    ULONGLONG currentSystemKernelTime;
-    ULONGLONG currentSystemUserTime;
+    cpuTime_t currentProcessKernelTime;
+    cpuTime_t currentProcessUserTime;
+    cpuTime_t currentSystemIdleTime;
+    cpuTime_t currentSystemKernelTime;
+    cpuTime_t currentSystemUserTime;
 
     if (!GetProcessTimes(currentProcessKernelTime, currentProcessUserTime))
     {
@@ -108,6 +113,10 @@ void CpuUsage::updateCpuUsage()
         return;
     }
 
+    float appCpuPercentage = 0.0f;
+    float systemCpuPercentage = 0.0f;
+
+#ifdef Q_OS_WIN
     // Application CPU usage
     ULONGLONG processKernelTimeDelta = currentProcessKernelTime - lastProcessKernelTime;
     ULONGLONG processUserTimeDelta = currentProcessUserTime - lastProcessUserTime;
@@ -120,14 +129,30 @@ void CpuUsage::updateCpuUsage()
     ULONGLONG systemTotalTimeDelta = systemKernelTimeDelta + systemUserTimeDelta;
     ULONGLONG totalSystemCpuTimeDelta = systemTotalTimeDelta + systemIdleTimeDelta;
 
-    float appCpuPercentage = 0.0;
-    float systemCpuPercentage = 0.0;
-
     if (totalSystemCpuTimeDelta > 0/* && processors > 0*/)
-        appCpuPercentage = (static_cast<float>(processTotalTimeDelta) / totalSystemCpuTimeDelta) * 100.0;// / processors;
+        appCpuPercentage = (static_cast<float>(processTotalTimeDelta) / totalSystemCpuTimeDelta) * 100.0f;// / processors;
 
     if (totalSystemCpuTimeDelta > 0)
-        systemCpuPercentage = (static_cast<float>(systemTotalTimeDelta) / totalSystemCpuTimeDelta) * 100.0;
+        systemCpuPercentage = (static_cast<float>(systemTotalTimeDelta) / totalSystemCpuTimeDelta) * 100.0f;
+#else
+
+    // System CPU usage
+    cpuTime_t totalSystemCpuTime = currentSystemUserTime + currentSystemKernelTime + currentSystemIdleTime;
+    cpuTime_t lastTotalSystemCpuTime = lastSystemIdleTime + lastSystemKernelTime + lastSystemUserTime;
+    cpuTime_t totalSystemCpuTimeDelta = totalSystemCpuTime - lastTotalSystemCpuTime;
+    cpuTime_t idleCpuTimeDelta = currentSystemIdleTime - lastSystemIdleTime;
+    cpuTime_t nonIdleSystemCpuTimeDelta = totalSystemCpuTimeDelta - idleCpuTimeDelta;
+
+    // Application CPU usage
+    cpuTime_t processTimeDelta = (currentProcessUserTime + currentProcessKernelTime) - (lastProcessUserTime + lastProcessKernelTime);
+
+    if (totalSystemCpuTimeDelta > 0)
+    {
+        systemCpuPercentage = static_cast<double>(nonIdleSystemCpuTimeDelta) / totalSystemCpuTimeDelta * 100.0f;
+        appCpuPercentage = static_cast<float>(processTimeDelta) / static_cast<float>(totalSystemCpuTimeDelta) * 100.0f/* * m_numCores*/;
+    }
+
+#endif
 
     emit cpuUsageUpdated(appCpuPercentage, systemCpuPercentage);
 
@@ -136,17 +161,16 @@ void CpuUsage::updateCpuUsage()
     lastSystemIdleTime = currentSystemIdleTime;
     lastSystemKernelTime = currentSystemKernelTime;
     lastSystemUserTime = currentSystemUserTime;
-#endif
 }
 
-#ifdef Q_OS_WIN
 /*
 ===================
 CpuUsage::GetProcessTimes
 ===================
 */
-bool CpuUsage::GetProcessTimes(ULONGLONG &kernelTime, ULONGLONG &userTime)
+bool CpuUsage::GetProcessTimes(cpuTime_t &kernelTime, cpuTime_t &userTime)
 {
+#ifdef Q_OS_WIN
     FILETIME creationFileTime;
     FILETIME exitFileTime;
     FILETIME kernelFileTime;
@@ -161,6 +185,36 @@ bool CpuUsage::GetProcessTimes(ULONGLONG &kernelTime, ULONGLONG &userTime)
     }
 
     return false;
+#else
+    QString procStatPath = QString("/proc/%1/stat").arg(m_pid);
+    QFile file(procStatPath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+
+    QTextStream in(&file);
+    QString line = in.readLine();
+    file.close();
+
+    // Use a more robust way to handle the process name with spaces
+    // The process name is in parentheses and can contain spaces, so we parse it separately
+    int closeParen = line.lastIndexOf(')');
+    QString statusString = line.mid(closeParen + 1).trimmed();
+
+    QStringList xparts = statusString.split(" ", Qt::SkipEmptyParts);
+
+    // The values we need are at specific positions after the process name
+    // (14th and 15th fields, which are at index 13 and 14 of the status string list)
+    if (xparts.size() < 15)
+        return false;
+
+    cpuTime_t utime = xparts[11].toULongLong();
+    cpuTime_t stime = xparts[12].toULongLong();
+
+    kernelTime = stime;
+    userTime = utime;
+
+    return true;
+#endif
 }
 
 /*
@@ -168,8 +222,9 @@ bool CpuUsage::GetProcessTimes(ULONGLONG &kernelTime, ULONGLONG &userTime)
 CpuUsage::GetSystemTimes
 ===================
 */
-bool CpuUsage::GetSystemTimes(ULONGLONG &idleTime, ULONGLONG &kernelTime, ULONGLONG &userTime)
+bool CpuUsage::GetSystemTimes(cpuTime_t &idleTime, cpuTime_t &kernelTime, cpuTime_t &userTime)
 {
+#ifdef Q_OS_WIN
     FILETIME idleFiletime;
     FILETIME kernelFileTime;
     FILETIME userFileTime;
@@ -184,8 +239,32 @@ bool CpuUsage::GetSystemTimes(ULONGLONG &idleTime, ULONGLONG &kernelTime, ULONGL
     }
 
     return false;
-}
+#else
+    QFile file("/proc/stat");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+
+    QTextStream in(&file);
+    QString line = in.readLine();
+    file.close();
+
+    // The first line starts with "cpu" and contains the total CPU time
+    QStringList parts = line.split(" ", Qt::SkipEmptyParts);
+    if (parts.size() < 5)
+        return false;
+
+    cpuTime_t user = parts[1].toULongLong();
+    cpuTime_t nice = parts[2].toULongLong();
+    cpuTime_t system = parts[3].toULongLong();
+    cpuTime_t idle = parts[4].toULongLong();
+
+    idleTime = idle;
+    kernelTime = system;
+    userTime = user + nice;
+
+    return true;
 #endif
+}
 
 #ifdef Q_OS_WIN
 /*
