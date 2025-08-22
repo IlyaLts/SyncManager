@@ -471,5 +471,13 @@
             <source>User Manual</source>
             <translation>उपयोगकर्ता पुस्तिका</translation>
         </message>
+        <message>
+            <source>System Tray is not available!</source>
+            <translation>सिस्टम ट्रे उपलब्ध नहीं है!</translation>
+        </message>
+        <message>
+            <source>Your system does not support the system tray.</source>
+            <translation>आपका सिस्टम सिस्टम ट्रे का समर्थन नहीं करता है।</translation>
+        </message>
     </context>
 </TS>

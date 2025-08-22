@@ -63,10 +63,10 @@ bool DecoratedStringListModel::setData(const QModelIndex &index, const QVariant 
 
 /*
 ===================
-DecoratedStringListModel::index
+DecoratedStringListModel::indexByRow
 ===================
 */
-QModelIndex DecoratedStringListModel::index(int row, const QModelIndex &parent) const
+QModelIndex DecoratedStringListModel::indexByRow(int row, const QModelIndex &parent) const
 {
     return QStandardItemModel::index(row, 0, parent);
 }

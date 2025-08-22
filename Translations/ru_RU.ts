@@ -471,5 +471,13 @@
             <source>User Manual</source>
             <translation>Руководство пользователя</translation>
         </message>
+        <message>
+            <source>System Tray is not available!</source>
+            <translation>Системный трей недоступен!</translation>
+        </message>
+        <message>
+            <source>Your system does not support the system tray.</source>
+            <translation>Ваша система не поддерживает системный трей.</translation>
+        </message>
     </context>
 </TS>

@@ -186,11 +186,20 @@ MainWindow::setTrayVisible
 ===================
 */
 void MainWindow::setTrayVisible(bool visible)
-{
+{    
     if (QSystemTrayIcon::isSystemTrayAvailable())
+    {
         showInTray = visible;
+    }
     else
+    {
         showInTray = false;
+        showInTrayAction->setChecked(false);
+
+        QString title = tr("System Tray is not available!");
+        QString text = tr("Your system does not support the system tray.");
+        QMessageBox::warning(NULL, title, text);
+    }
 
     show();
 
@@ -1436,8 +1445,8 @@ void MainWindow::rebindProfiles()
     {
         for (auto &profile : manager.profiles())
         {
-            if (profileModel->index(i).data(Qt::DisplayRole).toString()  == profile.name)
-                profile.index = profileModel->index(i);
+            if (profileModel->indexByRow(i).data(Qt::DisplayRole).toString()  == profile.name)
+                profile.index = profileModel->indexByRow(i);
         }
     }
 }
@@ -1553,7 +1562,7 @@ void MainWindow::updateStatus()
         // Profiles
         for (size_t i = 0; i < manager.profiles().size(); i++)
         {
-            QModelIndex index = profileModel->index(i);
+            QModelIndex index = profileModel->indexByRow(i);
             SyncProfile *profile = profileByIndex(index);
 
             if (!profile)
@@ -1586,7 +1595,7 @@ void MainWindow::updateStatus()
             {
                 for (int i = 0; i < folderModel->rowCount(); i++)
                 {
-                    QModelIndex index = folderModel->index(i);
+                    QModelIndex index = folderModel->indexByRow(i);
                     const SyncFolder *folder = profile->folderByIndex(index);
 
                     if (!folder)
@@ -1817,17 +1826,17 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
         {
             if (!folder.exists)
             {
-                folderModel->setData(folderModel->index(i), tr("The folder is currently unavailable."), Qt::ToolTipRole);
+                folderModel->setData(folderModel->indexByRow(i), tr("The folder is currently unavailable."), Qt::ToolTipRole);
             }
             else if (!folder.lastSyncDate.isNull())
             {
                 QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate, dateFormat));
                 QString text = QString("Last synchronization: %1.").arg(time) + nextSyncText;
-                folderModel->setData(folderModel->index(i), text, Qt::ToolTipRole);
+                folderModel->setData(folderModel->indexByRow(i), text, Qt::ToolTipRole);
             }
             else
             {
-                folderModel->setData(folderModel->index(i), tr("Haven't been synchronized yet."), Qt::ToolTipRole);
+                folderModel->setData(folderModel->indexByRow(i), tr("Haven't been synchronized yet."), Qt::ToolTipRole);
             }
 
             i++;
@@ -1864,7 +1873,7 @@ void MainWindow::loadSettings()
 
     for (int i = 0; i < profileModel->rowCount(); i++)
     {
-        QModelIndex index = profileModel->index(i);
+        QModelIndex index = profileModel->indexByRow(i);
         QString profileKeyPath(index.data(Qt::DisplayRole).toString() + QLatin1String("_profile/"));
         SyncProfile *profile = profileByIndex(index);
 
@@ -2088,6 +2097,11 @@ void MainWindow::setupMenus()
     this->menuBar()->addMenu(settingsMenu);
     this->menuBar()->setStyle(new MenuProxyStyle);
 
+    // Fix a disappearing icon when you click on its menu on Linux while using the Fusion style
+#ifndef Q_OS_WIN
+    this->menuBar()->setStyleSheet("QMenuBar::item:selected { background: #e3e3e3; } QMenuBar::item:pressed { background: #e3e3e3; })");
+#endif
+
     for (auto &profile : manager.profiles())
     {
         profile.loadSettings();
@@ -2115,8 +2129,8 @@ void MainWindow::setupMenus()
     connect(showAction, &QAction::triggered, this, [this](){ trayIconActivated(QSystemTrayIcon::DoubleClick); });
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
-    connect(userManualAction, &QAction::triggered, this, [this](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_LINK)); });
-    connect(reportBugAction, &QAction::triggered, this, [this](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_LINK)); });
+    connect(userManualAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_LINK)); });
+    connect(reportBugAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_LINK)); });
 
     for (auto &profile : manager.profiles())
         connectProfileMenu(profile);
@@ -2212,8 +2226,8 @@ MainWindow::indexByProfile
 QModelIndex MainWindow::indexByProfile(const SyncProfile &profile)
 {
     for (int i = 0; i < profileModel->rowCount(); i++)
-        if (profileModel->index(i) == profile.index)
-            return profileModel->index(i);
+        if (profileModel->indexByRow(i) == profile.index)
+            return profileModel->indexByRow(i);
 
     return QModelIndex();
 }
@@ -2226,8 +2240,8 @@ MainWindow::profileIndexByName
 QModelIndex MainWindow::profileIndexByName(const QString &name)
 {
     for (int i = 0; i < profileModel->rowCount(); i++)
-        if (profileModel->index(i).data(Qt::DisplayRole).toString()  == name)
-            return profileModel->index(i);
+        if (profileModel->indexByRow(i).data(Qt::DisplayRole).toString()  == name)
+            return profileModel->indexByRow(i);
 
     return QModelIndex();
 }

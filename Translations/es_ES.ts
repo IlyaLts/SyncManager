@@ -471,5 +471,13 @@
             <source>User Manual</source>
             <translation>Manual de usuario</translation>
         </message>
+        <message>
+            <source>System Tray is not available!</source>
+            <translation>¡La bandeja del sistema no está disponible!</translation>
+        </message>
+        <message>
+            <source>Your system does not support the system tray.</source>
+            <translation>Su sistema no es compatible con la bandeja del sistema.</translation>
+        </message>
     </context>
 </TS>

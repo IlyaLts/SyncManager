@@ -538,7 +538,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
         for (auto scanListIt = scanList.begin(); scanListIt != scanList.end();)
         {
-            if (scanListIt->data()->isFinished())
+            if (scanListIt->data()->future().isValid() && scanListIt->data()->isFinished())
             {
                 m_usedDevicesMutex.lock();
                 m_usedDevices.remove(hash64(QStorageInfo(scanListIt.key()->path).device()));
@@ -1198,7 +1198,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
                 const SyncFile &fileToMove = otherFolderIt->files.value(movedFileHash);
-                setFileModificationDate(pathToMove, QFileInfo(pathToNewFile).lastModified());
+                setFileModificationDate(pathToMove, QFileInfo(fullNewPathToFile).lastModified());
 #endif
             }
         }
@@ -2020,7 +2020,7 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
         if (copyFile(deviceRead, fileIt->fromFullPath, toFullPath))
         {
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
-            setFileModificationDate(filePath, fileIt->modifiedDate);
+            setFileModificationDate(toFullPath, fileIt->modifiedDate);
 #endif
 
             // Do not reorder QQFileInfo fileInfo(fullPath) with setFileModificationDate(), as we want to get the latest modified date

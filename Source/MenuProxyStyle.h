@@ -25,6 +25,7 @@
 class MenuProxyStyle : public QProxyStyle
 {
 public:
+
     int pixelMetric(PixelMetric metric, const QStyleOption *option = nullptr, const QWidget *widget = nullptr) const override;
 };
 

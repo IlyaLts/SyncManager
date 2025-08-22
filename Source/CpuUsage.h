@@ -26,6 +26,10 @@
 
 #ifdef Q_OS_WIN
 #include <windows.h>
+
+using cpuTime_t = ULONGLONG;
+#else
+using cpuTime_t = unsigned long long;
 #endif
 
 /*
@@ -56,19 +60,26 @@ private Q_SLOTS:
 
 private:
 
-    bool GetProcessTimes(ULONGLONG &kernelTime, ULONGLONG &userTime);
-    bool GetSystemTimes(ULONGLONG &idleTime, ULONGLONG &kernelTime, ULONGLONG &userTime);
+    bool GetProcessTimes(cpuTime_t &kernelTime, cpuTime_t &userTime);
+    bool GetSystemTimes(cpuTime_t &idleTime, cpuTime_t &kernelTime, cpuTime_t &userTime);
+
+#ifdef Q_OS_WIN
     ULONGLONG FileTimeToULONGLONG(const FILETIME &ft);
 
-    // Process CPU usage
     HANDLE process = nullptr;
-    ULONGLONG lastProcessKernelTime = 0;
-    ULONGLONG lastProcessUserTime = 0;
+#else
+    pid_t m_pid;
+    int m_numCores = 1;
+#endif
+
+    // Process CPU usage
+    cpuTime_t lastProcessKernelTime = 0;
+    cpuTime_t lastProcessUserTime = 0;
 
     // System CPU usage
-    ULONGLONG lastSystemIdleTime = 0;
-    ULONGLONG lastSystemKernelTime = 0;
-    ULONGLONG lastSystemUserTime = 0;
+    cpuTime_t lastSystemIdleTime = 0;
+    cpuTime_t lastSystemKernelTime = 0;
+    cpuTime_t lastSystemUserTime = 0;
 
     QTimer *timer;
     int processors = 0;
