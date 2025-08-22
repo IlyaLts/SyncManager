@@ -195,7 +195,6 @@ bool CpuUsage::GetProcessTimes(cpuTime_t &kernelTime, cpuTime_t &userTime)
     QString line = in.readLine();
     file.close();
 
-    // Use a more robust way to handle the process name with spaces
     // The process name is in parentheses and can contain spaces, so we parse it separately
     int closeParen = line.lastIndexOf(')');
     QString statusString = line.mid(closeParen + 1).trimmed();
@@ -203,7 +202,7 @@ bool CpuUsage::GetProcessTimes(cpuTime_t &kernelTime, cpuTime_t &userTime)
     QStringList xparts = statusString.split(" ", Qt::SkipEmptyParts);
 
     // The values we need are at specific positions after the process name
-    // (14th and 15th fields, which are at index 13 and 14 of the status string list)
+    // (14th and 15th fields, which are at index 11 and 12 of the status string list)
     if (xparts.size() < 15)
         return false;
 

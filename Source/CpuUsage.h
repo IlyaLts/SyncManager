@@ -32,7 +32,6 @@ using cpuTime_t = ULONGLONG;
 using cpuTime_t = unsigned long long;
 #endif
 
-
 /*
 ===========================================================
 
