@@ -42,13 +42,13 @@ CpuUsage::CpuUsage(QObject *parent) : QObject(parent)
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
     processors = sysInfo.dwNumberOfProcessors;
+#else
+    processors = sysconf(_SC_NPROCESSORS_ONLN);
+    m_pid = QCoreApplication::applicationPid();
+#endif
 
     if (!processors)
         processors = 1;
-#else
-    m_numCores = sysconf(_SC_NPROCESSORS_ONLN);
-    m_pid = QCoreApplication::applicationPid();
-#endif
 }
 
 /*
@@ -116,43 +116,23 @@ void CpuUsage::updateCpuUsage()
     float appCpuPercentage = 0.0f;
     float systemCpuPercentage = 0.0f;
 
-#ifdef Q_OS_WIN
     // Application CPU usage
-    ULONGLONG processKernelTimeDelta = currentProcessKernelTime - lastProcessKernelTime;
-    ULONGLONG processUserTimeDelta = currentProcessUserTime - lastProcessUserTime;
-    ULONGLONG processTotalTimeDelta = processKernelTimeDelta + processUserTimeDelta;
+    cpuTime_t processKernelTimeDelta = currentProcessKernelTime - lastProcessKernelTime;
+    cpuTime_t processUserTimeDelta = currentProcessUserTime - lastProcessUserTime;
+    cpuTime_t processTimeDelta = processKernelTimeDelta + processUserTimeDelta;
 
     // System CPU usage
-    ULONGLONG systemIdleTimeDelta = currentSystemIdleTime - lastSystemIdleTime;
-    ULONGLONG systemKernelTimeDelta = currentSystemKernelTime - lastSystemKernelTime;
-    ULONGLONG systemUserTimeDelta = currentSystemUserTime - lastSystemUserTime;
-    ULONGLONG systemTotalTimeDelta = systemKernelTimeDelta + systemUserTimeDelta;
-    ULONGLONG totalSystemCpuTimeDelta = systemTotalTimeDelta + systemIdleTimeDelta;
+    cpuTime_t systemIdleTimeDelta = currentSystemIdleTime - lastSystemIdleTime;
+    cpuTime_t systemKernelTimeDelta = currentSystemKernelTime - lastSystemKernelTime;
+    cpuTime_t systemUserTimeDelta = currentSystemUserTime - lastSystemUserTime;
+    cpuTime_t systemNonIdleTimeDelta = systemKernelTimeDelta + systemUserTimeDelta;
+    cpuTime_t systemTimeDelta = systemNonIdleTimeDelta + systemIdleTimeDelta;
 
-    if (totalSystemCpuTimeDelta > 0/* && processors > 0*/)
-        appCpuPercentage = (static_cast<float>(processTotalTimeDelta) / totalSystemCpuTimeDelta) * 100.0f;// / processors;
-
-    if (totalSystemCpuTimeDelta > 0)
-        systemCpuPercentage = (static_cast<float>(systemTotalTimeDelta) / totalSystemCpuTimeDelta) * 100.0f;
-#else
-
-    // System CPU usage
-    cpuTime_t totalSystemCpuTime = currentSystemUserTime + currentSystemKernelTime + currentSystemIdleTime;
-    cpuTime_t lastTotalSystemCpuTime = lastSystemIdleTime + lastSystemKernelTime + lastSystemUserTime;
-    cpuTime_t totalSystemCpuTimeDelta = totalSystemCpuTime - lastTotalSystemCpuTime;
-    cpuTime_t idleCpuTimeDelta = currentSystemIdleTime - lastSystemIdleTime;
-    cpuTime_t nonIdleSystemCpuTimeDelta = totalSystemCpuTimeDelta - idleCpuTimeDelta;
-
-    // Application CPU usage
-    cpuTime_t processTimeDelta = (currentProcessUserTime + currentProcessKernelTime) - (lastProcessUserTime + lastProcessKernelTime);
-
-    if (totalSystemCpuTimeDelta > 0)
+    if (systemTimeDelta > 0)
     {
-        systemCpuPercentage = static_cast<double>(nonIdleSystemCpuTimeDelta) / totalSystemCpuTimeDelta * 100.0f;
-        appCpuPercentage = static_cast<float>(processTimeDelta) / static_cast<float>(totalSystemCpuTimeDelta) * 100.0f/* * m_numCores*/;
+        appCpuPercentage = (static_cast<float>(processTimeDelta) / static_cast<float>(systemTimeDelta)) * 100.0f;// / processors;
+        systemCpuPercentage = (static_cast<float>(systemNonIdleTimeDelta) / systemTimeDelta) * 100.0f;
     }
-
-#endif
 
     emit cpuUsageUpdated(appCpuPercentage, systemCpuPercentage);
 

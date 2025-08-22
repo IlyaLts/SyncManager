@@ -69,7 +69,6 @@ private:
     HANDLE process = nullptr;
 #else
     pid_t m_pid;
-    int m_numCores = 1;
 #endif
 
     // Process CPU usage
@@ -82,7 +81,7 @@ private:
     cpuTime_t lastSystemUserTime = 0;
 
     QTimer *timer;
-    int processors = 0;
+    int processors = 1;
     int interval;
 };
 
