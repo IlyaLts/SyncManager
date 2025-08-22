@@ -2097,6 +2097,11 @@ void MainWindow::setupMenus()
     this->menuBar()->addMenu(settingsMenu);
     this->menuBar()->setStyle(new MenuProxyStyle);
 
+    // Fix a disappearing icon when you click on its menu on Linux while using the Fusion style
+#ifndef Q_OS_WIN
+    this->menuBar()->setStyleSheet("QMenuBar::item:selected { background: #e3e3e3; } QMenuBar::item:pressed { background: #e3e3e3; })");
+#endif
+
     for (auto &profile : manager.profiles())
     {
         profile.loadSettings();
