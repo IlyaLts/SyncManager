@@ -1782,7 +1782,7 @@ MainWindow::updateProfileTooltip
 */
 void MainWindow::updateProfileTooltip(const SyncProfile &profile)
 {
-    QModelIndex index = profileIndex(profile);
+    QModelIndex index = indexByProfile(profile);
 
     if (!index.isValid())
         return;
@@ -2206,10 +2206,10 @@ SyncProfile *MainWindow::profileByIndex(const QModelIndex &index)
 
 /*
 ===================
-MainWindow::profileIndex
+MainWindow::indexByProfile
 ===================
 */
-QModelIndex MainWindow::profileIndex(const SyncProfile &profile)
+QModelIndex MainWindow::indexByProfile(const SyncProfile &profile)
 {
     for (int i = 0; i < profileModel->rowCount(); i++)
         if (profileModel->index(i) == profile.index)

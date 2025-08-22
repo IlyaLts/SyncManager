@@ -27,7 +27,7 @@
 #include <QMutex>
 #include <QModelIndex>
 
-#define MOVED_FILES_MIN_SIZE    0
+#define MOVED_FILES_MIN_SIZE 0
 
 class SyncFolder;
 class UnhidableMenu;

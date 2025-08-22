@@ -123,7 +123,7 @@ private:
     void updateStrings();
     void updateLaunchOnStartupState();
     SyncProfile *profileByIndex(const QModelIndex &index);
-    QModelIndex profileIndex(const SyncProfile &profile);
+    QModelIndex indexByProfile(const SyncProfile &profile);
     QModelIndex profileIndexByName(const QString &name);
 
     SyncManager manager;
