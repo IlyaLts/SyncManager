@@ -43,7 +43,7 @@ struct Language
 {
     QLocale::Language language;
     QLocale::Country country;
-    const char *tsPath;
+    const char *filePath;
     const char *flagPath;
     const char *name;
 };
@@ -91,6 +91,7 @@ void removeDuplicatesBySizeAndDate (QHash<Hash, SyncFile *> &files);
 QFileInfo getCurrentFileInfo(const QString &path);
 bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent = nullptr);
 bool intInputDialog(QWidget *parent, const QString &title, const QString &label, int &returnValue, int value = 0, int minValue = -2147483647, int maxValue = 2147483647);
+bool doubleInputDialog(QWidget *parent, const QString &title, const QString &label, double &returnValue, double value = 0, double minValue = -2147483647, double maxValue = 2147483647);
 bool textInputDialog(QWidget *parent, const QString &title, const QString &label, QString &returnText, const QString &text = QString());
 
 bool isPathCaseSensitive(const QString &path);

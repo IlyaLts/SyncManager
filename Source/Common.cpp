@@ -199,6 +199,33 @@ bool intInputDialog(QWidget *parent, const QString &title, const QString &label,
 
 /*
 ===================
+doubleInputDialog
+===================
+*/
+bool doubleInputDialog(QWidget *parent, const QString &title, const QString &label, double &returnValue, double value, double minValue, double maxValue)
+{
+    QInputDialog *dialog = new QInputDialog(parent);
+    dialog->setInputMode(QInputDialog::DoubleInput);
+    dialog->setDoubleMinimum(minValue);
+    dialog->setDoubleMaximum(maxValue);
+    dialog->setWindowTitle(title);
+    dialog->setLabelText(label);
+    dialog->setDoubleValue(value);
+    dialog->setOkButtonText("&" + qApp->translate("MainWindow", "OK"));
+    dialog->setCancelButtonText("&" + qApp->translate("MainWindow", "Cancel"));
+    dialog->deleteLater();
+
+    if (dialog->exec())
+    {
+        returnValue = dialog->doubleValue();
+        return true;
+    }
+
+    return false;
+}
+
+/*
+===================
 textInputDialog
 ===================
 */

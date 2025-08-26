@@ -1028,12 +1028,12 @@ void MainWindow::setMaximumCpuUsage()
 {
     QString title(tr("Maximum CPU Usage"));
     QString text(tr("Please enter the maximum CPU usage in percentage:"));
-    int usage;
+    double usage;
 
-    if (!intInputDialog(this, title, text, usage, manager.maxCpuUsage(), 1, 100))
+    if (!doubleInputDialog(this, title, text, usage, manager.maxCpuUsage(), 0.01, 100.0))
         return;
 
-    manager.setMaxCpuUsage(usage);
+    manager.setMaxCpuUsage(static_cast<float>(usage));
     maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage()));
     saveSettings();
 }

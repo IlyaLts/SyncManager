@@ -63,7 +63,7 @@ public:
     void updateNextSyncingTime(SyncProfile &profile);
     void removeAllDatabases();
     void purgeRemovedProfiles();
-    bool shouldThrottleDown();
+    void throttleCpu();
 
     inline const QQueue<SyncProfile *> &queue() const { return m_queue; }
     inline const std::list<SyncProfile> &profiles() const { return m_profiles; }
@@ -72,12 +72,12 @@ public:
     inline void shouldQuit() { m_shouldQuit = true; }
     void setSyncTimeMultiplier(SyncProfile &profile, int multiplier);
     inline void setMaxDiskTransferRate(quint64 rate) { m_maxDiskTransferRate = rate; }
-    inline void setMaxCpuUsage(quint32 percentage) { m_maxCpuUsage = percentage; }
+    inline void setMaxCpuUsage(float percentage) { m_maxCpuUsage = percentage; }
     inline void setPaused(bool paused) { m_paused = paused; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }    
 
     inline quint64 maxDiskTransferRate() const { return m_maxDiskTransferRate; }
-    inline quint32 maxCpuUsage() const { return m_maxCpuUsage; }
+    inline float maxCpuUsage() const { return m_maxCpuUsage; }
     inline int filesToSync() const { return m_filesToSync; }
     inline int existingProfiles() const { return m_existingProfiles; }
     inline bool quitting() const { return m_shouldQuit; }
@@ -95,6 +95,7 @@ public:
 public Q_SLOTS:
 
     void updateCpuUsage(float appPercentage, float systemPercentage);
+
 
 Q_SIGNALS:
 
@@ -138,9 +139,9 @@ private:
     bool m_notifications = true;
 
     quint64 m_maxDiskTransferRate = 0;
-    quint32 m_maxCpuUsage = 100;
-    quint32 m_processUsage = 0;
-    quint32 m_systemUsage = 0;
+    float m_maxCpuUsage = 100.0;
+    float m_processUsage = 0.0;
+    float m_systemUsage = 0.0;
     QTimer m_diskUsageResetTimer;
     QMap<QString, QTimer *> m_notificationList;
     QSet<hash64_t> m_usedDevices;

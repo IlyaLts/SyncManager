@@ -125,7 +125,7 @@ void Application::setTranslator(QLocale::Language language)
         if (languages[i].language != language)
             continue;
 
-        result = translator.load(languages[i].tsPath);
+        result = translator.load(languages[i].filePath);
         locale = QLocale(languages[i].language, languages[i].country);
 
         if (!result)
@@ -137,7 +137,7 @@ void Application::setTranslator(QLocale::Language language)
     // Loads English by default if the specified language is not in the list
     if (!result)
     {
-        result = translator.load(defaultLanguage.tsPath);
+        result = translator.load(defaultLanguage.filePath);
         locale = QLocale(defaultLanguage.language, defaultLanguage.country);
 
         if (!result)

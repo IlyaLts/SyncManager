@@ -360,12 +360,13 @@ void SyncManager::purgeRemovedProfiles()
 
 /*
 ===================
-SyncManager::shouldThrottleDown
+SyncManager::throttleCpu
 ===================
 */
-bool SyncManager::shouldThrottleDown()
+void SyncManager::throttleCpu()
 {
-    return m_processUsage > m_maxCpuUsage;
+    while (m_processUsage > m_maxCpuUsage)
+        QThread::msleep(CPU_UPDATE_TIME);
 }
 
 /*
@@ -450,7 +451,7 @@ SyncManager::updateCpuUsage
 void SyncManager::updateCpuUsage(float appPercentage, float systemPercentage)
 {
     m_processUsage = appPercentage;
-    m_systemUsage = systemPercentage;
+    m_systemUsage = systemPercentage;   
 
     //qDebug(qUtf8Printable(QString("CPU process usage: %1% --- CPU system usage: %2%").arg(appPercentage).arg(systemPercentage)));
 }
@@ -676,9 +677,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         if (m_shouldQuit || !folder.isActive())
             return -1;
 
-        while (shouldThrottleDown())
-            QThread::msleep(CPU_UPDATE_TIME);
-
+        throttleCpu();
         dir.next();
 
         QFileInfo fileInfo(dir.fileInfo());
@@ -870,6 +869,8 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
                 if (!otherFileIt.value().exists())
                     continue;
 
+                throttleCpu();
+
                 const SyncFile &file = folderIt->files.value(otherFileIt.key());
                 const SyncFile &otherFile = otherFileIt.value();
 
@@ -922,6 +923,8 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 
         for (QHash<Hash, SyncFile>::iterator renamedFolderIt = folderIt->files.begin(); renamedFolderIt != folderIt->files.end(); ++renamedFolderIt)
         {
+            throttleCpu();
+
             // Only a newly added folder can indicate that the case of folder name was changed
             if (renamedFolderIt->type != SyncFile::Folder || !renamedFolderIt->newlyAdded() || !renamedFolderIt->exists())
                 continue;
@@ -958,6 +961,8 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
             // Adds folders from other sync folders for renaming
             for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
             {
+                throttleCpu();
+
                 if (folderIt == otherFolderIt)
                     continue;
 
@@ -1069,6 +1074,8 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
+        throttleCpu();
+
         if (!folderIt->isActive() || folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
             continue;
 
@@ -1103,6 +1110,8 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             // Searches for a match between a missed file and a newly added file
             for (QHash<Hash, SyncFile *>::iterator missingFileIt = missingFiles.begin(); missingFileIt != missingFiles.end(); ++missingFileIt)
             {
+                throttleCpu();
+
                 if (!missingFileIt.value()->hasSameSizeAndDate(*newFileIt.value()))
                     continue;
 
@@ -1230,6 +1239,8 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
 
             for (QHash<Hash, SyncFile>::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
             {
+                throttleCpu();
+
                 if (!otherFolderIt->isActive())
                     break;
 
@@ -1321,6 +1332,8 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
 
         for (QHash<Hash, SyncFile>::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
         {
+            throttleCpu();
+
             if (!folderIt->isActive())
                 break;
 
@@ -1597,6 +1610,8 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
             deviceRead += in;
             m_usedDevicesMutex.unlock();
 
+            throttleCpu();
+
             while (deviceRead >= m_maxDiskTransferRate && !quitting())
             {
                 int sleep = m_diskUsageResetTimer.remainingTime();
@@ -1645,6 +1660,8 @@ void SyncManager::createParentFolders(SyncProfile &profile, SyncFolder &folder, 
 
     while (!foldersToCreate.isEmpty())
     {
+        throttleCpu();
+
         if (QDir().mkdir(foldersToCreate.top()))
         {
             Qt::CaseSensitivity cs;
@@ -1683,6 +1700,8 @@ void SyncManager::renameFolders(SyncProfile &profile, SyncFolder &folder)
     {
         if (m_shouldQuit)
             break;
+
+        throttleCpu();
 
         QString fromFullPath(folder.path);
         fromFullPath.append(folderIt->fromPath);
@@ -1735,6 +1754,8 @@ void SyncManager::moveFiles(SyncProfile &profile, SyncFolder &folder)
     {
         if (m_shouldQuit)
             break;
+
+        throttleCpu();
 
         QByteArray fromFullPath(folder.path);
         fromFullPath.append(fileIt->fromPath);
@@ -1830,6 +1851,8 @@ void SyncManager::removeFolders(SyncProfile &profile, SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
+        throttleCpu();
+
         // Prevents the deletion of the main sync folder in case of a false detection during synchronization
         if (folderIt->second.isEmpty())
         {
@@ -1872,6 +1895,8 @@ void SyncManager::removeFiles(SyncProfile &profile, SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
+        throttleCpu();
+
         // Prevents the deletion of the main sync folder in case of a false detection during synchronization
         if (fileIt->isEmpty())
         {
@@ -1911,6 +1936,8 @@ void SyncManager::createFolders(SyncProfile &profile, SyncFolder &folder)
     {
         if (m_shouldQuit)
             break;
+
+        throttleCpu();
 
         if (folderIt->path.isEmpty())
         {
@@ -1965,6 +1992,8 @@ void SyncManager::copyFiles(SyncProfile &profile, SyncFolder &folder)
     {
         if (m_shouldQuit)
             break;
+
+        throttleCpu();
 
         // Removes from the "files to copy" list if the source file doesn't exist
         if (!QFileInfo::exists(fileIt->fromFullPath) || fileIt->toPath.isEmpty() || fileIt->fromFullPath.isEmpty())
