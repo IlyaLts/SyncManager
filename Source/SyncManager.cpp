@@ -1612,7 +1612,7 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
 
             throttleCpu();
 
-            while (deviceRead >= m_maxDiskTransferRate && !quitting())
+            while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
             {
                 int sleep = m_diskUsageResetTimer.remainingTime();
 
