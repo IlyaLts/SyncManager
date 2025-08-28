@@ -479,5 +479,9 @@
             <source>Your system does not support the system tray.</source>
             <translation>Ваша система не поддерживает системный трей.</translation>
         </message>
+        <message>
+            <source>Disabled</source>
+            <translation>Отключено</translation>
+        </message>
     </context>
 </TS>

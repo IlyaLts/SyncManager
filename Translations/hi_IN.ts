@@ -479,5 +479,9 @@
             <source>Your system does not support the system tray.</source>
             <translation>आपका सिस्टम सिस्टम ट्रे का समर्थन नहीं करता है।</translation>
         </message>
+        <message>
+            <source>Disabled</source>
+            <translation>अक्षम किया गया</translation>
+        </message>
     </context>
 </TS>

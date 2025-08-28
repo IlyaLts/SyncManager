@@ -1738,6 +1738,9 @@ void MainWindow::updateMenuMaxDiskTransferRate()
             text.append(tr("%1 B/s").arg(bytes));
     }
 
+    if (text.isEmpty())
+        text.assign(tr("Disabled"));
+
     maximumDiskTransferRateAction->setText("&" + tr("Maximum Disk Transfer Rate") + QString(": ") + text);
 }
 

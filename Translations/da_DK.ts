@@ -479,5 +479,9 @@
             <source>Your system does not support the system tray.</source>
             <translation>Dit system understøtter ikke systembakken.</translation>
         </message>
+        <message>
+            <source>Disabled</source>
+            <translation>Deaktiveret</translation>
+        </message>
     </context>
 </TS>

@@ -479,5 +479,9 @@
             <source>Your system does not support the system tray.</source>
             <translation>Votre système ne prend pas en charge le plateau système.</translation>
         </message>
+        <message>
+            <source>Disabled</source>
+            <translation>Désactivé</translation>
+        </message>
     </context>
 </TS>

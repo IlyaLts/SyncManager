@@ -479,5 +479,9 @@
             <source>Your system does not support the system tray.</source>
             <translation>Ваша система не підтримує системний лоток.</translation>
         </message>
+        <message>
+            <source>Disabled</source>
+            <translation>Вимкнено</translation>
+        </message>
     </context>
 </TS>

@@ -479,5 +479,9 @@
             <source>Your system does not support the system tray.</source>
             <translation>Su sistema no es compatible con la bandeja del sistema.</translation>
         </message>
+        <message>
+            <source>Disabled</source>
+            <translation>Desactivado</translation>
+        </message>
     </context>
 </TS>

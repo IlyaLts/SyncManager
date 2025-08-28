@@ -479,5 +479,9 @@
             <source>Your system does not support the system tray.</source>
             <translation>お使いのシステムはシステムトレイをサポートしていません。</translation>
         </message>
+        <message>
+            <source>Disabled</source>
+            <translation>無効</translation>
+        </message>
     </context>
 </TS>

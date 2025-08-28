@@ -479,5 +479,9 @@
             <source>Your system does not support the system tray.</source>
             <translation>您的系统不支持系统托盘。</translation>
         </message>
+        <message>
+            <source>Disabled</source>
+            <translation>已禁用</translation>
+        </message>
     </context>
 </TS>
