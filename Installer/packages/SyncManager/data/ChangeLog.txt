@@ -1,4 +1,13 @@
 ==========================
+2.1.4 - Aug 31, 2025
+==========================
+- Added partial synchronized status.
+- Improved CPU usage throttling.
+- Fixed infinite copying when disk transfer rate is disabled during copying.
+- Fixed disappearing menu icon when you click on it on Linux when using Fusion style.
+- Minor improvements and fixes.
+
+==========================
 2.1.3 - Aug 9, 2025
 ==========================
 - Added user manual.
