@@ -273,10 +273,7 @@ void MainWindow::addProfile()
     manager.profiles().back().paused = manager.paused();
     manager.profiles().back().setupMenus(this);
     connectProfileMenu(manager.profiles().back());
-
     rebindProfiles();
-
-    connect(&manager.profiles().back().syncTimer, &QChronoTimer::timeout, this, [this](){ sync(&manager.profiles().back(), true); });
 
     QSettings profileData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
     profileData.setValue(newName, folderModel->stringList());
@@ -317,8 +314,8 @@ void MainWindow::removeProfile()
         if (!profile)
             continue;
 
-        disconnect(&profile->syncTimer, &QChronoTimer::timeout, this, nullptr);
         ui->syncProfilesView->model()->removeRow(index.row());
+        disconnectProfileMenu(*profile);
         rebindProfiles();
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
@@ -1467,6 +1464,7 @@ MainWindow::connectProfileMenu
 */
 void MainWindow::connectProfileMenu(SyncProfile &profile)
 {
+    connect(&profile.syncTimer, &QChronoTimer::timeout, this, [this, &profile](){ sync(&profile, true); });
     connect(profile.manualAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::Manual); });
     connect(profile.automaticAdaptiveAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticAdaptive); });
     connect(profile.automaticFixedAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticFixed); });
@@ -1504,32 +1502,33 @@ MainWindow::disconnectProfileMenu
 */
 void MainWindow::disconnectProfileMenu(SyncProfile &profile)
 {
-    connect(profile.manualAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::Manual); });
-    connect(profile.automaticAdaptiveAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticAdaptive); });
-    connect(profile.automaticFixedAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticFixed); });
-    connect(profile.increaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ increaseSyncTime(profile); });
-    connect(profile.decreaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ decreaseSyncTime(profile); });
-    connect(profile.fixedSyncingTimeAction, &QAction::triggered, this, [this, &profile](){ setFixedInterval(profile); });
-    connect(profile.detectMovedFilesAction, &QAction::triggered, this, [this, &profile](){ toggleDetectMoved(profile); });
-    connect(profile.moveToTrashAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::MoveToTrash); });
-    connect(profile.versioningAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::Versioning); });
-    connect(profile.deletePermanentlyAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::DeletePermanently); });
-    connect(profile.fileTimestampBeforeAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FileTimestampBefore); });
-    connect(profile.fileTimestampAfterAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FileTimestampAfter); });
-    connect(profile.folderTimestampAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FolderTimestamp); });
-    connect(profile.lastVersionAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::LastVersion); });
-    connect(profile.versioningPostfixAction, &QAction::triggered, this, [this, &profile](){ setVersioningPostfix(profile); });
-    connect(profile.versioningPatternAction, &QAction::triggered, this, [this, &profile](){ setVersioningPattern(profile); });
-    connect(profile.locallyNextToFolderAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::LocallyNextToFolder); });
-    connect(profile.customLocationAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::CustomLocation); });
-    connect(profile.databaseLocallyAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Locally); });
-    connect(profile.databaseDecentralizedAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Decentralized); });
-    connect(profile.fileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMinSize(profile); });
-    connect(profile.fileMaxSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMaxSize(profile); });
-    connect(profile.movedFileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setMovedFileMinSize(profile); });
-    connect(profile.includeAction, &QAction::triggered, this, [this, &profile](){ setIncludeList(profile); });
-    connect(profile.excludeAction, &QAction::triggered, this, [this, &profile](){ setExcludeList(profile); });
-    connect(profile.ignoreHiddenFilesAction, &QAction::triggered, this, [this, &profile](){ toggleIgnoreHiddenFiles(profile); });
+    disconnect(&profile.syncTimer, nullptr, nullptr, nullptr);
+    disconnect(profile.manualAction, nullptr, nullptr, nullptr);
+    disconnect(profile.automaticAdaptiveAction, nullptr, nullptr, nullptr);
+    disconnect(profile.automaticFixedAction, nullptr, nullptr, nullptr);
+    disconnect(profile.increaseSyncTimeAction, nullptr, nullptr, nullptr);
+    disconnect(profile.decreaseSyncTimeAction, nullptr, nullptr, nullptr);
+    disconnect(profile.fixedSyncingTimeAction, nullptr, nullptr, nullptr);
+    disconnect(profile.detectMovedFilesAction, nullptr, nullptr, nullptr);
+    disconnect(profile.moveToTrashAction, nullptr, nullptr, nullptr);
+    disconnect(profile.versioningAction, nullptr, nullptr, nullptr);
+    disconnect(profile.deletePermanentlyAction, nullptr, nullptr, nullptr);
+    disconnect(profile.fileTimestampBeforeAction, nullptr, nullptr, nullptr);
+    disconnect(profile.fileTimestampAfterAction, nullptr, nullptr, nullptr);
+    disconnect(profile.folderTimestampAction, nullptr, nullptr, nullptr);
+    disconnect(profile.lastVersionAction, nullptr, nullptr, nullptr);
+    disconnect(profile.versioningPostfixAction, nullptr, nullptr, nullptr);
+    disconnect(profile.versioningPatternAction, nullptr, nullptr, nullptr);
+    disconnect(profile.locallyNextToFolderAction, nullptr, nullptr, nullptr);
+    disconnect(profile.customLocationAction, nullptr, nullptr, nullptr);
+    disconnect(profile.databaseLocallyAction, nullptr, nullptr, nullptr);
+    disconnect(profile.databaseDecentralizedAction, nullptr, nullptr, nullptr);
+    disconnect(profile.fileMinSizeAction, nullptr, nullptr, nullptr);
+    disconnect(profile.fileMaxSizeAction, nullptr, nullptr, nullptr);
+    disconnect(profile.movedFileMinSizeAction, nullptr, nullptr, nullptr);
+    disconnect(profile.includeAction, nullptr, nullptr, nullptr);
+    disconnect(profile.excludeAction, nullptr, nullptr, nullptr);
+    disconnect(profile.ignoreHiddenFilesAction, nullptr, nullptr, nullptr);
 }
 
 /*
