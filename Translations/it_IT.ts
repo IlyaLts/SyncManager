@@ -483,5 +483,17 @@
             <source>Disabled</source>
             <translation>Disabilitato</translation>
         </message>
+        <message>
+            <source>Partially synchronized!</source>
+            <translation>Parzialmente sincronizzato!</translation>
+        </message>
+        <message>
+            <source>Show unsynchronized files</source>
+            <translation>Mostra i file non sincronizzati</translation>
+        </message>
+        <message>
+            <source>Couldn't synchronize the following files</source>
+            <translation>Impossibile sincronizzare i seguenti file</translation>
+        </message>
     </context>
 </TS>

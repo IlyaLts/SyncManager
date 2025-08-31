@@ -483,5 +483,17 @@
             <source>Disabled</source>
             <translation>無効</translation>
         </message>
+        <message>
+            <source>Partially synchronized!</source>
+            <translation>一部同期されました！</translation>
+        </message>
+        <message>
+            <source>Show unsynchronized files</source>
+            <translation>非同期ファイルを表示</translation>
+        </message>
+        <message>
+            <source>Couldn't synchronize the following files</source>
+            <translation>以下のファイルを同期できませんでした</translation>
+        </message>
     </context>
 </TS>

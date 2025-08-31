@@ -31,5 +31,7 @@
         <file>Images/Flags/us.svg</file>
         <file>Images/Flags/cn.svg</file>
         <file>Images/Flags/fr.svg</file>
+        <file>Images/IconDonePartial.png</file>
+        <file>Images/TrayIconDonePartial.png</file>
     </qresource>
 </RCC>

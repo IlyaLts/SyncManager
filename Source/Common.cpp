@@ -28,6 +28,9 @@
 #include <QInputDialog>
 #include <QPushButton>
 #include <QRandomGenerator>
+#include <QBoxLayout>
+#include <QTextBrowser>
+#include <QPushButton>
 #include <stdio.h>
 #include <cstdarg>
 
@@ -247,6 +250,28 @@ bool textInputDialog(QWidget *parent, const QString &title, const QString &label
     }
 
     return false;
+}
+
+/*
+===================
+textDialog
+===================
+*/
+void textDialog(const QString &title, const QString &text)
+{
+    QDialog dialog;
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    QTextBrowser *textBrowser = new QTextBrowser();
+    QPushButton *okButton = new QPushButton(qApp->translate("MainWindow", "OK"));
+
+    dialog.setWindowTitle(title);
+    textBrowser->setText(text);
+
+    layout->addWidget(textBrowser);
+    layout->addWidget(okButton);
+
+    QObject::connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+    dialog.exec();
 }
 
 /*

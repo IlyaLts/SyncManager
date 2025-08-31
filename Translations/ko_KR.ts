@@ -483,5 +483,17 @@
             <source>Disabled</source>
             <translation>비활성화됨</translation>
         </message>
+        <message>
+            <source>Partially synchronized!</source>
+            <translation>부분적으로 동기화됨!</translation>
+        </message>
+        <message>
+            <source>Show unsynchronized files</source>
+            <translation>동기화되지 않은 파일 표시</translation>
+        </message>
+        <message>
+            <source>Couldn't synchronize the following files</source>
+            <translation>다음 파일을 동기화할 수 없습니다</translation>
+        </message>
     </context>
 </TS>

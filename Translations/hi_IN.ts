@@ -483,5 +483,17 @@
             <source>Disabled</source>
             <translation>अक्षम किया गया</translation>
         </message>
+        <message>
+            <source>Partially synchronized!</source>
+            <translation>आंशिक रूप से सिंक्रनाइज़ किया गया!</translation>
+        </message>
+        <message>
+            <source>Show unsynchronized files</source>
+            <translation>असिंक्रनाइज़ किए गए फ़ाइलें दिखाएं</translation>
+        </message>
+        <message>
+            <source>Couldn't synchronize the following files</source>
+            <translation>निम्न फ़ाइलों को सिंक्रनाइज़ नहीं किया जा सका</translation>
+        </message>
     </context>
 </TS>

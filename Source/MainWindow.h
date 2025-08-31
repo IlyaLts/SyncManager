@@ -135,6 +135,7 @@ private:
     QList<QAction *> countryIcons;
     QIcon iconAdd;
     QIcon iconDone;
+    QIcon iconDonePartial;
     QIcon iconPause;
     QIcon iconRemove;
     QIcon iconResume;
@@ -145,6 +146,7 @@ private:
     QIcon iconOneWay;
     QIcon iconOneWayUpdate;
     QIcon trayIconDone;
+    QIcon trayIconDonePartial;
     QIcon trayIconIssue;
     QIcon trayIconPause;
     QIcon trayIconSync;

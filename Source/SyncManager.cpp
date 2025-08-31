@@ -184,19 +184,11 @@ void SyncManager::updateStatus()
                 m_warning = true;
             }
 
-            if (m_busy && folder.isActive())
+            if (m_busy && folder.isActive() && folder.hasUnsyncedFiles())
             {
-                if (!folder.foldersToRename.isEmpty() ||
-                    !folder.filesToMove.isEmpty() ||
-                    !folder.foldersToCreate.isEmpty() ||
-                    !folder.filesToCopy.isEmpty() ||
-                    !folder.foldersToRemove.isEmpty() ||
-                    !folder.filesToRemove.isEmpty())
-                {
-                    m_syncing = true;
-                    profile.syncing = true;
-                    folder.syncing = true;
-                }
+                m_syncing = true;
+                profile.syncing = true;
+                folder.syncing = true;
             }
         }
     }
@@ -627,7 +619,33 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     }
 
     for (auto &folder : profile.folders)
+    {
+        folder.PartiallySynchronized = folder.hasUnsyncedFiles();
+        folder.unsyncedList.clear();
+
+        if (folder.partiallySynchronized())
+        {
+            for (auto &path : folder.foldersToRename)
+                folder.unsyncedList.append(path.toPath);
+
+            for (auto &path : folder.filesToMove)
+                folder.unsyncedList.append(path.toPath);
+
+            for (auto &path : folder.foldersToCreate)
+                folder.unsyncedList.append(path.path);
+
+            for (auto &path : folder.filesToCopy)
+                folder.unsyncedList.append(path.toPath);
+
+            for (auto &path : folder.foldersToRemove)
+                folder.unsyncedList.append(path);
+
+            for (auto &path : folder.filesToRemove)
+                folder.unsyncedList.append(path);
+        }
+
         folder.clearData();
+    }
 
     m_databaseChanged = false;
 

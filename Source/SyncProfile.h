@@ -140,6 +140,7 @@ public:
     bool isAnyFolderCaseSensitive() const;
     bool hasExistingFolders() const;
     bool hasMissingFolders() const;
+    bool partiallySynchronized() const;
     SyncFolder *folderByIndex(QModelIndex index);
     SyncFolder *folderByPath(const QString &path);
 

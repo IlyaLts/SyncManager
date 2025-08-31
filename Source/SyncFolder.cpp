@@ -424,3 +424,19 @@ bool SyncFolder::isActive() const
 {
     return !paused && !toBeRemoved && exists;
 }
+
+/*
+===================
+SyncFolder::hasUnsyncedFiles
+===================
+*/
+bool SyncFolder::hasUnsyncedFiles() const
+{
+    return !foldersToRename.isEmpty() ||
+           !filesToMove.isEmpty() ||
+           !foldersToCreate.isEmpty() ||
+           !filesToCopy.isEmpty() ||
+           !foldersToRemove.isEmpty() ||
+           !filesToRemove.isEmpty();
+}
+

@@ -1353,6 +1353,15 @@ void MainWindow::showContextMenu(const QPoint &pos)
 
             menu.addAction(iconRemove, "&" + tr("Remove folder"), this, SLOT(removeFolder()));
 
+            if (folder->partiallySynchronized() && !folder->unsyncedList.isEmpty())
+            {
+                QString menuTitle(tr("Show unsynchronized files"));
+                QString title(tr("Couldn't synchronize the following files"));
+
+                menu.addSeparator();
+                menu.addAction(iconWarning, "&" + menuTitle, this, [title, folder](){ textDialog(title, folder->unsyncedList); });
+            }
+
             menu.addSeparator();
 
             if (folder->syncType != SyncFolder::TWO_WAY)
@@ -1579,6 +1588,8 @@ void MainWindow::updateStatus()
                 profileModel->setData(index, iconRemove, Qt::DecorationRole);
             else if (profile->hasMissingFolders())
                 profileModel->setData(index, iconWarning, Qt::DecorationRole);
+            else if (profile->partiallySynchronized())
+                profileModel->setData(index, iconDonePartial, Qt::DecorationRole);
             else
                 profileModel->setData(index, iconDone, Qt::DecorationRole);
 
@@ -1622,6 +1633,8 @@ void MainWindow::updateStatus()
                         folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
                     else if (!folder->exists)
                         folderModel->setData(index, iconRemove, Qt::DecorationRole);
+                    else if (folder->partiallySynchronized())
+                        folderModel->setData(index, iconDonePartial, Qt::DecorationRole);
                     else
                         folderModel->setData(index, iconDone, Qt::DecorationRole);
 
@@ -1688,8 +1701,22 @@ void MainWindow::updateStatus()
         }
         else
         {
-            trayIcon->setIcon(trayIconDone);
-            setWindowIcon(trayIconDone);
+            bool incomplete = false;
+
+            for (auto &profile : manager.profiles())
+                if (profile.partiallySynchronized())
+                    incomplete = true;
+
+            if (incomplete)
+            {
+                trayIcon->setIcon(trayIconDonePartial);
+                setWindowIcon(trayIconDonePartial);
+            }
+            else
+            {
+                trayIcon->setIcon(trayIconDone);
+                setWindowIcon(trayIconDone);
+            }
         }
 
         // Fixes flickering menu bar
@@ -1815,6 +1842,10 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
     {
         QString time(syncApp->toLocalizedDateTime(profile.lastSyncDate, dateFormat));
         QString text = tr("Last synchronization: %1.").arg(time) + nextSyncText;
+
+        if (profile.partiallySynchronized())
+            text.insert(0, tr("Partially synchronized!") + "\n\n");
+
         profileModel->setData(index, text, Qt::ToolTipRole);
     }
     else
@@ -1835,6 +1866,10 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
             {
                 QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate, dateFormat));
                 QString text = QString("Last synchronization: %1.").arg(time) + nextSyncText;
+
+                if (folder.partiallySynchronized())
+                    text.insert(0, tr("Partially synchronized!") + "\n\n");
+
                 folderModel->setData(folderModel->indexByRow(i), text, Qt::ToolTipRole);
             }
             else
@@ -1903,6 +1938,7 @@ void MainWindow::loadSettings()
 
             folder.exists = QFileInfo::exists(folder.path);
             folder.lastSyncDate = settings.value(profileKeyPath + folder.path + QLatin1String("_LastSyncDate")).toDateTime();
+            folder.PartiallySynchronized = settings.value(profileKeyPath + folder.path + QLatin1String("_PartiallySynchronized")).toBool();
         }
     }
 
@@ -1981,6 +2017,7 @@ void MainWindow::setupMenus()
 {
     iconAdd.addFile(":/Images/IconAdd.png");
     iconDone.addFile(":/Images/IconDone.png");
+    iconDonePartial.addFile(":/Images/IconDonePartial.png");
     iconPause.addFile(":/Images/IconPause.png");
     iconRemove.addFile(":/Images/IconRemove.png");
     iconResume.addFile(":/Images/IconResume.png");
@@ -1991,6 +2028,7 @@ void MainWindow::setupMenus()
     iconOneWay.addFile(":/Images/IconOneWay.png");
     iconOneWayUpdate.addFile(":/Images/IconOneWayUpdate.png");
     trayIconDone.addFile(":/Images/TrayIconDone.png");
+    trayIconDonePartial.addFile(":/Images/TrayIconDonePartial.png");
     trayIconIssue.addFile(":/Images/TrayIconIssue.png");
     trayIconPause.addFile(":/Images/TrayIconPause.png");
     trayIconSync.addFile(":/Images/TrayIconSync.png");

@@ -483,5 +483,17 @@
             <source>Disabled</source>
             <translation>Вимкнено</translation>
         </message>
+        <message>
+            <source>Partially synchronized!</source>
+            <translation>Частково синхронізовано!</translation>
+        </message>
+        <message>
+            <source>Show unsynchronized files</source>
+            <translation>Показати несинхронізовані файли</translation>
+        </message>
+        <message>
+            <source>Couldn't synchronize the following files</source>
+            <translation>Не вдалося синхронізувати наступні файли</translation>
+        </message>
     </context>
 </TS>

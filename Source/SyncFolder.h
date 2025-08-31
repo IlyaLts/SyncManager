@@ -83,6 +83,8 @@ public:
     void removeDatabase() const;
     void removeNonExistentFiles();
     bool isActive() const;
+    bool hasUnsyncedFiles() const;
+    inline bool partiallySynchronized() const { return PartiallySynchronized; }
 
     SyncType syncType = TWO_WAY;
     QByteArray path;
@@ -96,6 +98,8 @@ public:
     QHash<Hash, QByteArray> filesToRemove;
     QSet<QByteArray> foldersToUpdate;
 
+    QString unsyncedList;
+    bool PartiallySynchronized = false;
     QDateTime lastSyncDate;
     bool exists = true;
     bool syncing = false;

@@ -483,5 +483,17 @@
             <source>Disabled</source>
             <translation>已禁用</translation>
         </message>
+        <message>
+            <source>Partially synchronized!</source>
+            <translation>部分同步！</translation>
+        </message>
+        <message>
+            <source>Show unsynchronized files</source>
+            <translation>显示未同步文件</translation>
+        </message>
+        <message>
+            <source>Couldn't synchronize the following files</source>
+            <translation>无法同步以下文件</translation>
+        </message>
     </context>
 </TS>
