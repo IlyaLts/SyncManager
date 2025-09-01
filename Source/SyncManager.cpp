@@ -133,7 +133,10 @@ void SyncManager::sync()
             action->setEnabled(true);
 
         if (!success)
+        {
             return;
+            m_busy = false;
+        }
 
         m_queue.head()->syncHidden = false;
         m_queue.dequeue();
