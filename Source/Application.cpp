@@ -37,9 +37,11 @@ Language languages[] =
         {QLocale::Italian,      QLocale::Italy,         ":/i18n/it_IT.qm",  ":/Images/Flags/it.svg", "&Italian"},
         {QLocale::Japanese,     QLocale::Japan,         ":/i18n/ja_JP.qm",  ":/Images/Flags/jp.svg", "&Japanese"},
         {QLocale::Korean,       QLocale::SouthKorea,    ":/i18n/ko_KR.qm",  ":/Images/Flags/kr.svg", "&Korean"},
+        {QLocale::Polish,       QLocale::Poland,        ":/i18n/pl_PL.qm",  ":/Images/Flags/pl.svg", "&Polish"},
         {QLocale::Portuguese,   QLocale::Portugal,      ":/i18n/pt_PT.qm",  ":/Images/Flags/pt.svg", "&Portuguese"},
         {QLocale::Russian,      QLocale::Russia,        ":/i18n/ru_RU.qm",  ":/Images/Flags/ru.svg", "&Russian"},
         {QLocale::Spanish,      QLocale::Spain,         ":/i18n/es_ES.qm",  ":/Images/Flags/es.svg", "&Spanish"},
+        {QLocale::Turkish,      QLocale::Turkey,        ":/i18n/tr_TR.qm",  ":/Images/Flags/tr.svg", "&Turkish"},
         {QLocale::Ukrainian,    QLocale::Ukraine,       ":/i18n/uk_UA.qm",  ":/Images/Flags/ua.svg", "&Ukrainian"},
 };
 
