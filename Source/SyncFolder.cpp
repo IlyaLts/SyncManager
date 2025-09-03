@@ -110,8 +110,7 @@ void SyncFolder::saveToDatabase(const QString &path) const
 
     for (auto fileIt = files.begin(); fileIt != files.end(); fileIt++)
     {
-        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) +
-                               sizeof(SyncFile::Type) + sizeof(SyncFile::LockedFlag) + sizeof(Attributes);
+        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(quint8) + sizeof(Attributes);
 
         char buf[bufSize];
         char *p = buf;
@@ -122,10 +121,9 @@ void SyncFolder::saveToDatabase(const QString &path) const
         p += sizeof(QDateTime);
         *reinterpret_cast<qint64 *>(p) = fileIt->size;
         p += sizeof(qint64);
-        *reinterpret_cast<SyncFile::Type *>(p) = fileIt->type;
-        p += sizeof(SyncFile::Type);
-        *reinterpret_cast<SyncFile::LockedFlag *>(p) = fileIt->lockedFlag;
-        p += sizeof(SyncFile::LockedFlag);
+        *reinterpret_cast<quint8 *>(p) |= fileIt->type;
+        *reinterpret_cast<quint8 *>(p) |= (fileIt->lockedFlag << 4);
+        p += sizeof(quint8);
         *reinterpret_cast<Attributes *>(p) = fileIt->attributes;
 
         if (stream.writeRawData(&buf[0], bufSize) != bufSize)
@@ -235,8 +233,7 @@ void SyncFolder::loadFromDatabase(const QString &path)
     // File data
     for (qsizetype i = 0; i < numOfFiles; i++)
     {
-        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) +
-                               sizeof(SyncFile::Type) + sizeof(SyncFile::LockedFlag) + sizeof(Attributes);
+        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(quint8) + sizeof(Attributes);
 
         char buf[bufSize];
 
@@ -257,10 +254,9 @@ void SyncFolder::loadFromDatabase(const QString &path)
         p += sizeof(QDateTime);
         size = *reinterpret_cast<qint64 *>(p);
         p += sizeof(qint64);
-        type = *reinterpret_cast<SyncFile::Type *>(p);
-        p += sizeof(SyncFile::Type);
-        lockedFlag = *reinterpret_cast<SyncFile::LockedFlag *>(p);
-        p += sizeof(SyncFile::LockedFlag);
+        type = static_cast<SyncFile::Type>((*reinterpret_cast<quint8 *>(p) & 0xf));
+        lockedFlag = static_cast<SyncFile::LockedFlag>((*reinterpret_cast<quint8 *>(p) >> 4));
+        p += sizeof(quint8);
         attributes = *reinterpret_cast<Attributes *>(p);
 
         const auto it = files.insert(hash, SyncFile(type, modifiedDate));

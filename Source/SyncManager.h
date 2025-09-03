@@ -33,7 +33,7 @@
 #define DATA_FOLDER_PATH        ".SyncManager"
 #define DATABASE_FILENAME       "db"
 #define TEMP_EXTENSION          "sm_temp"
-#define DATABASE_VERSION        3
+#define DATABASE_VERSION        4
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_COOLDOWN   300000
 #define CPU_UPDATE_TIME         50

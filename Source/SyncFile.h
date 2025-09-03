@@ -37,16 +37,16 @@ public:
 
     enum Type : qint8
     {
-        Unknown,
-        File,
-        Folder
+        Unknown = 1,
+        File = 2,
+        Folder = 3
     };
 
     enum LockedFlag : qint8
     {
-        Unlocked,           // Files can be copied or deleted.
-        Locked,             // Files are scheduled for renaming or moving, and must not be copied or deleted.
-        LockedInternal      // The same as Locked, but for internal subfolders in a case-insensitive renamed folder.
+        Unlocked = 1,           // Files can be copied or deleted.
+        Locked = 2,             // Files are scheduled for renaming or moving, and must not be copied or deleted.
+        LockedInternal = 3      // The same as Locked, but for internal subfolders in a case-insensitive renamed folder.
     };
 
     enum Flags
