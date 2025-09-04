@@ -80,7 +80,7 @@ Filename: "{app}\{#MyAppExeName}"; Parameters: "launchOnStartup"; Description: "
 Type: filesandordirs; Name: "{app}"
 
 [code]
-function InitializeUninstall(): Boolean;
+function KillApplicationIfRunning(): Boolean;
 var
   ErrorCode: Integer;
 begin
@@ -94,3 +94,14 @@ begin
 
   Result := True;
 end;
+
+function InitializeSetup(): Boolean;
+begin
+  Result := KillApplicationIfRunning();
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  Result := KillApplicationIfRunning();
+end;
+
