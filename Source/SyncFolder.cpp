@@ -121,8 +121,8 @@ void SyncFolder::saveToDatabase(const QString &path) const
         p += sizeof(QDateTime);
         *reinterpret_cast<qint64 *>(p) = fileIt->size;
         p += sizeof(qint64);
-        *reinterpret_cast<quint8 *>(p) |= fileIt->type;
-        *reinterpret_cast<quint8 *>(p) |= (fileIt->lockedFlag << 4);
+        *reinterpret_cast<quint8 *>(p) = fileIt->type;
+        *reinterpret_cast<quint8 *>(p) |= fileIt->lockedFlag << 4;
         p += sizeof(quint8);
         *reinterpret_cast<Attributes *>(p) = fileIt->attributes;
 
