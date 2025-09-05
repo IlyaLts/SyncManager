@@ -629,22 +629,22 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         if (folder.partiallySynchronized())
         {
             for (auto &path : folder.foldersToRename)
-                folder.unsyncedList.append(path.toPath);
+                folder.unsyncedList.append(path.toPath + "\n");
 
             for (auto &path : folder.filesToMove)
-                folder.unsyncedList.append(path.toPath);
+                folder.unsyncedList.append(path.toPath + "\n");
 
             for (auto &path : folder.foldersToCreate)
-                folder.unsyncedList.append(path.path);
+                folder.unsyncedList.append(path.path + "\n");
 
             for (auto &path : folder.filesToCopy)
-                folder.unsyncedList.append(path.toPath);
+                folder.unsyncedList.append(path.toPath + "\n");
 
             for (auto &path : folder.foldersToRemove)
-                folder.unsyncedList.append(path);
+                folder.unsyncedList.append(path + "\n");
 
             for (auto &path : folder.filesToRemove)
-                folder.unsyncedList.append(path);
+                folder.unsyncedList.append(path + "\n");
         }
 
         folder.clearData();
