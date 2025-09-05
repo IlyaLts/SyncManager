@@ -1,4 +1,11 @@
 ==========================
+2.1.5 - Sep 5, 2025
+==========================
+- Added Polish and Turkish languages.
+- Decreased database size by up to 3.5%.
+- Fixed removed profiles reappearing in the profile list after a adding new one.
+
+==========================
 2.1.4 - Aug 31, 2025
 ==========================
 - Added partial synchronized status.

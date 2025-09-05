@@ -27,22 +27,22 @@
 Language defaultLanguage = { QLocale::English, QLocale::UnitedStates, ":/i18n/en_US.qm", ":/Images/flags/us.svg", "&English" };
 
 Language languages[] =
-    {
-        {QLocale::Chinese,      QLocale::China,         ":/i18n/zh_CN.qm",  ":/Images/Flags/cn.svg", "&Chinese"},
-        {QLocale::Danish,       QLocale::Denmark,       ":/i18n/da_DK.qm",  ":/Images/Flags/dk.svg", "&Danish"},
-        {QLocale::English,      QLocale::UnitedStates,  ":/i18n/en_US.qm",  ":/Images/Flags/us.svg", "&English"},
-        {QLocale::French,       QLocale::France,        ":/i18n/fr_FR.qm",  ":/Images/Flags/fr.svg", "&French"},
-        {QLocale::German,       QLocale::Germany,       ":/i18n/de_DE.qm",  ":/Images/Flags/de.svg", "&German"},
-        {QLocale::Hindi,        QLocale::India,         ":/i18n/hi_IN.qm",  ":/Images/Flags/in.svg", "&Hindi"},
-        {QLocale::Italian,      QLocale::Italy,         ":/i18n/it_IT.qm",  ":/Images/Flags/it.svg", "&Italian"},
-        {QLocale::Japanese,     QLocale::Japan,         ":/i18n/ja_JP.qm",  ":/Images/Flags/jp.svg", "&Japanese"},
-        {QLocale::Korean,       QLocale::SouthKorea,    ":/i18n/ko_KR.qm",  ":/Images/Flags/kr.svg", "&Korean"},
-        {QLocale::Polish,       QLocale::Poland,        ":/i18n/pl_PL.qm",  ":/Images/Flags/pl.svg", "&Polish"},
-        {QLocale::Portuguese,   QLocale::Portugal,      ":/i18n/pt_PT.qm",  ":/Images/Flags/pt.svg", "&Portuguese"},
-        {QLocale::Russian,      QLocale::Russia,        ":/i18n/ru_RU.qm",  ":/Images/Flags/ru.svg", "&Russian"},
-        {QLocale::Spanish,      QLocale::Spain,         ":/i18n/es_ES.qm",  ":/Images/Flags/es.svg", "&Spanish"},
-        {QLocale::Turkish,      QLocale::Turkey,        ":/i18n/tr_TR.qm",  ":/Images/Flags/tr.svg", "&Turkish"},
-        {QLocale::Ukrainian,    QLocale::Ukraine,       ":/i18n/uk_UA.qm",  ":/Images/Flags/ua.svg", "&Ukrainian"},
+{
+    {QLocale::Chinese,      QLocale::China,         ":/i18n/zh_CN.qm",  ":/Images/Flags/cn.svg", "&Chinese"},
+    {QLocale::Danish,       QLocale::Denmark,       ":/i18n/da_DK.qm",  ":/Images/Flags/dk.svg", "&Danish"},
+    {QLocale::English,      QLocale::UnitedStates,  ":/i18n/en_US.qm",  ":/Images/Flags/us.svg", "&English"},
+    {QLocale::French,       QLocale::France,        ":/i18n/fr_FR.qm",  ":/Images/Flags/fr.svg", "&French"},
+    {QLocale::German,       QLocale::Germany,       ":/i18n/de_DE.qm",  ":/Images/Flags/de.svg", "&German"},
+    {QLocale::Hindi,        QLocale::India,         ":/i18n/hi_IN.qm",  ":/Images/Flags/in.svg", "&Hindi"},
+    {QLocale::Italian,      QLocale::Italy,         ":/i18n/it_IT.qm",  ":/Images/Flags/it.svg", "&Italian"},
+    {QLocale::Japanese,     QLocale::Japan,         ":/i18n/ja_JP.qm",  ":/Images/Flags/jp.svg", "&Japanese"},
+    {QLocale::Korean,       QLocale::SouthKorea,    ":/i18n/ko_KR.qm",  ":/Images/Flags/kr.svg", "&Korean"},
+    {QLocale::Polish,       QLocale::Poland,        ":/i18n/pl_PL.qm",  ":/Images/Flags/pl.svg", "&Polish"},
+    {QLocale::Portuguese,   QLocale::Portugal,      ":/i18n/pt_PT.qm",  ":/Images/Flags/pt.svg", "&Portuguese"},
+    {QLocale::Russian,      QLocale::Russia,        ":/i18n/ru_RU.qm",  ":/Images/Flags/ru.svg", "&Russian"},
+    {QLocale::Spanish,      QLocale::Spain,         ":/i18n/es_ES.qm",  ":/Images/Flags/es.svg", "&Spanish"},
+    {QLocale::Turkish,      QLocale::Turkey,        ":/i18n/tr_TR.qm",  ":/Images/Flags/tr.svg", "&Turkish"},
+    {QLocale::Ukrainian,    QLocale::Ukraine,       ":/i18n/uk_UA.qm",  ":/Images/Flags/ua.svg", "&Ukrainian"}
 };
 
 /*
