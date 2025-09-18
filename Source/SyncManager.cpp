@@ -729,11 +729,14 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
             }
         }
 
-        if (profile.fileMinSize() > static_cast<quint64>(fileSize))
-            continue;
+        if (fileInfo.isFile())
+        {
+            if (profile.fileMinSize() > static_cast<quint64>(fileSize))
+                continue;
 
-        if (profile.fileMaxSize() > 0 && static_cast<quint64>(fileSize) > profile.fileMaxSize())
-            continue;
+            if (profile.fileMaxSize() > 0 && static_cast<quint64>(fileSize) > profile.fileMaxSize())
+                continue;
+        }
 
         QByteArray absoluteFilePath = fileInfo.filePath().toUtf8();
         QByteArray filePath(absoluteFilePath);
