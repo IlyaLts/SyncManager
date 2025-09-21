@@ -495,5 +495,13 @@
             <source>Couldn't synchronize the following files</source>
             <translation>निम्न फ़ाइलों को सिंक्रनाइज़ नहीं किया जा सका</translation>
         </message>
+        <message>
+            <source>Syncing</source>
+            <translation>सिंक्रनाइज़ हो रहा है</translation>
+        </message>
+        <message>
+            <source>In queue</source>
+            <translation>कतार में है</translation>
+        </message>
     </context>
 </TS>

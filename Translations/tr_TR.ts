@@ -495,5 +495,13 @@
             <source>Couldn't synchronize the following files</source>
             <translation>Aşağıdaki dosyalar senkronize edilemedi</translation>
         </message>
+        <message>
+            <source>Syncing</source>
+            <translation>Senkronize ediliyor</translation>
+        </message>
+        <message>
+            <source>In queue</source>
+            <translation>Sırada</translation>
+        </message>
     </context>
 </TS>

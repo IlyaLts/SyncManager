@@ -495,5 +495,13 @@
             <source>Couldn't synchronize the following files</source>
             <translation>다음 파일을 동기화할 수 없습니다</translation>
         </message>
+        <message>
+            <source>Syncing</source>
+            <translation>동기화 중</translation>
+        </message>
+        <message>
+            <source>In queue</source>
+            <translation>대기 중</translation>
+        </message>
     </context>
 </TS>

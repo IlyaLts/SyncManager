@@ -495,5 +495,13 @@
             <source>Couldn't synchronize the following files</source>
             <translation>Не вдалося синхронізувати наступні файли</translation>
         </message>
+        <message>
+            <source>Syncing</source>
+            <translation>Синхронізація</translation>
+        </message>
+        <message>
+            <source>In queue</source>
+            <translation>У черзі</translation>
+        </message>
     </context>
 </TS>

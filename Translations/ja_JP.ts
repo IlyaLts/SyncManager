@@ -495,5 +495,13 @@
             <source>Couldn't synchronize the following files</source>
             <translation>以下のファイルを同期できませんでした</translation>
         </message>
+        <message>
+            <source>Syncing</source>
+            <translation>同期中</translation>
+        </message>
+        <message>
+            <source>In queue</source>
+            <translation>キューに入っています</translation>
+        </message>
     </context>
 </TS>

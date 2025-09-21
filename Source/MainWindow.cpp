@@ -1584,9 +1584,9 @@ void MainWindow::updateStatus()
             int posInQueue = manager.queue().indexOf(profile);
 
             if (posInQueue == 0)
-                profileModel->setData(index, QString("Syncing"), QueueStatusRole);
+                profileModel->setData(index, tr("Syncing"), QueueStatusRole);
             else if (posInQueue > 0)
-                profileModel->setData(index, QString("In queue (%1)").arg(posInQueue), QueueStatusRole);
+                profileModel->setData(index, tr("In queue") + QString(" (%1)").arg(posInQueue), QueueStatusRole);
             else
                 profileModel->setData(index, QString(""), QueueStatusRole);
 

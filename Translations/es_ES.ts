@@ -495,5 +495,13 @@
             <source>Couldn't synchronize the following files</source>
             <translation>No se pudieron sincronizar los siguientes archivos</translation>
         </message>
+        <message>
+            <source>Syncing</source>
+            <translation>Sincronizando</translation>
+        </message>
+        <message>
+            <source>In queue</source>
+            <translation>En cola</translation>
+        </message>
     </context>
 </TS>

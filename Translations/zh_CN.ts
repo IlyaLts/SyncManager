@@ -495,5 +495,13 @@
             <source>Couldn't synchronize the following files</source>
             <translation>无法同步以下文件</translation>
         </message>
+        <message>
+            <source>Syncing</source>
+            <translation>正在同步</translation>
+        </message>
+        <message>
+            <source>In queue</source>
+            <translation>在队列中</translation>
+        </message>
     </context>
 </TS>
