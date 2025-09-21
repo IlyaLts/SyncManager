@@ -53,9 +53,13 @@ FolderStyleDelegate::sizeHint
 QSize FolderStyleDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     QSize baseSize = QStyledItemDelegate::sizeHint(option, index);
+    QIcon syncTypeIcon = index.model()->data(index, SyncTypeRole).value<QIcon>();
 
-    if (!index.model()->data(index, SyncTypeRole).value<QIcon>().isNull())
-        baseSize.setWidth(baseSize.width() + option.decorationSize.width());
+    if (!syncTypeIcon.isNull())
+    {
+        QPixmap pixmap = syncTypeIcon.pixmap(option.decorationSize);
+        baseSize.setWidth(baseSize.width() + option.decorationSize.width() + pixmap.width());
+    }
 
     return baseSize;
 }
