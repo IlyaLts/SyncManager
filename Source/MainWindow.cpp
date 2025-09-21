@@ -2148,9 +2148,20 @@ void MainWindow::setupMenus()
     this->menuBar()->addMenu(settingsMenu);
     this->menuBar()->setStyle(new MenuProxyStyle);
 
-    // Fix a disappearing icon when you click on its menu on Linux while using the Fusion style
 #ifndef Q_OS_WIN
-    this->menuBar()->setStyleSheet("QMenuBar::item:selected { background: #e3e3e3; } QMenuBar::item:pressed { background: #e3e3e3; })");
+    QString styleSheet;
+
+    // Fixes the issue of overly small menu buttons in the menu bar
+    styleSheet.append("QMenuBar { padding: 5px 0px 5px 0px; } QMenuBar::item { padding: 5px 10px 5px 10px; border: none; }");
+
+    // Fixes a disappearing icon when you click on its menu on Linux while using the Fusion style
+    styleSheet.append("QMenuBar::item:selected { background: #e3e3e3; } QMenuBar::item:pressed { background: #e3e3e3; }");
+
+    this->menuBar()->setStyleSheet(styleSheet);
+
+    // Makes profiles/folders items slightly bigger
+    ui->syncProfilesView->setStyleSheet("QListView::item { padding: 3px;}");
+    ui->folderListView->setStyleSheet("QListView::item { padding: 3px; }");
 #endif
 
     for (auto &profile : manager.profiles())
