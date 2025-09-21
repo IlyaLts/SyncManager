@@ -65,7 +65,7 @@ void SyncManager::addToQueue(SyncProfile *profile)
     // Adds the passed profile number to the sync queue
     if (profile)
     {
-        if ((!profile->paused || !profile->isAutomatic()) && !profile->toBeRemoved)
+        if (!profile->paused && !profile->toBeRemoved)
         {
             m_queue.enqueue(profile);
         }
@@ -74,7 +74,7 @@ void SyncManager::addToQueue(SyncProfile *profile)
     else
     {
         for (auto &profile : profiles())
-            if ((!profile.paused || !profile.isAutomatic()) && !profile.toBeRemoved && !m_queue.contains(&profile))
+            if (!profile.paused && !profile.toBeRemoved && !m_queue.contains(&profile))
                 m_queue.enqueue(&profile);
     }
 }
@@ -465,9 +465,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
     if (!profile.isActive())
         return false;
-
-    if (m_paused)
-        return true;
 
     QElapsedTimer timer;
     timer.start();
