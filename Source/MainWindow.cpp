@@ -26,6 +26,7 @@
 #include "MenuProxyStyle.h"
 #include "Common.h"
 #include "FolderStyleDelegate.h"
+#include "ProfileStyleDelegate.h"
 #include <QStringListModel>
 #include <QSettings>
 #include <QCloseEvent>
@@ -63,6 +64,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     profileModel = new DecoratedStringListModel;
     folderModel = new DecoratedStringListModel;
     ui->syncProfilesView->setModel(profileModel);
+    ui->syncProfilesView->setItemDelegate(new ProfileStyleDelegate(ui->syncProfilesView));
     ui->folderListView->setModel(folderModel);
     ui->folderListView->setItemDelegate(new FolderStyleDelegate(ui->folderListView));
 
@@ -1578,6 +1580,15 @@ void MainWindow::updateStatus()
 
             if (profile->toBeRemoved)
                 continue;
+
+            int posInQueue = manager.queue().indexOf(profile);
+
+            if (posInQueue == 0)
+                profileModel->setData(index, QString("Syncing"), QueueStatusRole);
+            else if (posInQueue > 0)
+                profileModel->setData(index, QString("In queue (%1)").arg(posInQueue), QueueStatusRole);
+            else
+                profileModel->setData(index, QString(""), QueueStatusRole);
 
             if (profile->paused)
                 profileModel->setData(index, iconPause, Qt::DecorationRole);
