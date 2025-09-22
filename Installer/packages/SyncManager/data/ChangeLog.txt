@@ -1,4 +1,13 @@
 ==========================
+2.1.6 - Sep 22, 2025
+==========================
+- Added queue statuses to the right side of a profile name.
+- Improved user interface on Linux.
+- Fixed syncing getting stuck when folders are unavailable.
+- Fixed profiles not syncing after being unpaused.
+- Fixed an issue where an empty folder didn't get deleted due to filtering by size.
+
+==========================
 2.1.5 - Sep 5, 2025
 ==========================
 - Added Polish and Turkish languages.
