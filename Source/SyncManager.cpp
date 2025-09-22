@@ -463,9 +463,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     debugSetTime(syncTime);
 #endif
 
-    if (!profile.isActive())
-        return false;
-
     QElapsedTimer timer;
     timer.start();
 
