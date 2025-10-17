@@ -749,6 +749,7 @@ void MainWindow::switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMod
     }
 
     updateStatus();
+    updateProfileTooltip(profile);
 
     if (appInitiated)
         profile.saveSettings();
@@ -1832,17 +1833,20 @@ MainWindow::updateProfileTooltip
 void MainWindow::updateProfileTooltip(const SyncProfile &profile)
 {
     QModelIndex index = indexByProfile(profile);
+    QString nextSyncText;
+    QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
 
     if (!index.isValid())
         return;
 
-    QString nextSyncText("\n");
-    nextSyncText.append(tr("Next Synchronization: "));
-    QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
-    QDateTime dateTime = profile.lastSyncDate;
-    dateTime += std::chrono::duration<quint64, std::milli>(profile.syncEvery);
-    nextSyncText.append(syncApp->toLocalizedDateTime(dateTime, dateFormat));
-    nextSyncText.append(".");
+    if (profile.syncingMode() != SyncProfile::Manual)
+    {
+        nextSyncText.append("\n" + tr("Next Synchronization: "));
+        QDateTime dateTime = profile.lastSyncDate;
+        dateTime += std::chrono::duration<quint64, std::milli>(profile.syncEvery);
+        nextSyncText.append(syncApp->toLocalizedDateTime(dateTime, dateFormat));
+        nextSyncText.append(".");
+    }
 
     if (!profile.hasExistingFolders())
     {
