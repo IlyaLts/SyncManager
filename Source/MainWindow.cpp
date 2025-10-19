@@ -100,7 +100,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
 
     connect(ui->syncProfilesView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(profileClicked(QItemSelection,QItemSelection)));
-    connect(ui->syncProfilesView->model(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)), SLOT(profileNameChanged(QModelIndex)));
+    connect(ui->syncProfilesView->model(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)), SLOT(profileNameChanged(QModelIndex,QModelIndex,QList<int>)));
     connect(ui->syncProfilesView, SIGNAL(deletePressed()), SLOT(removeProfile()));
     connect(ui->folderListView, &FolderListView::drop, this, &MainWindow::addFolder);
     connect(ui->folderListView, SIGNAL(deletePressed()), SLOT(removeFolder()));
@@ -382,9 +382,14 @@ void MainWindow::profileClicked(const QItemSelection &selected, const QItemSelec
 MainWindow::profileNameChanged
 ===================
 */
-void MainWindow::profileNameChanged(const QModelIndex &index)
+void MainWindow::profileNameChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles)
 {
-    QString newName = index.data(Qt::DisplayRole).toString();
+    Q_UNUSED(bottomRight);
+
+    if (!roles.contains(Qt::DisplayRole))
+        return;
+
+    QString newName = topLeft.data(Qt::DisplayRole).toString();
     newName.remove('/');
     newName.remove('\\');
 
@@ -394,9 +399,12 @@ void MainWindow::profileNameChanged(const QModelIndex &index)
     for (const auto &profile : manager.profiles())
         profileNames.append(profile.name);
 
-    SyncProfile *profile = profileByIndex(index);
+    SyncProfile *profile = profileByIndex(topLeft);
 
     if (!profile)
+        return;
+
+    if (newName == profile->name)
         return;
 
     for (const auto &folder : profile->folders)
@@ -405,19 +413,24 @@ void MainWindow::profileNameChanged(const QModelIndex &index)
     // Sets its name back to original if there's the profile name that already exists
     if (newName.compare(profile->name, Qt::CaseInsensitive) && (newName.isEmpty() || profileNames.contains(newName, Qt::CaseInsensitive)))
     {
-        ui->syncProfilesView->model()->setData(index, profile->name, Qt::DisplayRole);
+        ui->syncProfilesView->model()->setData(topLeft, profile->name, Qt::DisplayRole);
         return;
     }
 
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    settings.remove(profile->name + QLatin1String("_profile"));
-    settings.setValue(newName + QLatin1String("_profile/") + QLatin1String("Paused"), profile->paused);
-    settings.setValue(newName + QLatin1String("_profile/") + QLatin1String("LastSyncDate"), profile->lastSyncDate);
+    QString oldProfilePrefix = profile->name + QLatin1String("_profile");
+    QStringList allKeys = settings.allKeys();
+    QStringList keysToRename;
 
-    for (const auto &folder : profile->folders)
+    for (const QString &key : std::as_const(allKeys))
+        if (key.startsWith(oldProfilePrefix))
+            keysToRename.append(key);
+
+    for (const QString &key : std::as_const(keysToRename))
     {
-        settings.setValue(newName + QLatin1String("_profile/") + folder.path + QLatin1String("_Paused"), folder.paused);
-        settings.setValue(newName + QLatin1String("_profile/") + folder.path + QLatin1String("_LastSyncDate"), folder.lastSyncDate);
+        QString newKey = QString(key).replace(0, oldProfilePrefix.length(), newName + QLatin1String("_profile"));
+        settings.setValue(newKey, settings.value(key));
+        settings.remove(key);
     }
 
     QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);

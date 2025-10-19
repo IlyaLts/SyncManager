@@ -69,7 +69,7 @@ private Q_SLOTS:
     void addProfile();
     void removeProfile();
     void profileClicked(const QItemSelection &selected, const QItemSelection &deselected);
-    void profileNameChanged(const QModelIndex &index);
+    void profileNameChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles);
     void addFolder(const QMimeData *mimeData = nullptr);
     void removeFolder();
     void pauseSyncing();
