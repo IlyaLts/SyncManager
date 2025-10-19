@@ -132,6 +132,15 @@ void SyncManager::sync()
         for (auto &action : m_queue.head()->filteringMenu->actions())
             action->setEnabled(true);
 
+        quint64 max = SyncManager::maxInterval();
+
+        // If exceeds the maximum value of an qint64
+        if (m_queue.head()->syncEvery >= max)
+            m_queue.head()->increaseSyncTimeAction->setEnabled(false);
+
+        if (m_queue.head()->syncTimeMultiplier() <= 1)
+            m_queue.head()->decreaseSyncTimeAction->setEnabled(false);
+
         if (!success)
         {
             return;
@@ -172,7 +181,7 @@ void SyncManager::updateStatus()
         {
             folder.syncing = false;
 
-            if ((!m_queue.isEmpty() && m_queue.head() != &profile ) || folder.toBeRemoved)
+            if (folder.toBeRemoved)
                 continue;
 
             if (folder.exists)
@@ -371,6 +380,9 @@ SyncManager::setSyncTimeMultiplier
 */
 void SyncManager::setSyncTimeMultiplier(SyncProfile &profile, int multiplier)
 {
+    if (multiplier <= 0)
+        multiplier = 1;
+
     profile.setSyncTimeMultiplier(multiplier);
     updateNextSyncingTime(profile);
 }

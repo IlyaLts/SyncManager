@@ -1710,18 +1710,15 @@ void MainWindow::updateStatus()
             if (windowIcon().cacheKey() != trayIconSync.cacheKey())
                 setWindowIcon(trayIconSync);
         }
+        else if (manager.issue())
+        {
+            trayIcon->setIcon(trayIconIssue);
+            setWindowIcon(trayIconIssue);
+        }
         else if (manager.warning())
         {
-            if (manager.issue())
-            {
-                trayIcon->setIcon(trayIconIssue);
-                setWindowIcon(trayIconIssue);
-            }
-            else
-            {
-                trayIcon->setIcon(trayIconWarning);
-                setWindowIcon(trayIconWarning);
-            }
+            trayIcon->setIcon(trayIconWarning);
+            setWindowIcon(trayIconWarning);
         }
         else
         {
@@ -1997,6 +1994,9 @@ void MainWindow::loadSettings()
         // If exceeds the maximum value of an qint64
         if (profile.syncEvery >= max)
             profile.increaseSyncTimeAction->setEnabled(false);
+
+        if (profile.syncTimeMultiplier() <= 1)
+            profile.decreaseSyncTimeAction->setEnabled(false);
 
         updateProfileTooltip(profile);
     }
