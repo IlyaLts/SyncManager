@@ -1818,6 +1818,11 @@ void SyncManager::moveFiles(SyncProfile &profile, SyncFolder &folder)
                 // the database compared to the expected hash. This could lead to false detection, where a moved file is considered as a new.
                 if (fromFullPath.compare(toFullPath, Qt::CaseSensitive) == 0 || currentToPath.compare(expectedToPath, Qt::CaseSensitive) == 0)
                 {
+                    folder.files.remove(hash64(fileIt->fromPath));
+                    hash64_t hash = hash64(fileIt->toPath);
+                    auto it = folder.files.insert(hash, SyncFile(SyncFile::File, QFileInfo(toFullPath).lastModified()));
+                    it->size = QFileInfo(toFullPath).size();
+                    it->lockedFlag = SyncFile::Locked;
                     fileIt = folder.filesToMove.erase(static_cast<QHash<Hash, FileToMoveInfo>::const_iterator>(fileIt));
                     continue;
                 }
