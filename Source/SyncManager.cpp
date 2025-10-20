@@ -1676,6 +1676,8 @@ Creates all necessary parent directories for a given file path
 */
 void SyncManager::createParentFolders(SyncProfile &profile, SyncFolder &folder, QByteArray path)
 {
+    Q_UNUSED(profile);
+
     QStack<QString> foldersToCreate;
 
     while (!QDir(path = QFileInfo(path).path().toUtf8()).exists())
@@ -1704,7 +1706,6 @@ void SyncManager::createParentFolders(SyncProfile &profile, SyncFolder &folder, 
                 folder.files.insert(hash, SyncFile(SyncFile::Folder, QFileInfo(foldersToCreate.top()).lastModified()));
                 folder.foldersToCreate.remove(hash);
                 folder.foldersToUpdate.insert(foldersToCreate.top().toUtf8());
-                profile.addFilePath(hash, relativePath);
             }
         }
 
@@ -1719,6 +1720,8 @@ SyncManager::renameFolders
 */
 void SyncManager::renameFolders(SyncProfile &profile, SyncFolder &folder)
 {
+    Q_UNUSED(profile);
+
     for (auto folderIt = folder.foldersToRename.begin(); folderIt != folder.foldersToRename.end() && (!m_paused && folder.isActive());)
     {
         if (m_shouldQuit)
@@ -1756,7 +1759,6 @@ void SyncManager::renameFolders(SyncProfile &profile, SyncFolder &folder)
             folder.files.remove(folderIt.key());
             auto it = folder.files.insert(hash, SyncFile(SyncFile::Folder, QFileInfo(toFullPath).lastModified()));
             it->lockedFlag = SyncFile::Locked;
-            profile.addFilePath(hash, folderIt->toPath);
             folderIt = folder.foldersToRename.erase(static_cast<QHash<Hash, FolderToRenameInfo>::const_iterator>(folderIt));
         }
         else
@@ -1842,7 +1844,6 @@ void SyncManager::moveFiles(SyncProfile &profile, SyncFolder &folder)
             auto it = folder.files.insert(hash, SyncFile(SyncFile::File, QFileInfo(toFullPath).lastModified()));
             it->size = QFileInfo(toFullPath).size();
             it->lockedFlag = SyncFile::Locked;
-            profile.addFilePath(hash, fileIt->toPath);
             fileIt = folder.filesToMove.erase(static_cast<QHash<Hash, FileToMoveInfo>::const_iterator>(fileIt));
         }
         else
