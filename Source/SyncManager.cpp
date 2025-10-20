@@ -413,13 +413,8 @@ SyncManager::inPausedState
 */
 bool SyncManager::inPausedState() const
 {
-    if (paused())
-        return true;
-
     if (profiles().empty())
         return false;
-
-    bool profilePaused = false;
 
     for (const auto &profile : profiles())
     {
@@ -428,11 +423,9 @@ bool SyncManager::inPausedState() const
 
         if (!profile.paused)
             return false;
-        else
-            profilePaused = true;
     }
 
-    return profilePaused;
+    return true;
 }
 
 /*

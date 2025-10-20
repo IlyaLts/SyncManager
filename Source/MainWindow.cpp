@@ -1699,6 +1699,7 @@ void MainWindow::updateStatus()
             pauseSyncingAction->setIcon(iconResume);
 
         pauseSyncingAction->setText("&" + tr("Resume Syncing"));
+        manager.setPaused(true);
     }
     else
     {
@@ -1745,6 +1746,7 @@ void MainWindow::updateStatus()
             pauseSyncingAction->setIcon(iconPause);
 
         pauseSyncingAction->setText("&" + tr("Pause Syncing"));
+        manager.setPaused(false);
     }
 
     // Title
