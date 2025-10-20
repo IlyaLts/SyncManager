@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "SyncManager"
-#define MyAppVersion "2.1.6"
+#define MyAppVersion "2.1.7"
 #define MyAppURL "https://github.com/IlyaLts/SyncManager"
 #define MyAppExeName "SyncManager.exe"
 

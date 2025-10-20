@@ -1,4 +1,10 @@
 ==========================
+2.1.7 - Oct 19, 2025
+==========================
+- Fixed an issue that caused profile settings to be lost after an unexpected system crash.
+- Minor bugfixes and improvements.
+
+==========================
 2.1.6 - Sep 22, 2025
 ==========================
 - Added queue statuses to the right side of a profile name.
