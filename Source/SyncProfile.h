@@ -124,12 +124,13 @@ public:
     inline bool ignoreHiddenFiles() const { return m_ignoreHiddenFiles; }
 
     bool resetLocks();
-    void removeInvalidFileData();
+    void removeNonexistentFileData();
     void saveDatabasesLocally() const;
     void saveDatabasesDecentralised() const;
     void loadDatabasesLocally();
     void loadDatebasesDecentralised();
     void addFilePath(hash64_t hash, const QByteArray &path);
+    void removeUnneededFilePath(hash64_t hash);
     inline void clearFilePaths() { filePaths.clear(); }
 
     inline QByteArray filePath(Hash hash) const { return filePaths.value(hash); }

@@ -200,19 +200,16 @@ bool SyncProfile::resetLocks()
 
 /*
 ===================
-SyncProfile::removeInvalidFileData
-
-If a file doesn't have a path after getListOfFiles(), then that means that the file doesn't exist at all.
-So, it is better to remove it from the database to prevent further synchronization issues.
+SyncProfile::removeNonexistentFileData
 ===================
 */
-void SyncProfile::removeInvalidFileData()
+void SyncProfile::removeNonexistentFileData()
 {
     for (auto &folder : folders)
     {
         for (QHash<Hash, SyncFile>::iterator fileIt = folder.files.begin(); fileIt != folder.files.end();)
         {
-            if (!hasFilePath(fileIt.key()))
+            if (!fileIt->exists() || fileIt->type == SyncFile::Unknown)
                 fileIt = folder.files.erase(static_cast<QHash<Hash, SyncFile>::const_iterator>(fileIt));
             else
                 ++fileIt;
@@ -310,6 +307,44 @@ void SyncProfile::addFilePath(hash64_t hash, const QByteArray &path)
         auto it = filePaths.insert(Hash(hash), path);
         it->squeeze();
     }
+
+    mutex.unlock();
+}
+
+/*
+===================
+SyncProfile::removeUnneededFilePath
+===================
+*/
+void SyncProfile::removeUnneededFilePath(hash64_t hash)
+{
+    for (auto &folder : folders)
+    {
+        const SyncFile &file = folder.files.value(hash);
+
+        if (file.type == SyncFile::Unknown)
+            return;
+
+        if (!file.scanned() || !file.exists())
+            return;
+
+        if (file.updated() || file.attributesUpdated())
+            return;
+
+        if (file.newlyAdded())
+            return;
+    }
+
+    mutex.lock();
+    filePaths.remove(hash);
+
+    // I don't know exactly what squeeze() does internally,
+    // but calling it repeatedly significantly impacts performance.
+    // So, since QHash capacity is always doubled, we should just check
+    // if we really need to squeeze it. That, itself, brings performance back.
+    // Also, the minimum capacity for QHash is 64 bytes.
+    if (filePaths.size() < filePaths.capacity() / 2 && filePaths.size() > 64)
+        filePaths.squeeze();
 
     mutex.unlock();
 }

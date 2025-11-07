@@ -607,7 +607,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         return false;
 
     syncFiles(profile);
-    profile.removeInvalidFileData();
+    profile.removeNonexistentFileData();
 
     if (profile.resetLocks())
         m_databaseChanged = true;
@@ -773,6 +773,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
         {
             SyncFile &file = folder.files[fileHash];
             QDateTime modifiedDate(fileInfo.lastModified());
+            Attributes attributes = getFileAttributes(absoluteFilePath);
 
             // Quits if a hash collision is detected
             if (file.scanned())
@@ -802,7 +803,7 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
             if (file.type != type)
                 m_databaseChanged = true;
 
-            if (file.attributes != getFileAttributes(absoluteFilePath))
+            if (file.attributes != attributes)
             {
                 m_databaseChanged = true;
                 file.setAttributesUpdated(true);
@@ -827,10 +828,12 @@ int SyncManager::scanFiles(SyncProfile &profile, SyncFolder &folder)
             file.modifiedDate = modifiedDate;
             file.size = fileSize;
             file.type = type;
-            file.attributes = getFileAttributes(absoluteFilePath);
+            file.attributes = attributes;
             file.setExists(true);
             file.setScanned(true);
             file.setReadOnly(!fileInfo.isWritable());
+
+            profile.removeUnneededFilePath(fileHash);
         }
         // If a file is new
         else
@@ -906,7 +909,6 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
                 if (file.hasOlderAttributes(otherFile))
                 {
                     QByteArray filePath(otherFolderIt->path);
-
 
                     QByteArray from(otherFolderIt->path);
                     from.append(profile.filePath(otherFileIt.key()));
