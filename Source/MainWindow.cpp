@@ -508,7 +508,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         if (!exists)
         {
             profile->folders.push_back(SyncFolder());
-            profile->folders.back().paused = manager.paused();
+            profile->folders.back().paused = profile->paused;
             profile->folders.back().path = folderName.toUtf8();
             profile->folders.back().path.append("/");
             folderPaths.append(profile->folders.back().path);
