@@ -37,6 +37,8 @@
 #ifdef Q_OS_WIN
 #include <fileapi.h>
 #include <windows.h>
+
+#define ATTRIBUTE_VALID_SET_FLAGS 0x000031a7
 #else
 #include <sys/stat.h>
 #include <utime.h>
@@ -326,7 +328,7 @@ getFileAttributes
 Attributes getFileAttributes(const QString &path)
 {
 #ifdef Q_OS_WIN
-    return GetFileAttributesW(path.toStdWString().c_str());
+    return GetFileAttributesW(path.toStdWString().c_str()) & ATTRIBUTE_VALID_SET_FLAGS;
 #else
     struct stat buf;
     stat(path.toLatin1(), &buf);
@@ -342,7 +344,7 @@ setFileAttribute
 bool setFileAttribute(const QString &path, Attributes attributes)
 {
 #ifdef Q_OS_WIN
-    return SetFileAttributesW(path.toStdWString().c_str(), attributes);
+    return SetFileAttributesW(path.toStdWString().c_str(), attributes & ATTRIBUTE_VALID_SET_FLAGS);
 #else
     return chmod(path.toLatin1(), attributes) == 0;
 #endif

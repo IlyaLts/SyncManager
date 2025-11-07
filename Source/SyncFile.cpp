@@ -60,10 +60,10 @@ bool SyncFile::hasOlderAttributes(const SyncFile &other) const
     if (type != other.type)
         return false;
 
-    if (other.attributesUpdated())
+    if (!attributesUpdated() && other.attributesUpdated())
         return true;
 
-    if (attributes != other.attributes && !attributesUpdated() && !other.attributesUpdated())
+    if (attributes != other.attributes)
         return true;
 
     return false;

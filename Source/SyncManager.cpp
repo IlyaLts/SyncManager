@@ -905,16 +905,21 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
 
                 if (file.hasOlderAttributes(otherFile))
                 {
+                    QByteArray filePath(otherFolderIt->path);
+
+
                     QByteArray from(otherFolderIt->path);
                     from.append(profile.filePath(otherFileIt.key()));
 
                     QByteArray to(folderIt->path);
                     to.append(profile.filePath(otherFileIt.key()));
 
-                    if (setFileAttribute(to, getFileAttributes(from)))
+                    Attributes newAttributes = getFileAttributes(from);
+
+                    if (setFileAttribute(to, newAttributes))
                     {
-                        SyncFile &folder = folderIt->files[otherFileIt.key()];
-                        folder.attributes = otherFile.attributes;
+                        SyncFile &file = folderIt->files[otherFileIt.key()];
+                        file.attributes = newAttributes;
                         m_databaseChanged = true;
                     }
                 }

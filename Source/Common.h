@@ -32,12 +32,7 @@ class QByteArray;
 class SyncFile;
 
 using hash64_t = quint64;
-
-#ifdef Q_OS_WIN
-using Attributes = qint32;
-#else
 using Attributes = quint32;
-#endif
 
 struct Language
 {
