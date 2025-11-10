@@ -503,5 +503,13 @@
             <source>In queue</source>
             <translation>Sırada</translation>
         </message>
+        <message>
+            <source>Check for Updates</source>
+            <translation>Güncellemeleri Kontrol Et</translation>
+        </message>
+        <message>
+            <source>New Update Available</source>
+            <translation>Yeni Güncelleme Mevcut</translation>
+        </message>
     </context>
 </TS>

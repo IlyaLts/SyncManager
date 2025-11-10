@@ -503,5 +503,13 @@
             <source>In queue</source>
             <translation>En attente</translation>
         </message>
+        <message>
+            <source>Check for Updates</source>
+            <translation>Vérifier les mises à jour</translation>
+        </message>
+        <message>
+            <source>New Update Available</source>
+            <translation>Nouvelle mise à jour disponible</translation>
+        </message>
     </context>
 </TS>

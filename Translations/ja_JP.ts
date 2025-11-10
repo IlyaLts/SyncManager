@@ -503,5 +503,13 @@
             <source>In queue</source>
             <translation>キューに入っています</translation>
         </message>
+        <message>
+            <source>Check for Updates</source>
+            <translation>アップデートを確認</translation>
+        </message>
+        <message>
+            <source>New Update Available</source>
+            <translation>新しいアップデートが利用可能です</translation>
+        </message>
     </context>
 </TS>

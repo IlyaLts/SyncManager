@@ -23,6 +23,10 @@
 #include <QStandardPaths>
 #include <QFile>
 #include <QSettings>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 Language defaultLanguage = { QLocale::English, QLocale::UnitedStates, ":/i18n/en_US.qm", ":/Images/flags/us.svg", "&English" };
 
@@ -56,6 +60,11 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
     QSettings settings(localDataPath + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     QLocale::Language systemLanguage = QLocale::system().language();
     setTranslator(static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt()));
+
+    m_netManager = new QNetworkAccessManager(this);
+    connect(m_netManager, &QNetworkAccessManager::finished, this, &Application::onUpdateReply);
+    connect(&m_updateTimer, &QTimer::timeout, this, &Application::checkForUpdates);
+    setCheckForUpdates(true);
 }
 
 /*
@@ -119,7 +128,7 @@ Application::setTranslator
 */
 void Application::setTranslator(QLocale::Language language)
 {
-    QCoreApplication::removeTranslator(&translator);
+    QCoreApplication::removeTranslator(&m_translator);
     bool result = false;
 
     for (int i = 0; i < languageCount(); i++)
@@ -127,8 +136,8 @@ void Application::setTranslator(QLocale::Language language)
         if (languages[i].language != language)
             continue;
 
-        result = translator.load(languages[i].filePath);
-        locale = QLocale(languages[i].language, languages[i].country);
+        result = m_translator.load(languages[i].filePath);
+        m_locale = QLocale(languages[i].language, languages[i].country);
 
         if (!result)
             qWarning("Unable to load %s language", qPrintable(QLocale::languageToString(language)));
@@ -139,8 +148,8 @@ void Application::setTranslator(QLocale::Language language)
     // Loads English by default if the specified language is not in the list
     if (!result)
     {
-        result = translator.load(defaultLanguage.filePath);
-        locale = QLocale(defaultLanguage.language, defaultLanguage.country);
+        result = m_translator.load(defaultLanguage.filePath);
+        m_locale = QLocale(defaultLanguage.language, defaultLanguage.country);
 
         if (!result)
         {
@@ -149,7 +158,33 @@ void Application::setTranslator(QLocale::Language language)
         }
     }
 
-    QCoreApplication::installTranslator(&translator);
+    QCoreApplication::installTranslator(&m_translator);
+}
+
+/*
+===================
+Application::setCheckForUpdates
+===================
+*/
+void Application::setCheckForUpdates(bool enable)
+{
+    if (enable)
+        m_updateTimer.start(CHECK_FOR_UPDATE_TIME);
+    else
+        m_updateTimer.stop();
+}
+
+/*
+===================
+Application::checkForUpdates
+===================
+*/
+void Application::checkForUpdates()
+{
+    QNetworkRequest request;
+    request.setUrl(QUrl(LATEST_RELEASE_API_URL));
+    request.setRawHeader("User-Agent", "SyncManager");
+    m_netManager->get(request);
 }
 
 /*
@@ -160,4 +195,38 @@ Application::languageCount
 int Application::languageCount()
 {
     return static_cast<int>(sizeof(languages) / sizeof(Language));
+}
+
+/*
+===================
+Application::onUpdateReply
+===================
+*/
+void Application::onUpdateReply(QNetworkReply *reply)
+{
+    reply->deleteLater();
+
+    if (reply->error() != QNetworkReply::NoError)
+        return;
+
+    QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+
+    if (doc.isNull() || !doc.isObject())
+        return;
+
+    QJsonObject releaseObject = doc.object();
+    QString lastVersion = releaseObject["tag_name"].toString();
+
+    if (lastVersion.isEmpty())
+        return;
+
+    if (lastVersion.contains("Alpha", Qt::CaseInsensitive) || lastVersion.contains("Beta", Qt::CaseInsensitive))
+        return;
+
+    if (lastVersion != SYNCMANAGER_VERSION)
+    {
+        m_updateAvailable = true;
+        qDebug() << "Update found! Latest version:" << lastVersion;
+        emit updateFound();
+    }
 }

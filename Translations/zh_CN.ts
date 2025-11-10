@@ -503,5 +503,13 @@
             <source>In queue</source>
             <translation>在队列中</translation>
         </message>
+        <message>
+            <source>Check for Updates</source>
+            <translation>检查更新</translation>
+        </message>
+        <message>
+            <source>New Update Available</source>
+            <translation>有新更新可用</translation>
+        </message>
     </context>
 </TS>

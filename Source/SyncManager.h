@@ -96,7 +96,6 @@ public Q_SLOTS:
 
     void updateCpuUsage(float appPercentage, float systemPercentage);
 
-
 Q_SIGNALS:
 
     void message(const QString &title, const QString &message);

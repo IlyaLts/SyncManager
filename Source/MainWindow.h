@@ -37,6 +37,7 @@ class DecoratedStringListModel;
 class QItemSelection;
 class QMimeData;
 class UnhidableMenu;
+class QPushButton;
 
 /*
 ===========================================================
@@ -89,6 +90,7 @@ private Q_SLOTS:
     void toggleLaunchOnStartup();
     void toggleShowInTray();
     void toggleNotification();
+    void toggleCheckForUpdates();
     void setMaximumTransferRateUsage();
     void setMaximumCpuUsage();
     void setFixedInterval(SyncProfile &profile);
@@ -106,6 +108,7 @@ private Q_SLOTS:
     void sync(SyncProfile *profile, bool hidden = false);
     void syncDone();
     void profileSynced(SyncProfile *profile);
+    void updateAvailable();
 
 private:
 
@@ -169,6 +172,7 @@ private:
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
     QAction *disableNotificationAction;
+    QAction *checkForUpdatesAction;
     QAction *showAction;
     QAction *quitAction;
     QAction *userManualAction;
@@ -182,12 +186,15 @@ private:
     UnhidableMenu *priorityMenu;
     UnhidableMenu *languageMenu;
 
+    QPushButton *updateAvailableButton;
+
     QThread::Priority priority = QThread::NormalPriority;
     QThread *syncThread;
     SyncWorker *syncWorker;
     QLocale::Language language;
     QTimer updateTimer;
     bool showInTray;
+    bool checkForUpdates;
     bool appInitiated = false;
 };
 

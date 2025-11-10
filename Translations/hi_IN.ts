@@ -503,5 +503,13 @@
             <source>In queue</source>
             <translation>कतार में है</translation>
         </message>
+        <message>
+            <source>Check for Updates</source>
+            <translation>अपडेट के लिए जाँचें</translation>
+        </message>
+        <message>
+            <source>New Update Available</source>
+            <translation>नया अपडेट उपलब्ध है</translation>
+        </message>
     </context>
 </TS>

@@ -39,6 +39,7 @@
 #include <QInputDialog>
 #include <QDesktopServices>
 #include <QMimeData>
+#include <QPushButton>
 
 /*
 ===================
@@ -1015,6 +1016,21 @@ void MainWindow::toggleNotification()
 
 /*
 ===================
+MainWindow::toggleCheckForUpdates
+===================
+*/
+void MainWindow::toggleCheckForUpdates()
+{
+    checkForUpdates = !checkForUpdates;
+    updateAvailableButton->setVisible(checkForUpdates && syncApp->updateAvailable());
+    syncApp->setCheckForUpdates(checkForUpdates);
+
+    if (checkForUpdates)
+        syncApp->checkForUpdates();
+}
+
+/*
+===================
 MainWindow::setMaximumTransferRateUsage
 ===================
 */
@@ -1452,6 +1468,20 @@ void MainWindow::profileSynced(SyncProfile *profile)
     updateMenuSyncTime(*profile);
     updateProfileTooltip(*profile);
     saveSettings();
+}
+
+/*
+===================
+MainWindow::updateAvailable
+===================
+*/
+void MainWindow::updateAvailable()
+{
+    if (!checkForUpdates)
+        return;
+
+    updateAvailableButton->setVisible(true);
+    notify("Sync Manager", "New Update Available", QSystemTrayIcon::Information);
 }
 
 /*
@@ -1933,6 +1963,7 @@ void MainWindow::loadSettings()
     switchPriority(static_cast<QThread::Priority>(settings.value("Priority", QThread::NormalPriority).toInt()));
     language = static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt());
     showInTray = settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool();
+    checkForUpdates = settings.value("CheckForUpdates", true).toBool();
     manager.enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
 
     for (int i = 0; i < profileModel->rowCount(); i++)
@@ -1970,6 +2001,11 @@ void MainWindow::loadSettings()
 
     showInTrayAction->setChecked(showInTray);
     disableNotificationAction->setChecked(!manager.notificationsEnabled());
+    checkForUpdatesAction->setChecked(checkForUpdates);
+    syncApp->setCheckForUpdates(checkForUpdates);
+
+    if (checkForUpdates)
+        syncApp->checkForUpdates();
 
     updateMenuMaxDiskTransferRate();
 
@@ -2035,6 +2071,7 @@ void MainWindow::saveSettings() const
     settings.setValue("ShowInTray", showInTray);
     settings.setValue("Paused", manager.paused());
     settings.setValue("Notifications", manager.notificationsEnabled());
+    settings.setValue("CheckForUpdates", checkForUpdates);
 }
 
 /*
@@ -2085,6 +2122,7 @@ void MainWindow::setupMenus()
     launchOnStartupAction = new QAction("&" + tr("Launch on Startup"), this);
     showInTrayAction = new QAction("&" + tr("Show in System Tray"));
     disableNotificationAction = new QAction("&" + tr("Disable Notifications"), this);
+    checkForUpdatesAction = new QAction("&" + tr("Check for Updates"), this);
     showAction = new QAction("&" + tr("Show"), this);
     quitAction = new QAction("&" + tr("Quit"), this);
     userManualAction = new QAction("&" + tr("User Manual"), this);
@@ -2106,6 +2144,7 @@ void MainWindow::setupMenus()
     launchOnStartupAction->setCheckable(true);
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
+    checkForUpdatesAction->setCheckable(true);
 
     updateLaunchOnStartupState();
 
@@ -2139,6 +2178,7 @@ void MainWindow::setupMenus()
     settingsMenu->addAction(launchOnStartupAction);
     settingsMenu->addAction(showInTrayAction);
     settingsMenu->addAction(disableNotificationAction);
+    settingsMenu->addAction(checkForUpdatesAction);
     settingsMenu->addSeparator();
     settingsMenu->addAction(userManualAction);
     settingsMenu->addAction(reportBugAction);
@@ -2166,6 +2206,15 @@ void MainWindow::setupMenus()
     this->menuBar()->addAction(pauseSyncingAction);
     this->menuBar()->addMenu(settingsMenu);
     this->menuBar()->setStyle(new MenuProxyStyle);
+
+    updateAvailableButton = new QPushButton(tr("New Update Available"));
+    updateAvailableButton->setStyleSheet("QPushButton { margin: 2px 5px 0px 0px; padding: 5px 8px }");
+    updateAvailableButton->setVisible(false);
+
+    QMenuBar *menuBar = this->menuBar();
+    menuBar->setCornerWidget(updateAvailableButton);
+    connect(updateAvailableButton, &QPushButton::clicked, this, [](){ QDesktopServices::openUrl(QUrl(LATEST_RELEASE_URL)); });
+    connect(syncApp, &Application::updateFound, this, &MainWindow::updateAvailable);
 
 #ifndef Q_OS_WIN
     QString styleSheet;
@@ -2207,11 +2256,12 @@ void MainWindow::setupMenus()
     connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
     connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
     connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
+    connect(checkForUpdatesAction, &QAction::triggered, this, &MainWindow::toggleCheckForUpdates);
     connect(showAction, &QAction::triggered, this, [this](){ trayIconActivated(QSystemTrayIcon::DoubleClick); });
     connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
-    connect(userManualAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_LINK)); });
-    connect(reportBugAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_LINK)); });
+    connect(userManualAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_PATH)); });
+    connect(reportBugAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_URL)); });
 
     for (auto &profile : manager.profiles())
         connectProfileMenu(profile);
@@ -2242,6 +2292,7 @@ void MainWindow::updateStrings()
     launchOnStartupAction->setText("&" + tr("Launch on Startup"));
     showInTrayAction->setText("&" + tr("Show in System Tray"));
     disableNotificationAction->setText("&" + tr("Disable Notifications"));
+    checkForUpdatesAction->setText("&" + tr("Check for Updates"));
     showAction->setText("&" + tr("Show"));
     quitAction->setText("&" + tr("Quit"));
     userManualAction->setText("&" + tr("User Manual"));
@@ -2257,6 +2308,10 @@ void MainWindow::updateStrings()
     pauseSyncingAction->setToolTip("&" + tr("Pause Syncing"));
     ui->SyncLabel->setText(tr("Synchronization profiles:"));
     ui->foldersLabel->setText(tr("Folders to synchronize:"));
+
+    updateAvailableButton->setText(tr("New Update Available"));
+    updateAvailableButton->adjustSize();
+    this->menuBar()->adjustSize();
 
     updateStatus();
     updateMenuMaxDiskTransferRate();

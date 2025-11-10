@@ -503,5 +503,13 @@
             <source>In queue</source>
             <translation>In queue</translation>
         </message>
+        <message>
+            <source>Check for Updates</source>
+            <translation>Check for Updates</translation>
+        </message>
+        <message>
+            <source>New Update Available</source>
+            <translation>New Update Available</translation>
+        </message>
     </context>
 </TS>

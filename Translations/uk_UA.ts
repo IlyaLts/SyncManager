@@ -503,5 +503,13 @@
             <source>In queue</source>
             <translation>У черзі</translation>
         </message>
+        <message>
+            <source>Check for Updates</source>
+            <translation>Перевірити наявність оновлень</translation>
+        </message>
+        <message>
+            <source>New Update Available</source>
+            <translation>Доступне нове оновлення</translation>
+        </message>
     </context>
 </TS>
