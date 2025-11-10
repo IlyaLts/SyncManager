@@ -99,13 +99,13 @@ removeDuplicatesBySizeAndDate
 Removes duplicates from the list of files based on file size and modification time
 ===================
 */
-void removeDuplicatesBySizeAndDate(QHash<Hash, SyncFile *> &files)
+void removeDuplicatesBySizeAndDate(FilePointerList &files)
 {
-    for (QHash<Hash, SyncFile *>::iterator fileIt = files.begin(); fileIt != files.end();)
+    for (FilePointerList::iterator fileIt = files.begin(); fileIt != files.end();)
     {
         bool dup = false;
 
-        for (QHash<Hash, SyncFile *>::iterator anotherFileIt = ++QHash<Hash, SyncFile *>::iterator(fileIt); anotherFileIt != files.end();)
+        for (FilePointerList::iterator anotherFileIt = ++FilePointerList::iterator(fileIt); anotherFileIt != files.end();)
         {
             if (!fileIt.value()->hasSameSizeAndDate(*anotherFileIt.value()))
             {
@@ -114,11 +114,11 @@ void removeDuplicatesBySizeAndDate(QHash<Hash, SyncFile *> &files)
             }
 
             dup = true;
-            anotherFileIt = files.erase(static_cast<QHash<Hash, SyncFile *>::const_iterator>(anotherFileIt));
+            anotherFileIt = files.erase(static_cast<FilePointerList::const_iterator>(anotherFileIt));
         }
 
         if (dup)
-            fileIt = files.erase(static_cast<QHash<Hash, SyncFile *>::const_iterator>(fileIt));
+            fileIt = files.erase(static_cast<FilePointerList::const_iterator>(fileIt));
         else
             ++fileIt;
     }
@@ -160,7 +160,8 @@ QFileInfo getCurrentFileInfo(const QString &path)
 questionBox
 ===================
 */
-bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text, QMessageBox::StandardButton defaultButton, QWidget *parent)
+bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text,
+                 QMessageBox::StandardButton defaultButton, QWidget *parent)
 {
     QMessageBox messageBox(icon, title, text, QMessageBox::NoButton, parent);
 
@@ -180,7 +181,8 @@ bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &te
 intInputDialog
 ===================
 */
-bool intInputDialog(QWidget *parent, const QString &title, const QString &label, int &returnValue, int value, int minValue, int maxValue)
+bool intInputDialog(QWidget *parent, const QString &title, const QString &label,
+                    int &returnValue, int value, int minValue, int maxValue)
 {
     QInputDialog *dialog = new QInputDialog(parent);
     dialog->setInputMode(QInputDialog::IntInput);
@@ -207,7 +209,8 @@ bool intInputDialog(QWidget *parent, const QString &title, const QString &label,
 doubleInputDialog
 ===================
 */
-bool doubleInputDialog(QWidget *parent, const QString &title, const QString &label, double &returnValue, double value, double minValue, double maxValue)
+bool doubleInputDialog(QWidget *parent, const QString &title, const QString &label,
+                       double &returnValue, double value, double minValue, double maxValue)
 {
     QInputDialog *dialog = new QInputDialog(parent);
     dialog->setInputMode(QInputDialog::DoubleInput);

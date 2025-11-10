@@ -93,7 +93,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         for (auto &path : paths)
         {
-            profile.folders.push_back(SyncFolder());
+            profile.folders.push_back(SyncFolder(&profile));
             profile.folders.back().paused = manager.paused();
             profile.folders.back().path = path.toUtf8();
         }
@@ -507,7 +507,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
         if (!exists)
         {
-            profile->folders.push_back(SyncFolder());
+            profile->folders.push_back(SyncFolder(profile));
             profile->folders.back().paused = profile->paused;
             profile->folders.back().path = folderName.toUtf8();
             profile->folders.back().path.append("/");

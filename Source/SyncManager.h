@@ -105,23 +105,23 @@ Q_SIGNALS:
 private:
 
     bool syncProfile(SyncProfile &profile);
-    int scanFiles(SyncProfile &profile, SyncFolder &folder);
+    int scanFiles(SyncFolder &folder);
     void synchronizeFileAttributes(SyncProfile &profile);
     void checkForRenamedFolders(SyncProfile &profile);
     void checkForMovedFiles(SyncProfile &profile);
     void checkForAddedFiles(SyncProfile &profile);
     void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);
-    bool removeFile(SyncProfile &profile, SyncFolder &folder, const QString &path, const QString &fullPath, SyncFile::Type type);
+    bool removeFile(SyncFolder &folder, const QString &path, const QString &fullPath, SyncFile::Type type);
     bool copyFile(quint64 &deviceRead, const QString &fileName, const QString &newName);
-    void renameFolders(SyncProfile &profile, SyncFolder &folder);
-    void moveFiles(SyncProfile &profile, SyncFolder &folder);
-    void createParentFolders(SyncProfile &profile, SyncFolder &folder, QByteArray path);
-    void removeFolders(SyncProfile &profile, SyncFolder &folder);
-    void removeFiles(SyncProfile &profile, SyncFolder &folder);
-    void createFolders(SyncProfile &profile, SyncFolder &folder);
-    void copyFiles(SyncProfile &profile, SyncFolder &folder);
-    void removeUniqueFiles(SyncProfile &profile, SyncFolder &folder);
+    void renameFolders(SyncFolder &folder);
+    void moveFiles(SyncFolder &folder);
+    void createParentFolders(SyncFolder &folder, QByteArray path);
+    void removeFolders(SyncFolder &folder);
+    void removeFiles(SyncFolder &folder);
+    void createFolders(SyncFolder &folder);
+    void copyFiles(SyncFolder &folder);
+    void removeUniqueFiles(SyncFolder &folder);
     void syncFiles(SyncProfile &profile);
 
     QQueue<SyncProfile *> m_queue;

@@ -55,6 +55,15 @@ struct FileToCopyInfo
     QDateTime modifiedDate;
 };
 
+using Files = QHash<Hash, SyncFile>;
+using FolderRenameList = QHash<Hash, FolderToRenameInfo>;
+using FileMoveList = QHash<Hash, FileToMoveInfo>;
+using FolderCreateList = QHash<Hash, FolderToCreateInfo>;
+using FileCopyList = QHash<Hash, FileToCopyInfo>;
+using FolderRemoveList = QHash<Hash, QByteArray>;
+using FileRemoveList = QHash<Hash, QByteArray>;
+using FolderUpdateList = QSet<QByteArray>;
+
 /*
 ===========================================================
 
@@ -73,6 +82,8 @@ public:
         ONE_WAY_UPDATE
     };
 
+    explicit SyncFolder(SyncProfile *profile) { m_profile = profile; }
+
     inline bool operator ==(const SyncFolder &other) { return path == other.path; }
 
     void clearData();
@@ -86,17 +97,19 @@ public:
     bool hasUnsyncedFiles() const;
     inline bool partiallySynchronized() const { return PartiallySynchronized; }
 
+    inline SyncProfile &profile() const { return *m_profile; }
+
     SyncType syncType = TWO_WAY;
     QByteArray path;
     QString versioningPath;
-    QHash<Hash, SyncFile> files;
-    QHash<Hash, FolderToRenameInfo> foldersToRename;
-    QHash<Hash, FileToMoveInfo> filesToMove;
-    QHash<Hash, FolderToCreateInfo> foldersToCreate;
-    QHash<Hash, FileToCopyInfo> filesToCopy;
-    QHash<Hash, QByteArray> foldersToRemove;
-    QHash<Hash, QByteArray> filesToRemove;
-    QSet<QByteArray> foldersToUpdate;
+    Files files;
+    FolderRenameList foldersToRename;
+    FileMoveList filesToMove;
+    FolderCreateList foldersToCreate;
+    FileCopyList filesToCopy;
+    FolderRemoveList foldersToRemove;
+    FileRemoveList filesToRemove;
+    FolderUpdateList foldersToUpdate;
 
     QString unsyncedList;
     bool PartiallySynchronized = false;
@@ -106,6 +119,10 @@ public:
     bool paused = false;
     bool toBeRemoved = false;
     bool caseSensitive = false;
+
+private:
+
+    SyncProfile *m_profile;
 };
 
 #endif // SYNCFOLDER_H

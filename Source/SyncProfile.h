@@ -80,9 +80,8 @@ public:
     };
 
     explicit SyncProfile(const QString &name, const QModelIndex &index);
-    explicit SyncProfile(const SyncProfile &other) : SyncProfile(other.name, other.index) { *this = other; }
-    explicit SyncProfile(SyncProfile &&other) : SyncProfile(other.name, other.index) { *this = other; }
-    ~SyncProfile(){ syncTimer.stop(); }
+    explicit SyncProfile(const SyncProfile &other) : QObject(nullptr) { *this = other; }
+    explicit SyncProfile(SyncProfile &&other) { *this = other; }
 
     void operator =(const SyncProfile &other);
     inline bool operator ==(const SyncProfile &other) { return name == other.name; }

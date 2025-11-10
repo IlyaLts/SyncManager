@@ -402,10 +402,10 @@ SyncFolder::removeNonExistentFiles
 */
 void SyncFolder::removeNonExistentFiles()
 {
-    for (QHash<Hash, SyncFile>::iterator fileIt = files.begin(); fileIt != files.end();)
+    for (Files::iterator fileIt = files.begin(); fileIt != files.end();)
     {
         if (!fileIt->exists())
-            fileIt = files.erase(static_cast<QHash<Hash, SyncFile>::const_iterator>(fileIt));
+            fileIt = files.erase(static_cast<Files::const_iterator>(fileIt));
         else
             ++fileIt;
     }

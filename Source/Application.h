@@ -33,6 +33,9 @@
 #define BUG_TRACKER_LINK        "https://github.com/IlyaLts/SyncManager/issues"
 #define UPDATE_TIME             40
 
+#define DISABLE_DOUBLE_HASHING
+#define PRESERVE_MODIFICATION_DATE_ON_LINUX
+
 extern Language defaultLanguage;
 extern Language languages[];
 

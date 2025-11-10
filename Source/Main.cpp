@@ -52,8 +52,8 @@ int main(int argc, char *argv[])
     // Prevention of multiple instances
     if (!sharedMemory.create(1))
     {
-        QString title = app.translate("MainWindow", "Couldn't launch!");
-        QString text = app.translate("MainWindow", "The app is already launched and cannot be launched as a second instance.");
+        QString title = app.tr("MainWindow", "Couldn't launch!");
+        QString text = app.tr("MainWindow", "The app is already launched and cannot be launched as a second instance.");
         QMessageBox::warning(NULL, title, text);
         return -1;
     }
