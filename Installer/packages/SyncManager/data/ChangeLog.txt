@@ -1,4 +1,12 @@
 ==========================
+2.2 - Nov 11, 2025
+==========================
+- Fixed a false detection of system attributes on Windows.
+- Fixed an incorrect pause state for a newly added folder in a paused profile.
+- Added a feature to automatically check for updates.
+- Reduced memory usage during synchronization by up to 60% or more.
+
+==========================
 2.1.7 - Oct 19, 2025
 ==========================
 - Fixed an issue that caused profile settings to be lost after an unexpected system crash.

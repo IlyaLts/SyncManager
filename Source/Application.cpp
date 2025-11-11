@@ -226,7 +226,10 @@ void Application::onUpdateReply(QNetworkReply *reply)
     if (lastVersion != SYNCMANAGER_VERSION)
     {
         m_updateAvailable = true;
-        qDebug() << "Update found! Latest version:" << lastVersion;
         emit updateFound();
+    }
+    else
+    {
+        m_updateAvailable = false;
     }
 }
