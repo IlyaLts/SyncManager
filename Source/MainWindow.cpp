@@ -304,17 +304,22 @@ void MainWindow::removeProfile()
     if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
         return;
 
-    QString title(tr("Remove profile"));
-    QString text(tr("Are you sure you want to remove profile?"));
-
-    if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
-        return;
-
     for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
     {
         SyncProfile *profile = profileByIndex(index);
 
         if (!profile)
+            continue;
+
+        QString title(tr("Remove profile"));
+        QString text;
+
+        if (profile->syncing)
+            text.assign(tr("The profile is currently syncing. Are you sure you want to remove it?"));
+        else
+            text.assign(tr("Are you sure you want to remove the profile?"));
+
+        if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
             continue;
 
         ui->syncProfilesView->model()->removeRow(index.row());
