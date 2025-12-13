@@ -467,7 +467,7 @@ SyncProfile::folderByPath
 SyncFolder *SyncProfile::folderByPath(const QString &path)
 {
     for (auto &folder : folders)
-        if (folder.path == path)
+        if (folder.path.compare(path.toUtf8(), folder.caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive) == 0)
             return &folder;
 
     return nullptr;

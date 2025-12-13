@@ -458,11 +458,17 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
     QModelIndex index = ui->syncProfilesView->selectionModel()->selectedIndexes()[0];
     SyncProfile *profile = profileByIndex(index);
-    QStringList folders;
+    QStringList existedFolders;
+    QStringList foldersToAdd;
 
     if (!profile)
         return;
 
+    for (const auto &folder : profile->folders)
+        if (!folder.toBeRemoved)
+            existedFolders.append(folder.path);
+
+    // Drag & drop
     if (mimeData)
     {
         const QList<QUrl> urls = mimeData->urls();
@@ -472,9 +478,10 @@ void MainWindow::addFolder(const QMimeData *mimeData)
             if (!QFileInfo(url.toLocalFile()).isDir())
                 continue;
 
-            folders.append(url.toLocalFile());
+            foldersToAdd.append(url.toLocalFile() + "/");
         }
     }
+    // Browse dialog
     else
     {
         QString title(tr("Browse For Folder"));
@@ -483,30 +490,22 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         if (folderPath.isEmpty())
             return;
 
-        folders.append(folderPath);
+        foldersToAdd.append(folderPath + "/");
     }
 
-    QStringList folderPaths;
-
-    for (const auto &folder : profile->folders)
-        if (!folder.toBeRemoved)
-            folderPaths.append(folder.path);
-
     // Checks if we already have a folder for synchronization in the list
-    for (const auto &folderName : folders)
+    for (const auto &newFolderPath : foldersToAdd)
     {
         bool exists = false;
 
-        for (const auto &path : folderPaths)
+        if (const SyncFolder *folder = profile->folderByPath(newFolderPath))
         {
-            int n = path.size() > folderName.size() ? path.size() - 1 : folderName.size() - 1;
-
-            if (const SyncFolder *folder = profile->folderByPath(folderName))
+            for (const auto &existedFolderPath : existedFolders)
             {
-                if ((folder->caseSensitive && path.toStdString().compare(0, n, folderName.toStdString()) == 0) ||
-                    (!folder->caseSensitive && path.toLower().toStdString().compare(0, n, folderName.toLower().toStdString()) == 0))
+                if (existedFolderPath.compare(newFolderPath, folder->caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive) == 0)
                 {
                     exists = true;
+                    break;
                 }
             }
         }
@@ -515,14 +514,13 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         {
             profile->folders.push_back(SyncFolder(profile));
             profile->folders.back().paused = profile->paused;
-            profile->folders.back().path = folderName.toUtf8();
-            profile->folders.back().path.append("/");
-            folderPaths.append(profile->folders.back().path);
+            profile->folders.back().path = newFolderPath.toUtf8();
+            existedFolders.append(profile->folders.back().path);
 
             QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-            profilesData.setValue(profile->name, folderPaths);
+            profilesData.setValue(profile->name, existedFolders);
 
-            folderModel->setStringList(folderPaths);
+            folderModel->setStringList(existedFolders);
             updateStatus();
         }
     }
