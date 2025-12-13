@@ -405,16 +405,18 @@ bool SyncProfile::isAnyFolderCaseSensitive() const
 
 /*
 ===================
-SyncProfile::hasExistingFolders
+SyncProfile::countExistingFolders
 ===================
 */
-bool SyncProfile::hasExistingFolders() const
+int SyncProfile::countExistingFolders() const
 {
+    int n = 0;
+
     for (const auto &folder : folders)
         if (folder.exists)
-            return true;
+            n++;
 
-    return false;
+    return n;
 }
 
 /*

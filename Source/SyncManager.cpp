@@ -162,7 +162,7 @@ SyncManager::updateStatus
 void SyncManager::updateStatus()
 {
     m_existingProfiles = 0;
-    m_issue = true;
+    m_issue = false;
     m_warning = false;
     m_syncing = false;
 
@@ -185,16 +185,9 @@ void SyncManager::updateStatus()
                 continue;
 
             if (folder.exists)
-            {
                 existingFolders++;
-
-                if (existingFolders >= 2)
-                    m_issue = false;
-            }
             else
-            {
                 m_warning = true;
-            }
 
             if (m_busy && folder.isActive() && folder.hasUnsyncedFiles())
             {
@@ -203,6 +196,9 @@ void SyncManager::updateStatus()
                 folder.syncing = true;
             }
         }
+
+        if (existingFolders >= 2)
+            m_issue = false;
     }
 
     // Number of files left to sync

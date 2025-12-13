@@ -1643,7 +1643,7 @@ void MainWindow::updateStatus()
                 profileModel->setData(index, iconPause, Qt::DecorationRole);
             else if (profile->syncing || (!profile->syncHidden && manager.queue().contains(profile)))
                 profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-            else if (!profile->hasExistingFolders() && !profile->folders.empty())
+            else if (!profile->folders.empty() && profile->countExistingFolders() < 2 && profile->folders.size() >= 2)
                 profileModel->setData(index, iconRemove, Qt::DecorationRole);
             else if (profile->hasMissingFolders())
                 profileModel->setData(index, iconWarning, Qt::DecorationRole);
@@ -1895,7 +1895,7 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
         nextSyncText.append(".");
     }
 
-    if (!profile.hasExistingFolders())
+    if (!profile.countExistingFolders())
     {
         profileModel->setData(index, tr("The profile has no folders available."), Qt::ToolTipRole);
     }
