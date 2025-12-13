@@ -544,14 +544,16 @@ void MainWindow::removeFolder()
         if (!profile || !folder)
             continue;
 
-        if (folder->syncing)
-        {
-            QString title(tr("Remove folder"));
-            QString text(tr("The folder is currently syncing. Are you sure you want to remove it?"));
+        QString title(tr("Remove folder"));
+        QString text;
 
-            if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
-                return;
-        }
+        if (folder->syncing)
+            text.assign(tr("The folder is currently syncing. Are you sure you want to remove it?"));
+        else
+            text.assign(tr("Are you sure you want to remove the folder?"));
+
+        if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
+            return;
 
         folder->paused = true;
         folder->toBeRemoved = true;
