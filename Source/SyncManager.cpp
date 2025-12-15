@@ -2111,6 +2111,11 @@ void SyncManager::copyFiles(SyncFolder &folder)
                 if (!m_notificationList.contains(rootPath))
                     m_notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);
 
+                QByteArray parentPath = toFileInfo.path().toUtf8();
+
+                if (QFileInfo::exists(parentPath))
+                    folder.foldersToUpdate.insert(parentPath);
+
                 shouldNotify = false;
                 m_notificationList.value(rootPath)->start(NOTIFICATION_COOLDOWN);
                 emit message(tr("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path).displayName(), rootPath), "");
