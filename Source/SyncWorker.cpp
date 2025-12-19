@@ -17,6 +17,7 @@
 ===============================================================================
 */
 
+#include "Application.h"
 #include "SyncWorker.h"
 #include <QThread>
 

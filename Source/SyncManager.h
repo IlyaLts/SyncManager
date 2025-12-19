@@ -38,8 +38,6 @@
 #define NOTIFICATION_COOLDOWN   300000
 #define CPU_UPDATE_TIME         50
 
-class CpuUsage;
-
 /*
 ===========================================================
 
@@ -72,12 +70,10 @@ public:
     inline void shouldQuit() { m_shouldQuit = true; }
     void setSyncTimeMultiplier(SyncProfile &profile, int multiplier);
     inline void setMaxDiskTransferRate(quint64 rate) { m_maxDiskTransferRate = rate; }
-    inline void setMaxCpuUsage(float percentage) { m_maxCpuUsage = percentage; }
     inline void setPaused(bool paused) { m_paused = paused; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }    
 
     inline quint64 maxDiskTransferRate() const { return m_maxDiskTransferRate; }
-    inline float maxCpuUsage() const { return m_maxCpuUsage; }
     inline int filesToSync() const { return m_filesToSync; }
     inline int existingProfiles() const { return m_existingProfiles; }
     inline bool quitting() const { return m_shouldQuit; }
@@ -91,10 +87,6 @@ public:
     inline bool notificationsEnabled() const { return m_notifications; }
 
     static quint64 maxInterval();
-
-public Q_SLOTS:
-
-    void updateCpuUsage(float appPercentage, float systemPercentage);
 
 Q_SIGNALS:
 
@@ -120,8 +112,8 @@ private:
     void removeFiles(SyncFolder &folder);
     void createFolders(SyncFolder &folder);
     void copyFiles(SyncFolder &folder);
-    void removeUniqueFiles(SyncFolder &folder);
-    void syncFiles(SyncProfile &profile);
+    void cleanupFolder(SyncFolder &folder);
+    void syncChanges(SyncProfile &profile);
 
     QQueue<SyncProfile *> m_queue;
     std::list<SyncProfile> m_profiles;
@@ -138,15 +130,11 @@ private:
     bool m_notifications = true;
 
     quint64 m_maxDiskTransferRate = 0;
-    float m_maxCpuUsage = 100.0;
-    float m_processUsage = 0.0;
-    float m_systemUsage = 0.0;
     QTimer m_diskUsageResetTimer;
     QMap<QString, QTimer *> m_notificationList;
     QSet<hash64_t> m_usedDevices;
     QMap<hash64_t, quint64> m_deviceRead;
     QMutex m_usedDevicesMutex;
-    CpuUsage *m_cpuUsage;
 };
 
 #endif // SYNCMANAGER_H

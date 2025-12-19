@@ -24,7 +24,6 @@
 #include "SyncProfile.h"
 #include "SyncWorker.h"
 #include <QMainWindow>
-#include <QSystemTrayIcon>
 #include <QTimer>
 #include <QMovie>
 #include <QThread>
@@ -58,7 +57,6 @@ public:
 public Q_SLOTS:
 
     void show();
-    void setTrayVisible(bool visible);
 
 protected:
 
@@ -75,8 +73,6 @@ private Q_SLOTS:
     void removeFolder();
     void pauseSyncing();
     void pauseSelected();
-    void quit();
-    void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMode mode);
     void switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionMode mode);
     void switchVersioningFormat(SyncProfile &profile, SyncProfile::VersioningFormat format);
@@ -115,7 +111,6 @@ private:
     void rebindProfiles();
     void connectProfileMenu(SyncProfile &profile);
     void disconnectProfileMenu(SyncProfile &profile);
-    void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
     void updateStatus();
     void updateMenuMaxDiskTransferRate();
     void updateMenuSyncTime(const SyncProfile &profile);
@@ -129,7 +124,6 @@ private:
     QModelIndex indexByProfile(const SyncProfile &profile);
     QModelIndex profileIndexByName(const QString &name);
 
-    SyncManager manager;
     Ui::MainWindow *ui;
 
     DecoratedStringListModel *profileModel;
@@ -148,12 +142,6 @@ private:
     QIcon iconTwoWay;
     QIcon iconOneWay;
     QIcon iconOneWayUpdate;
-    QIcon trayIconDone;
-    QIcon trayIconDonePartial;
-    QIcon trayIconIssue;
-    QIcon trayIconPause;
-    QIcon trayIconSync;
-    QIcon trayIconWarning;
 
     QMovie animSync;
 
@@ -173,14 +161,10 @@ private:
     QAction *showInTrayAction;
     QAction *disableNotificationAction;
     QAction *checkForUpdatesAction;
-    QAction *showAction;
-    QAction *quitAction;
     QAction *userManualAction;
     QAction *reportBugAction;
     QAction *versionAction;
 
-    QSystemTrayIcon *trayIcon;
-    QMenu *trayIconMenu;
     UnhidableMenu *settingsMenu;
     UnhidableMenu *performanceMenu;
     UnhidableMenu *priorityMenu;
@@ -189,13 +173,9 @@ private:
     QPushButton *updateAvailableButton;
 
     QThread::Priority priority = QThread::NormalPriority;
-    QThread *syncThread;
-    SyncWorker *syncWorker;
     QLocale::Language language;
     QTimer updateTimer;
-    bool showInTray;
     bool checkForUpdates;
-    bool appInitiated = false;
 };
 
 #endif // MAINWINDOW_H

@@ -49,13 +49,7 @@ MainWindow::MainWindow
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     connect(&updateTimer, &QTimer::timeout, this, &MainWindow::updateStatus);
-
-    syncThread = new QThread(this);
-    syncWorker = new SyncWorker();
-
-    syncWorker->moveToThread(syncThread);
-    connect(syncThread, &QThread::started, syncWorker, [this](){ syncWorker->run(manager); });
-    connect(syncWorker, &SyncWorker::finished, this, [this](){ syncDone(); });
+    connect(syncApp->syncWorker(), &SyncWorker::finished, this, [this](){ syncDone(); });
 
     ui->setupUi(this);
     ui->centralWidget->setLayout(ui->mainLayout);
@@ -83,10 +77,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (auto &name : profileNames)
     {
-        manager.profiles().push_back(SyncProfile(name, profileIndexByName(name)));
+        syncApp->manager()->profiles().push_back(SyncProfile(name, profileIndexByName(name)));
 
-        SyncProfile &profile = manager.profiles().back();
-        profile.paused = manager.paused();
+        SyncProfile &profile = syncApp->manager()->profiles().back();
+        profile.paused = syncApp->manager()->paused();
         profile.name = name;
 
         QStringList paths = profilesData.value(name).toStringList();
@@ -95,7 +89,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         for (auto &path : paths)
         {
             profile.folders.push_back(SyncFolder(&profile));
-            profile.folders.back().paused = manager.paused();
+            profile.folders.back().paused = syncApp->manager()->paused();
             profile.folders.back().path = path.toUtf8();
         }
     }
@@ -107,10 +101,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->folderListView, SIGNAL(deletePressed()), SLOT(removeFolder()));
     connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
     connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showContextMenu(QPoint)));
-    connect(&manager, &SyncManager::message, this, [this](const QString &title, const QString &message){ notify(title, message, QSystemTrayIcon::Critical); });
-    connect(&manager, &SyncManager::profileSynced, this, &MainWindow::profileSynced);
+    connect(syncApp->manager(), &SyncManager::message, this, [this](const QString &title, const QString &message){ syncApp->tray()->notify(title, message, QSystemTrayIcon::Critical); });
+    connect(syncApp->manager(), &SyncManager::profileSynced, this, &MainWindow::profileSynced);
 
-    for (auto &profile : manager.profiles())
+    for (auto &profile : syncApp->manager()->profiles())
     {
         profile.syncTimer.setSingleShot(true);
         connect(&profile.syncTimer, &QChronoTimer::timeout, this, [&profile, this](){ sync(&const_cast<SyncProfile &>(profile), true); });
@@ -121,7 +115,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     updateStrings();
     switchLanguage(language);
 
-    for (auto &profile : manager.profiles())
+    for (auto &profile : syncApp->manager()->profiles())
     {
         switchDatabaseLocation(profile, profile.databaseLocation());
         updateMenuSyncTime(profile);
@@ -129,12 +123,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     updateStatus();
 
-    appInitiated = true;
-
-    for (const auto &profile : manager.profiles())
+    for (const auto &profile : syncApp->manager()->profiles())
         for (const auto &folder : profile.folders)
             if (!folder.exists)
-                notify(tr("Couldn't find folder"), folder.path, QSystemTrayIcon::Warning);
+                syncApp->tray()->notify(tr("Couldn't find folder"), folder.path, QSystemTrayIcon::Warning);
 }
 
 /*
@@ -144,23 +136,11 @@ MainWindow::~MainWindow
 */
 MainWindow::~MainWindow()
 {
-    for (const auto &profile : manager.profiles())
+    for (const auto &profile : syncApp->manager()->profiles())
         profile.saveSettings();
 
     saveSettings();
     delete ui;
-
-    if (syncThread->isRunning())
-    {
-        syncThread->requestInterruption();
-        syncThread->quit();
-
-        if (syncThread->isRunning())
-        {
-            syncThread->terminate();
-            syncThread->wait();
-        }
-    }
 }
 
 /*
@@ -170,44 +150,26 @@ MainWindow::show
 */
 void MainWindow::show()
 {
-    if (QSystemTrayIcon::isSystemTrayAvailable() && showInTray)
+    if (QSystemTrayIcon::isSystemTrayAvailable() && syncApp->trayVisible())
     {
-        trayIcon->show();
-        syncApp->setQuitOnLastWindowClosed(false);
+#ifdef Q_OS_LINUX
+        // Fixes wrong window position after hiding the window.
+        if (isHidden())
+        {
+            move(pos().x() + (frameSize().width() - size().width()),
+                 pos().y() + (frameSize().height() - size().height()));
+        }
+#endif
+
+        setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+        QMainWindow::show();
+        raise();
+        activateWindow();
     }
     else
     {
         QMainWindow::show();
-        trayIcon->hide();
-        syncApp->setQuitOnLastWindowClosed(true);
     }
-}
-
-/*
-===================
-MainWindow::setTrayVisible
-===================
-*/
-void MainWindow::setTrayVisible(bool visible)
-{    
-    if (QSystemTrayIcon::isSystemTrayAvailable())
-    {
-        showInTray = visible;
-    }
-    else
-    {
-        showInTray = false;
-        showInTrayAction->setChecked(false);
-
-        QString title = tr("System Tray is not available!");
-        QString text = tr("Your system does not support the system tray.");
-        QMessageBox::warning(NULL, title, text);
-    }
-
-    show();
-
-    if (appInitiated)
-        saveSettings();
 }
 
 /*
@@ -217,7 +179,7 @@ MainWindow::closeEvent
 */
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if (QSystemTrayIcon::isSystemTrayAvailable() && showInTray)
+    if (QSystemTrayIcon::isSystemTrayAvailable() && syncApp->trayVisible())
     {
         // Hides the window instead of closing as it can appear out of the screen after disconnecting a display.
         hide();
@@ -228,13 +190,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
         QString title(tr("Quit"));
         QString text(tr("Currently syncing. Are you sure you want to quit?"));
 
-        if (manager.busy() && !questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
+        if (syncApp->manager()->busy() && !questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
         {
             event->ignore();
             return;
         }
 
-        manager.shouldQuit();
+        syncApp->manager()->shouldQuit();
         event->accept();
     }
 }
@@ -260,7 +222,7 @@ void MainWindow::addProfile()
     QString newName(tr("New profile"));
     QStringList profileNames;
 
-    for (const auto &profile : manager.profiles())
+    for (const auto &profile : syncApp->manager()->profiles())
         profileNames.append(profile.name);
 
     for (int i = 2; profileNames.contains(newName); i++)
@@ -272,10 +234,10 @@ void MainWindow::addProfile()
     profileNames.append(newName);
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
-    manager.profiles().push_back(SyncProfile(newName, profileIndexByName(newName)));
-    manager.profiles().back().paused = manager.paused();
-    manager.profiles().back().setupMenus(this);
-    connectProfileMenu(manager.profiles().back());
+    syncApp->manager()->profiles().push_back(SyncProfile(newName, profileIndexByName(newName)));
+    syncApp->manager()->profiles().back().paused = syncApp->manager()->paused();
+    syncApp->manager()->profiles().back().setupMenus(this);
+    connectProfileMenu(syncApp->manager()->profiles().back());
     rebindProfiles();
 
     QSettings profileData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
@@ -288,10 +250,10 @@ void MainWindow::addProfile()
 
     ui->folderListView->selectionModel()->reset();
     ui->folderListView->update();
-    updateProfileTooltip(manager.profiles().back());
+    updateProfileTooltip(syncApp->manager()->profiles().back());
     updateStatus();
-    manager.updateNextSyncingTime(manager.profiles().back());
-    manager.updateTimer(manager.profiles().back());
+    syncApp->manager()->updateNextSyncingTime(syncApp->manager()->profiles().back());
+    syncApp->manager()->updateTimer(syncApp->manager()->profiles().back());
 }
 
 /*
@@ -342,11 +304,11 @@ void MainWindow::removeProfile()
             folder.removeDatabase();
         }
 
-        if (!manager.busy())
-            manager.profiles().remove(*profile);
+        if (!syncApp->manager()->busy())
+            syncApp->manager()->profiles().remove(*profile);
 
         folderModel->setStringList(QStringList());
-        manager.updateNextSyncingTime(*profile);
+        syncApp->manager()->updateNextSyncingTime(*profile);
     }
 
     ui->syncProfilesView->selectionModel()->reset();
@@ -402,7 +364,7 @@ void MainWindow::profileNameChanged(const QModelIndex &topLeft, const QModelInde
     QStringList profileNames;
     QStringList folderPaths;
 
-    for (const auto &profile : manager.profiles())
+    for (const auto &profile : syncApp->manager()->profiles())
         profileNames.append(profile.name);
 
     SyncProfile *profile = profileByIndex(topLeft);
@@ -567,7 +529,7 @@ void MainWindow::removeFolder()
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
         settings.remove(profile->name + QLatin1String("_profile/") + folder->path + QLatin1String("_Paused"));
 
-        if (!manager.busy())
+        if (!syncApp->manager()->busy())
             profile->folders.remove(*folder);
 
         QStringList foldersPaths;
@@ -578,8 +540,8 @@ void MainWindow::removeFolder()
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
         profilesData.setValue(profile->name, foldersPaths);
 
-        manager.updateTimer(*profile);
-        manager.updateNextSyncingTime(*profile);
+        syncApp->manager()->updateTimer(*profile);
+        syncApp->manager()->updateNextSyncingTime(*profile);
     }
 
     ui->folderListView->selectionModel()->reset();
@@ -593,27 +555,27 @@ MainWindow::pauseSyncing
 */
 void MainWindow::pauseSyncing()
 {
-    manager.setPaused(!manager.paused());
+    syncApp->manager()->setPaused(!syncApp->manager()->paused());
 
-    for (auto &profile : manager.profiles())
+    for (auto &profile : syncApp->manager()->profiles())
     {
-        profile.paused = manager.paused();
+        profile.paused = syncApp->manager()->paused();
 
         for (auto &folder : profile.folders)
-            folder.paused = manager.paused();
+            folder.paused = syncApp->manager()->paused();
 
         if (profile.paused)
             profile.syncTimer.stop();
         else
-            manager.updateTimer(profile);
+            syncApp->manager()->updateTimer(profile);
 
-        if (appInitiated)
+        if (syncApp->initiated())
             profile.saveSettings();
     }
 
     updateStatus();
 
-    if (appInitiated)
+    if (syncApp->initiated())
         saveSettings();
 }
 
@@ -653,7 +615,7 @@ void MainWindow::pauseSelected()
                 if (!folder.paused)
                     profile->paused = false;
 
-            if (appInitiated)
+            if (syncApp->initiated())
                 profile->saveSettings();
         }
         // Profiles are selected
@@ -676,64 +638,14 @@ void MainWindow::pauseSelected()
                 if (profile->paused)
                     profile->syncTimer.stop();
                 else
-                    manager.updateTimer(*profile);
+                    syncApp->manager()->updateTimer(*profile);
 
-                if (appInitiated)
+                if (syncApp->initiated())
                     profile->saveSettings();
             }
         }
 
         updateStatus();
-    }
-}
-
-/*
-===================
-MainWindow::quit
-===================
-*/
-void MainWindow::quit()
-{
-    QString title(tr("Quit"));
-    QString text(tr("Are you sure you want to quit?"));
-    QString syncText(tr("Currently syncing. Are you sure you want to quit?"));
-
-    if ((!manager.busy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No, this)) ||
-        (manager.busy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, this)))
-    {
-        manager.shouldQuit();
-        syncApp->quit();
-    }
-}
-
-/*
-===================
-MainWindow::trayIconActivated
-===================
-*/
-void MainWindow::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
-{
-    switch (reason)
-    {
-    case QSystemTrayIcon::Trigger:
-    case QSystemTrayIcon::DoubleClick:
-
-#ifdef Q_OS_LINUX
-    // Double click doesn't work on GNOME
-    case QSystemTrayIcon::MiddleClick:
-
-        // Fixes wrong window position after hiding the window.
-        if (isHidden()) move(pos().x() + (frameSize().width() - size().width()), pos().y() + (frameSize().height() - size().height()));
-#endif
-
-        setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-        QMainWindow::show();
-        raise();
-        activateWindow();
-
-        break;
-    default:
-        break;
     }
 }
 
@@ -763,14 +675,14 @@ void MainWindow::switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMod
     // Otherwise, automatic
     else
     {
-        manager.updateNextSyncingTime(profile);
-        manager.updateTimer(profile);
+        syncApp->manager()->updateNextSyncingTime(profile);
+        syncApp->manager()->updateTimer(profile);
     }
 
     updateStatus();
     updateProfileTooltip(profile);
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -784,7 +696,7 @@ void MainWindow::switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionM
     if (mode < SyncProfile::MoveToTrash || mode > SyncProfile::DeletePermanently)
         mode = SyncProfile::MoveToTrash;
 
-    if (appInitiated && mode == SyncProfile::DeletePermanently && mode != profile.deletionMode())
+    if (syncApp->initiated() && mode == SyncProfile::DeletePermanently && mode != profile.deletionMode())
     {
         QString title(tr("Switch deletion mode to delete files permanently?"));
         QString text(tr("Are you sure? Beware: this could lead to data loss!"));
@@ -800,7 +712,7 @@ void MainWindow::switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionM
     profile.versioningFormatMenu->menuAction()->setVisible(mode == SyncProfile::Versioning);
     profile.versioningLocationMenu->menuAction()->setVisible(mode == SyncProfile::Versioning);
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -820,7 +732,7 @@ void MainWindow::switchVersioningFormat(SyncProfile &profile, SyncProfile::Versi
     profile.lastVersionAction->setChecked(format == SyncProfile::LastVersion);
     profile.setVersioningFormat(format);
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -840,7 +752,7 @@ void MainWindow::switchVersioningLocation(SyncProfile &profile, SyncProfile::Ver
     profile.customLocationPathAction->setVisible(location == SyncProfile::CustomLocation);
     profile.setVersioningLocation(location);
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -857,7 +769,7 @@ void MainWindow::switchSyncingType(SyncProfile &profile, SyncFolder &folder, Syn
     folder.syncType = type;
     updateStatus();
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -875,7 +787,7 @@ void MainWindow::switchDatabaseLocation(SyncProfile &profile, SyncProfile::Datab
     profile.databaseDecentralizedAction->setChecked(location == true);
     profile.setDatabaseLocation(location);
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -894,8 +806,8 @@ void MainWindow::switchPriority(QThread::Priority priority)
     highestPriorityAction->setChecked(priority == QThread::HighestPriority);
     timeCriticalPriorityAction->setChecked(priority == QThread::TimeCriticalPriority);
 
-    if (syncThread->isRunning())
-        syncThread->setPriority(priority);
+    if (syncApp->syncThread()->isRunning())
+        syncApp->syncThread()->setPriority(priority);
 }
 
 /*
@@ -914,7 +826,7 @@ void MainWindow::increaseSyncTime(SyncProfile &profile)
         return;
     }
 
-    manager.setSyncTimeMultiplier(profile, profile.syncTimeMultiplier() + 1);
+    syncApp->manager()->setSyncTimeMultiplier(profile, profile.syncTimeMultiplier() + 1);
     profile.decreaseSyncTimeAction->setEnabled(true);
     updateMenuSyncTime(profile);
 
@@ -922,10 +834,10 @@ void MainWindow::increaseSyncTime(SyncProfile &profile)
     if (profile.syncEvery >= max)
         profile.increaseSyncTimeAction->setEnabled(false);
 
-    manager.updateTimer(profile);
+    syncApp->manager()->updateTimer(profile);
     updateProfileTooltip(profile);
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -936,7 +848,7 @@ MainWindow::decreaseSyncTime
 */
 void MainWindow::decreaseSyncTime(SyncProfile &profile)
 {
-    manager.setSyncTimeMultiplier(profile, profile.syncTimeMultiplier() - 1);
+    syncApp->manager()->setSyncTimeMultiplier(profile, profile.syncTimeMultiplier() - 1);
     updateMenuSyncTime(profile);
 
     quint64 max = SyncManager::maxInterval();
@@ -948,10 +860,10 @@ void MainWindow::decreaseSyncTime(SyncProfile &profile)
     if (profile.syncTimeMultiplier() <= 1)
         profile.decreaseSyncTimeAction->setEnabled(false);
 
-    manager.updateTimer(profile);
+    syncApp->manager()->updateTimer(profile);
     updateProfileTooltip(profile);
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -969,10 +881,10 @@ void MainWindow::switchLanguage(QLocale::Language language)
     this->language = language;
     updateStrings();
 
-    if (appInitiated)
+    if (syncApp->initiated())
         saveSettings();
 
-    for (auto &profile : manager.profiles())
+    for (auto &profile : syncApp->manager()->profiles())
     {
         profile.updateStrings();
         updateMenuSyncTime(profile);
@@ -989,20 +901,23 @@ void MainWindow::toggleLaunchOnStartup()
     syncApp->setLaunchOnStartup(launchOnStartupAction->isChecked());
     updateLaunchOnStartupState();
 
-    if (appInitiated)
+    if (syncApp->initiated())
         saveSettings();
 }
 
 /*
 ===================
-MainWindow::showInTray
+MainWindow::toggleShowInTray
 ===================
 */
 void MainWindow::toggleShowInTray()
 {
-    setTrayVisible(!showInTray);
+    syncApp->setTrayVisible(!syncApp->trayVisible());
 
-    if (appInitiated)
+    if (!QSystemTrayIcon::isSystemTrayAvailable())
+        showInTrayAction->setChecked(false);
+
+    if (syncApp->initiated())
         saveSettings();
 }
 
@@ -1013,9 +928,9 @@ MainWindow::disableNotification
 */
 void MainWindow::toggleNotification()
 {
-    manager.enableNotifications(!manager.notificationsEnabled());
+    syncApp->manager()->enableNotifications(!syncApp->manager()->notificationsEnabled());
 
-    if (appInitiated)
+    if (syncApp->initiated())
         saveSettings();
 }
 
@@ -1045,10 +960,10 @@ void MainWindow::setMaximumTransferRateUsage()
     QString text(tr("Please enter the maximum disk transfer rate in bytes per second:"));
     int usage;
 
-    if (!intInputDialog(this, title, text, usage, manager.maxDiskTransferRate(), 0, std::numeric_limits<int>::max()))
+    if (!intInputDialog(this, title, text, usage, syncApp->manager()->maxDiskTransferRate(), 0, std::numeric_limits<int>::max()))
         return;
 
-    manager.setMaxDiskTransferRate(usage);
+    syncApp->manager()->setMaxDiskTransferRate(usage);
     updateMenuMaxDiskTransferRate();
     saveSettings();
 }
@@ -1064,11 +979,11 @@ void MainWindow::setMaximumCpuUsage()
     QString text(tr("Please enter the maximum CPU usage in percentage:"));
     double usage;
 
-    if (!doubleInputDialog(this, title, text, usage, manager.maxCpuUsage(), 0.01, 100.0))
+    if (!doubleInputDialog(this, title, text, usage, syncApp->maxCpuUsage(), 0.01, 100.0))
         return;
 
-    manager.setMaxCpuUsage(static_cast<float>(usage));
-    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage()));
+    syncApp->setMaxCpuUsage(static_cast<float>(usage));
+    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
     saveSettings();
 }
 
@@ -1089,7 +1004,7 @@ void MainWindow::setFixedInterval(SyncProfile &profile)
     profile.setSyncIntervalFixed(size * 1000);
     updateMenuSyncTime(profile);
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1110,7 +1025,7 @@ void MainWindow::setVersioningPostfix(SyncProfile &profile)
     profile.setVersioningFolder(postfix);
     profile.versioningPostfixAction->setText(QString("&" + tr("Folder Postfix: %1")).arg(profile.versioningFolder()));
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1138,7 +1053,7 @@ void MainWindow::setVersioningPattern(SyncProfile &profile)
     profile.setVersioningPattern(pattern);
     profile.versioningPatternAction->setText(QString("&" + tr("Pattern: %1")).arg(profile.versioningPattern()));
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1149,7 +1064,7 @@ MainWindow::setVersioningLocationPath
 */
 void MainWindow::setVersioningLocationPath(SyncProfile &profile)
 {
-    if (profile.versioningLocation() == SyncProfile::CustomLocation && appInitiated)
+    if (profile.versioningLocation() == SyncProfile::CustomLocation && syncApp->initiated())
     {
         QString title(tr("Browse for Versioning Folder"));
         QString path = QFileDialog::getExistingDirectory(this, title, QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
@@ -1161,7 +1076,7 @@ void MainWindow::setVersioningLocationPath(SyncProfile &profile)
         }
     }
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1185,7 +1100,7 @@ void MainWindow::setFileMinSize(SyncProfile &profile)
     profile.setFileMinSize(size);
     profile.fileMinSizeAction->setText("&" + tr("Minimum File Size: %1 bytes").arg(profile.fileMinSize()));
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1209,7 +1124,7 @@ void MainWindow::setFileMaxSize(SyncProfile &profile)
     profile.setFileMaxSize(size);
     profile.fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1 bytes").arg(profile.fileMaxSize()));
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1230,7 +1145,7 @@ void MainWindow::setMovedFileMinSize(SyncProfile &profile)
     profile.setMovedFileMinSize(size);
     profile.movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1 bytes").arg(profile.movedFileMinSize()));
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1257,7 +1172,7 @@ void MainWindow::setIncludeList(SyncProfile &profile)
     profile.setIncludeList(includeList);
     profile.includeAction->setText("&" + tr("Include: %1").arg(includeString));
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1284,7 +1199,7 @@ void MainWindow::setExcludeList(SyncProfile &profile)
     profile.setExcludeList(excludeList);
     profile.excludeAction->setText("&" + tr("Exclude: %1").arg(excludeString));
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1297,7 +1212,7 @@ void MainWindow::toggleIgnoreHiddenFiles(SyncProfile &profile)
 {
     profile.setIgnoreHiddenFiles(!profile.ignoreHiddenFiles());
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1310,7 +1225,7 @@ void MainWindow::toggleDetectMoved(SyncProfile &profile)
 {
     profile.setDetectMovedFiles(!profile.detectMovedFiles());
 
-    if (appInitiated)
+    if (syncApp->initiated())
         profile.saveSettings();
 }
 
@@ -1346,7 +1261,7 @@ void MainWindow::showContextMenu(const QPoint &pos)
                 menu.addAction(iconPause, "&" + tr("Pause syncing profile"), this, SLOT(pauseSelected()));
 
                 QAction *action = menu.addAction(iconSync, "&" + tr("Synchronize profile"), this, [=, this](){ sync(profile, false); });
-                action->setDisabled(manager.queue().contains(profile));
+                action->setDisabled(syncApp->manager()->queue().contains(profile));
             }
 
             menu.addAction(iconRemove, "&" + tr("Remove profile"), this, SLOT(removeProfile()));
@@ -1421,27 +1336,27 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
 {
     if (profile)
     {
-        if (manager.queue().contains(profile))
+        if (syncApp->manager()->queue().contains(profile))
             return;
 
         profile->syncHidden = hidden;
     }
     else
     {
-        for (auto &profile : manager.profiles())
+        for (auto &profile : syncApp->manager()->profiles())
             profile.syncHidden = false;
     }
 
-    manager.addToQueue(profile);
+    syncApp->manager()->addToQueue(profile);
 
-    if (!manager.busy())
+    if (!syncApp->manager()->busy())
     {
         animSync.start();
 
-        if (!syncThread->isRunning())
+        if (!syncApp->syncThread()->isRunning())
         {
-            syncThread->start();
-            syncThread->setPriority(QThread::LowestPriority);
+            syncApp->syncThread()->start();
+            syncApp->syncThread()->setPriority(QThread::LowestPriority);
             updateTimer.start(UPDATE_TIME);
         }
     }
@@ -1454,12 +1369,11 @@ MainWindow::syncDone
 */
 void MainWindow::syncDone()
 {
-    syncThread->quit();
     updateTimer.stop();
     animSync.stop();
 
     updateStatus();
-    manager.purgeRemovedProfiles();
+    syncApp->manager()->purgeRemovedProfiles();
 }
 
 /*
@@ -1469,7 +1383,7 @@ MainWindow::profileSynced
 */
 void MainWindow::profileSynced(SyncProfile *profile)
 {
-    manager.updateTimer(*profile);
+    syncApp->manager()->updateTimer(*profile);
     updateMenuSyncTime(*profile);
     updateProfileTooltip(*profile);
     saveSettings();
@@ -1486,7 +1400,7 @@ void MainWindow::updateAvailable()
         return;
 
     updateAvailableButton->setVisible(true);
-    notify("Sync Manager", "New Update Available", QSystemTrayIcon::Information);
+    syncApp->tray()->notify("Sync Manager", "New Update Available", QSystemTrayIcon::Information);
 }
 
 /*
@@ -1500,7 +1414,7 @@ void MainWindow::rebindProfiles()
 {
     for (int i = 0; i < profileModel->rowCount(); i++)
     {
-        for (auto &profile : manager.profiles())
+        for (auto &profile : syncApp->manager()->profiles())
         {
             if (profileModel->indexByRow(i).data(Qt::DisplayRole).toString()  == profile.name)
                 profile.index = profileModel->indexByRow(i);
@@ -1584,42 +1498,18 @@ void MainWindow::disconnectProfileMenu(SyncProfile &profile)
 
 /*
 ===================
-MainWindow::notify
-
-QSystemTrayIcon doesn't display messages when hidden.
-A quick workaround is to temporarily show the tray, display the message, and then re-hide it.
-===================
-*/
-void MainWindow::notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon)
-{
-    if (!trayIcon->isSystemTrayAvailable() || !manager.notificationsEnabled())
-        return;
-
-    bool visible = trayIcon->isVisible();
-
-    if (!visible)
-        trayIcon->show();
-
-    trayIcon->showMessage(title, message, icon, std::numeric_limits<int>::max());
-
-    if (!visible)
-        trayIcon->hide();
-}
-
-/*
-===================
 MainWindow::updateStatus
 ===================
 */
 void MainWindow::updateStatus()
 {
-    manager.updateStatus();
-    syncNowAction->setEnabled(manager.queue().size() != manager.existingProfiles());
+    syncApp->manager()->updateStatus();
+    syncNowAction->setEnabled(syncApp->manager()->queue().size() != syncApp->manager()->existingProfiles());
 
     if (isVisible())
     {
         // Profiles
-        for (size_t i = 0; i < manager.profiles().size(); i++)
+        for (size_t i = 0; i < syncApp->manager()->profiles().size(); i++)
         {
             QModelIndex index = profileModel->indexByRow(i);
             SyncProfile *profile = profileByIndex(index);
@@ -1630,7 +1520,7 @@ void MainWindow::updateStatus()
             if (profile->toBeRemoved)
                 continue;
 
-            int posInQueue = manager.queue().indexOf(profile);
+            int posInQueue = syncApp->manager()->queue().indexOf(profile);
 
             if (posInQueue == 0)
                 profileModel->setData(index, tr("Syncing"), QueueStatusRole);
@@ -1641,7 +1531,7 @@ void MainWindow::updateStatus()
 
             if (profile->paused)
                 profileModel->setData(index, iconPause, Qt::DecorationRole);
-            else if (profile->syncing || (!profile->syncHidden && manager.queue().contains(profile)))
+            else if (profile->syncing || (!profile->syncHidden && syncApp->manager()->queue().contains(profile)))
                 profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
             else if (!profile->folders.empty() && profile->countExistingFolders() < 2 && profile->folders.size() >= 2)
                 profileModel->setData(index, iconRemove, Qt::DecorationRole);
@@ -1688,7 +1578,7 @@ void MainWindow::updateStatus()
 
                     if (folder->paused)
                         folderModel->setData(index, iconPause, Qt::DecorationRole);
-                    else if (folder->syncing || (manager.queue().contains(profile) && !manager.syncing() && !profile->syncHidden))
+                    else if (folder->syncing || (syncApp->manager()->queue().contains(profile) && !syncApp->manager()->syncing() && !profile->syncHidden))
                         folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
                     else if (!folder->exists)
                         folderModel->setData(index, iconRemove, Qt::DecorationRole);
@@ -1703,76 +1593,73 @@ void MainWindow::updateStatus()
         }
     }
 
-    bool paused = manager.paused();
+    bool paused = syncApp->manager()->paused();
 
     // Pause status
-    for (const auto &profile : manager.profiles())
+    for (const auto &profile : syncApp->manager()->profiles())
     {
         if (profile.toBeRemoved)
             continue;
 
-        if (manager.paused())
+        if (syncApp->manager()->paused())
             paused = true;
 
-        if (!manager.paused())
+        if (!syncApp->manager()->paused())
         {
             paused = false;
             break;
         }
     }
 
-    manager.setPaused(paused);
+    syncApp->manager()->setPaused(paused);
 
     // Tray & Icon
-    if (manager.inPausedState())
+    if (syncApp->manager()->inPausedState())
     {
-        trayIcon->setIcon(trayIconPause);
-        setWindowIcon(trayIconPause);
+        syncApp->tray()->setIcon(syncApp->tray()->iconPause());
+        setWindowIcon(syncApp->tray()->icon());
 
         // Fixes flickering menu bar
         if (pauseSyncingAction->icon().cacheKey() != iconResume.cacheKey())
             pauseSyncingAction->setIcon(iconResume);
 
         pauseSyncingAction->setText("&" + tr("Resume Syncing"));
-        manager.setPaused(true);
+        syncApp->manager()->setPaused(true);
     }
     else
     {
-        if (manager.syncing() || manager.hasManualSyncProfile())
+        if (syncApp->manager()->syncing() || syncApp->manager()->hasManualSyncProfile())
         {
-            if (trayIcon->icon().cacheKey() != trayIconSync.cacheKey())
-                trayIcon->setIcon(trayIconSync);
-
-            if (windowIcon().cacheKey() != trayIconSync.cacheKey())
-                setWindowIcon(trayIconSync);
+            syncApp->tray()->setIcon(syncApp->tray()->iconSync());
+            setWindowIcon(syncApp->tray()->iconSync());
         }
-        else if (manager.issue())
+        else if (syncApp->manager()->issue())
         {
-            trayIcon->setIcon(trayIconIssue);
-            setWindowIcon(trayIconIssue);
+            syncApp->tray()->setIcon(syncApp->tray()->iconIssue());
+            setWindowIcon(syncApp->tray()->iconIssue());
         }
-        else if (manager.warning())
+        else if (syncApp->manager()->warning())
         {
-            trayIcon->setIcon(trayIconWarning);
-            setWindowIcon(trayIconWarning);
+            syncApp->tray()->setIcon(syncApp->tray()->iconWarning());
+            setWindowIcon(syncApp->tray()->iconWarning());
         }
         else
         {
             bool incomplete = false;
 
-            for (auto &profile : manager.profiles())
+            for (auto &profile : syncApp->manager()->profiles())
                 if (profile.partiallySynchronized())
                     incomplete = true;
 
             if (incomplete)
             {
-                trayIcon->setIcon(trayIconDonePartial);
-                setWindowIcon(trayIconDonePartial);
+                syncApp->tray()->setIcon(syncApp->tray()->iconDonePartial());
+                setWindowIcon(syncApp->tray()->iconDonePartial());
             }
             else
             {
-                trayIcon->setIcon(trayIconDone);
-                setWindowIcon(trayIconDone);
+                syncApp->tray()->setIcon(syncApp->tray()->iconDone());
+                setWindowIcon(syncApp->tray()->iconDone());
             }
         }
 
@@ -1781,18 +1668,18 @@ void MainWindow::updateStatus()
             pauseSyncingAction->setIcon(iconPause);
 
         pauseSyncingAction->setText("&" + tr("Pause Syncing"));
-        manager.setPaused(false);
+        syncApp->manager()->setPaused(false);
     }
 
     // Title
-    if (manager.filesToSync())
+    if (syncApp->manager()->filesToSync())
     {
-        trayIcon->setToolTip(tr("Sync Manager - %1 files to synchronize").arg(manager.filesToSync()));
-        setWindowTitle(tr("Sync Manager - %1 files to synchronize").arg(manager.filesToSync()));
+        syncApp->tray()->setToolTip(tr("Sync Manager - %1 files to synchronize").arg(syncApp->manager()->filesToSync()));
+        setWindowTitle(tr("Sync Manager - %1 files to synchronize").arg(syncApp->manager()->filesToSync()));
     }
     else
     {
-        trayIcon->setToolTip("Sync Manager");
+        syncApp->tray()->setToolTip("Sync Manager");
         setWindowTitle("Sync Manager");
     }
 }
@@ -1806,12 +1693,12 @@ void MainWindow::updateMenuMaxDiskTransferRate()
 {
     QString text;
 
-    if (manager.maxDiskTransferRate())
+    if (syncApp->manager()->maxDiskTransferRate())
     {
-        quint64 bytes = manager.maxDiskTransferRate() % 1024;
-        quint64 kilobytes = (manager.maxDiskTransferRate() / 1024) % 1024;
-        quint64 megabytes = (manager.maxDiskTransferRate() / 1024 / 1024) % 1024;
-        quint64 gigabytes = (manager.maxDiskTransferRate() / 1024 / 1024/ 1024) % 1024;
+        quint64 bytes = syncApp->manager()->maxDiskTransferRate() % 1024;
+        quint64 kilobytes = (syncApp->manager()->maxDiskTransferRate() / 1024) % 1024;
+        quint64 megabytes = (syncApp->manager()->maxDiskTransferRate() / 1024 / 1024) % 1024;
+        quint64 gigabytes = (syncApp->manager()->maxDiskTransferRate() / 1024 / 1024/ 1024) % 1024;
 
         if (gigabytes)
             text.append(tr("%1 GB/s").arg(QString::number(static_cast<float>(gigabytes) + static_cast<float>(megabytes) / 1024.0f, 'f', 1)));
@@ -1963,13 +1850,13 @@ void MainWindow::loadSettings()
     ui->horizontalSplitter->setStretchFactor(0, 0);
     ui->horizontalSplitter->setStretchFactor(1, 1);
 
-    manager.setMaxDiskTransferRate(settings.value("MaximumDiskUsage", 0).toULongLong());
-    manager.setMaxCpuUsage(settings.value("MaximumCpuUsage", 100).toUInt());
+    syncApp->manager()->setMaxDiskTransferRate(settings.value("MaximumDiskUsage", 0).toULongLong());
+    syncApp->setMaxCpuUsage(settings.value("MaximumCpuUsage", 100).toUInt());
     switchPriority(static_cast<QThread::Priority>(settings.value("Priority", QThread::NormalPriority).toInt()));
     language = static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt());
-    showInTray = settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool();
+    syncApp->setTrayVisible(settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool());
     checkForUpdates = settings.value("CheckForUpdates", true).toBool();
-    manager.enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
+    syncApp->manager()->enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
 
     for (int i = 0; i < profileModel->rowCount(); i++)
     {
@@ -1984,7 +1871,7 @@ void MainWindow::loadSettings()
         profile->paused = settings.value(profileKeyPath + QLatin1String("Paused"), false).toBool();
 
         if (!profile->paused)
-            manager.setPaused(false);
+            syncApp->manager()->setPaused(false);
 
         // Loads last sync dates for all profiles
         profile->lastSyncDate = settings.value(profileKeyPath + QLatin1String("LastSyncDate")).toDateTime();
@@ -1996,7 +1883,7 @@ void MainWindow::loadSettings()
             folder.syncType = static_cast<SyncFolder::SyncType>(settings.value(profileKeyPath + folder.path + QLatin1String("_SyncType"), SyncFolder::TWO_WAY).toInt());
 
             if (!folder.paused)
-                manager.setPaused(false);
+                syncApp->manager()->setPaused(false);
 
             folder.exists = QFileInfo::exists(folder.path);
             folder.lastSyncDate = settings.value(profileKeyPath + folder.path + QLatin1String("_LastSyncDate")).toDateTime();
@@ -2004,8 +1891,8 @@ void MainWindow::loadSettings()
         }
     }
 
-    showInTrayAction->setChecked(showInTray);
-    disableNotificationAction->setChecked(!manager.notificationsEnabled());
+    showInTrayAction->setChecked(syncApp->trayVisible());
+    disableNotificationAction->setChecked(!syncApp->manager()->notificationsEnabled());
     checkForUpdatesAction->setChecked(checkForUpdates);
     syncApp->setCheckForUpdates(checkForUpdates);
 
@@ -2014,7 +1901,7 @@ void MainWindow::loadSettings()
 
     updateMenuMaxDiskTransferRate();
 
-    for (auto &profile : manager.profiles())
+    for (auto &profile : syncApp->manager()->profiles())
     {
         profile.ignoreHiddenFilesAction->setChecked(profile.ignoreHiddenFiles());
         profile.detectMovedFilesAction->setChecked(profile.detectMovedFiles());
@@ -2027,10 +1914,10 @@ void MainWindow::loadSettings()
         switchVersioningLocation(profile, static_cast<SyncProfile::VersioningLocation>(settings.value(profileKeyname + "VersioningLocation", SyncProfile::LocallyNextToFolder).toInt()));
         switchDatabaseLocation(profile, static_cast<SyncProfile::DatabaseLocation>(settings.value(profileKeyname + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
 
-        manager.updateNextSyncingTime(profile);
+        syncApp->manager()->updateNextSyncingTime(profile);
     }
 
-    for (auto &profile : manager.profiles())
+    for (auto &profile : syncApp->manager()->profiles())
     {
         quint64 max = SyncManager::maxInterval();
 
@@ -2052,7 +1939,7 @@ MainWindow::saveSettings
 */
 void MainWindow::saveSettings() const
 {
-    if (!appInitiated)
+    if (!syncApp->initiated())
         return;
 
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
@@ -2069,13 +1956,13 @@ void MainWindow::saveSettings() const
 
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("HorizontalSplitter", hSizes);
-    settings.setValue("MaximumDiskUsage", manager.maxDiskTransferRate());
-    settings.setValue("MaximumCpuUsage", manager.maxCpuUsage());
+    settings.setValue("MaximumDiskUsage", syncApp->manager()->maxDiskTransferRate());
+    settings.setValue("MaximumCpuUsage", syncApp->maxCpuUsage());
     settings.setValue("Priority", priority);
     settings.setValue("Language", language);
-    settings.setValue("ShowInTray", showInTray);
-    settings.setValue("Paused", manager.paused());
-    settings.setValue("Notifications", manager.notificationsEnabled());
+    settings.setValue("ShowInTray", syncApp->trayVisible());
+    settings.setValue("Paused", syncApp->manager()->paused());
+    settings.setValue("Notifications", syncApp->manager()->notificationsEnabled());
     settings.setValue("CheckForUpdates", checkForUpdates);
 }
 
@@ -2098,18 +1985,12 @@ void MainWindow::setupMenus()
     iconTwoWay.addFile(":/Images/IconTwoWay.png");
     iconOneWay.addFile(":/Images/IconOneWay.png");
     iconOneWayUpdate.addFile(":/Images/IconOneWayUpdate.png");
-    trayIconDone.addFile(":/Images/TrayIconDone.png");
-    trayIconDonePartial.addFile(":/Images/TrayIconDonePartial.png");
-    trayIconIssue.addFile(":/Images/TrayIconIssue.png");
-    trayIconPause.addFile(":/Images/TrayIconPause.png");
-    trayIconSync.addFile(":/Images/TrayIconSync.png");
-    trayIconWarning.addFile(":/Images/TrayIconWarning.png");
     animSync.setFileName(":/Images/AnimSync.gif");
 
     syncNowAction = new QAction(iconSync, "&" + tr("Sync Now"), this);
     pauseSyncingAction = new QAction(iconPause, "&" + tr("Pause Syncing"), this);
-    maximumDiskTransferRateAction = new QAction("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(manager.maxDiskTransferRate()), this);
-    maximumCpuUsageAction = new QAction("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage()), this);
+    maximumDiskTransferRateAction = new QAction("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()), this);
+    maximumCpuUsageAction = new QAction("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()), this);
     idlePriorityAction = new QAction("&" + tr("Idle Priority"), this);
     lowestPriorityAction = new QAction("&" + tr("Lowest Priority"), this);
     lowPriorityAction = new QAction("&" + tr("Low Priority"), this);
@@ -2128,8 +2009,6 @@ void MainWindow::setupMenus()
     showInTrayAction = new QAction("&" + tr("Show in System Tray"));
     disableNotificationAction = new QAction("&" + tr("Disable Notifications"), this);
     checkForUpdatesAction = new QAction("&" + tr("Check for Updates"), this);
-    showAction = new QAction("&" + tr("Show"), this);
-    quitAction = new QAction("&" + tr("Quit"), this);
     userManualAction = new QAction("&" + tr("User Manual"), this);
     reportBugAction = new QAction("&" + tr("Report a Bug"), this);
     versionAction = new QAction(tr("Version: %1").arg(SYNCMANAGER_VERSION), this);
@@ -2190,22 +2069,10 @@ void MainWindow::setupMenus()
     settingsMenu->addSeparator();
     settingsMenu->addAction(versionAction);
 
-    trayIconMenu = new QMenu(this);
-    trayIconMenu->addAction(syncNowAction);
-    trayIconMenu->addAction(pauseSyncingAction);
-    trayIconMenu->addSeparator();
-    trayIconMenu->addMenu(settingsMenu);
-
-#ifdef Q_OS_LINUX
-    trayIconMenu->addAction(showAction);
-#endif
-
-    trayIconMenu->addAction(quitAction);
-
-    trayIcon = new QSystemTrayIcon(this);
-    trayIcon->setToolTip("Sync Manager");
-    trayIcon->setContextMenu(trayIconMenu);
-    trayIcon->setIcon(trayIconDone);
+    syncApp->tray()->addMenu(settingsMenu);
+    syncApp->tray()->addSeparator();
+    syncApp->tray()->addAction(pauseSyncingAction);
+    syncApp->tray()->addAction(syncNowAction);
 
     this->menuBar()->addAction(syncNowAction);
     this->menuBar()->addAction(pauseSyncingAction);
@@ -2237,7 +2104,7 @@ void MainWindow::setupMenus()
     ui->folderListView->setStyleSheet("QListView::item { padding: 3px; }");
 #endif
 
-    for (auto &profile : manager.profiles())
+    for (auto &profile : syncApp->manager()->profiles())
     {
         profile.loadSettings();
         profile.setupMenus(this);
@@ -2262,13 +2129,10 @@ void MainWindow::setupMenus()
     connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
     connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
     connect(checkForUpdatesAction, &QAction::triggered, this, &MainWindow::toggleCheckForUpdates);
-    connect(showAction, &QAction::triggered, this, [this](){ trayIconActivated(QSystemTrayIcon::DoubleClick); });
-    connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
-    connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
     connect(userManualAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_PATH)); });
     connect(reportBugAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_URL)); });
 
-    for (auto &profile : manager.profiles())
+    for (auto &profile : syncApp->manager()->profiles())
         connectProfileMenu(profile);
 }
 
@@ -2281,8 +2145,8 @@ void MainWindow::updateStrings()
 {
     syncNowAction->setText("&" + tr("Sync Now"));
     pauseSyncingAction->setText("&" + tr("Pause Syncing"));
-    maximumDiskTransferRateAction->setText("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(manager.maxDiskTransferRate()));
-    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(manager.maxCpuUsage()));
+    maximumDiskTransferRateAction->setText("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()));
+    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
     idlePriorityAction->setText("&" + tr("Idle Priority"));
     lowestPriorityAction->setText("&" + tr("Lowest Priority"));
     lowPriorityAction->setText("&" + tr("Low Priority"));
@@ -2298,8 +2162,6 @@ void MainWindow::updateStrings()
     showInTrayAction->setText("&" + tr("Show in System Tray"));
     disableNotificationAction->setText("&" + tr("Disable Notifications"));
     checkForUpdatesAction->setText("&" + tr("Check for Updates"));
-    showAction->setText("&" + tr("Show"));
-    quitAction->setText("&" + tr("Quit"));
     userManualAction->setText("&" + tr("User Manual"));
     reportBugAction->setText("&" + tr("Report a Bug"));
     versionAction->setText(tr("Version: %1").arg(SYNCMANAGER_VERSION));
@@ -2318,10 +2180,11 @@ void MainWindow::updateStrings()
     updateAvailableButton->adjustSize();
     this->menuBar()->adjustSize();
 
+    syncApp->tray()->updateStrings();
     updateStatus();
     updateMenuMaxDiskTransferRate();
 
-    for (auto &profile : manager.profiles())
+    for (auto &profile : syncApp->manager()->profiles())
     {
         updateMenuSyncTime(profile);
         profile.updateStrings();
@@ -2337,10 +2200,10 @@ MainWindow::updateLaunchOnStartupState
 void MainWindow::updateLaunchOnStartupState()
 {
 #ifdef Q_OS_WIN
-    QString path(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk");
+    QString path(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncsyncApp->manager.lnk");
     launchOnStartupAction->setChecked(QFile::exists(path));
 #else
-    QString path(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop");
+    QString path(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncsyncApp->manager.desktop");
     launchOnStartupAction->setChecked(QFile::exists(path));
 #endif
 }
@@ -2352,7 +2215,7 @@ MainWindow::profileByIndex
 */
 SyncProfile *MainWindow::profileByIndex(const QModelIndex &index)
 {
-    for (auto &profile : manager.profiles())
+    for (auto &profile : syncApp->manager()->profiles())
         if (profile.index == index)
             return &profile;
 

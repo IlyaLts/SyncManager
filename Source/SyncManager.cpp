@@ -22,7 +22,6 @@
 #include "MainWindow.h"
 #include "UnhidableMenu.h"
 #include "Common.h"
-#include "CpuUsage.h"
 #include <QStringListModel>
 #include <QSettings>
 #include <QCloseEvent>
@@ -44,12 +43,8 @@ SyncManager::SyncManager
 */
 SyncManager::SyncManager()
 {
-    m_cpuUsage = new CpuUsage(this);
-
     connect(&m_diskUsageResetTimer, &QTimer::timeout, this, [this](){ for (auto &device : m_deviceRead) device = 0; });
-    connect(m_cpuUsage, &CpuUsage::cpuUsageUpdated, this, &SyncManager::updateCpuUsage);
     m_diskUsageResetTimer.start(1000);
-    m_cpuUsage->startMonitoring(CPU_UPDATE_TIME);
 }
 
 /*
@@ -372,7 +367,7 @@ SyncManager::throttleCpu
 */
 void SyncManager::throttleCpu()
 {
-    while (m_processUsage > m_maxCpuUsage)
+    while (syncApp->processUsage() > syncApp->maxCpuUsage())
         QThread::msleep(CPU_UPDATE_TIME);
 }
 
@@ -444,17 +439,6 @@ quint64 SyncManager::maxInterval()
     max /= 1000000;
 
     return max;
-}
-
-/*
-===================
-SyncManager::updateCpuUsage
-===================
-*/
-void SyncManager::updateCpuUsage(float appPercentage, float systemPercentage)
-{
-    m_processUsage = appPercentage;
-    m_systemUsage = systemPercentage;   
 }
 
 /*
@@ -608,7 +592,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     if (m_shouldQuit)
         return false;
 
-    syncFiles(profile);
+    syncChanges(profile);
     profile.removeNonexistentFileData();
 
     if (profile.resetLocks())
@@ -2128,14 +2112,17 @@ void SyncManager::copyFiles(SyncFolder &folder)
 
 /*
 ===================
-SyncManager::removeUniqueFiles
+SyncManager::cleanupFolder
 
 Used by one-way synchronization folders.
-Removes files from a synchronization folder that do not exist in other synchronization folders
+Removes files from a synchronization folder that do not exist in other two-way synchronization folders
 ===================
 */
-void SyncManager::removeUniqueFiles(SyncFolder &folder)
+void SyncManager::cleanupFolder(SyncFolder &folder)
 {
+    if (folder.syncType != SyncFolder::ONE_WAY)
+        return;
+
     SyncProfile &profile = folder.profile();
     const int typeSize = 2;
     SyncFile::Type types[typeSize];
@@ -2178,8 +2165,7 @@ void SyncManager::removeUniqueFiles(SyncFolder &folder)
                 // Prevents files from being removed if there are no folders to mirror from
                 if (otherFolderIt->syncType == SyncFolder::TWO_WAY)
                     hasTwoWay = true;
-
-                if (otherFolderIt->syncType == SyncFolder::ONE_WAY || otherFolderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
+                else
                     continue;
 
                 if (otherFolderIt->files.contains(fileIt.key()))
@@ -2214,10 +2200,10 @@ void SyncManager::removeUniqueFiles(SyncFolder &folder)
 
 /*
 ===================
-SyncManager::syncFiles
+SyncManager::syncChanges
 ===================
 */
-void SyncManager::syncFiles(SyncProfile &profile)
+void SyncManager::syncChanges(SyncProfile &profile)
 {
     synchronizeFileAttributes(profile);
 
@@ -2254,7 +2240,7 @@ void SyncManager::syncFiles(SyncProfile &profile)
 
         // We don't want files in one-way folders that don't exist in other folders
         if (folder.syncType == SyncFolder::ONE_WAY)
-            removeUniqueFiles(folder);
+            cleanupFolder(folder);
 
         folder.versioningPath.clear();
 

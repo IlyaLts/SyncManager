@@ -60,11 +60,82 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
     QSettings settings(localDataPath + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     QLocale::Language systemLanguage = QLocale::system().language();
     setTranslator(static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt()));
+}
 
+/*
+===================
+Application::~Application
+===================
+*/
+Application::~Application()
+{
+    if (syncApp->m_syncThread->isRunning())
+    {
+        syncApp->m_syncThread->requestInterruption();
+        syncApp->m_syncThread->quit();
+
+        if (syncApp->m_syncThread->isRunning())
+        {
+            syncApp->m_syncThread->terminate();
+            syncApp->m_syncThread->wait();
+        }
+    }
+}
+
+/*
+===================
+Application::init
+===================
+*/
+void Application::init()
+{
     m_netManager = new QNetworkAccessManager(this);
     connect(m_netManager, &QNetworkAccessManager::finished, this, &Application::onUpdateReply);
     connect(&m_updateTimer, &QTimer::timeout, this, &Application::checkForUpdates);
     setCheckForUpdates(true);
+
+    m_manager = new SyncManager;
+    m_syncThread = new QThread(this);
+    m_syncWorker = new SyncWorker();
+    m_tray = new SystemTray;
+    m_window = new MainWindow;
+    m_cpuUsage = new CpuUsage(this);
+
+    m_syncWorker->moveToThread(m_syncThread);
+    connect(m_syncThread, &QThread::started, m_syncWorker, [this](){ m_syncWorker->run(*m_manager); });
+    connect(m_syncWorker, &SyncWorker::finished, this, [this](){ m_syncThread->quit(); });
+
+    connect(m_cpuUsage, &CpuUsage::cpuUsageUpdated, this, &Application::updateCpuUsage);
+    m_cpuUsage->startMonitoring(CPU_UPDATE_TIME);
+}
+
+/*
+===================
+Application::setTrayVisible
+===================
+*/
+void Application::setTrayVisible(bool visible)
+{
+    if (QSystemTrayIcon::isSystemTrayAvailable() && visible)
+    {
+        m_trayVisible = visible;
+        m_tray->show();
+        setQuitOnLastWindowClosed(false);
+    }
+    else
+    {
+        m_trayVisible = false;
+
+        QString title = syncApp->translate("MainWindow", "System Tray is not available!");
+        QString text = syncApp->translate("MainWindow", "Your system does not support the system tray.");
+        QMessageBox::warning(NULL, title, text);
+
+        m_tray->hide();
+        setQuitOnLastWindowClosed(true);
+
+        if (initiated())
+            m_window->QMainWindow::show();
+    }
 }
 
 /*
@@ -176,6 +247,22 @@ void Application::setCheckForUpdates(bool enable)
 
 /*
 ===================
+Application::setMaxCpuUsage
+===================
+*/
+void Application::setMaxCpuUsage(float percentage)
+{
+    if (percentage <= 0.0f)
+        percentage = 0.1f;
+
+    if (percentage > 100.0f)
+        percentage = 100.0f;
+
+    m_maxCpuUsage = percentage;
+}
+
+/*
+===================
 Application::checkForUpdates
 ===================
 */
@@ -189,12 +276,46 @@ void Application::checkForUpdates()
 
 /*
 ===================
+Application::exec
+===================
+*/
+int Application::exec()
+{
+    m_initiated = true;
+
+    if (!syncApp->trayVisible())
+        m_window->show();
+
+    return QApplication::exec();
+}
+
+/*
+===================
 Application::languageCount
 ===================
 */
 int Application::languageCount()
 {
     return static_cast<int>(sizeof(languages) / sizeof(Language));
+}
+
+/*
+===================
+Application::quit
+===================
+*/
+void Application::quit()
+{
+    QString title(syncApp->translate("MainWindow", "Quit"));
+    QString text(syncApp->translate("MainWindow", "Are you sure you want to quit?"));
+    QString syncText(syncApp->translate("MainWindow", "Currently syncing. Are you sure you want to quit?"));
+
+    if ((!m_manager->busy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No, m_window)) ||
+        (m_manager->busy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, m_window)))
+    {
+        m_manager->shouldQuit();
+        QApplication::quit();
+    }
 }
 
 /*
@@ -232,4 +353,15 @@ void Application::onUpdateReply(QNetworkReply *reply)
     {
         m_updateAvailable = false;
     }
+}
+
+/*
+===================
+Application::updateCpuUsage
+===================
+*/
+void Application::updateCpuUsage(float appPercentage, float systemPercentage)
+{
+    m_processUsage = appPercentage;
+    m_systemUsage = systemPercentage;
 }

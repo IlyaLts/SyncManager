@@ -76,7 +76,6 @@ int main(int argc, char *argv[])
     if (QCoreApplication::arguments().contains("launchOnStartup", Qt::CaseInsensitive))
         app.setLaunchOnStartup(true);
 
-    MainWindow window;
-    window.show();
+    app.init();
     return app.exec();
 }
