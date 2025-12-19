@@ -428,38 +428,6 @@
             <translation>Indtast venligst den maksimale CPU-anvendelse i procent:</translation>
         </message>
         <message>
-            <source>Priority</source>
-            <translation>Prioritet</translation>
-        </message>
-        <message>
-            <source>Idle Priority</source>
-            <translation>Prioritet for inaktiv</translation>
-        </message>
-        <message>
-            <source>Lowest Priority</source>
-            <translation>Laveste prioritet</translation>
-        </message>
-        <message>
-            <source>Low Priority</source>
-            <translation>Lav prioritet</translation>
-        </message>
-        <message>
-            <source>Normal Priority</source>
-            <translation>Normal prioritet</translation>
-        </message>
-        <message>
-            <source>High Priority</source>
-            <translation>Høj prioritet</translation>
-        </message>
-        <message>
-            <source>Highest Priority</source>
-            <translation>Højeste prioritet</translation>
-        </message>
-        <message>
-            <source>Time Critical Priority</source>
-            <translation>Tidskritisk prioritet</translation>
-        </message>
-        <message>
             <source>Maximum Disk Transfer Rate</source>
             <translation>Maksimal diskhastighed</translation>
         </message>

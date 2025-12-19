@@ -428,38 +428,6 @@
             <translation>최대 CPU 사용량을 백분율로 입력해주세요:</translation>
         </message>
         <message>
-            <source>Priority</source>
-            <translation>우선순위</translation>
-        </message>
-        <message>
-            <source>Idle Priority</source>
-            <translation>유휴 우선순위</translation>
-        </message>
-        <message>
-            <source>Lowest Priority</source>
-            <translation>가장 낮은 우선순위</translation>
-        </message>
-        <message>
-            <source>Low Priority</source>
-            <translation>낮은 우선순위</translation>
-        </message>
-        <message>
-            <source>Normal Priority</source>
-            <translation>보통 우선순위</translation>
-        </message>
-        <message>
-            <source>High Priority</source>
-            <translation>높은 우선순위</translation>
-        </message>
-        <message>
-            <source>Highest Priority</source>
-            <translation>가장 높은 우선순위</translation>
-        </message>
-        <message>
-            <source>Time Critical Priority</source>
-            <translation>시간 긴급 우선순위</translation>
-        </message>
-        <message>
             <source>Maximum Disk Transfer Rate</source>
             <translation>최대 디스크 전송 속도</translation>
         </message>

@@ -167,12 +167,10 @@ private:
 
     UnhidableMenu *settingsMenu;
     UnhidableMenu *performanceMenu;
-    UnhidableMenu *priorityMenu;
     UnhidableMenu *languageMenu;
 
     QPushButton *updateAvailableButton;
 
-    QThread::Priority priority = QThread::NormalPriority;
     QLocale::Language language;
     QTimer updateTimer;
     bool checkForUpdates;

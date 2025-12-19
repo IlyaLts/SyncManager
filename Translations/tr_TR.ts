@@ -428,38 +428,6 @@
             <translation>Lütfen maksimum CPU kullanımını yüzde olarak girin:</translation>
         </message>
         <message>
-            <source>Priority</source>
-            <translation>Öncelik</translation>
-        </message>
-        <message>
-            <source>Idle Priority</source>
-            <translation>Boşta Öncelik</translation>
-        </message>
-        <message>
-            <source>Lowest Priority</source>
-            <translation>En Düşük Öncelik</translation>
-        </message>
-        <message>
-            <source>Low Priority</source>
-            <translation>Düşük Öncelik</translation>
-        </message>
-        <message>
-            <source>Normal Priority</source>
-            <translation>Normal Öncelik</translation>
-        </message>
-        <message>
-            <source>High Priority</source>
-            <translation>Yüksek Öncelik</translation>
-        </message>
-        <message>
-            <source>Highest Priority</source>
-            <translation>En Yüksek Öncelik</translation>
-        </message>
-        <message>
-            <source>Time Critical Priority</source>
-            <translation>Zaman Açısından Kritik Öncelik</translation>
-        </message>
-        <message>
             <source>Maximum Disk Transfer Rate</source>
             <translation>Maksimum Disk Transfer Hızı</translation>
         </message>

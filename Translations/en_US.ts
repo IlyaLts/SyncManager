@@ -428,38 +428,6 @@
             <translation>Please enter the maximum CPU usage in percentage:</translation>
         </message>
         <message>
-            <source>Priority</source>
-            <translation>Priority</translation>
-        </message>
-        <message>
-            <source>Idle Priority</source>
-            <translation>Idle Priority</translation>
-        </message>
-        <message>
-            <source>Lowest Priority</source>
-            <translation>Lowest Priority</translation>
-        </message>
-        <message>
-            <source>Low Priority</source>
-            <translation>Low Priority</translation>
-        </message>
-        <message>
-            <source>Normal Priority</source>
-            <translation>Normal Priority</translation>
-        </message>
-        <message>
-            <source>High Priority</source>
-            <translation>High Priority</translation>
-        </message>
-        <message>
-            <source>Highest Priority</source>
-            <translation>Highest Priority</translation>
-        </message>
-        <message>
-            <source>Time Critical Priority</source>
-            <translation>Time Critical Priority</translation>
-        </message>
-        <message>
             <source>Maximum Disk Transfer Rate</source>
             <translation>Maximum Disk Transfer Rate</translation>
         </message>

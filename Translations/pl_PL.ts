@@ -428,38 +428,6 @@
             <translation>Wprowadź maksymalne użycie procesora w procentach:</translation>
         </message>
         <message>
-            <source>Priority</source>
-            <translation>Priorytet</translation>
-        </message>
-        <message>
-            <source>Idle Priority</source>
-            <translation>Priorytet bezczynności</translation>
-        </message>
-        <message>
-            <source>Lowest Priority</source>
-            <translation>Najniższy priorytet</translation>
-        </message>
-        <message>
-            <source>Low Priority</source>
-            <translation>Niski priorytet</translation>
-        </message>
-        <message>
-            <source>Normal Priority</source>
-            <translation>Normalny priorytet</translation>
-        </message>
-        <message>
-            <source>High Priority</source>
-            <translation>Wysoki priorytet</translation>
-        </message>
-        <message>
-            <source>Highest Priority</source>
-            <translation>Najwyższy priorytet</translation>
-        </message>
-        <message>
-            <source>Time Critical Priority</source>
-            <translation>Krytyczny priorytet czasowy</translation>
-        </message>
-        <message>
             <source>Maximum Disk Transfer Rate</source>
             <translation>Maksymalna prędkość transferu dysku</translation>
         </message>

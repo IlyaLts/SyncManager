@@ -1958,7 +1958,6 @@ void MainWindow::saveSettings() const
     settings.setValue("HorizontalSplitter", hSizes);
     settings.setValue("MaximumDiskUsage", syncApp->manager()->maxDiskTransferRate());
     settings.setValue("MaximumCpuUsage", syncApp->maxCpuUsage());
-    settings.setValue("Priority", priority);
     settings.setValue("Language", language);
     settings.setValue("ShowInTray", syncApp->trayVisible());
     settings.setValue("Paused", syncApp->manager()->paused());
@@ -2037,23 +2036,9 @@ void MainWindow::setupMenus()
     for (int i = 0; i < Application::languageCount(); i++)
         languageMenu->addAction(languageActions[i]);
 
-    priorityMenu = new UnhidableMenu("&" + tr("Priority"), this);
-    priorityMenu->addAction(idlePriorityAction);
-    priorityMenu->addAction(lowestPriorityAction);
-    priorityMenu->addAction(lowPriorityAction);
-    priorityMenu->addAction(normalPriorityAction);
-    priorityMenu->addAction(highPriorityAction);
-    priorityMenu->addAction(highestPriorityAction);
-    priorityMenu->addAction(timeCriticalPriorityAction);
-
     performanceMenu = new UnhidableMenu("&" + tr("Performance"), this);
     performanceMenu->addAction(maximumDiskTransferRateAction);
     performanceMenu->addAction(maximumCpuUsageAction);
-    performanceMenu->addMenu(priorityMenu);
-
-#ifndef Q_OS_WIN
-    priorityMenu->setVisible(false);
-#endif
 
     settingsMenu = new UnhidableMenu("&" + tr("Settings"), this);
     settingsMenu->setIcon(iconSettings);
@@ -2167,7 +2152,6 @@ void MainWindow::updateStrings()
     versionAction->setText(tr("Version: %1").arg(SYNCMANAGER_VERSION));
 
     performanceMenu->setTitle("&" + tr("Performance"));
-    priorityMenu->setTitle("&" + tr("Priority"));
     languageMenu->setTitle("&" + tr("Language"));
     settingsMenu->setTitle("&" + tr("Settings"));
 

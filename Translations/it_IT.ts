@@ -428,38 +428,6 @@
             <translation>Inserisci l'utilizzo massimo della CPU in percentuale:</translation>
         </message>
         <message>
-            <source>Priority</source>
-            <translation>Priorità</translation>
-        </message>
-        <message>
-            <source>Idle Priority</source>
-            <translation>Priorità inattiva</translation>
-        </message>
-        <message>
-            <source>Lowest Priority</source>
-            <translation>Priorità minima</translation>
-        </message>
-        <message>
-            <source>Low Priority</source>
-            <translation>Priorità bassa</translation>
-        </message>
-        <message>
-            <source>Normal Priority</source>
-            <translation>Priorità normale</translation>
-        </message>
-        <message>
-            <source>High Priority</source>
-            <translation>Priorità alta</translation>
-        </message>
-        <message>
-            <source>Highest Priority</source>
-            <translation>Priorità massima</translation>
-        </message>
-        <message>
-            <source>Time Critical Priority</source>
-            <translation>Priorità critica</translation>
-        </message>
-        <message>
             <source>Maximum Disk Transfer Rate</source>
             <translation>Massima velocità di trasferimento del disco</translation>
         </message>
