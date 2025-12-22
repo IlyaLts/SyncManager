@@ -27,6 +27,11 @@
 #include <QNetworkReply>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QInputDialog>
+#include <QPushButton>
+#include <QBoxLayout>
+#include <QTextBrowser>
+#include <QThread>
 
 Language defaultLanguage = { QLocale::English, QLocale::UnitedStates, ":/i18n/en_US.qm", ":/Images/flags/us.svg", "&English" };
 
@@ -59,7 +64,7 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
     QString localDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     QSettings settings(localDataPath + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     QLocale::Language systemLanguage = QLocale::system().language();
-    setTranslator(static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt()));
+    setLanguage(static_cast<QLocale::Language>(settings.value("Language", systemLanguage).toInt()));
 }
 
 /*
@@ -96,17 +101,69 @@ void Application::init()
 
     m_manager = new SyncManager;
     m_syncThread = new QThread(this);
-    m_syncWorker = new SyncWorker();
     m_tray = new SystemTray;
     m_window = new MainWindow;
     m_cpuUsage = new CpuUsage(this);
 
-    m_syncWorker->moveToThread(m_syncThread);
-    connect(m_syncThread, &QThread::started, m_syncWorker, [this](){ m_syncWorker->run(*m_manager); });
-    connect(m_syncWorker, &SyncWorker::finished, this, [this](){ m_syncThread->quit(); });
+    m_manager->moveToThread(m_syncThread);
+    connect(m_syncThread, &QThread::started, m_manager, [this](){ m_manager->sync(); });
+    connect(m_manager, &SyncManager::finished, this, [this](){ m_syncThread->quit(); });
 
     connect(m_cpuUsage, &CpuUsage::cpuUsageUpdated, this, &Application::updateCpuUsage);
     m_cpuUsage->startMonitoring(CPU_UPDATE_TIME);
+
+    m_initiated = true;
+}
+
+/*
+===================
+Application::setLanguage
+===================
+*/
+void Application::setLanguage(QLocale::Language language)
+{
+    QCoreApplication::removeTranslator(&m_translator);
+    bool result = false;
+
+    for (int i = 0; i < languageCount(); i++)
+    {
+        if (languages[i].language != language)
+            continue;
+
+        result = m_translator.load(languages[i].filePath);
+        m_locale = QLocale(languages[i].language, languages[i].country);
+
+        if (!result)
+            qWarning("Unable to load %s language", qPrintable(QLocale::languageToString(language)));
+
+        break;
+    }
+
+    // Loads English by default if the specified language is not in the list
+    if (!result)
+    {
+        result = m_translator.load(defaultLanguage.filePath);
+        m_locale = QLocale(defaultLanguage.language, defaultLanguage.country);
+
+        if (!result)
+        {
+            qWarning("Unable to load %s language", qPrintable(QLocale::languageToString(defaultLanguage.language)));
+            return;
+        }
+    }
+
+    QCoreApplication::installTranslator(&m_translator);
+
+    m_language = language;
+
+    if (initiated())
+    {
+        m_window->retranslate();
+        m_tray->retranslate();
+        saveSettings();
+
+        emit languageChanged();
+    }
 }
 
 /*
@@ -194,51 +251,13 @@ void Application::setLaunchOnStartup(bool enable)
 
 /*
 ===================
-Application::setTranslator
-===================
-*/
-void Application::setTranslator(QLocale::Language language)
-{
-    QCoreApplication::removeTranslator(&m_translator);
-    bool result = false;
-
-    for (int i = 0; i < languageCount(); i++)
-    {
-        if (languages[i].language != language)
-            continue;
-
-        result = m_translator.load(languages[i].filePath);
-        m_locale = QLocale(languages[i].language, languages[i].country);
-
-        if (!result)
-            qWarning("Unable to load %s language", qPrintable(QLocale::languageToString(language)));
-
-        break;
-    }
-
-    // Loads English by default if the specified language is not in the list
-    if (!result)
-    {
-        result = m_translator.load(defaultLanguage.filePath);
-        m_locale = QLocale(defaultLanguage.language, defaultLanguage.country);
-
-        if (!result)
-        {
-            qWarning("Unable to load %s language", qPrintable(QLocale::languageToString(defaultLanguage.language)));
-            return;
-        }
-    }
-
-    QCoreApplication::installTranslator(&m_translator);
-}
-
-/*
-===================
 Application::setCheckForUpdates
 ===================
 */
 void Application::setCheckForUpdates(bool enable)
 {
+    m_checkForUpdates = enable;
+
     if (enable)
         m_updateTimer.start(CHECK_FOR_UPDATE_TIME);
     else
@@ -281,22 +300,13 @@ Application::exec
 */
 int Application::exec()
 {
-    m_initiated = true;
+    if (!m_initiated)
+        return -1;
 
     if (!syncApp->trayVisible())
         m_window->show();
 
     return QApplication::exec();
-}
-
-/*
-===================
-Application::languageCount
-===================
-*/
-int Application::languageCount()
-{
-    return static_cast<int>(sizeof(languages) / sizeof(Language));
 }
 
 /*
@@ -316,6 +326,39 @@ void Application::quit()
         m_manager->shouldQuit();
         QApplication::quit();
     }
+}
+
+/*
+===================
+Application::saveSettings
+===================
+*/
+void Application::saveSettings() const
+{
+    if (!initiated())
+        return;
+
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    QVariantList hSizes;
+
+    for (auto &size : m_window->splitterSizes())
+        hSizes.append(size);
+
+    if (!syncApp->m_window->isMaximized())
+    {
+        settings.setValue("Width", syncApp->m_window->size().width());
+        settings.setValue("Height", syncApp->m_window->size().height());
+    }
+
+    settings.setValue("Fullscreen", syncApp->m_window->isMaximized());
+    settings.setValue("HorizontalSplitter", hSizes);
+    settings.setValue("MaximumDiskUsage", manager()->maxDiskTransferRate());
+    settings.setValue("MaximumCpuUsage", maxCpuUsage());
+    settings.setValue("Language", m_language);
+    settings.setValue("ShowInTray", trayVisible());
+    settings.setValue("Paused", manager()->paused());
+    settings.setValue("Notifications", manager()->notificationsEnabled());
+    settings.setValue("CheckForUpdates", m_checkForUpdates);
 }
 
 /*
@@ -353,6 +396,141 @@ void Application::onUpdateReply(QNetworkReply *reply)
     {
         m_updateAvailable = false;
     }
+}
+
+/*
+===================
+Application::languageCount
+===================
+*/
+int Application::languageCount()
+{
+    return static_cast<int>(sizeof(languages) / sizeof(Language));
+}
+
+/*
+===================
+Application::textDialog
+===================
+*/
+void Application::textDialog(const QString &title, const QString &text)
+{
+    QDialog dialog;
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    QTextBrowser *textBrowser = new QTextBrowser();
+    QPushButton *okButton = new QPushButton(translate("MainWindow", "OK"));
+
+    dialog.setWindowTitle(title);
+    textBrowser->setText(text);
+
+    layout->addWidget(textBrowser);
+    layout->addWidget(okButton);
+
+    QObject::connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+    dialog.exec();
+}
+
+/*
+===================
+Application::questionBox
+===================
+*/
+bool Application::questionBox(QMessageBox::Icon icon, const QString &title, const QString &text,
+                              QMessageBox::StandardButton defaultButton, QWidget *parent)
+{
+    QMessageBox messageBox(icon, title, text, QMessageBox::NoButton, parent);
+
+    QPushButton *yes = new QPushButton("&" + translate("MainWindow", "Yes"), parent);
+    QPushButton *no = new QPushButton("&" + translate("MainWindow", "No"), parent);
+
+    messageBox.addButton(yes, QMessageBox::YesRole);
+    messageBox.addButton(no, QMessageBox::NoRole);
+    messageBox.setDefaultButton(defaultButton == QMessageBox::Yes ? yes : no);
+
+    messageBox.exec();
+    return messageBox.clickedButton() == yes;
+}
+
+/*
+===================
+Application::intInputDialog
+===================
+*/
+bool Application::intInputDialog(QWidget *parent, const QString &title, const QString &label,
+                                 int &returnValue, int value, int minValue, int maxValue)
+{
+    QInputDialog *dialog = new QInputDialog(parent);
+    dialog->setInputMode(QInputDialog::IntInput);
+    dialog->setIntMinimum(minValue);
+    dialog->setIntMaximum(maxValue);
+    dialog->setWindowTitle(title);
+    dialog->setLabelText(label);
+    dialog->setIntValue(value);
+    dialog->setOkButtonText("&" + translate("MainWindow", "OK"));
+    dialog->setCancelButtonText("&" + translate("MainWindow", "Cancel"));
+    dialog->deleteLater();
+
+    if (dialog->exec())
+    {
+        returnValue = dialog->intValue();
+        return true;
+    }
+
+    return false;
+}
+
+/*
+===================
+Application::doubleInputDialog
+===================
+*/
+bool Application::doubleInputDialog(QWidget *parent, const QString &title, const QString &label,
+                                    double &returnValue, double value, double minValue, double maxValue)
+{
+    QInputDialog *dialog = new QInputDialog(parent);
+    dialog->setInputMode(QInputDialog::DoubleInput);
+    dialog->setDoubleMinimum(minValue);
+    dialog->setDoubleMaximum(maxValue);
+    dialog->setWindowTitle(title);
+    dialog->setLabelText(label);
+    dialog->setDoubleValue(value);
+    dialog->setOkButtonText("&" + translate("MainWindow", "OK"));
+    dialog->setCancelButtonText("&" + translate("MainWindow", "Cancel"));
+    dialog->deleteLater();
+
+    if (dialog->exec())
+    {
+        returnValue = dialog->doubleValue();
+        return true;
+    }
+
+    return false;
+}
+
+/*
+===================
+Application::textInputDialog
+===================
+*/
+bool Application::textInputDialog(QWidget *parent, const QString &title, const QString &label,
+                                  QString &returnText, const QString &text)
+{
+    QInputDialog *dialog = new QInputDialog(parent);
+    dialog->setInputMode(QInputDialog::TextInput);
+    dialog->setWindowTitle(title);
+    dialog->setLabelText(label);
+    dialog->setTextValue(text);
+    dialog->setOkButtonText("&" + translate("MainWindow", "OK"));
+    dialog->setCancelButtonText("&" + translate("MainWindow", "Cancel"));
+    dialog->deleteLater();
+
+    if (dialog->exec())
+    {
+        returnText = dialog->textValue();
+        return true;
+    }
+
+    return false;
 }
 
 /*

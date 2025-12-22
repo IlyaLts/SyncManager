@@ -749,10 +749,10 @@ void SyncProfile::saveSettings() const
 
 /*
 ===================
-SyncProfile::updateStrings
+SyncProfile::retranslate
 ===================
 */
-void SyncProfile::updateStrings()
+void SyncProfile::retranslate()
 {
     manualAction->setText("&" + qApp->translate("MainWindow", "Manual"));
     automaticAdaptiveAction->setText("&" + qApp->translate("MainWindow", "Automatic (Adaptive)"));

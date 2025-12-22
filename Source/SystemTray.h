@@ -21,8 +21,16 @@
 #define SYSTEMTRAY_H
 
 #include <QSystemTrayIcon>
-#include <QAction>
 
+class QAction;
+
+/*
+===========================================================
+
+    SystemTray
+
+===========================================================
+*/
 class SystemTray : public QSystemTrayIcon
 {
     Q_OBJECT
@@ -31,7 +39,7 @@ public:
 
     SystemTray();
 
-    void updateStrings();
+    void retranslate();
     void setIcon(const QIcon &icon);
     void addAction(QAction *action);
     void addMenu(QMenu *menu);

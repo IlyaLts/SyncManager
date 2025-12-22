@@ -22,6 +22,7 @@
 #include "MainWindow.h"
 #include "UnhidableMenu.h"
 #include <QMenu>
+#include <QAction>
 
 /*
 ===================
@@ -59,10 +60,10 @@ SystemTray::SystemTray()
 
 /*
 ===================
-SystemTray::updateStrings
+SystemTray::retranslate
 ===================
 */
-void SystemTray::updateStrings()
+void SystemTray::retranslate()
 {
     m_showAction->setText("&" + syncApp->translate("MainWindow", "Show"));
     m_quitAction->setText("&" + syncApp->translate("MainWindow", "Quit"));

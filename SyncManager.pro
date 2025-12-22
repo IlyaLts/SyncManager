@@ -21,7 +21,6 @@ SOURCES += \
     Source/SyncManager.cpp \
     Source/SyncProfile.cpp \
     Source/UnhidableMenu.cpp \
-    Source/SyncWorker.cpp \
     Source/SystemTray.cpp
 
 HEADERS += \
@@ -40,7 +39,6 @@ HEADERS += \
     Source/SyncManager.h \
     Source/SyncProfile.h \
     Source/UnhidableMenu.h \
-    Source/SyncWorker.h \
     Source/SystemTray.h
 
 FORMS += \

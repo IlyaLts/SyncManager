@@ -147,6 +147,7 @@ void SyncManager::sync()
     }
 
     m_busy = false;
+    emit finished();
 }
 
 /*

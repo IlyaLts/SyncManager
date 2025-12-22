@@ -22,11 +22,11 @@
 
 #include "SyncManager.h"
 #include "SyncProfile.h"
-#include "SyncWorker.h"
 #include <QMainWindow>
 #include <QTimer>
 #include <QMovie>
-#include <QThread>
+#include <QSplitter>
+#include "ui_MainWindow.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -54,6 +54,9 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void retranslate();
+    inline QList<int> splitterSizes() const { return ui->horizontalSplitter->sizes(); };
+
 public Q_SLOTS:
 
     void show();
@@ -79,10 +82,10 @@ private Q_SLOTS:
     void switchVersioningLocation(SyncProfile &profile, SyncProfile::VersioningLocation location);
     void switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::SyncType type);
     void switchDatabaseLocation(SyncProfile &profile, SyncProfile::DatabaseLocation location);
-    void switchPriority(QThread::Priority priority);
     void increaseSyncTime(SyncProfile &profile);
     void decreaseSyncTime(SyncProfile &profile);
     void switchLanguage(QLocale::Language language);
+    void updateLanguageMenu();
     void toggleLaunchOnStartup();
     void toggleShowInTray();
     void toggleNotification();
@@ -116,9 +119,7 @@ private:
     void updateMenuSyncTime(const SyncProfile &profile);
     void updateProfileTooltip(const SyncProfile &profile);
     void loadSettings();
-    void saveSettings() const;
     void setupMenus();
-    void updateStrings();
     void updateLaunchOnStartupState();
     SyncProfile *profileByIndex(const QModelIndex &index);
     QModelIndex indexByProfile(const SyncProfile &profile);
@@ -149,13 +150,6 @@ private:
     QAction *pauseSyncingAction;
     QAction *maximumDiskTransferRateAction;
     QAction *maximumCpuUsageAction;
-    QAction *idlePriorityAction;
-    QAction *lowestPriorityAction;
-    QAction *lowPriorityAction;
-    QAction *normalPriorityAction;
-    QAction *highPriorityAction;
-    QAction *highestPriorityAction;
-    QAction *timeCriticalPriorityAction;
     QList<QAction *> languageActions;
     QAction *launchOnStartupAction;
     QAction *showInTrayAction;
@@ -171,9 +165,7 @@ private:
 
     QPushButton *updateAvailableButton;
 
-    QLocale::Language language;
     QTimer updateTimer;
-    bool checkForUpdates;
 };
 
 #endif // MAINWINDOW_H

@@ -149,7 +149,7 @@ public:
     void destroyMenus();
     void loadSettings();
     void saveSettings() const;
-    void updateStrings();
+    void retranslate();
 
     QModelIndex index;
     std::list<SyncFolder> folders;

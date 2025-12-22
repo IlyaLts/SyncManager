@@ -36,10 +36,10 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QTimer>
-#include <QInputDialog>
 #include <QDesktopServices>
 #include <QMimeData>
 #include <QPushButton>
+#include <QThread>
 
 /*
 ===================
@@ -49,7 +49,7 @@ MainWindow::MainWindow
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     connect(&updateTimer, &QTimer::timeout, this, &MainWindow::updateStatus);
-    connect(syncApp->syncWorker(), &SyncWorker::finished, this, [this](){ syncDone(); });
+    connect(syncApp->manager(), &SyncManager::finished, this, [this](){ syncDone(); });
 
     ui->setupUi(this);
     ui->centralWidget->setLayout(ui->mainLayout);
@@ -112,8 +112,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     setupMenus();
     loadSettings();
-    updateStrings();
-    switchLanguage(language);
+    retranslate();
 
     for (auto &profile : syncApp->manager()->profiles())
     {
@@ -139,8 +138,56 @@ MainWindow::~MainWindow()
     for (const auto &profile : syncApp->manager()->profiles())
         profile.saveSettings();
 
-    saveSettings();
+    syncApp->saveSettings();
     delete ui;
+}
+
+/*
+===================
+MainWindow::retranslate
+===================
+*/
+void MainWindow::retranslate()
+{
+    syncNowAction->setText("&" + tr("Sync Now"));
+    pauseSyncingAction->setText("&" + tr("Pause Syncing"));
+    maximumDiskTransferRateAction->setText("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()));
+    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
+
+    for (int i = 0; i < Application::languageCount(); i++)
+        languageActions[i]->setText(tr(languages[i].name));
+
+    launchOnStartupAction->setText("&" + tr("Launch on Startup"));
+    showInTrayAction->setText("&" + tr("Show in System Tray"));
+    disableNotificationAction->setText("&" + tr("Disable Notifications"));
+    checkForUpdatesAction->setText("&" + tr("Check for Updates"));
+    userManualAction->setText("&" + tr("User Manual"));
+    reportBugAction->setText("&" + tr("Report a Bug"));
+    versionAction->setText(tr("Version: %1").arg(SYNCMANAGER_VERSION));
+
+    performanceMenu->setTitle("&" + tr("Performance"));
+    languageMenu->setTitle("&" + tr("Language"));
+    settingsMenu->setTitle("&" + tr("Settings"));
+
+    syncNowAction->setToolTip("&" + tr("Sync Now"));
+    pauseSyncingAction->setToolTip("&" + tr("Pause Syncing"));
+    ui->SyncLabel->setText(tr("Synchronization profiles:"));
+    ui->foldersLabel->setText(tr("Folders to synchronize:"));
+
+    updateAvailableButton->setText(tr("New Update Available"));
+    updateAvailableButton->adjustSize();
+    this->menuBar()->adjustSize();
+
+    syncApp->tray()->retranslate();
+    updateStatus();
+    updateMenuMaxDiskTransferRate();
+
+    for (auto &profile : syncApp->manager()->profiles())
+    {
+        profile.retranslate();
+        updateMenuSyncTime(profile);
+        updateProfileTooltip(profile);
+    }
 }
 
 /*
@@ -190,7 +237,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         QString title(tr("Quit"));
         QString text(tr("Currently syncing. Are you sure you want to quit?"));
 
-        if (syncApp->manager()->busy() && !questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
+        if (syncApp->manager()->busy() && !syncApp->questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
         {
             event->ignore();
             return;
@@ -281,7 +328,7 @@ void MainWindow::removeProfile()
         else
             text.assign(tr("Are you sure you want to remove the profile?"));
 
-        if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
+        if (!syncApp->questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
             continue;
 
         ui->syncProfilesView->model()->removeRow(index.row());
@@ -517,7 +564,7 @@ void MainWindow::removeFolder()
         else
             text.assign(tr("Are you sure you want to remove the folder?"));
 
-        if (!questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
+        if (!syncApp->questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
             return;
 
         folder->paused = true;
@@ -576,7 +623,7 @@ void MainWindow::pauseSyncing()
     updateStatus();
 
     if (syncApp->initiated())
-        saveSettings();
+        syncApp->saveSettings();
 }
 
 /*
@@ -701,7 +748,7 @@ void MainWindow::switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionM
         QString title(tr("Switch deletion mode to delete files permanently?"));
         QString text(tr("Are you sure? Beware: this could lead to data loss!"));
 
-        if (!questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
+        if (!syncApp->questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
             mode = profile.deletionMode();
     }
 
@@ -793,25 +840,6 @@ void MainWindow::switchDatabaseLocation(SyncProfile &profile, SyncProfile::Datab
 
 /*
 ===================
-MainWindow::switchPriority
-===================
-*/
-void MainWindow::switchPriority(QThread::Priority priority)
-{
-    idlePriorityAction->setChecked(priority == QThread::IdlePriority);
-    lowestPriorityAction->setChecked(priority == QThread::LowestPriority);
-    lowPriorityAction->setChecked(priority == QThread::LowPriority);
-    normalPriorityAction->setChecked(priority == QThread::NormalPriority);
-    highPriorityAction->setChecked(priority == QThread::HighPriority);
-    highestPriorityAction->setChecked(priority == QThread::HighestPriority);
-    timeCriticalPriorityAction->setChecked(priority == QThread::TimeCriticalPriority);
-
-    if (syncApp->syncThread()->isRunning())
-        syncApp->syncThread()->setPriority(priority);
-}
-
-/*
-===================
 MainWindow::increaseSyncTime
 ===================
 */
@@ -874,21 +902,18 @@ MainWindow::switchLanguage
 */
 void MainWindow::switchLanguage(QLocale::Language language)
 {
+    syncApp->setLanguage(language);
+}
+
+/*
+===================
+MainWindow::updateLanguageMenu
+===================
+*/
+void MainWindow::updateLanguageMenu()
+{
     for (int i = 0; i < Application::languageCount(); i++)
-        languageActions[i]->setChecked(language == languages[i].language);
-
-    syncApp->setTranslator(language);
-    this->language = language;
-    updateStrings();
-
-    if (syncApp->initiated())
-        saveSettings();
-
-    for (auto &profile : syncApp->manager()->profiles())
-    {
-        profile.updateStrings();
-        updateMenuSyncTime(profile);
-    }
+        languageActions[i]->setChecked(syncApp->language() == languages[i].language);
 }
 
 /*
@@ -902,7 +927,7 @@ void MainWindow::toggleLaunchOnStartup()
     updateLaunchOnStartupState();
 
     if (syncApp->initiated())
-        saveSettings();
+        syncApp->saveSettings();
 }
 
 /*
@@ -918,7 +943,7 @@ void MainWindow::toggleShowInTray()
         showInTrayAction->setChecked(false);
 
     if (syncApp->initiated())
-        saveSettings();
+        syncApp->saveSettings();
 }
 
 /*
@@ -931,7 +956,7 @@ void MainWindow::toggleNotification()
     syncApp->manager()->enableNotifications(!syncApp->manager()->notificationsEnabled());
 
     if (syncApp->initiated())
-        saveSettings();
+        syncApp->saveSettings();
 }
 
 /*
@@ -941,11 +966,10 @@ MainWindow::toggleCheckForUpdates
 */
 void MainWindow::toggleCheckForUpdates()
 {
-    checkForUpdates = !checkForUpdates;
-    updateAvailableButton->setVisible(checkForUpdates && syncApp->updateAvailable());
-    syncApp->setCheckForUpdates(checkForUpdates);
+    syncApp->setCheckForUpdates(!syncApp->checkForUpdatesEnabled());
+    updateAvailableButton->setVisible(syncApp->checkForUpdatesEnabled() && syncApp->updateAvailable());
 
-    if (checkForUpdates)
+    if (syncApp->checkForUpdatesEnabled())
         syncApp->checkForUpdates();
 }
 
@@ -960,12 +984,12 @@ void MainWindow::setMaximumTransferRateUsage()
     QString text(tr("Please enter the maximum disk transfer rate in bytes per second:"));
     int usage;
 
-    if (!intInputDialog(this, title, text, usage, syncApp->manager()->maxDiskTransferRate(), 0, std::numeric_limits<int>::max()))
+    if (!syncApp->intInputDialog(this, title, text, usage, syncApp->manager()->maxDiskTransferRate(), 0, std::numeric_limits<int>::max()))
         return;
 
     syncApp->manager()->setMaxDiskTransferRate(usage);
     updateMenuMaxDiskTransferRate();
-    saveSettings();
+    syncApp->saveSettings();
 }
 
 /*
@@ -979,12 +1003,12 @@ void MainWindow::setMaximumCpuUsage()
     QString text(tr("Please enter the maximum CPU usage in percentage:"));
     double usage;
 
-    if (!doubleInputDialog(this, title, text, usage, syncApp->maxCpuUsage(), 0.01, 100.0))
+    if (!syncApp->doubleInputDialog(this, title, text, usage, syncApp->maxCpuUsage(), 0.01, 100.0))
         return;
 
     syncApp->setMaxCpuUsage(static_cast<float>(usage));
     maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
-    saveSettings();
+    syncApp->saveSettings();
 }
 
 /*
@@ -998,7 +1022,7 @@ void MainWindow::setFixedInterval(SyncProfile &profile)
     QString text(tr("Please enter the synchronization interval in seconds:"));
     int size;
 
-    if (!intInputDialog(this, title, text, size, profile.syncIntervalFixed() / 1000, 0))
+    if (!syncApp->intInputDialog(this, title, text, size, profile.syncIntervalFixed() / 1000, 0))
         return;
 
     profile.setSyncIntervalFixed(size * 1000);
@@ -1019,7 +1043,7 @@ void MainWindow::setVersioningPostfix(SyncProfile &profile)
     QString title(tr("Versioning Folder Postfix"));
     QString text(tr("Please enter the versioning folder postfix:"));
 
-    if (!textInputDialog(this, title, text, postfix, postfix))
+    if (!syncApp->textInputDialog(this, title, text, postfix, postfix))
         return;
 
     profile.setVersioningFolder(postfix);
@@ -1047,7 +1071,7 @@ void MainWindow::setVersioningPattern(SyncProfile &profile)
     text.append("\nhh:mm:ss.zzz - 14_13_09_120");
     text.append("\nap_h_m_s - pm_2_13_9");
 
-    if (!textInputDialog(this, title, text, pattern, pattern))
+    if (!syncApp->textInputDialog(this, title, text, pattern, pattern))
         return;
 
     profile.setVersioningPattern(pattern);
@@ -1091,7 +1115,7 @@ void MainWindow::setFileMinSize(SyncProfile &profile)
     QString text(tr("Please enter the minimum size in bytes:"));
     int size;
 
-    if (!intInputDialog(this, title, text, size, profile.fileMinSize(), 0))
+    if (!syncApp->intInputDialog(this, title, text, size, profile.fileMinSize(), 0))
         return;
 
     if (size && profile.fileMaxSize() && static_cast<quint64>(size) > profile.fileMaxSize())
@@ -1115,7 +1139,7 @@ void MainWindow::setFileMaxSize(SyncProfile &profile)
     QString text(tr("Please enter the maximum size in bytes:"));
     int size;
 
-    if (!intInputDialog(this, title, text, size, profile.fileMaxSize(), 0))
+    if (!syncApp->intInputDialog(this, title, text, size, profile.fileMaxSize(), 0))
         return;
 
     if (size && static_cast<quint64>(size) < profile.fileMinSize())
@@ -1139,7 +1163,7 @@ void MainWindow::setMovedFileMinSize(SyncProfile &profile)
     QString text(tr("Please enter the minimum size for a moved file in bytes:"));
     int size;
 
-    if (!intInputDialog(this, title, text, size, profile.movedFileMinSize(), 0))
+    if (!syncApp->intInputDialog(this, title, text, size, profile.movedFileMinSize(), 0))
         return;
 
     profile.setMovedFileMinSize(size);
@@ -1160,7 +1184,7 @@ void MainWindow::setIncludeList(SyncProfile &profile)
     QString title(tr("Include List"));
     QString text(tr("Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
 
-    if (!textInputDialog(this, title, text, includeString, includeString))
+    if (!syncApp->textInputDialog(this, title, text, includeString, includeString))
         return;
 
     QStringList includeList = includeString.split(";");
@@ -1187,7 +1211,7 @@ void MainWindow::setExcludeList(SyncProfile &profile)
     QString title(tr("Exclude List"));
     QString text(tr("Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
 
-    if (!textInputDialog(this, title, text, excludeString, excludeString))
+    if (!syncApp->textInputDialog(this, title, text, excludeString, excludeString))
         return;
 
     QStringList excludeList = excludeString.split(";");
@@ -1308,7 +1332,7 @@ void MainWindow::showContextMenu(const QPoint &pos)
                 QString title(tr("Couldn't synchronize the following files"));
 
                 menu.addSeparator();
-                menu.addAction(iconWarning, "&" + menuTitle, this, [title, folder](){ textDialog(title, folder->unsyncedList); });
+                menu.addAction(iconWarning, "&" + menuTitle, this, [title, folder](){ syncApp->textDialog(title, folder->unsyncedList); });
             }
 
             menu.addSeparator();
@@ -1356,7 +1380,6 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         if (!syncApp->syncThread()->isRunning())
         {
             syncApp->syncThread()->start();
-            syncApp->syncThread()->setPriority(QThread::LowestPriority);
             updateTimer.start(UPDATE_TIME);
         }
     }
@@ -1386,7 +1409,7 @@ void MainWindow::profileSynced(SyncProfile *profile)
     syncApp->manager()->updateTimer(*profile);
     updateMenuSyncTime(*profile);
     updateProfileTooltip(*profile);
-    saveSettings();
+    syncApp->saveSettings();
 }
 
 /*
@@ -1396,9 +1419,6 @@ MainWindow::updateAvailable
 */
 void MainWindow::updateAvailable()
 {
-    if (!checkForUpdates)
-        return;
-
     updateAvailableButton->setVisible(true);
     syncApp->tray()->notify("Sync Manager", "New Update Available", QSystemTrayIcon::Information);
 }
@@ -1852,10 +1872,9 @@ void MainWindow::loadSettings()
 
     syncApp->manager()->setMaxDiskTransferRate(settings.value("MaximumDiskUsage", 0).toULongLong());
     syncApp->setMaxCpuUsage(settings.value("MaximumCpuUsage", 100).toUInt());
-    switchPriority(static_cast<QThread::Priority>(settings.value("Priority", QThread::NormalPriority).toInt()));
-    language = static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt());
+    syncApp->setLanguage(static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt()));
     syncApp->setTrayVisible(settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool());
-    checkForUpdates = settings.value("CheckForUpdates", true).toBool();
+    syncApp->setCheckForUpdates(settings.value("CheckForUpdates", true).toBool());
     syncApp->manager()->enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
 
     for (int i = 0; i < profileModel->rowCount(); i++)
@@ -1893,10 +1912,9 @@ void MainWindow::loadSettings()
 
     showInTrayAction->setChecked(syncApp->trayVisible());
     disableNotificationAction->setChecked(!syncApp->manager()->notificationsEnabled());
-    checkForUpdatesAction->setChecked(checkForUpdates);
-    syncApp->setCheckForUpdates(checkForUpdates);
+    checkForUpdatesAction->setChecked(syncApp->checkForUpdatesEnabled());
 
-    if (checkForUpdates)
+    if (syncApp->checkForUpdatesEnabled())
         syncApp->checkForUpdates();
 
     updateMenuMaxDiskTransferRate();
@@ -1934,39 +1952,6 @@ void MainWindow::loadSettings()
 
 /*
 ===================
-MainWindow::saveSettings
-===================
-*/
-void MainWindow::saveSettings() const
-{
-    if (!syncApp->initiated())
-        return;
-
-    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    QVariantList hSizes;
-
-    for (auto &size : ui->horizontalSplitter->sizes())
-        hSizes.append(size);
-
-    if (!isMaximized())
-    {
-        settings.setValue("Width", size().width());
-        settings.setValue("Height", size().height());
-    }
-
-    settings.setValue("Fullscreen", isMaximized());
-    settings.setValue("HorizontalSplitter", hSizes);
-    settings.setValue("MaximumDiskUsage", syncApp->manager()->maxDiskTransferRate());
-    settings.setValue("MaximumCpuUsage", syncApp->maxCpuUsage());
-    settings.setValue("Language", language);
-    settings.setValue("ShowInTray", syncApp->trayVisible());
-    settings.setValue("Paused", syncApp->manager()->paused());
-    settings.setValue("Notifications", syncApp->manager()->notificationsEnabled());
-    settings.setValue("CheckForUpdates", checkForUpdates);
-}
-
-/*
-===================
 MainWindow::setupMenus
 ===================
 */
@@ -1990,13 +1975,6 @@ void MainWindow::setupMenus()
     pauseSyncingAction = new QAction(iconPause, "&" + tr("Pause Syncing"), this);
     maximumDiskTransferRateAction = new QAction("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()), this);
     maximumCpuUsageAction = new QAction("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()), this);
-    idlePriorityAction = new QAction("&" + tr("Idle Priority"), this);
-    lowestPriorityAction = new QAction("&" + tr("Lowest Priority"), this);
-    lowPriorityAction = new QAction("&" + tr("Low Priority"), this);
-    normalPriorityAction = new QAction("&" + tr("Normal Priority"), this);
-    highPriorityAction = new QAction("&" + tr("High Priority"), this);
-    highestPriorityAction = new QAction("&" + tr("Highest Priority"), this);
-    timeCriticalPriorityAction = new QAction("&" + tr("Time Critical Priority"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
     {
@@ -2017,13 +1995,6 @@ void MainWindow::setupMenus()
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setCheckable(true);
 
-    idlePriorityAction->setCheckable(true);
-    lowestPriorityAction->setCheckable(true);
-    lowPriorityAction->setCheckable(true);
-    normalPriorityAction->setCheckable(true);
-    highPriorityAction->setCheckable(true);
-    highestPriorityAction->setCheckable(true);
-    timeCriticalPriorityAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
@@ -2099,17 +2070,11 @@ void MainWindow::setupMenus()
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
     connect(maximumDiskTransferRateAction, SIGNAL(triggered()), this, SLOT(setMaximumTransferRateUsage()));
     connect(maximumCpuUsageAction, SIGNAL(triggered()), this, SLOT(setMaximumCpuUsage()));
-    connect(idlePriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::IdlePriority); });
-    connect(lowestPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::LowestPriority); });
-    connect(lowPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::LowPriority); });
-    connect(normalPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::NormalPriority); });
-    connect(highPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::HighPriority); });
-    connect(highestPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::HighestPriority); });
-    connect(timeCriticalPriorityAction, &QAction::triggered, this, [this](){ switchPriority(QThread::TimeCriticalPriority); });
 
     for (int i = 0; i < Application::languageCount(); i++)
         connect(languageActions[i], &QAction::triggered, this, [i, this](){ switchLanguage(languages[i].language); });
 
+    connect(syncApp, &Application::languageChanged, this, &MainWindow::updateLanguageMenu);
     connect(launchOnStartupAction, &QAction::triggered, this, &MainWindow::toggleLaunchOnStartup);
     connect(showInTrayAction, &QAction::triggered, this, &MainWindow::toggleShowInTray);
     connect(disableNotificationAction, &QAction::triggered, this, &MainWindow::toggleNotification);
@@ -2119,61 +2084,6 @@ void MainWindow::setupMenus()
 
     for (auto &profile : syncApp->manager()->profiles())
         connectProfileMenu(profile);
-}
-
-/*
-===================
-MainWindow::updateStrings
-===================
-*/
-void MainWindow::updateStrings()
-{
-    syncNowAction->setText("&" + tr("Sync Now"));
-    pauseSyncingAction->setText("&" + tr("Pause Syncing"));
-    maximumDiskTransferRateAction->setText("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()));
-    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
-    idlePriorityAction->setText("&" + tr("Idle Priority"));
-    lowestPriorityAction->setText("&" + tr("Lowest Priority"));
-    lowPriorityAction->setText("&" + tr("Low Priority"));
-    normalPriorityAction->setText("&" + tr("Normal Priority"));
-    highPriorityAction->setText("&" + tr("High Priority"));
-    highestPriorityAction->setText("&" + tr("Highest Priority"));
-    timeCriticalPriorityAction->setText("&" + tr("Time Critical Priority"));
-
-    for (int i = 0; i < Application::languageCount(); i++)
-        languageActions[i]->setText(tr(languages[i].name));
-
-    launchOnStartupAction->setText("&" + tr("Launch on Startup"));
-    showInTrayAction->setText("&" + tr("Show in System Tray"));
-    disableNotificationAction->setText("&" + tr("Disable Notifications"));
-    checkForUpdatesAction->setText("&" + tr("Check for Updates"));
-    userManualAction->setText("&" + tr("User Manual"));
-    reportBugAction->setText("&" + tr("Report a Bug"));
-    versionAction->setText(tr("Version: %1").arg(SYNCMANAGER_VERSION));
-
-    performanceMenu->setTitle("&" + tr("Performance"));
-    languageMenu->setTitle("&" + tr("Language"));
-    settingsMenu->setTitle("&" + tr("Settings"));
-
-    syncNowAction->setToolTip("&" + tr("Sync Now"));
-    pauseSyncingAction->setToolTip("&" + tr("Pause Syncing"));
-    ui->SyncLabel->setText(tr("Synchronization profiles:"));
-    ui->foldersLabel->setText(tr("Folders to synchronize:"));
-
-    updateAvailableButton->setText(tr("New Update Available"));
-    updateAvailableButton->adjustSize();
-    this->menuBar()->adjustSize();
-
-    syncApp->tray()->updateStrings();
-    updateStatus();
-    updateMenuMaxDiskTransferRate();
-
-    for (auto &profile : syncApp->manager()->profiles())
-    {
-        updateMenuSyncTime(profile);
-        profile.updateStrings();
-        updateProfileTooltip(profile);
-    }
 }
 
 /*

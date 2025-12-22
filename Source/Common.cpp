@@ -25,12 +25,7 @@
 #include <QTranslator>
 #include <QApplication>
 #include <QMessageBox>
-#include <QInputDialog>
-#include <QPushButton>
 #include <QRandomGenerator>
-#include <QBoxLayout>
-#include <QTextBrowser>
-#include <QPushButton>
 #include <stdio.h>
 #include <cstdarg>
 
@@ -153,130 +148,6 @@ QFileInfo getCurrentFileInfo(const QString &path)
 #else
     return QFileInfo(path);
 #endif
-}
-
-/*
-===================
-questionBox
-===================
-*/
-bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text,
-                 QMessageBox::StandardButton defaultButton, QWidget *parent)
-{
-    QMessageBox messageBox(icon, title, text, QMessageBox::NoButton, parent);
-
-    QPushButton *yes = new QPushButton("&" + qApp->translate("MainWindow", "Yes"), parent);
-    QPushButton *no = new QPushButton("&" + qApp->translate("MainWindow", "No"), parent);
-
-    messageBox.addButton(yes, QMessageBox::YesRole);
-    messageBox.addButton(no, QMessageBox::NoRole);
-    messageBox.setDefaultButton(defaultButton == QMessageBox::Yes ? yes : no);
-
-    messageBox.exec();
-    return messageBox.clickedButton() == yes;
-}
-
-/*
-===================
-intInputDialog
-===================
-*/
-bool intInputDialog(QWidget *parent, const QString &title, const QString &label,
-                    int &returnValue, int value, int minValue, int maxValue)
-{
-    QInputDialog *dialog = new QInputDialog(parent);
-    dialog->setInputMode(QInputDialog::IntInput);
-    dialog->setIntMinimum(minValue);
-    dialog->setIntMaximum(maxValue);
-    dialog->setWindowTitle(title);
-    dialog->setLabelText(label);
-    dialog->setIntValue(value);
-    dialog->setOkButtonText("&" + qApp->translate("MainWindow", "OK"));
-    dialog->setCancelButtonText("&" + qApp->translate("MainWindow", "Cancel"));
-    dialog->deleteLater();
-
-    if (dialog->exec())
-    {
-        returnValue = dialog->intValue();
-        return true;
-    }
-
-    return false;
-}
-
-/*
-===================
-doubleInputDialog
-===================
-*/
-bool doubleInputDialog(QWidget *parent, const QString &title, const QString &label,
-                       double &returnValue, double value, double minValue, double maxValue)
-{
-    QInputDialog *dialog = new QInputDialog(parent);
-    dialog->setInputMode(QInputDialog::DoubleInput);
-    dialog->setDoubleMinimum(minValue);
-    dialog->setDoubleMaximum(maxValue);
-    dialog->setWindowTitle(title);
-    dialog->setLabelText(label);
-    dialog->setDoubleValue(value);
-    dialog->setOkButtonText("&" + qApp->translate("MainWindow", "OK"));
-    dialog->setCancelButtonText("&" + qApp->translate("MainWindow", "Cancel"));
-    dialog->deleteLater();
-
-    if (dialog->exec())
-    {
-        returnValue = dialog->doubleValue();
-        return true;
-    }
-
-    return false;
-}
-
-/*
-===================
-textInputDialog
-===================
-*/
-bool textInputDialog(QWidget *parent, const QString &title, const QString &label, QString &returnText, const QString &text)
-{
-    QInputDialog *dialog = new QInputDialog(parent);
-    dialog->setInputMode(QInputDialog::TextInput);
-    dialog->setWindowTitle(title);
-    dialog->setLabelText(label);
-    dialog->setTextValue(text);
-    dialog->setOkButtonText("&" + qApp->translate("MainWindow", "OK"));
-    dialog->setCancelButtonText("&" + qApp->translate("MainWindow", "Cancel"));
-    dialog->deleteLater();
-
-    if (dialog->exec())
-    {
-        returnText = dialog->textValue();
-        return true;
-    }
-
-    return false;
-}
-
-/*
-===================
-textDialog
-===================
-*/
-void textDialog(const QString &title, const QString &text)
-{
-    QDialog dialog;
-    QVBoxLayout *layout = new QVBoxLayout(&dialog);
-    QTextBrowser *textBrowser = new QTextBrowser();
-    QPushButton *okButton = new QPushButton(qApp->translate("MainWindow", "OK"));
-
-    dialog.setWindowTitle(title);
-    textBrowser->setText(text);
-
-    layout->addWidget(textBrowser);
-    layout->addWidget(okButton);
-
-    QObject::connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
-    dialog.exec();
 }
 
 /*

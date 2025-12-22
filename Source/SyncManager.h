@@ -92,6 +92,7 @@ Q_SIGNALS:
 
     void message(const QString &title, const QString &message);
     void profileSynced(SyncProfile *profile);
+    void finished();
 
 private:
 

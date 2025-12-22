@@ -80,20 +80,6 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 hash64_t hash64(const QByteArray &str);
 void removeDuplicatesBySizeAndDate (FilePointerList &files);
 QFileInfo getCurrentFileInfo(const QString &path);
-
-bool questionBox(QMessageBox::Icon icon, const QString &title, const QString &text,
-                 QMessageBox::StandardButton defaultButton, QWidget *parent = nullptr);
-
-bool intInputDialog(QWidget *parent, const QString &title, const QString &label, int &returnValue,
-                    int value = 0, int minValue = -2147483647, int maxValue = 2147483647);
-
-bool doubleInputDialog(QWidget *parent, const QString &title, const QString &label, double &returnValue,
-                       double value = 0, double minValue = -2147483647, double maxValue = 2147483647);
-
-bool textInputDialog(QWidget *parent, const QString &title, const QString &label,
-                     QString &returnText, const QString &text = QString());
-
-void textDialog(const QString &title, const QString &text);
 bool isPathCaseSensitive(const QString &path);
 Attributes getFileAttributes(const QString &path);
 bool setFileAttribute(const QString &path, Attributes attributes);
