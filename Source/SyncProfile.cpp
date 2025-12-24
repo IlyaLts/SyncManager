@@ -42,47 +42,93 @@ SyncProfile::SyncProfile(const QString &name, const QModelIndex &index)
 
     syncTimer.setSingleShot(true);
     syncTimer.setTimerType(Qt::VeryCoarseTimer);
+
+    loadSettings();
 }
 
 /*
 ===================
-SyncProfile::operator =
+SyncProfile::~SyncProfile
 ===================
 */
-void SyncProfile::operator =(const SyncProfile &other)
+SyncProfile::~SyncProfile()
 {
-    index = other.index;
-    folders = other.folders;
+    saveSettings();
+}
 
-    syncing = other.syncing;
-    paused = other.paused;
-    toBeRemoved = other.toBeRemoved;
-    syncHidden = other.syncHidden;
-    syncEvery = other.syncEvery;
-    syncTime = other.syncTime;
-    lastSyncDate = other.lastSyncDate;
-    name = other.name;
+/*
+===================
+SyncProfile::loadSettings
+===================
+*/
+void SyncProfile::loadSettings()
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    QString keyName(name + QLatin1String("_profile/"));
 
-    m_syncingMode = other.m_syncingMode;
-    m_syncIntervalFixed = other.m_syncIntervalFixed;
-    m_deletionMode = other.m_deletionMode;
-    m_versioningLocation = other.m_versioningLocation;
-    m_versioningFormat = other.m_versioningFormat;
-    m_versioningFolder = other.m_versioningFolder;
-    m_versioningPattern = other.m_versioningPattern;
-    m_versioningPath = other.m_versioningPath;
-    m_databaseLocation = other.m_databaseLocation;
-    m_fileMinSize = other.m_fileMinSize;
-    m_fileMaxSize = other.m_fileMaxSize;
-    m_movedFileMinSize = other.m_movedFileMinSize;
-    m_includeList = other.m_includeList;
-    m_excludeList = other.m_excludeList;
-    m_syncTimeMultiplier = other.m_syncTimeMultiplier;
-    m_detectMovedFiles = other.m_detectMovedFiles;
-    m_ignoreHiddenFiles = other.m_ignoreHiddenFiles;
+    setSyncTimeMultiplier(settings.value(keyName + "SyncTimeMultiplier", 1).toInt());
+    setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", 1).toInt());
+    setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
+    setVersioningPath(settings.value(keyName + "VersioningPath", "").toString());
+    setDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(keyName + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
+    setIgnoreHiddenFiles(settings.value(keyName + "IgnoreHiddenFiles", true).toBool());
+    setFileMinSize(settings.value(keyName + "FileMinSize", 0).toInt());
+    setFileMaxSize(settings.value(keyName + "FileMaxSize", 0).toInt());
+    setMovedFileMinSize(settings.value(keyName + "MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt());
+    setIncludeList(settings.value(keyName + "IncludeList").toStringList());
+    setExcludeList(settings.value(keyName + "ExcludeList").toStringList());
+    setVersioningFolder(settings.value(keyName + "VersionFolder", "[Deletions]").toString());
+    setVersioningPattern(settings.value(keyName + "VersionPattern", "yyyy_M_d_h_m_s_z").toString());
 
-    syncTimer.setSingleShot(other.syncTimer.isSingleShot());
-    syncTimer.setTimerType(other.syncTimer.timerType());
+    lastSyncDate = settings.value(keyName + "LastSyncDate").toDateTime();
+    paused = settings.value(keyName + "Paused", false).toBool();
+    syncTime = settings.value(keyName + "SyncTime", 0).toULongLong();
+}
+
+/*
+===================
+SyncProfile::saveSettings
+===================
+*/
+void SyncProfile::saveSettings() const
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    QString profileKey(name + QLatin1String("_profile/"));
+
+    settings.setValue(profileKey + "SyncingMode", syncingMode());
+    settings.setValue(profileKey + "SyncTimeMultiplier", syncTimeMultiplier());
+    settings.setValue(profileKey + "FixedSyncTime", syncIntervalFixed());
+    settings.setValue(profileKey + "DetectMovedFiles", detectMovedFiles());
+    settings.setValue(profileKey + "DeletionMode", deletionMode());
+    settings.setValue(profileKey + "VersioningFormat", versioningFormat());
+    settings.setValue(profileKey + "VersioningLocation", versioningLocation());
+    settings.setValue(profileKey + "VersioningPath", versioningPath());
+    settings.setValue(profileKey + "DatabaseLocation", databaseLocation());
+    settings.setValue(profileKey + "IgnoreHiddenFiles", ignoreHiddenFiles());
+    settings.setValue(profileKey + "FileMinSize", fileMinSize());
+    settings.setValue(profileKey + "FileMaxSize", fileMaxSize());
+    settings.setValue(profileKey + "MovedFileMinSize", movedFileMinSize());
+    settings.setValue(profileKey + "IncludeList", includeList());
+    settings.setValue(profileKey + "ExcludeList", excludeList());
+    settings.setValue(profileKey + "VersionFolder", versioningFolder());
+    settings.setValue(profileKey + "VersionPattern", versioningPattern());
+
+    settings.setValue(profileKey + QLatin1String("LastSyncDate"), lastSyncDate);
+    settings.setValue(profileKey + QLatin1String("Paused"), paused);
+    settings.setValue(profileKey + QLatin1String("SyncTime"), syncTime);
+
+    for (const auto &folder : folders)
+    {
+        if (folder.toBeRemoved)
+            continue;
+
+        QString folderKey(profileKey + folder.path);
+
+        settings.setValue(folderKey + QLatin1String("_LastSyncDate"), folder.lastSyncDate);
+        settings.setValue(folderKey + QLatin1String("_Paused"), folder.paused);
+        settings.setValue(folderKey + QLatin1String("_SyncType"), folder.syncType);
+        settings.setValue(folderKey + QLatin1String("_PartiallySynchronized"), folder.PartiallySynchronized);
+    }
 }
 
 /*
@@ -667,84 +713,6 @@ void SyncProfile::destroyMenus()
     versioningLocationMenu->deleteLater();
     databaseLocationMenu->deleteLater();
     filteringMenu->deleteLater();
-}
-
-/*
-===================
-SyncProfile::loadSettings
-===================
-*/
-void SyncProfile::loadSettings()
-{
-    if (toBeRemoved)
-        return;
-
-    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    QString keyName(name + QLatin1String("_profile/"));
-
-    paused = settings.value(keyName + QLatin1String("Paused"), false).toBool();
-    setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
-    setDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(keyName + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
-    setSyncTimeMultiplier(settings.value(keyName + "SyncTimeMultiplier", 1).toInt());
-    setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", 1).toInt());
-    setVersioningFolder(settings.value(keyName + "VersionFolder", "[Deletions]").toString());
-    setVersioningPattern(settings.value(keyName + "VersionPattern", "yyyy_M_d_h_m_s_z").toString());
-    setVersioningPath(settings.value(keyName + "VersioningPath", "").toString());
-    setFileMinSize(settings.value(keyName + "FileMinSize", 0).toInt());
-    setFileMaxSize(settings.value(keyName + "FileMaxSize", 0).toInt());
-    setMovedFileMinSize(settings.value(keyName + "MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt());
-    setIncludeList(settings.value(keyName + "IncludeList").toStringList());
-    setExcludeList(settings.value(keyName + "ExcludeList").toStringList());
-    setIgnoreHiddenFiles(settings.value(keyName + "IgnoreHiddenFiles", true).toBool());
-}
-
-/*
-===================
-SyncProfile::saveSettings
-===================
-*/
-void SyncProfile::saveSettings() const
-{
-    if (toBeRemoved)
-        return;
-
-    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    QString profileKey(name + QLatin1String("_profile/"));
-
-    settings.setValue(profileKey + "SyncingMode", syncingMode());
-    settings.setValue(profileKey + "SyncTimeMultiplier", syncTimeMultiplier());
-    settings.setValue(profileKey + "FixedSyncTime", syncIntervalFixed());
-    settings.setValue(profileKey + "DetectMovedFiles", detectMovedFiles());
-    settings.setValue(profileKey + "DeletionMode", deletionMode());
-    settings.setValue(profileKey + "VersioningFormat", versioningFormat());
-    settings.setValue(profileKey + "VersioningLocation", versioningLocation());
-    settings.setValue(profileKey + "VersioningPath", versioningPath());
-    settings.setValue(profileKey + "DatabaseLocation", databaseLocation());
-    settings.setValue(profileKey + "IgnoreHiddenFiles", ignoreHiddenFiles());
-    settings.setValue(profileKey + "FileMinSize", fileMinSize());
-    settings.setValue(profileKey + "FileMaxSize", fileMaxSize());
-    settings.setValue(profileKey + "MovedFileMinSize", movedFileMinSize());
-    settings.setValue(profileKey + "IncludeList", includeList());
-    settings.setValue(profileKey + "ExcludeList", excludeList());
-    settings.setValue(profileKey + "VersionFolder", versioningFolder());
-    settings.setValue(profileKey + "VersionPattern", versioningPattern());
-
-    settings.setValue(profileKey + QLatin1String("LastSyncDate"), lastSyncDate);
-    settings.setValue(profileKey + QLatin1String("Paused"), paused);
-    settings.setValue(profileKey + QLatin1String("SyncTime"), syncTime);
-
-    for (const auto &folder : folders)
-    {
-        if (folder.toBeRemoved)
-            continue;
-
-        QString folderKey(profileKey + folder.path);
-
-        settings.setValue(folderKey + QLatin1String("_LastSyncDate"), folder.lastSyncDate);
-        settings.setValue(folderKey + QLatin1String("_Paused"), folder.paused);
-        settings.setValue(folderKey + QLatin1String("_SyncType"), folder.syncType);
-        settings.setValue(folderKey + QLatin1String("_PartiallySynchronized"), folder.PartiallySynchronized);
-    }
 }
 
 /*

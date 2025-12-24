@@ -73,9 +73,9 @@ public:
 
     int exec();
 
-    inline MainWindow *window() const { return m_window; }
+    inline MainWindow *window() const { return m_window.data(); }
+    inline SyncManager *manager() const { return m_manager.data(); }
     inline SystemTray *tray() const { return m_tray; }
-    inline SyncManager *manager() const { return m_manager; }
     inline QThread *syncThread() const { return m_syncThread; }
 
     inline bool initiated() const { return m_initiated; }
@@ -111,6 +111,7 @@ Q_SIGNALS:
 public Q_SLOTS:
 
     void quit();
+    void loadSettings();
     void saveSettings() const;
 
 private Q_SLOTS:
@@ -120,9 +121,9 @@ private Q_SLOTS:
 
 private:
 
-    MainWindow *m_window = nullptr;
+    QScopedPointer<MainWindow> m_window;
+    QScopedPointer<SyncManager> m_manager;
     SystemTray *m_tray = nullptr;
-    SyncManager *m_manager = nullptr;
     QThread *m_syncThread = nullptr;
     QTranslator m_translator;
     QLocale m_locale;

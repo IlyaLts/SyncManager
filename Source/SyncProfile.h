@@ -80,11 +80,12 @@ public:
     };
 
     explicit SyncProfile(const QString &name, const QModelIndex &index);
-    explicit SyncProfile(const SyncProfile &other) : QObject(nullptr) { *this = other; }
-    explicit SyncProfile(SyncProfile &&other) { *this = other; }
+    ~SyncProfile();
 
-    void operator =(const SyncProfile &other);
     inline bool operator ==(const SyncProfile &other) { return name == other.name; }
+
+    void loadSettings();
+    void saveSettings() const;
 
     void setSyncingMode(SyncingMode mode);
     inline void setSyncTimeMultiplier(quint32 multiplier) { m_syncTimeMultiplier = multiplier; }
@@ -147,8 +148,6 @@ public:
     void setupMenus(QWidget *parent = nullptr);
     void updateMenuStates();
     void destroyMenus();
-    void loadSettings();
-    void saveSettings() const;
     void retranslate();
 
     QModelIndex index;

@@ -52,6 +52,10 @@ class SyncManager : public QObject
 public:
 
     SyncManager();
+    ~SyncManager();
+
+    void loadSettings();
+    void saveSettings() const;
 
     void addToQueue(SyncProfile *profile);
     void sync();
@@ -94,7 +98,7 @@ Q_SIGNALS:
     void profileSynced(SyncProfile *profile);
     void finished();
 
-private:
+public:
 
     bool syncProfile(SyncProfile &profile);
     int scanFiles(SyncFolder &folder);

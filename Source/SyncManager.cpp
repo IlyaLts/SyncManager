@@ -45,6 +45,61 @@ SyncManager::SyncManager()
 {
     connect(&m_diskUsageResetTimer, &QTimer::timeout, this, [this](){ for (auto &device : m_deviceRead) device = 0; });
     m_diskUsageResetTimer.start(1000);
+    loadSettings();
+}
+
+/*
+===================
+SyncManager::~SyncManager
+===================
+*/
+SyncManager::~SyncManager()
+{
+    saveSettings();
+}
+
+/*
+===================
+SyncManager::loadSettings
+===================
+*/
+void SyncManager::loadSettings()
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+
+    setMaxDiskTransferRate(settings.value("MaximumDiskUsage", 0).toULongLong());
+    enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
+
+    for (auto &profile : profiles())
+    {
+        profile.ignoreHiddenFilesAction->setChecked(profile.ignoreHiddenFiles());
+        profile.detectMovedFilesAction->setChecked(profile.detectMovedFiles());
+
+        updateNextSyncingTime(profile);
+
+        quint64 max = SyncManager::maxInterval();
+
+        // If exceeds the maximum value of an qint64
+        if (profile.syncEvery >= max)
+            profile.increaseSyncTimeAction->setEnabled(false);
+
+        if (profile.syncTimeMultiplier() <= 1)
+            profile.decreaseSyncTimeAction->setEnabled(false);
+    }
+}
+
+/*
+===================
+SyncManager::saveSettings
+===================
+*/
+void SyncManager::saveSettings() const
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+
+    settings.setValue("MaximumDiskUsage", maxDiskTransferRate());
+    settings.setValue("Paused", paused());
+    settings.setValue("Notifications", notificationsEnabled());
 }
 
 /*

@@ -55,7 +55,8 @@ public:
     ~MainWindow();
 
     void retranslate();
-    inline QList<int> splitterSizes() const { return ui->horizontalSplitter->sizes(); };
+    void loadSettings();
+    void saveSettings() const;
 
 public Q_SLOTS:
 
@@ -118,7 +119,6 @@ private:
     void updateMenuMaxDiskTransferRate();
     void updateMenuSyncTime(const SyncProfile &profile);
     void updateProfileTooltip(const SyncProfile &profile);
-    void loadSettings();
     void setupMenus();
     void updateLaunchOnStartupState();
     SyncProfile *profileByIndex(const QModelIndex &index);

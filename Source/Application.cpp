@@ -97,21 +97,21 @@ void Application::init()
     m_netManager = new QNetworkAccessManager(this);
     connect(m_netManager, &QNetworkAccessManager::finished, this, &Application::onUpdateReply);
     connect(&m_updateTimer, &QTimer::timeout, this, &Application::checkForUpdates);
-    setCheckForUpdates(true);
 
-    m_manager = new SyncManager;
     m_syncThread = new QThread(this);
     m_tray = new SystemTray;
-    m_window = new MainWindow;
+    m_manager.reset(new SyncManager);
+    m_window.reset(new MainWindow);
     m_cpuUsage = new CpuUsage(this);
 
     m_manager->moveToThread(m_syncThread);
-    connect(m_syncThread, &QThread::started, m_manager, [this](){ m_manager->sync(); });
-    connect(m_manager, &SyncManager::finished, this, [this](){ m_syncThread->quit(); });
+    connect(m_syncThread, &QThread::started, m_manager.data(), [this](){ m_manager->sync(); });
+    connect(m_manager.data(), &SyncManager::finished, this, [this](){ m_syncThread->quit(); });
 
     connect(m_cpuUsage, &CpuUsage::cpuUsageUpdated, this, &Application::updateCpuUsage);
     m_cpuUsage->startMonitoring(CPU_UPDATE_TIME);
 
+    loadSettings();
     m_initiated = true;
 }
 
@@ -320,12 +320,30 @@ void Application::quit()
     QString text(syncApp->translate("MainWindow", "Are you sure you want to quit?"));
     QString syncText(syncApp->translate("MainWindow", "Currently syncing. Are you sure you want to quit?"));
 
-    if ((!m_manager->busy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No, m_window)) ||
-        (m_manager->busy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, m_window)))
+    if ((!m_manager->busy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No, m_window.data())) ||
+        (m_manager->busy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, m_window.data())))
     {
         m_manager->shouldQuit();
         QApplication::quit();
     }
+}
+
+/*
+===================
+Application::loadSettings
+===================
+*/
+void Application::loadSettings()
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+
+    setMaxCpuUsage(settings.value("MaximumCpuUsage", 100).toUInt());
+    setLanguage(static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt()));
+    setTrayVisible(settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool());
+    setCheckForUpdates(settings.value("CheckForUpdates", true).toBool());
+
+    if (syncApp->checkForUpdatesEnabled())
+        syncApp->checkForUpdates();
 }
 
 /*
@@ -339,25 +357,10 @@ void Application::saveSettings() const
         return;
 
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    QVariantList hSizes;
 
-    for (auto &size : m_window->splitterSizes())
-        hSizes.append(size);
-
-    if (!syncApp->m_window->isMaximized())
-    {
-        settings.setValue("Width", syncApp->m_window->size().width());
-        settings.setValue("Height", syncApp->m_window->size().height());
-    }
-
-    settings.setValue("Fullscreen", syncApp->m_window->isMaximized());
-    settings.setValue("HorizontalSplitter", hSizes);
-    settings.setValue("MaximumDiskUsage", manager()->maxDiskTransferRate());
     settings.setValue("MaximumCpuUsage", maxCpuUsage());
     settings.setValue("Language", m_language);
     settings.setValue("ShowInTray", trayVisible());
-    settings.setValue("Paused", manager()->paused());
-    settings.setValue("Notifications", manager()->notificationsEnabled());
     settings.setValue("CheckForUpdates", m_checkForUpdates);
 }
 
