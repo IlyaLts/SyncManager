@@ -479,5 +479,9 @@
             <source>New Update Available</source>
             <translation>Yeni Güncelleme Mevcut</translation>
         </message>
+        <message>
+            <source>File Delta Copying</source>
+            <translation>Dosya Delta Kopyalama</translation>
+        </message>
     </context>
 </TS>

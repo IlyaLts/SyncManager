@@ -479,5 +479,9 @@
             <source>New Update Available</source>
             <translation>Доступно новое обновление</translation>
         </message>
+        <message>
+            <source>File Delta Copying</source>
+            <translation>Дельта-копирование файлов</translation>
+        </message>
     </context>
 </TS>

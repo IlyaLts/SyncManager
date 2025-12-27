@@ -479,5 +479,9 @@
             <source>New Update Available</source>
             <translation>有新更新可用</translation>
         </message>
+        <message>
+            <source>File Delta Copying</source>
+            <translation>文件增量复制</translation>
+        </message>
     </context>
 </TS>

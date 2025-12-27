@@ -479,5 +479,9 @@
             <source>New Update Available</source>
             <translation>नया अपडेट उपलब्ध है</translation>
         </message>
+        <message>
+            <source>File Delta Copying</source>
+            <translation>फ़ाइल डेल्टा कॉपी करना</translation>
+        </message>
     </context>
 </TS>

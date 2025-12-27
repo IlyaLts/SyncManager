@@ -1627,15 +1627,20 @@ or avoid using QFile::copy altogether.
 */
 bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const QString &newName)
 {
-    if (!m_maxDiskTransferRate)
+    QFile from(fileName);
+
+    if (QFile(newName).exists())
+        return false;
+
+    if(!from.open(QFile::ReadOnly))
+        return false;
+
+    if (!m_maxDiskTransferRate && !m_deltaCopying)
     {
+        qDebug("usual Copying");
         QString tempName = newName + "." + TEMP_EXTENSION;
-        QFile from(fileName);
 
         if (!QFile::copy(fileName, tempName))
-            return false;
-
-        if (!from.open(QFile::ReadOnly))
             return false;
 
         setFileModificationDate(tempName, from.fileTime(QFileDevice::FileModificationTime));
@@ -1645,17 +1650,6 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
     }
     else
     {
-        QFile file(fileName);
-
-        if (file.fileName().isEmpty())
-            return false;
-
-        if (QFile(newName).exists())
-            return false;
-
-        if(!file.open(QFile::ReadOnly))
-            return false;
-
         QString fileTemplate = QString("%1/.XXXXXX.") + TEMP_EXTENSION;
         QTemporaryFile out(fileTemplate.arg(QFileInfo(newName).path()));
 
@@ -1667,54 +1661,82 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
                 return false;
         }
 
-        char block[4096];
-        qint64 totalRead = 0;
 
-        while(!file.atEnd())
+        if (m_deltaCopying)
         {
-            qint64 in = file.read(block, sizeof(block));
-
-            if (in <= 0)
-                break;
-
-            if (quitting())
-                return false;
-
-            totalRead += in;
-
-            m_usedDevicesMutex.lock();
-            deviceRead += in;
-            m_usedDevicesMutex.unlock();
-
-            throttleCpu();
-
-            while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
+            qDebug(" delta Copying");
+            while(!from.atEnd())
             {
-                int sleep = m_diskUsageResetTimer.remainingTime();
+                qint64 pos = from.pos();
+                QByteArray fromChunk = from.read(4096);
+                QByteArray toChunk = out.read(4096);
 
-                if (sleep < 0)
-                    sleep = 0;
+                m_usedDevicesMutex.lock();
+                deviceRead += fromChunk.size() + toChunk.size();
+                m_usedDevicesMutex.unlock();
 
-                QThread::msleep(sleep);
+                throttleCpu();
+
+                if (fromChunk != toChunk)
+                {
+                    out.seek(pos);
+                    out.write(fromChunk);
+                    out.seek(pos + fromChunk.size());
+                }
+            }
+        }
+        else
+        {
+            qDebug(" custom usual Copying");
+            char chunkSize[4096];
+            qint64 totalRead = 0;
+
+            while(!from.atEnd())
+            {
+                qint64 in = from.read(chunkSize, sizeof(chunkSize));
+
+                if (in <= 0)
+                    break;
+
+                if (quitting())
+                    return false;
+
+                totalRead += in;
+
+                m_usedDevicesMutex.lock();
+                deviceRead += in;
+                m_usedDevicesMutex.unlock();
+
+                throttleCpu();
+
+                while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
+                {
+                    int sleep = m_diskUsageResetTimer.remainingTime();
+
+                    if (sleep < 0)
+                        sleep = 0;
+
+                    QThread::msleep(sleep);
+                }
+
+                if(in != out.write(chunkSize, in))
+                    return false;
             }
 
-            if(in != out.write(block, in))
+            if (totalRead != from.size())
                 return false;
         }
 
-        if (totalRead != file.size())
-            return false;
-
         // It must be done before renaming, otherwise it won't work.
-        out.setFileTime(file.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
+        out.setFileTime(from.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
 
         if (!out.rename(newName))
             return false;
 
-        if (!out.setPermissions(file.permissions()))
+        if (!out.setPermissions(from.permissions()))
             return false;
 
-        file.close();
+        from.close();
         out.setAutoRemove(false);
         return true;
     }
