@@ -1692,7 +1692,7 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
                     QThread::msleep(sleep);
                 }
 
-                if (nFrom != nTo || memcmp(fromChunk, toChunk, 4096) != 0)
+                if (nFrom != nTo || memcmp(fromChunk, toChunk, COPY_BUFFER_SIZE) != 0)
                 {
                     to.seek(fromPos);
                     to.write(fromChunk, nFrom);
@@ -1701,6 +1701,10 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
                 fromPos += nFrom;
                 toPos += nTo;
             }
+
+            // Trails data from the destination if the source file has less data
+            if (from.size() != to.size())
+                to.resize(from.size());
 
             to.setFileTime(from.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
 
