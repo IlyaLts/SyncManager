@@ -67,6 +67,7 @@ void SyncManager::loadSettings()
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
 
+    m_deltaCopying = settings.value("DeltaCopying", false).toBool();
     setMaxDiskTransferRate(settings.value("MaximumDiskUsage", 0).toULongLong());
     enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
 
@@ -97,6 +98,7 @@ void SyncManager::saveSettings() const
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
 
+    settings.setValue("DeltaCopying", m_deltaCopying);
     settings.setValue("MaximumDiskUsage", maxDiskTransferRate());
     settings.setValue("Paused", paused());
     settings.setValue("Notifications", notificationsEnabled());
@@ -1629,15 +1631,14 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
 {
     QFile from(fileName);
 
-    if (QFile(newName).exists())
-        return false;
-
     if(!from.open(QFile::ReadOnly))
         return false;
 
     if (!m_maxDiskTransferRate && !m_deltaCopying)
     {
-        qDebug("usual Copying");
+        if (QFile(newName).exists())
+            return false;
+
         QString tempName = newName + "." + TEMP_EXTENSION;
 
         if (!QFile::copy(fileName, tempName))
@@ -1650,56 +1651,94 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
     }
     else
     {
-        QString fileTemplate = QString("%1/.XXXXXX.") + TEMP_EXTENSION;
-        QTemporaryFile out(fileTemplate.arg(QFileInfo(newName).path()));
-
-        if (!out.open())
+        if (m_deltaCopying && QFile::exists(newName))
         {
-            out.setFileTemplate(fileTemplate.arg(QDir::tempPath()));
+            QFile to(newName);
 
-            if (!out.open())
+            if(!to.open(QFile::ReadWrite))
                 return false;
-        }
 
+            qint64 nFrom;
+            qint64 nTo;
+            qint64 fromPos = 0;
+            qint64 toPos = 0;
+            char fromChunk[COPY_BUFFER_SIZE];
+            char toChunk[COPY_BUFFER_SIZE];
 
-        if (m_deltaCopying)
-        {
-            qDebug(" delta Copying");
             while(!from.atEnd())
             {
-                qint64 pos = from.pos();
-                QByteArray fromChunk = from.read(4096);
-                QByteArray toChunk = out.read(4096);
+                if (quitting())
+                    return false;
+
+                nFrom = from.read(fromChunk, sizeof(fromChunk));
+                nTo = to.read(toChunk, sizeof(toChunk));
+
+                if (nFrom <= 0)
+                    break;
 
                 m_usedDevicesMutex.lock();
-                deviceRead += fromChunk.size() + toChunk.size();
+                deviceRead += nFrom + nTo;
                 m_usedDevicesMutex.unlock();
 
                 throttleCpu();
 
-                if (fromChunk != toChunk)
+                while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
                 {
-                    out.seek(pos);
-                    out.write(fromChunk);
-                    out.seek(pos + fromChunk.size());
+                    int sleep = m_diskUsageResetTimer.remainingTime();
+
+                    if (sleep < 0)
+                        sleep = 0;
+
+                    QThread::msleep(sleep);
                 }
+
+                if (nFrom != nTo || memcmp(fromChunk, toChunk, 4096) != 0)
+                {
+                    to.seek(fromPos);
+                    to.write(fromChunk, nFrom);
+                }
+
+                fromPos += nFrom;
+                toPos += nTo;
             }
+
+            to.setFileTime(from.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
+
+            if (!to.setPermissions(from.permissions()))
+                return false;
+
+            from.close();
+            to.close();
+            return true;
         }
         else
         {
-            qDebug(" custom usual Copying");
-            char chunkSize[4096];
+            if (QFile(newName).exists())
+                return false;
+
+            QString fileTemplate = QString("%1/.XXXXXX.") + TEMP_EXTENSION;
+            QTemporaryFile tempFile(fileTemplate.arg(QFileInfo(newName).path()));
+
+            if (!tempFile.open())
+            {
+                tempFile.setFileTemplate(fileTemplate.arg(QDir::tempPath()));
+
+                if (!tempFile.open())
+                    return false;
+            }
+
+            char chunkSize[COPY_BUFFER_SIZE];
             qint64 totalRead = 0;
 
             while(!from.atEnd())
             {
+                if (quitting())
+                    return false;
+
                 qint64 in = from.read(chunkSize, sizeof(chunkSize));
 
                 if (in <= 0)
                     break;
-
-                if (quitting())
-                    return false;
 
                 totalRead += in;
 
@@ -1719,26 +1758,26 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
                     QThread::msleep(sleep);
                 }
 
-                if(in != out.write(chunkSize, in))
+                if(in != tempFile.write(chunkSize, in))
                     return false;
             }
 
             if (totalRead != from.size())
                 return false;
+
+            // It must be done before renaming, otherwise it won't work.
+            tempFile.setFileTime(from.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
+
+            if (!tempFile.rename(newName))
+                return false;
+
+            if (!tempFile.setPermissions(from.permissions()))
+                return false;
+
+            from.close();
+            tempFile.setAutoRemove(false);
+            return true;
         }
-
-        // It must be done before renaming, otherwise it won't work.
-        out.setFileTime(from.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
-
-        if (!out.rename(newName))
-            return false;
-
-        if (!out.setPermissions(from.permissions()))
-            return false;
-
-        from.close();
-        out.setAutoRemove(false);
-        return true;
     }
 }
 
@@ -2143,7 +2182,7 @@ void SyncManager::copyFiles(SyncFolder &folder)
         createParentFolders(folder, QDir::cleanPath(toFullPath).toUtf8());
 
         // Removes a file with the same filename first if exists
-        if (toFileInfo.exists())
+        if (!m_deltaCopying && toFileInfo.exists())
             removeFile(folder, fileIt->toPath, toFullPath, toFile.type);
 
         if (copyFile(deviceRead, fileIt->fromFullPath, toFullPath))

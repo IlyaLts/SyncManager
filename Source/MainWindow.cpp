@@ -201,8 +201,6 @@ void MainWindow::loadSettings()
     ui->horizontalSplitter->setStretchFactor(0, 0);
     ui->horizontalSplitter->setStretchFactor(1, 1);
 
-    syncApp->manager()->setDeltaCopying(settings.value("DeltaCopying", false).toBool());
-    deltaCopyingAction->setChecked(syncApp->manager()->deltaCopying());
     syncApp->setMaxCpuUsage(settings.value("MaximumCpuUsage", 100).toUInt());
     syncApp->setLanguage(static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt()));
     syncApp->setTrayVisible(settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool());
@@ -247,6 +245,7 @@ void MainWindow::loadSettings()
         updateProfileTooltip(*profile);
     }
 
+    deltaCopyingAction->setChecked(syncApp->manager()->deltaCopying());
     showInTrayAction->setChecked(syncApp->trayVisible());
     disableNotificationAction->setChecked(!syncApp->manager()->notificationsEnabled());
     checkForUpdatesAction->setChecked(syncApp->checkForUpdatesEnabled());
@@ -267,7 +266,6 @@ void MainWindow::saveSettings() const
     for (auto &size : ui->horizontalSplitter->sizes())
         hSizes.append(size);
 
-    settings.setValue("DeltaCopying", syncApp->manager()->deltaCopying());
     settings.setValue("Fullscreen", isMaximized());
     settings.setValue("HorizontalSplitter", hSizes);
 
