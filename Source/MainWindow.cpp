@@ -231,15 +231,10 @@ void MainWindow::loadSettings()
 
         for (auto &folder : profile->folders)
         {
-            folder.paused = settings.value(profileKeyPath + folder.path + QLatin1String("_Paused"), false).toBool();
-            folder.syncType = static_cast<SyncFolder::SyncType>(settings.value(profileKeyPath + folder.path + QLatin1String("_SyncType"), SyncFolder::TWO_WAY).toInt());
+            folder.loadSettings();
 
             if (!folder.paused)
                 syncApp->manager()->setPaused(false);
-
-            folder.exists = QFileInfo::exists(folder.path);
-            folder.lastSyncDate = settings.value(profileKeyPath + folder.path + QLatin1String("_LastSyncDate")).toDateTime();
-            folder.PartiallySynchronized = settings.value(profileKeyPath + folder.path + QLatin1String("_PartiallySynchronized")).toBool();
         }
 
         updateProfileTooltip(*profile);
@@ -367,10 +362,10 @@ void MainWindow::addProfile()
     profileNames.append(newName);
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
-    syncApp->manager()->profiles().emplace_back(newName, profileIndexByName(newName));
-    syncApp->manager()->profiles().back().paused = syncApp->manager()->paused();
-    syncApp->manager()->profiles().back().setupMenus(this);
-    connectProfileMenu(syncApp->manager()->profiles().back());
+    SyncProfile &profile = syncApp->manager()->profiles().emplace_back(newName, profileIndexByName(newName));
+    profile.paused = syncApp->manager()->paused();
+    profile.setupMenus(this);
+    connectProfileMenu(profile);
     rebindProfiles();
 
     QSettings profileData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
@@ -383,10 +378,11 @@ void MainWindow::addProfile()
 
     ui->folderListView->selectionModel()->reset();
     ui->folderListView->update();
-    updateProfileTooltip(syncApp->manager()->profiles().back());
+    updateProfileTooltip(profile);
     updateStatus();
-    syncApp->manager()->updateNextSyncingTime(syncApp->manager()->profiles().back());
-    syncApp->manager()->updateTimer(syncApp->manager()->profiles().back());
+    syncApp->manager()->updateNextSyncingTime(profile);
+    syncApp->manager()->updateTimer(profile);
+    profile.saveSettings();
 }
 
 /*
@@ -429,6 +425,7 @@ void MainWindow::removeProfile()
 
         profile->paused = true;
         profile->toBeRemoved = true;
+        profile->removeSettings();
 
         for (auto &folder : profile->folders)
         {
@@ -607,10 +604,11 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
         if (!exists)
         {
-            profile->folders.emplace_back(profile);
-            profile->folders.back().paused = profile->paused;
-            profile->folders.back().path = newFolderPath.toUtf8();
-            existedFolders.append(profile->folders.back().path);
+            SyncFolder &folder = profile->folders.emplace_back(profile);
+            folder.paused = profile->paused;
+            folder.path = newFolderPath.toUtf8();
+            folder.saveSettings();
+            existedFolders.append(folder.path);
 
             QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
             profilesData.setValue(profile->name, existedFolders);
@@ -658,6 +656,7 @@ void MainWindow::removeFolder()
         ui->folderListView->model()->removeRow(folderIndex.row());
 
         folder->removeDatabase();
+        folder->removeSettings();
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
         settings.remove(profile->name + QLatin1String("_profile/") + folder->path + QLatin1String("_Paused"));

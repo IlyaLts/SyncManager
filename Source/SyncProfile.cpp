@@ -53,7 +53,8 @@ SyncProfile::~SyncProfile
 */
 SyncProfile::~SyncProfile()
 {
-    saveSettings();
+    if (!toBeRemoved)
+        saveSettings();
 }
 
 /*
@@ -118,17 +119,18 @@ void SyncProfile::saveSettings() const
     settings.setValue(profileKey + QLatin1String("SyncTime"), syncTime);
 
     for (const auto &folder : folders)
-    {
-        if (folder.toBeRemoved)
-            continue;
+        folder.saveSettings();
+}
 
-        QString folderKey(profileKey + folder.path);
-
-        settings.setValue(folderKey + QLatin1String("_LastSyncDate"), folder.lastSyncDate);
-        settings.setValue(folderKey + QLatin1String("_Paused"), folder.paused);
-        settings.setValue(folderKey + QLatin1String("_SyncType"), folder.syncType);
-        settings.setValue(folderKey + QLatin1String("_PartiallySynchronized"), folder.PartiallySynchronized);
-    }
+/*
+===================
+SyncProfile::removeSettings
+===================
+*/
+void SyncProfile::removeSettings() const
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    settings.remove(name + QLatin1String("_profile/"));
 }
 
 /*

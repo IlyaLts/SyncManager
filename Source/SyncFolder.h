@@ -86,6 +86,10 @@ public:
 
     inline bool operator ==(const SyncFolder &other) { return path == other.path; }
 
+    void loadSettings();
+    void saveSettings() const;
+    void removeSettings() const;
+
     void clearData();
     void optimizeMemoryUsage();
     void updateVersioningPath(const SyncProfile &profile);

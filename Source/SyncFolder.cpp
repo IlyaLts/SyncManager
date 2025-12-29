@@ -20,9 +20,61 @@
 #include "SyncManager.h"
 #include "SyncFolder.h"
 #include "SyncProfile.h"
+#include "Application.h"
 #include "Common.h"
 #include <QMutex>
 #include <QStandardPaths>
+#include <QSettings>
+
+/*
+===================
+SyncFolder::loadSettings
+===================
+*/
+void SyncFolder::loadSettings()
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    QString folderKey(m_profile->name + QLatin1String("_profile/") + path);
+
+    exists = QFileInfo::exists(path);
+    lastSyncDate = settings.value(folderKey + QLatin1String("_LastSyncDate")).toDateTime();
+    paused = settings.value(folderKey + QLatin1String("_Paused"), false).toBool();
+    syncType = static_cast<SyncFolder::SyncType>(settings.value(folderKey + QLatin1String("_SyncType"), SyncFolder::TWO_WAY).toInt());
+    PartiallySynchronized = settings.value(folderKey + QLatin1String("_PartiallySynchronized")).toBool();
+
+    if (!paused)
+        syncApp->manager()->setPaused(false);
+}
+
+/*
+===================
+SyncFolder::saveSettings
+===================
+*/
+void SyncFolder::saveSettings() const
+{
+    if (toBeRemoved)
+        return;
+
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    QString folderKey(m_profile->name + QLatin1String("_profile/") + path);
+
+    settings.setValue(folderKey + QLatin1String("_LastSyncDate"), lastSyncDate);
+    settings.setValue(folderKey + QLatin1String("_Paused"), paused);
+    settings.setValue(folderKey + QLatin1String("_SyncType"), syncType);
+    settings.setValue(folderKey + QLatin1String("_PartiallySynchronized"), PartiallySynchronized);
+}
+
+/*
+===================
+SyncFolder::removeSettings
+===================
+*/
+void SyncFolder::removeSettings() const
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    settings.remove(m_profile->name + QLatin1String("_profile/") + path);
+}
 
 /*
 ===================

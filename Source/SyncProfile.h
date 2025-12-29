@@ -86,6 +86,7 @@ public:
 
     void loadSettings();
     void saveSettings() const;
+    void removeSettings() const;
 
     void setSyncingMode(SyncingMode mode);
     inline void setSyncTimeMultiplier(quint32 multiplier) { m_syncTimeMultiplier = multiplier; }

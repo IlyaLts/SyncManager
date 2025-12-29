@@ -1702,7 +1702,7 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
                 toPos += nTo;
             }
 
-            // Trails data from the destination if the source file has less data
+            // Trims trailing data from the destination if the source file has less data
             if (from.size() != to.size())
                 to.resize(from.size());
 
