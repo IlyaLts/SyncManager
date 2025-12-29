@@ -2080,10 +2080,10 @@ MainWindow::updateLaunchOnStartupState
 void MainWindow::updateLaunchOnStartupState()
 {
 #ifdef Q_OS_WIN
-    QString path(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncsyncApp->manager.lnk");
+    QString path(QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/Startup/SyncManager.lnk");
     launchOnStartupAction->setChecked(QFile::exists(path));
 #else
-    QString path(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncsyncApp->manager.desktop");
+    QString path(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop");
     launchOnStartupAction->setChecked(QFile::exists(path));
 #endif
 }

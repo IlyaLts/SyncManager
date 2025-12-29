@@ -173,13 +173,9 @@ Application::setTrayVisible
 */
 void Application::setTrayVisible(bool visible)
 {
-    if (QSystemTrayIcon::isSystemTrayAvailable() && visible)
-    {
-        m_trayVisible = visible;
-        m_tray->show();
-        setQuitOnLastWindowClosed(false);
-    }
-    else
+    m_trayVisible = visible;
+
+    if (!QSystemTrayIcon::isSystemTrayAvailable())
     {
         m_trayVisible = false;
 
@@ -187,6 +183,16 @@ void Application::setTrayVisible(bool visible)
         QString text = syncApp->translate("MainWindow", "Your system does not support the system tray.");
         QMessageBox::warning(NULL, title, text);
 
+        return;
+    }
+
+    if (visible)
+    {
+        m_tray->show();
+        setQuitOnLastWindowClosed(false);
+    }
+    else
+    {
         m_tray->hide();
         setQuitOnLastWindowClosed(true);
 
