@@ -14,8 +14,8 @@ Here's an overview of how it works:
 ### Synchronization Types
 There are three synchronization types that determine how a folder should be synchronized.
 - **Two-way** - *The most common type. It keeps all files and folders identical in both locations. If you add, delete, or change a file in one folder, the same change will happen in the other.*
-- **One-way** - *A mirror image. It copies all files and folders from a "source" folder to a "destination" folder. Any files in the destination that don't exist in the source are deleted.*
-- **One-way update** - *This type is for simple updates. Files are only copied once from a source folder to a destination folder. Unlike One-way, files that are deleted from the source folder are not deleted from the destination. This is useful for backups where you don't want to lose old data.*
+- **One-way** - *A mirror image. It copies all files and folders from two-way folders. Any files in the one-way folder that don't exist in two-way folders will be deleted.*
+- **One-way update** - *This mode is for simple updates. Files are copied only once from two-way folders to the one-way update folder. Unlike the one-way type, files that are deleted from two-way folders will not be deleted from the one-way update folder. This is useful for backups where you don't want to lose old data.*
 ### Syncing Modes
 Synchronization can be triggered using the following modes:
 - **Manual** - *Will only sync your files when you tell it to.*
@@ -78,4 +78,5 @@ Requires Qt 6.9 or newer. Buildable with Qt Creator.
 
 # License
 SyncManager is licensed under the GPL-3.0 license, see LICENSE.txt for more information.
+
 
