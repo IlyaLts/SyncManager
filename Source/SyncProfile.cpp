@@ -71,7 +71,7 @@ void SyncProfile::loadSettings()
     setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
     setVersioningPath(settings.value(keyName + "VersioningPath", "").toString());
     setDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(keyName + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
-    setIgnoreHiddenFiles(settings.value(keyName + "IgnoreHiddenFiles", true).toBool());
+    setIgnoreHiddenFiles(settings.value(keyName + "IgnoreHiddenFiles", false).toBool());
     setFileMinSize(settings.value(keyName + "FileMinSize", 0).toInt());
     setFileMaxSize(settings.value(keyName + "FileMaxSize", 0).toInt());
     setMovedFileMinSize(settings.value(keyName + "MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt());
