@@ -78,6 +78,7 @@ void SyncProfile::loadSettings()
     setFileMinSize(settings.value(keyName + "FileMinSize", 0).toInt());
     setFileMaxSize(settings.value(keyName + "FileMaxSize", 0).toInt());
     setMovedFileMinSize(settings.value(keyName + "MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt());
+    setDeltaCopyingMinSize(settings.value(keyName + "DeltaCopyingMinSize", DELTA_COPYING_MIN_SIZE).toInt());
     setIncludeList(settings.value(keyName + "IncludeList").toStringList());
     setExcludeList(settings.value(keyName + "ExcludeList").toStringList());
     setVersioningFolder(settings.value(keyName + "VersionFolder", "[Deletions]").toString());
@@ -112,6 +113,7 @@ void SyncProfile::saveSettings() const
     settings.setValue(profileKey + "FileMinSize", fileMinSize());
     settings.setValue(profileKey + "FileMaxSize", fileMaxSize());
     settings.setValue(profileKey + "MovedFileMinSize", movedFileMinSize());
+    settings.setValue(profileKey + "DeltaCopyingMinSize", deltaCopyingMinSize());
     settings.setValue(profileKey + "IncludeList", includeList());
     settings.setValue(profileKey + "ExcludeList", excludeList());
     settings.setValue(profileKey + "VersionFolder", versioningFolder());
@@ -147,6 +149,33 @@ void SyncProfile::setSyncingMode(SyncingMode mode)
         mode = AutomaticAdaptive;
 
     m_syncingMode = mode;
+}
+
+/*
+===================
+SyncProfile::setDeltaCopying
+===================
+*/
+void SyncProfile::setDeltaCopying(bool enable)
+{
+    m_deltaCopying = enable;
+
+    if (!syncApp->initiated())
+        return;
+
+    if (deltaCopying())
+    {
+        QString title(tr("Enable file delta copying?"));
+        QString text(tr("Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back."));
+
+        if (!syncApp->questionBox(QMessageBox::Warning, title, text, QMessageBox::No, nullptr))
+        {
+            setDeltaCopying(false);
+            deltaCopyingAction->setChecked(false);
+        }
+    }
+
+    deltaCopyingMinSizeAction->setVisible(deltaCopying());
 }
 
 /*
@@ -537,7 +566,7 @@ void SyncProfile::setupMenus(QWidget *parent)
     automaticAdaptiveAction = new QAction("&" + qApp->translate("MainWindow", "Automatic (Adaptive)"), parent);
     automaticFixedAction = new QAction("&" + qApp->translate("MainWindow", "Automatic (Fixed)"), parent);
     detectMovedFilesAction = new QAction("&" + qApp->translate("MainWindow", "Detect Renamed and Moved Files"), parent);
-    deltaCopyingAction = new QAction("&" + qApp->translate("MainWindow", "File Delta Copying"), parent);
+    deltaCopyingAction = new QAction("&" + qApp->translate("MainWindow", "File Delta Copying") + " (Beta)", parent);
     increaseSyncTimeAction = new QAction("&" + qApp->translate("MainWindow", "Increase"), parent);
     syncingTimeAction = new QAction(qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncEvery), parent);
     decreaseSyncTimeAction = new QAction("&" + qApp->translate("MainWindow", "Decrease"), parent);
@@ -556,9 +585,10 @@ void SyncProfile::setupMenus(QWidget *parent)
     customLocationPathAction = new QAction(qApp->translate("MainWindow", "Custom Location: ") + m_versioningPath, parent);
     databaseLocallyAction = new QAction("&" + qApp->translate("MainWindow", "Locally (On the local machine)"), parent);
     databaseDecentralizedAction = new QAction("&" + qApp->translate("MainWindow", "Decentralized (Inside synchronization folders)"), parent);
-    fileMinSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Minimum File Size: %1 bytes")).arg(m_fileMinSize), parent);
-    fileMaxSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Maximum File Size: %1 bytes")).arg(m_fileMaxSize), parent);
-    movedFileMinSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Minimum Size for a Moved File: %1 bytes")).arg(m_movedFileMinSize), parent);
+    fileMinSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Minimum File Size: %1")).arg(formatSize((m_fileMinSize))), parent);
+    fileMaxSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Maximum File Size: %1")).arg(formatSize((m_fileMaxSize))), parent);
+    movedFileMinSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Minimum Size for a Moved File: %1")).arg(formatSize((m_movedFileMinSize))), parent);
+    deltaCopyingMinSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Minimum Size for Delta Copying: %1")).arg(formatSize((m_deltaCopyingMinSize))), parent);
     includeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Include: %1")).arg(m_includeList.join("; ")), parent);
     excludeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Exclude: %1")).arg(m_excludeList.join("; ")), parent);
     ignoreHiddenFilesAction = new QAction("&" + qApp->translate("MainWindow", "Ignore Hidden Files"), parent);
@@ -630,12 +660,15 @@ void SyncProfile::setupMenus(QWidget *parent)
     filteringMenu->addAction(fileMinSizeAction);
     filteringMenu->addAction(fileMaxSizeAction);
     filteringMenu->addAction(movedFileMinSizeAction);
+    filteringMenu->addAction(deltaCopyingMinSizeAction);
     filteringMenu->addAction(includeAction);
     filteringMenu->addAction(excludeAction);
     filteringMenu->addSeparator();
     filteringMenu->addAction(ignoreHiddenFilesAction);
 
     updateMenuStates();
+
+    connect(deltaCopyingAction, &QAction::triggered, this, &SyncProfile::setDeltaCopying);
 }
 
 /*
@@ -668,9 +701,11 @@ void SyncProfile::updateMenuStates()
     customLocationPathAction->setText(tr("Custom Location: ") + versioningPath());
     databaseLocallyAction->setChecked(databaseLocation() == Locally);
     databaseDecentralizedAction->setChecked(databaseLocation() == Decentralized);
-    fileMinSizeAction->setText("&" + tr("Minimum File Size: %1 bytes").arg(fileMinSize()));
-    fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1 bytes").arg(fileMaxSize()));
-    movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1 bytes").arg(movedFileMinSize()));
+    fileMinSizeAction->setText("&" + tr("Minimum File Size: %1").arg(formatSize(fileMinSize())));
+    fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1").arg(formatSize(fileMaxSize())));
+    movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1").arg(formatSize(movedFileMinSize())));
+    deltaCopyingMinSizeAction->setVisible(deltaCopying());
+    deltaCopyingMinSizeAction->setText("&" + tr("Minimum Size for Delta Copying: %1").arg(formatSize(deltaCopyingMinSize())));
     includeAction->setText("&" + tr("Include: %1").arg(includeList().join("; ")));
     excludeAction->setText("&" + tr("Exclude: %1").arg(excludeList().join("; ")));
     ignoreHiddenFilesAction->setChecked(ignoreHiddenFiles());
@@ -713,6 +748,7 @@ void SyncProfile::destroyMenus()
     fileMinSizeAction->deleteLater();
     fileMaxSizeAction->deleteLater();
     movedFileMinSizeAction->deleteLater();
+    deltaCopyingMinSizeAction->deleteLater();
     includeAction->deleteLater();
     excludeAction->deleteLater();
     ignoreHiddenFilesAction->deleteLater();
@@ -736,7 +772,7 @@ void SyncProfile::retranslate()
     automaticAdaptiveAction->setText("&" + qApp->translate("MainWindow", "Automatic (Adaptive)"));
     automaticFixedAction->setText("&" + qApp->translate("MainWindow", "Automatic (Fixed)"));
     detectMovedFilesAction->setText("&" + qApp->translate("MainWindow", "Detect Renamed and Moved Files"));
-    deltaCopyingAction->setText("&" + qApp->translate("MainWindow", "File Delta Copying"));
+    deltaCopyingAction->setText("&" + qApp->translate("MainWindow", "File Delta Copying") + " (Beta)");
     increaseSyncTimeAction->setText("&" + qApp->translate("MainWindow", "Increase"));
     syncingTimeAction->setText(qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncEvery));
     decreaseSyncTimeAction->setText("&" + qApp->translate("MainWindow", "Decrease"));
@@ -755,9 +791,10 @@ void SyncProfile::retranslate()
     customLocationPathAction->setText(qApp->translate("MainWindow", "Custom Location: ") + versioningPath());
     databaseLocallyAction->setText("&" + qApp->translate("MainWindow", "Locally (On the local machine)"));
     databaseDecentralizedAction->setText("&" + qApp->translate("MainWindow", "Decentralized (Inside synchronization folders)"));
-    fileMinSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Minimum File Size: %1 bytes")).arg(fileMinSize()));
-    fileMaxSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Maximum File Size: %1 bytes")).arg(fileMaxSize()));
-    movedFileMinSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Minimum Size for a Moved File: %1 bytes")).arg(movedFileMinSize()));
+    fileMinSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Minimum File Size: %1")).arg(formatSize(fileMinSize())));
+    fileMaxSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Maximum File Size: %1")).arg(formatSize(fileMaxSize())));
+    movedFileMinSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Minimum Size for a Moved File: %1")).arg(formatSize(movedFileMinSize())));
+    deltaCopyingMinSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Minimum Size for Delta Copying: %1")).arg(formatSize(deltaCopyingMinSize())));
     includeAction->setText(QString("&" + qApp->translate("MainWindow", "Include: %1")).arg(includeList().join("; ")));
     excludeAction->setText(QString("&" + qApp->translate("MainWindow", "Exclude: %1")).arg(excludeList().join("; ")));
     ignoreHiddenFilesAction->setText("&" + qApp->translate("MainWindow", "Ignore Hidden Files"));

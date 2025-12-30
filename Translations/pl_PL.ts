@@ -332,16 +332,16 @@
             <translation>Filtrowanie</translation>
         </message>
         <message>
-            <source>Minimum File Size: %1 bytes</source>
-            <translation>Minimalny rozmiar pliku: %1 bajtów</translation>
+            <source>Minimum File Size: %1</source>
+            <translation>Minimalny rozmiar pliku: %1</translation>
         </message>
         <message>
-            <source>Maximum File Size: %1 bytes</source>
-            <translation>Maksymalny rozmiar pliku: %1 bajtów</translation>
+            <source>Maximum File Size: %1</source>
+            <translation>Maksymalny rozmiar pliku: %1</translation>
         </message>
         <message>
-            <source>Minimum Size for a Moved File: %1 bytes</source>
-            <translation>Minimalny rozmiar dla przeniesionego pliku: %1 bajtów</translation>
+            <source>Minimum Size for a Moved File: %1</source>
+            <translation>Minimalny rozmiar dla przeniesionego pliku: %1</translation>
         </message>
         <message>
             <source>Include: %1</source>
@@ -482,6 +482,34 @@
         <message>
             <source>File Delta Copying</source>
             <translation>Kopiowanie różnicowe plików</translation>
+        </message>
+        <message>
+            <source>Minimum Size for Delta Copying: %1</source>
+            <translation>Minimalny rozmiar dla kopiowania delta: %1</translation>
+        </message>
+        <message>
+            <source>bytes</source>
+            <translation>bajtów</translation>
+        </message>
+        <message>
+            <source>kilobytes</source>
+            <translation>kilobajty</translation>
+        </message>
+        <message>
+            <source>megabytes</source>
+            <translation>megabajty</translation>
+        </message>
+        <message>
+            <source>gigabytes</source>
+            <translation>gigabajty</translation>
+        </message>
+        <message>
+            <source>Enable file delta copying?</source>
+            <translation>Włączyć kopiowanie różnicowe plików?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
+            <translation>Czy na pewno? Uwaga: pliki zostaną nadpisane i nie będzie możliwości przywrócenia ich poprzednich wersji.</translation>
         </message>
     </context>
 </TS>

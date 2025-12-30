@@ -332,16 +332,16 @@
             <translation>フィルタリング</translation>
         </message>
         <message>
-            <source>Minimum File Size: %1 bytes</source>
-            <translation>最小ファイルサイズ: %1 バイト</translation>
+            <source>Minimum File Size: %1</source>
+            <translation>最小ファイルサイズ: %1</translation>
         </message>
         <message>
-            <source>Maximum File Size: %1 bytes</source>
-            <translation>最大ファイルサイズ: %1 バイト</translation>
+            <source>Maximum File Size: %1</source>
+            <translation>最大ファイルサイズ: %1</translation>
         </message>
         <message>
-            <source>Minimum Size for a Moved File: %1 bytes</source>
-            <translation>移動されたファイルの最小サイズ: %1 バイト</translation>
+            <source>Minimum Size for a Moved File: %1</source>
+            <translation>移動されたファイルの最小サイズ: %1</translation>
         </message>
         <message>
             <source>Include: %1</source>
@@ -482,6 +482,34 @@
         <message>
             <source>File Delta Copying</source>
             <translation>ファイル デルタ コピー</translation>
+        </message>
+        <message>
+            <source>Minimum Size for Delta Copying: %1</source>
+            <translation>デルタコピーの最小サイズ: %1</translation>
+        </message>
+        <message>
+            <source>bytes</source>
+            <translation>バイト</translation>
+        </message>
+        <message>
+            <source>kilobytes</source>
+            <translation>キロバイト</translation>
+        </message>
+        <message>
+            <source>megabytes</source>
+            <translation>メガバイト</translation>
+        </message>
+        <message>
+            <source>gigabytes</source>
+            <translation>ギガバイト</translation>
+        </message>
+        <message>
+            <source>Enable file delta copying?</source>
+            <translation>ファイルの差分コピーを有効にしますか？</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
+            <translation>よろしいですか？ 注意：ファイルは上書きされ、以前のバージョンに戻すことはできません。</translation>
         </message>
     </context>
 </TS>

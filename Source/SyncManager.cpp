@@ -1632,7 +1632,7 @@ bool SyncManager::copyFile(SyncProfile &profile, quint64 &deviceRead, const QStr
     if(!from.open(QFile::ReadOnly))
         return false;
 
-    if (!m_maxDiskTransferRate && !profile.deltaCopying())
+    if (!m_maxDiskTransferRate && (!profile.deltaCopying() || static_cast<quint64>(QFileInfo(newName).size()) < profile.deltaCopyingMinSize()))
     {
         if (QFile(newName).exists())
             return false;
@@ -1649,7 +1649,7 @@ bool SyncManager::copyFile(SyncProfile &profile, quint64 &deviceRead, const QStr
     }
     else
     {
-        if (profile.deltaCopying() && QFile::exists(newName))
+        if (profile.deltaCopying() && static_cast<quint64>(QFileInfo(newName).size()) >= profile.deltaCopyingMinSize() && QFile::exists(newName))
         {
             QFile to(newName);
 
@@ -2184,7 +2184,7 @@ void SyncManager::copyFiles(SyncFolder &folder)
         createParentFolders(folder, QDir::cleanPath(toFullPath).toUtf8());
 
         // Removes a file with the same filename first if exists
-        if (!folder.profile().deltaCopying() && toFileInfo.exists())
+        if ((!folder.profile().deltaCopying() || static_cast<quint64>(toFileInfo.size()) < folder.profile().deltaCopyingMinSize()) && toFileInfo.exists())
             removeFile(folder, fileIt->toPath, toFullPath, toFile.type);
 
         if (copyFile(folder.profile(), deviceRead, fileIt->fromFullPath, toFullPath))

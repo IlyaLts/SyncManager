@@ -100,6 +100,7 @@ private Q_SLOTS:
     void setFileMinSize(SyncProfile &profile);
     void setFileMaxSize(SyncProfile &profile);
     void setMovedFileMinSize(SyncProfile &profile);
+    void setDeltaCopyingMinSize(SyncProfile &profile);
     void setIncludeList(SyncProfile &profile);
     void setExcludeList(SyncProfile &profile);
     void toggleIgnoreHiddenFiles(SyncProfile &profile);

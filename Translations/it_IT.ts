@@ -332,16 +332,16 @@
             <translation>Filtro</translation>
         </message>
         <message>
-            <source>Minimum File Size: %1 bytes</source>
-            <translation>Dimensione minima file: %1 byte</translation>
+            <source>Minimum File Size: %1</source>
+            <translation>Dimensione minima file: %1</translation>
         </message>
         <message>
-            <source>Maximum File Size: %1 bytes</source>
-            <translation>Dimensione massima file: %1 byte</translation>
+            <source>Maximum File Size: %1</source>
+            <translation>Dimensione massima file: %1</translation>
         </message>
         <message>
-            <source>Minimum Size for a Moved File: %1 bytes</source>
-            <translation>Dimensione minima per un file spostato: %1 byte</translation>
+            <source>Minimum Size for a Moved File: %1</source>
+            <translation>Dimensione minima per un file spostato: %1</translation>
         </message>
         <message>
             <source>Include: %1</source>
@@ -482,6 +482,34 @@
         <message>
             <source>File Delta Copying</source>
             <translation>Copia delta dei file</translation>
+        </message>
+        <message>
+            <source>Minimum Size for Delta Copying: %1</source>
+            <translation>Dimensione minima per la copia delta: %1</translation>
+        </message>
+        <message>
+            <source>bytes</source>
+            <translation>byte</translation>
+        </message>
+        <message>
+            <source>kilobytes</source>
+            <translation>kilobyte</translation>
+        </message>
+        <message>
+            <source>megabytes</source>
+            <translation>megabyte</translation>
+        </message>
+        <message>
+            <source>gigabytes</source>
+            <translation>gigabyte</translation>
+        </message>
+        <message>
+            <source>Enable file delta copying?</source>
+            <translation>Abilitare la copia delta dei file?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
+            <translation>Sei sicuro? Attenzione: i file verranno sovrascritti e non sarà possibile ripristinare le versioni precedenti.</translation>
         </message>
     </context>
 </TS>

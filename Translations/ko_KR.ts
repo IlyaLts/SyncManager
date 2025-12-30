@@ -332,16 +332,16 @@
             <translation>필터링</translation>
         </message>
         <message>
-            <source>Minimum File Size: %1 bytes</source>
-            <translation>최소 파일 크기: %1 바이트</translation>
+            <source>Minimum File Size: %1</source>
+            <translation>최소 파일 크기: %1</translation>
         </message>
         <message>
-            <source>Maximum File Size: %1 bytes</source>
-            <translation>최대 파일 크기: %1 바이트</translation>
+            <source>Maximum File Size: %1</source>
+            <translation>최대 파일 크기: %1</translation>
         </message>
         <message>
-            <source>Minimum Size for a Moved File: %1 bytes</source>
-            <translation>이동된 파일의 최소 크기: %1 바이트</translation>
+            <source>Minimum Size for a Moved File: %1</source>
+            <translation>이동된 파일의 최소 크기: %1</translation>
         </message>
         <message>
             <source>Include: %1</source>
@@ -482,6 +482,34 @@
         <message>
             <source>File Delta Copying</source>
             <translation>파일 델타 복사</translation>
+        </message>
+        <message>
+            <source>Minimum Size for Delta Copying: %1</source>
+            <translation>델타 복사를 위한 최소 크기: %1</translation>
+        </message>
+        <message>
+            <source>bytes</source>
+            <translation>바이트</translation>
+        </message>
+        <message>
+            <source>kilobytes</source>
+            <translation>킬로바이트</translation>
+        </message>
+        <message>
+            <source>megabytes</source>
+            <translation>메가바이트</translation>
+        </message>
+        <message>
+            <source>gigabytes</source>
+            <translation>기가바이트</translation>
+        </message>
+        <message>
+            <source>Enable file delta copying?</source>
+            <translation>파일 델타 복사를 활성화하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
+            <translation>정말입니까? 주의: 파일이 덮어쓰여지며 이전 버전으로 되돌릴 수 있는 방법이 없습니다.</translation>
         </message>
     </context>
 </TS>

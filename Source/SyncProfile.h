@@ -28,6 +28,7 @@
 #include <QModelIndex>
 
 #define MOVED_FILES_MIN_SIZE 0
+#define DELTA_COPYING_MIN_SIZE 1073741824
 
 class SyncFolder;
 class UnhidableMenu;
@@ -92,7 +93,7 @@ public:
     inline void setSyncTimeMultiplier(quint32 multiplier) { m_syncTimeMultiplier = multiplier; }
     inline void setSyncIntervalFixed(quint64 interval) { m_syncIntervalFixed = interval; }
     inline void setDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
-    inline void setDeltaCopying(bool enable) { m_deltaCopying = enable; }
+    void setDeltaCopying(bool enable);
     void setDeletionMode(DeletionMode mode);
     void setDatabaseLocation(DatabaseLocation location);
     void setVersioningFormat(VersioningFormat format);
@@ -103,6 +104,7 @@ public:
     inline void setFileMinSize(quint64 size) { m_fileMinSize = size; }
     inline void setFileMaxSize(quint64 size) { m_fileMaxSize = size; }
     inline void setMovedFileMinSize(quint64 size) { m_movedFileMinSize = size; }
+    inline void setDeltaCopyingMinSize(quint64 size) { m_deltaCopyingMinSize = size; }
     inline void setIncludeList(const QStringList &list) { m_includeList = list; }
     inline void setExcludeList(const QStringList &list) { m_excludeList = list; }
     inline void setIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
@@ -122,6 +124,7 @@ public:
     inline quint64 fileMinSize() const { return m_fileMinSize; }
     inline quint64 fileMaxSize() const { return m_fileMaxSize; }
     inline quint64 movedFileMinSize() const { return m_movedFileMinSize; }
+    inline quint64 deltaCopyingMinSize() const { return m_deltaCopyingMinSize; }
     inline const QStringList &includeList() const { return m_includeList; }
     inline const QStringList &excludeList() const { return m_excludeList; }
     inline bool ignoreHiddenFiles() const { return m_ignoreHiddenFiles; }
@@ -182,6 +185,7 @@ public:
     QAction *fileMinSizeAction;
     QAction *fileMaxSizeAction;
     QAction *movedFileMinSizeAction;
+    QAction *deltaCopyingMinSizeAction;
     QAction *includeAction;
     QAction *excludeAction;
     QAction *ignoreHiddenFilesAction;
@@ -217,6 +221,7 @@ private:
     quint64 m_fileMinSize = 0;
     quint64 m_fileMaxSize = 0;
     quint64 m_movedFileMinSize = MOVED_FILES_MIN_SIZE;
+    quint64 m_deltaCopyingMinSize = DELTA_COPYING_MIN_SIZE;
     QStringList m_includeList;
     QStringList m_excludeList;
     quint32 m_syncTimeMultiplier = 1;

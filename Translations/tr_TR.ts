@@ -332,16 +332,16 @@
             <translation>Filtreleme</translation>
         </message>
         <message>
-            <source>Minimum File Size: %1 bytes</source>
-            <translation>Minimum Dosya Boyutu: %1 bayt</translation>
+            <source>Minimum File Size: %1</source>
+            <translation>Minimum Dosya Boyutu: %1</translation>
         </message>
         <message>
-            <source>Maximum File Size: %1 bytes</source>
-            <translation>Maksimum Dosya Boyutu: %1 bayt</translation>
+            <source>Maximum File Size: %1</source>
+            <translation>Maksimum Dosya Boyutu: %1</translation>
         </message>
         <message>
-            <source>Minimum Size for a Moved File: %1 bytes</source>
-            <translation>Taşınan Bir Dosya için Minimum Boyut: %1 bayt</translation>
+            <source>Minimum Size for a Moved File: %1</source>
+            <translation>Taşınan Bir Dosya için Minimum Boyut: %1</translation>
         </message>
         <message>
             <source>Include: %1</source>
@@ -482,6 +482,34 @@
         <message>
             <source>File Delta Copying</source>
             <translation>Dosya Delta Kopyalama</translation>
+        </message>
+        <message>
+            <source>Minimum Size for Delta Copying: %1</source>
+            <translation>Delta Kopyalama için Minimum Boyut: %1</translation>
+        </message>
+        <message>
+            <source>bytes</source>
+            <translation>bayt</translation>
+        </message>
+        <message>
+            <source>kilobytes</source>
+            <translation>kilobayt</translation>
+        </message>
+        <message>
+            <source>megabytes</source>
+            <translation>megabayt</translation>
+        </message>
+        <message>
+            <source>gigabytes</source>
+            <translation>gigabayt</translation>
+        </message>
+        <message>
+            <source>Enable file delta copying?</source>
+            <translation>Dosya delta kopyalama etkinleştirilsin mi?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
+            <translation>Emin misiniz? Dikkat: Dosyaların üzerine yazılacaktır ve önceki sürümleri geri getirmenin bir yolu yoktur.</translation>
         </message>
     </context>
 </TS>

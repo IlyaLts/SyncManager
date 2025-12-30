@@ -332,16 +332,16 @@
             <translation>Filtrering</translation>
         </message>
         <message>
-            <source>Minimum File Size: %1 bytes</source>
-            <translation>Minimum filstørrelse: %1 bytes</translation>
+            <source>Minimum File Size: %1</source>
+            <translation>Minimum filstørrelse: %1</translation>
         </message>
         <message>
-            <source>Maximum File Size: %1 bytes</source>
-            <translation>Maksimum filstørrelse: %1 bytes</translation>
+            <source>Maximum File Size: %1</source>
+            <translation>Maksimum filstørrelse: %1</translation>
         </message>
         <message>
-            <source>Minimum Size for a Moved File: %1 bytes</source>
-            <translation>Minimumstørrelse for en flyttet fil: %1 bytes</translation>
+            <source>Minimum Size for a Moved File: %1</source>
+            <translation>Minimumstørrelse for en flyttet fil: %1</translation>
         </message>
         <message>
             <source>Include: %1</source>
@@ -482,6 +482,34 @@
         <message>
             <source>File Delta Copying</source>
             <translation>Fil-delta-kopiering</translation>
+        </message>
+        <message>
+            <source>Minimum Size for Delta Copying: %1</source>
+            <translation>Minimumsstørrelse for delta-kopiering: %1</translation>
+        </message>
+        <message>
+            <source>bytes</source>
+            <translation>bytes</translation>
+        </message>
+        <message>
+            <source>kilobytes</source>
+            <translation>kilobytes</translation>
+        </message>
+        <message>
+            <source>megabytes</source>
+            <translation>megabytes</translation>
+        </message>
+        <message>
+            <source>gigabytes</source>
+            <translation>gigabytes</translation>
+        </message>
+        <message>
+            <source>Enable file delta copying?</source>
+            <translation>Aktiver delta-kopiering af filer?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
+            <translation>Er du sikker? Pas på: filer vil blive overskrevet, og der er ingen måde at gendanne de tidligere versioner på.</translation>
         </message>
     </context>
 </TS>

@@ -332,16 +332,16 @@
             <translation>Filtrado</translation>
         </message>
         <message>
-            <source>Minimum File Size: %1 bytes</source>
-            <translation>Tamaño mínimo de archivo: %1 bytes</translation>
+            <source>Minimum File Size: %1</source>
+            <translation>Tamaño mínimo de archivo: %1</translation>
         </message>
         <message>
-            <source>Maximum File Size: %1 bytes</source>
-            <translation>Tamaño máximo de archivo: %1 bytes</translation>
+            <source>Maximum File Size: %1</source>
+            <translation>Tamaño máximo de archivo: %1</translation>
         </message>
         <message>
-            <source>Minimum Size for a Moved File: %1 bytes</source>
-            <translation>Tamaño mínimo para un archivo movido: %1 bytes</translation>
+            <source>Minimum Size for a Moved File: %1</source>
+            <translation>Tamaño mínimo para un archivo movido: %1</translation>
         </message>
         <message>
             <source>Include: %1</source>
@@ -483,6 +483,34 @@
         <message>
             <source>File Delta Copying</source>
             <translation>Copia delta de archivos</translation>
+        </message>
+        <message>
+            <source>Minimum Size for Delta Copying: %1</source>
+            <translation>Tamaño mínimo para la copia delta: %1</translation>
+        </message>
+        <message>
+            <source>bytes</source>
+            <translation>bytes</translation>
+        </message>
+        <message>
+            <source>kilobytes</source>
+            <translation>kilobytes</translation>
+        </message>
+        <message>
+            <source>megabytes</source>
+            <translation>megabytes</translation>
+        </message>
+        <message>
+            <source>gigabytes</source>
+            <translation>gigabytes</translation>
+        </message>
+        <message>
+            <source>Enable file delta copying?</source>
+            <translation>¿Activar la copia delta de archivos?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
+            <translation>¿Está seguro? Atención: los archivos se sobrescribirán y no habrá forma de recuperar las versiones anteriores.</translation>
         </message>
     </context>
 </TS>

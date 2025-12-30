@@ -332,16 +332,16 @@
             <translation>Фільтрація</translation>
         </message>
         <message>
-            <source>Minimum File Size: %1 bytes</source>
-            <translation>Мінімальний розмір файлу: %1 байт</translation>
+            <source>Minimum File Size: %1</source>
+            <translation>Мінімальний розмір файлу: %1</translation>
         </message>
         <message>
-            <source>Maximum File Size: %1 bytes</source>
-            <translation>Максимальний розмір файлу: %1 байт</translation>
+            <source>Maximum File Size: %1</source>
+            <translation>Максимальний розмір файлу: %1</translation>
         </message>
         <message>
-            <source>Minimum Size for a Moved File: %1 bytes</source>
-            <translation>Мінімальний розмір для переміщеного файлу: %1 байт</translation>
+            <source>Minimum Size for a Moved File: %1</source>
+            <translation>Мінімальний розмір для переміщеного файлу: %1</translation>
         </message>
         <message>
             <source>Include: %1</source>
@@ -482,6 +482,34 @@
         <message>
             <source>File Delta Copying</source>
             <translation>Дельта-копіювання файлів</translation>
+        </message>
+        <message>
+            <source>Minimum Size for Delta Copying: %1</source>
+            <translation>Мінімальний розмір для дельта-копіювання: %1</translation>
+        </message>
+        <message>
+            <source>bytes</source>
+            <translation>байт</translation>
+        </message>
+        <message>
+            <source>kilobytes</source>
+            <translation>кілобайти</translation>
+        </message>
+        <message>
+            <source>megabytes</source>
+            <translation>мегабайти</translation>
+        </message>
+        <message>
+            <source>gigabytes</source>
+            <translation>гігабайти</translation>
+        </message>
+        <message>
+            <source>Enable file delta copying?</source>
+            <translation>Увімкнути дельта-копіювання файлів?</translation>
+        </message>
+        <message>
+            <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
+            <translation>Ви впевнені? Увага: файли будуть перезаписані, і повернути попередні версії буде неможливо.</translation>
         </message>
     </context>
 </TS>

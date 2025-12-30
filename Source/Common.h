@@ -77,6 +77,7 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 
 #endif // DEBUG
 
+QString formatSize(quint64 size);
 hash64_t hash64(const QByteArray &str);
 void removeDuplicatesBySizeAndDate (FilePointerList &files);
 QFileInfo getCurrentFileInfo(const QString &path);

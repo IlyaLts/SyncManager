@@ -75,6 +75,28 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 
 /*
 ===================
+formatSize
+===================
+*/
+QString formatSize(quint64 size)
+{
+    quint64 bytes = size % 1024;
+    quint64 kilobytes = (size / 1024) % 1024;
+    quint64 megabytes = (size / 1024 / 1024) % 1024;
+    quint64 gigabytes = (size / 1024 / 1024/ 1024) % 1024;
+
+    if (gigabytes)
+        return QString("%1 " + qApp->translate("MainWindow", "gigabytes")).arg(gigabytes);
+    else if (megabytes)
+        return QString("%1 " + qApp->translate("MainWindow", "megabytes")).arg(megabytes);
+    else if (kilobytes)
+        return QString("%1 " + qApp->translate("MainWindow", "Kilobytes")).arg(kilobytes);
+    else
+        return QString("%1 " + qApp->translate("MainWindow", "bytes")).arg(bytes);
+}
+
+/*
+===================
 hash64
 ===================
 */

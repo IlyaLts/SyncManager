@@ -1205,7 +1205,7 @@ void MainWindow::setFileMinSize(SyncProfile &profile)
         size = profile.fileMaxSize();
 
     profile.setFileMinSize(size);
-    profile.fileMinSizeAction->setText("&" + tr("Minimum File Size: %1 bytes").arg(profile.fileMinSize()));
+    profile.fileMinSizeAction->setText("&" + tr("Minimum File Size: %1").arg(formatSize(profile.fileMinSize())));
 
     if (syncApp->initiated())
         profile.saveSettings();
@@ -1229,7 +1229,7 @@ void MainWindow::setFileMaxSize(SyncProfile &profile)
         size = profile.fileMinSize();
 
     profile.setFileMaxSize(size);
-    profile.fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1 bytes").arg(profile.fileMaxSize()));
+    profile.fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1").arg(formatSize(profile.fileMaxSize())));
 
     if (syncApp->initiated())
         profile.saveSettings();
@@ -1250,7 +1250,28 @@ void MainWindow::setMovedFileMinSize(SyncProfile &profile)
         return;
 
     profile.setMovedFileMinSize(size);
-    profile.movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1 bytes").arg(profile.movedFileMinSize()));
+    profile.movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1").arg(formatSize(profile.movedFileMinSize())));
+
+    if (syncApp->initiated())
+        profile.saveSettings();
+}
+
+/*
+===================
+MainWindow::setDeltaCopyingMinSize
+===================
+*/
+void MainWindow::setDeltaCopyingMinSize(SyncProfile &profile)
+{
+    QString title(tr("Minimum Size for Delta Copying"));
+    QString text(tr("Please enter the minimum size for delta copying in bytes:"));
+    int size;
+
+    if (!syncApp->intInputDialog(this, title, text, size, profile.deltaCopyingMinSize(), 0))
+        return;
+
+    profile.setDeltaCopyingMinSize(size);
+    profile.deltaCopyingMinSizeAction->setText("&" + tr("Minimum Size for delta copying: %1").arg(formatSize(profile.deltaCopyingMinSize())));
 
     if (syncApp->initiated())
         profile.saveSettings();
@@ -1540,7 +1561,6 @@ void MainWindow::connectProfileMenu(SyncProfile &profile)
     connect(profile.decreaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ decreaseSyncTime(profile); });
     connect(profile.fixedSyncingTimeAction, &QAction::triggered, this, [this, &profile](){ setFixedInterval(profile); });
     connect(profile.detectMovedFilesAction, &QAction::triggered, this, [this, &profile](){ toggleDetectMoved(profile); });
-    connect(profile.deltaCopyingAction, &QAction::triggered, this, [this, &profile](){  });//syncApp->manager()->setDeltaCopying(!syncApp->manager()->deltaCopying());
     connect(profile.moveToTrashAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::MoveToTrash); });
     connect(profile.versioningAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::Versioning); });
     connect(profile.deletePermanentlyAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::DeletePermanently); });
@@ -1558,6 +1578,7 @@ void MainWindow::connectProfileMenu(SyncProfile &profile)
     connect(profile.fileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMinSize(profile); });
     connect(profile.fileMaxSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMaxSize(profile); });
     connect(profile.movedFileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setMovedFileMinSize(profile); });
+    connect(profile.deltaCopyingMinSizeAction, &QAction::triggered, this, [this, &profile](){ setDeltaCopyingMinSize(profile); });
     connect(profile.includeAction, &QAction::triggered, this, [this, &profile](){ setIncludeList(profile); });
     connect(profile.excludeAction, &QAction::triggered, this, [this, &profile](){ setExcludeList(profile); });
     connect(profile.ignoreHiddenFilesAction, &QAction::triggered, this, [this, &profile](){ toggleIgnoreHiddenFiles(profile); });
@@ -1595,6 +1616,7 @@ void MainWindow::disconnectProfileMenu(SyncProfile &profile)
     disconnect(profile.fileMinSizeAction, nullptr, nullptr, nullptr);
     disconnect(profile.fileMaxSizeAction, nullptr, nullptr, nullptr);
     disconnect(profile.movedFileMinSizeAction, nullptr, nullptr, nullptr);
+    disconnect(profile.deltaCopyingMinSizeAction, nullptr, nullptr, nullptr);
     disconnect(profile.includeAction, nullptr, nullptr, nullptr);
     disconnect(profile.excludeAction, nullptr, nullptr, nullptr);
     disconnect(profile.ignoreHiddenFilesAction, nullptr, nullptr, nullptr);
