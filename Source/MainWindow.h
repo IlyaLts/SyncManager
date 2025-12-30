@@ -148,7 +148,6 @@ private:
 
     QAction *syncNowAction;
     QAction *pauseSyncingAction;
-    QAction *deltaCopyingAction;
     QAction *maximumDiskTransferRateAction;
     QAction *maximumCpuUsageAction;
     QList<QAction *> languageActions;

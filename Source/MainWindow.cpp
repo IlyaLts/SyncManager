@@ -141,7 +141,6 @@ void MainWindow::retranslate()
 {
     syncNowAction->setText("&" + tr("Sync Now"));
     pauseSyncingAction->setText("&" + tr("Pause Syncing"));
-    deltaCopyingAction->setText("&" + tr("File Delta Copying"));
     maximumDiskTransferRateAction->setText("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()));
     maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
 
@@ -240,7 +239,6 @@ void MainWindow::loadSettings()
         updateProfileTooltip(*profile);
     }
 
-    deltaCopyingAction->setChecked(syncApp->manager()->deltaCopying());
     showInTrayAction->setChecked(syncApp->trayVisible());
     disableNotificationAction->setChecked(!syncApp->manager()->notificationsEnabled());
     checkForUpdatesAction->setChecked(syncApp->checkForUpdatesEnabled());
@@ -1542,6 +1540,7 @@ void MainWindow::connectProfileMenu(SyncProfile &profile)
     connect(profile.decreaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ decreaseSyncTime(profile); });
     connect(profile.fixedSyncingTimeAction, &QAction::triggered, this, [this, &profile](){ setFixedInterval(profile); });
     connect(profile.detectMovedFilesAction, &QAction::triggered, this, [this, &profile](){ toggleDetectMoved(profile); });
+    connect(profile.deltaCopyingAction, &QAction::triggered, this, [this, &profile](){  });//syncApp->manager()->setDeltaCopying(!syncApp->manager()->deltaCopying());
     connect(profile.moveToTrashAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::MoveToTrash); });
     connect(profile.versioningAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::Versioning); });
     connect(profile.deletePermanentlyAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::DeletePermanently); });
@@ -1958,7 +1957,6 @@ void MainWindow::setupMenus()
 
     syncNowAction = new QAction(iconSync, "&" + tr("Sync Now"), this);
     pauseSyncingAction = new QAction(iconPause, "&" + tr("Pause Syncing"), this);
-    deltaCopyingAction = new QAction("&" + tr("File Delta Copying"), this);
     maximumDiskTransferRateAction = new QAction("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()), this);
     maximumCpuUsageAction = new QAction("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()), this);
 
@@ -1981,7 +1979,6 @@ void MainWindow::setupMenus()
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setCheckable(true);
 
-    deltaCopyingAction->setCheckable(true);
     launchOnStartupAction->setCheckable(true);
     showInTrayAction->setCheckable(true);
     disableNotificationAction->setCheckable(true);
@@ -1995,7 +1992,6 @@ void MainWindow::setupMenus()
         languageMenu->addAction(languageActions[i]);
 
     performanceMenu = new UnhidableMenu("&" + tr("Performance"), this);
-    performanceMenu->addAction(deltaCopyingAction);
     performanceMenu->addAction(maximumDiskTransferRateAction);
     performanceMenu->addAction(maximumCpuUsageAction);
 
@@ -2053,7 +2049,6 @@ void MainWindow::setupMenus()
 
     connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
     connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
-    connect(deltaCopyingAction, &QAction::triggered, this, [this](){ syncApp->manager()->setDeltaCopying(!syncApp->manager()->deltaCopying()); });
     connect(maximumDiskTransferRateAction, SIGNAL(triggered()), this, SLOT(setMaximumTransferRateUsage()));
     connect(maximumCpuUsageAction, SIGNAL(triggered()), this, SLOT(setMaximumCpuUsage()));
 

@@ -67,7 +67,6 @@ void SyncManager::loadSettings()
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
 
-    m_deltaCopying = settings.value("DeltaCopying", false).toBool();
     setMaxDiskTransferRate(settings.value("MaximumDiskUsage", 0).toULongLong());
     enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
 
@@ -98,7 +97,6 @@ void SyncManager::saveSettings() const
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
 
-    settings.setValue("DeltaCopying", m_deltaCopying);
     settings.setValue("MaximumDiskUsage", maxDiskTransferRate());
     settings.setValue("Paused", paused());
     settings.setValue("Notifications", notificationsEnabled());
@@ -1627,14 +1625,14 @@ we cannot change their modification date after copying. Therefore, we will need 
 or avoid using QFile::copy altogether.
 ===================
 */
-bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const QString &newName)
+bool SyncManager::copyFile(SyncProfile &profile, quint64 &deviceRead, const QString &fileName, const QString &newName)
 {
     QFile from(fileName);
 
     if(!from.open(QFile::ReadOnly))
         return false;
 
-    if (!m_maxDiskTransferRate && !m_deltaCopying)
+    if (!m_maxDiskTransferRate && !profile.deltaCopying())
     {
         if (QFile(newName).exists())
             return false;
@@ -1651,7 +1649,7 @@ bool SyncManager::copyFile(quint64 &deviceRead, const QString &fileName, const Q
     }
     else
     {
-        if (m_deltaCopying && QFile::exists(newName))
+        if (profile.deltaCopying() && QFile::exists(newName))
         {
             QFile to(newName);
 
@@ -2186,10 +2184,10 @@ void SyncManager::copyFiles(SyncFolder &folder)
         createParentFolders(folder, QDir::cleanPath(toFullPath).toUtf8());
 
         // Removes a file with the same filename first if exists
-        if (!m_deltaCopying && toFileInfo.exists())
+        if (!folder.profile().deltaCopying() && toFileInfo.exists())
             removeFile(folder, fileIt->toPath, toFullPath, toFile.type);
 
-        if (copyFile(deviceRead, fileIt->fromFullPath, toFullPath))
+        if (copyFile(folder.profile(), deviceRead, fileIt->fromFullPath, toFullPath))
         {
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
             setFileModificationDate(toFullPath, fileIt->modifiedDate);

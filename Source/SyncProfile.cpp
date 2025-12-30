@@ -70,6 +70,8 @@ void SyncProfile::loadSettings()
     setSyncTimeMultiplier(settings.value(keyName + "SyncTimeMultiplier", 1).toInt());
     setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", 1).toInt());
     setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
+    setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
+    setDeltaCopying(settings.value(keyName + "DeltaCopying", false).toBool());
     setVersioningPath(settings.value(keyName + "VersioningPath", "").toString());
     setDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(keyName + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
     setIgnoreHiddenFiles(settings.value(keyName + "IgnoreHiddenFiles", false).toBool());
@@ -100,6 +102,7 @@ void SyncProfile::saveSettings() const
     settings.setValue(profileKey + "SyncTimeMultiplier", syncTimeMultiplier());
     settings.setValue(profileKey + "FixedSyncTime", syncIntervalFixed());
     settings.setValue(profileKey + "DetectMovedFiles", detectMovedFiles());
+    settings.setValue(profileKey + "DeltaCopying", deltaCopying());
     settings.setValue(profileKey + "DeletionMode", deletionMode());
     settings.setValue(profileKey + "VersioningFormat", versioningFormat());
     settings.setValue(profileKey + "VersioningLocation", versioningLocation());
@@ -534,6 +537,7 @@ void SyncProfile::setupMenus(QWidget *parent)
     automaticAdaptiveAction = new QAction("&" + qApp->translate("MainWindow", "Automatic (Adaptive)"), parent);
     automaticFixedAction = new QAction("&" + qApp->translate("MainWindow", "Automatic (Fixed)"), parent);
     detectMovedFilesAction = new QAction("&" + qApp->translate("MainWindow", "Detect Renamed and Moved Files"), parent);
+    deltaCopyingAction = new QAction("&" + qApp->translate("MainWindow", "File Delta Copying"), parent);
     increaseSyncTimeAction = new QAction("&" + qApp->translate("MainWindow", "Increase"), parent);
     syncingTimeAction = new QAction(qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncEvery), parent);
     decreaseSyncTimeAction = new QAction("&" + qApp->translate("MainWindow", "Decrease"), parent);
@@ -569,6 +573,7 @@ void SyncProfile::setupMenus(QWidget *parent)
     automaticAdaptiveAction->setCheckable(true);
     automaticFixedAction->setCheckable(true);
     detectMovedFilesAction->setCheckable(true);
+    deltaCopyingAction->setCheckable(true);
     deletePermanentlyAction->setCheckable(true);
     moveToTrashAction->setCheckable(true);
     versioningAction->setCheckable(true);
@@ -595,6 +600,7 @@ void SyncProfile::setupMenus(QWidget *parent)
 
     syncingModeMenu->addSeparator();
     syncingModeMenu->addAction(detectMovedFilesAction);
+    syncingModeMenu->addAction(deltaCopyingAction);
 
     deletionModeMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Deletion Mode"), parent);
     deletionModeMenu->addAction(moveToTrashAction);
@@ -643,6 +649,7 @@ void SyncProfile::updateMenuStates()
     automaticAdaptiveAction->setChecked(syncingMode() == AutomaticAdaptive);
     automaticFixedAction->setChecked(syncingMode() == AutomaticFixed);
     detectMovedFilesAction->setChecked(detectMovedFiles());
+    deltaCopyingAction->setChecked(m_deltaCopying);
     syncingTimeAction->setVisible(syncingMode() == AutomaticAdaptive);
     syncingTimeAction->setText(tr("Synchronize Every"));
     fixedSyncingTimeAction->setVisible(syncingMode() == AutomaticFixed);
@@ -684,6 +691,7 @@ void SyncProfile::destroyMenus()
     automaticAdaptiveAction->deleteLater();
     automaticFixedAction->deleteLater();
     detectMovedFilesAction->deleteLater();
+    deltaCopyingAction->deleteLater();
     increaseSyncTimeAction->deleteLater();
     syncingTimeAction->deleteLater();
     decreaseSyncTimeAction->deleteLater();
@@ -728,6 +736,7 @@ void SyncProfile::retranslate()
     automaticAdaptiveAction->setText("&" + qApp->translate("MainWindow", "Automatic (Adaptive)"));
     automaticFixedAction->setText("&" + qApp->translate("MainWindow", "Automatic (Fixed)"));
     detectMovedFilesAction->setText("&" + qApp->translate("MainWindow", "Detect Renamed and Moved Files"));
+    deltaCopyingAction->setText("&" + qApp->translate("MainWindow", "File Delta Copying"));
     increaseSyncTimeAction->setText("&" + qApp->translate("MainWindow", "Increase"));
     syncingTimeAction->setText(qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncEvery));
     decreaseSyncTimeAction->setText("&" + qApp->translate("MainWindow", "Decrease"));

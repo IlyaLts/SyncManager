@@ -74,12 +74,10 @@ public:
 
     inline void shouldQuit() { m_shouldQuit = true; }
     void setSyncTimeMultiplier(SyncProfile &profile, int multiplier);
-    inline void setDeltaCopying(bool enable) { m_deltaCopying = enable; }
     inline void setMaxDiskTransferRate(quint64 rate) { m_maxDiskTransferRate = rate; }
     inline void setPaused(bool paused) { m_paused = paused; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }
 
-    inline bool deltaCopying() const { return m_deltaCopying; }
     inline quint64 maxDiskTransferRate() const { return m_maxDiskTransferRate; }
     inline int filesToSync() const { return m_filesToSync; }
     inline int existingProfiles() const { return m_existingProfiles; }
@@ -112,7 +110,7 @@ public:
     void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);
     bool removeFile(SyncFolder &folder, const QString &path, const QString &fullPath, SyncFile::Type type);
-    bool copyFile(quint64 &deviceRead, const QString &fileName, const QString &newName);
+    bool copyFile(SyncProfile &profile, quint64 &deviceRead, const QString &fileName, const QString &newName);
     void renameFolders(SyncFolder &folder);
     void moveFiles(SyncFolder &folder);
     void createParentFolders(SyncFolder &folder, QByteArray path);
@@ -137,7 +135,6 @@ public:
     bool m_syncing = false;
     bool m_notifications = true;
 
-    bool m_deltaCopying = false;
     quint64 m_maxDiskTransferRate = 0;
     QTimer m_diskUsageResetTimer;
     QMap<QString, QTimer *> m_notificationList;

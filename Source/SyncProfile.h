@@ -92,6 +92,7 @@ public:
     inline void setSyncTimeMultiplier(quint32 multiplier) { m_syncTimeMultiplier = multiplier; }
     inline void setSyncIntervalFixed(quint64 interval) { m_syncIntervalFixed = interval; }
     inline void setDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
+    inline void setDeltaCopying(bool enable) { m_deltaCopying = enable; }
     void setDeletionMode(DeletionMode mode);
     void setDatabaseLocation(DatabaseLocation location);
     void setVersioningFormat(VersioningFormat format);
@@ -110,6 +111,7 @@ public:
     inline quint32 syncTimeMultiplier() const { return m_syncTimeMultiplier; }
     inline quint64 syncIntervalFixed() const { return m_syncIntervalFixed; }
     inline bool detectMovedFiles() const { return m_detectMovedFiles; }
+    inline bool deltaCopying() const { return m_deltaCopying; }
     inline DeletionMode deletionMode() const { return m_deletionMode; }
     inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
     inline VersioningFormat versioningFormat() const { return m_versioningFormat; }
@@ -158,6 +160,7 @@ public:
     QAction *automaticAdaptiveAction;
     QAction *automaticFixedAction;
     QAction *detectMovedFilesAction;
+    QAction *deltaCopyingAction;
     QAction *increaseSyncTimeAction;
     QAction *syncingTimeAction;
     QAction *decreaseSyncTimeAction;
@@ -218,6 +221,7 @@ private:
     QStringList m_excludeList;
     quint32 m_syncTimeMultiplier = 1;
     bool m_detectMovedFiles = true;
+    bool m_deltaCopying = false;
     bool m_ignoreHiddenFiles = false;
 
     QHash<Hash, QByteArray> filePaths;
