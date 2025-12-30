@@ -33,6 +33,8 @@ SyncManager uses sophisticated algorithms to detect changes since the last synch
 Since SyncManager doesn't store the original paths of files in a database, it relies on a filepath comparison-based approach between synchronization folders to detect case changes in folder names. It compares the current filename of a newly renamed folder in one location with the corresponding folder's filenames in other locations (if they exist), checking for differences in case naming. If a difference is found, SyncManager considers the case of the folder was changed and renames folders accordingly, matching the folder's filename in the source location.
 ### Detection of Moved and Renamed Files
 SyncManager searches for matches between removed and new files based on their modified date and size. If a match is found, the file is considered to be the same, and SyncManager renames or moves the corresponding file to other locations to match the new location in the source. In cases where there are multiple matches with the same modified date and size, SyncManager falls back to the standard synchronization method, copying files from one location to another.
+### File Delta Copying
+While standard file synchronization replaces a destination file with an entirely new copy of the source file, delta synchronization utilizes a more efficient block-level approach. It only synchronizes the specific blocks of data that were actually changed. Once the sync is complete, the destination file is overwritten, and older versions of that file cannot be recovered. This could be ideal for synchronizing large files, as it significantly reduces wear and tear on your storage drives.
 ### Synchronization Order
 Based on the changes detected, SyncManager performs the synchronization operations in the following order:
 1. **Synchronizes file attributes**
@@ -62,6 +64,7 @@ Files can be filtered from synchronization using the following options:
 - **Minimum file size**
 - **Maximum file size**
 - **Minimum size for a moved file** - *(The size at which files are allowed to be detected as moved or renamed)*
+- **Minimum size for delta copying** - *(The size at which files start being delta copied. Files lower than that size will be deleted and fully recopied)*
 - **Include** - *(Whitelist)*
 - **Exclude** - *(Blacklist)*
 ### Database Location
@@ -78,5 +81,6 @@ Requires Qt 6.9 or newer. Buildable with Qt Creator.
 
 # License
 SyncManager is licensed under the GPL-3.0 license, see LICENSE.txt for more information.
+
 
 
