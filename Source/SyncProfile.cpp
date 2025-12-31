@@ -165,8 +165,8 @@ void SyncProfile::setDeltaCopying(bool enable)
 
     if (deltaCopying())
     {
-        QString title(tr("Enable file delta copying?"));
-        QString text(tr("Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back."));
+        QString title(syncApp->translate("MainWindow", "Enable file delta copying?"));
+        QString text(syncApp->translate("MainWindow", "Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back."));
 
         if (!syncApp->questionBox(QMessageBox::Warning, title, text, QMessageBox::No, nullptr))
         {
@@ -684,9 +684,9 @@ void SyncProfile::updateMenuStates()
     detectMovedFilesAction->setChecked(detectMovedFiles());
     deltaCopyingAction->setChecked(m_deltaCopying);
     syncingTimeAction->setVisible(syncingMode() == AutomaticAdaptive);
-    syncingTimeAction->setText(tr("Synchronize Every"));
+    syncingTimeAction->setText(syncApp->translate("MainWindow", "Synchronize Every"));
     fixedSyncingTimeAction->setVisible(syncingMode() == AutomaticFixed);
-    fixedSyncingTimeAction->setText(tr("Synchronize Every"));
+    fixedSyncingTimeAction->setText(syncApp->translate("MainWindow", "Synchronize Every"));
     moveToTrashAction->setChecked(deletionMode() == MoveToTrash);
     versioningAction->setChecked(deletionMode() == Versioning);
     deletePermanentlyAction->setChecked(deletionMode() == DeletePermanently);
@@ -694,20 +694,20 @@ void SyncProfile::updateMenuStates()
     fileTimestampAfterAction->setChecked(versioningFormat() == FileTimestampAfter);
     folderTimestampAction->setChecked(versioningFormat() == FolderTimestamp);
     lastVersionAction->setChecked(versioningFormat() == LastVersion);
-    versioningPostfixAction->setText(QString("&" + tr("Folder Postfix: %1")).arg(versioningFolder()));
-    versioningPatternAction->setText(QString("&" + tr("Pattern: %1")).arg(versioningPattern()));
+    versioningPostfixAction->setText(QString("&" + syncApp->translate("MainWindow", "Folder Postfix: %1")).arg(versioningFolder()));
+    versioningPatternAction->setText(QString("&" + syncApp->translate("MainWindow", "Pattern: %1")).arg(versioningPattern()));
     locallyNextToFolderAction->setChecked(VersioningLocation() == LocallyNextToFolder);
     customLocationAction->setChecked(VersioningLocation() == CustomLocation);
-    customLocationPathAction->setText(tr("Custom Location: ") + versioningPath());
+    customLocationPathAction->setText(syncApp->translate("MainWindow", "Custom Location: ") + versioningPath());
     databaseLocallyAction->setChecked(databaseLocation() == Locally);
     databaseDecentralizedAction->setChecked(databaseLocation() == Decentralized);
-    fileMinSizeAction->setText("&" + tr("Minimum File Size: %1").arg(formatSize(fileMinSize())));
-    fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1").arg(formatSize(fileMaxSize())));
-    movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1").arg(formatSize(movedFileMinSize())));
+    fileMinSizeAction->setText("&" + syncApp->translate("MainWindow", "Minimum File Size: %1").arg(formatSize(fileMinSize())));
+    fileMaxSizeAction->setText("&" + syncApp->translate("MainWindow", "Maximum File Size: %1").arg(formatSize(fileMaxSize())));
+    movedFileMinSizeAction->setText("&" + syncApp->translate("MainWindow", "Minimum Size for a Moved File: %1").arg(formatSize(movedFileMinSize())));
     deltaCopyingMinSizeAction->setVisible(deltaCopying());
-    deltaCopyingMinSizeAction->setText("&" + tr("Minimum Size for Delta Copying: %1").arg(formatSize(deltaCopyingMinSize())));
-    includeAction->setText("&" + tr("Include: %1").arg(includeList().join("; ")));
-    excludeAction->setText("&" + tr("Exclude: %1").arg(excludeList().join("; ")));
+    deltaCopyingMinSizeAction->setText("&" + syncApp->translate("MainWindow", "Minimum Size for Delta Copying: %1").arg(formatSize(deltaCopyingMinSize())));
+    includeAction->setText("&" + syncApp->translate("MainWindow", "Include: %1").arg(includeList().join("; ")));
+    excludeAction->setText("&" + syncApp->translate("MainWindow", "Exclude: %1").arg(excludeList().join("; ")));
     ignoreHiddenFilesAction->setChecked(ignoreHiddenFiles());
 
     versioningFormatMenu->setVisible(deletionMode() == Versioning);
