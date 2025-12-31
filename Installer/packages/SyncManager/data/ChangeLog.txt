@@ -1,4 +1,16 @@
 ==========================
+2.3 - Dec 31, 2025
+==========================
+- Added file delta synchronization support.
+- Added a confirmation dialog when removing a folder.
+- Added cleanup profile/folder settings when they are removed.
+- Fixed attributes synchronizing in only one direction.
+- Fixed deletion being ignored after copying file using temporary file.
+- Fixed an incorrect profile status for empty profiles.
+- Fixed broken prevention of adding duplicate folder paths.
+- Removed sync thread priorities.
+
+==========================
 2.2 - Nov 11, 2025
 ==========================
 - Fixed a false detection of system attributes on Windows.
