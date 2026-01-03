@@ -20,7 +20,6 @@
 #include "Application.h"
 #include "SystemTray.h"
 #include "MainWindow.h"
-#include "UnhidableMenu.h"
 #include <QMenu>
 #include <QAction>
 
@@ -44,7 +43,7 @@ SystemTray::SystemTray()
     m_trayIconMenu = new QMenu(nullptr);
 
 #ifdef Q_OS_LINUX
-    trayIconMenu->addAction(showAction);
+    m_trayIconMenu->addAction(m_showAction);
 #endif
 
     m_trayIconMenu->addAction(m_quitAction);
