@@ -161,6 +161,7 @@ void SyncProfile::setSyncTimeMultiplier(quint32 multiplier)
     if (multiplier <= 0)
         multiplier = 1;
 
+    m_syncTimeMultiplier = multiplier;
     updateNextSyncingTime();
 }
 

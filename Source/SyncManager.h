@@ -96,7 +96,7 @@ Q_SIGNALS:
     void profileSynced(SyncProfile *profile);
     void finished();
 
-public:
+private:
 
     bool syncProfile(SyncProfile &profile);
     int scanFiles(SyncFolder &folder);

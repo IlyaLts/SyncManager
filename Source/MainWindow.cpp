@@ -114,6 +114,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
 
     updateStatus();
+    updateLanguageMenu();
 
     for (const auto &profile : syncApp->manager()->profiles())
         for (const auto &folder : profile.folders)
