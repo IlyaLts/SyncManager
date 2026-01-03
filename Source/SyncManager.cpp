@@ -75,7 +75,7 @@ void SyncManager::loadSettings()
         profile.ignoreHiddenFilesAction->setChecked(profile.ignoreHiddenFiles());
         profile.detectMovedFilesAction->setChecked(profile.detectMovedFiles());
 
-        updateNextSyncingTime(profile);
+        profile.updateNextSyncingTime();
 
         quint64 max = SyncManager::maxInterval();
 
@@ -277,96 +277,6 @@ void SyncManager::updateStatus()
 
 /*
 ===================
-SyncManager::updateTimer
-===================
-*/
-void SyncManager::updateTimer(SyncProfile &profile)
-{
-    using namespace std;
-    using namespace std::chrono;
-
-    if (!profile.isAutomatic())
-        return;
-
-    QDateTime dateToSync(profile.lastSyncDate);
-
-    if (profile.syncingMode() == SyncProfile::AutomaticAdaptive)
-        dateToSync = dateToSync.addMSecs(profile.syncEvery);
-    else if (profile.syncingMode() == SyncProfile::AutomaticFixed)
-        dateToSync = dateToSync.addMSecs(profile.syncIntervalFixed());
-
-    qint64 syncTime = 0;
-
-    if (dateToSync >= QDateTime::currentDateTime())
-        syncTime = QDateTime::currentDateTime().msecsTo(dateToSync);
-
-    if (!profile.isActive())
-        if (syncTime < SYNC_MIN_DELAY)
-            syncTime = SYNC_MIN_DELAY;
-
-    bool profileActive = profile.syncTimer.isActive();
-    bool startTimer = false;
-
-    if (!m_busy && profileActive)
-        startTimer = true;
-
-    if (!profileActive || (duration<qint64, milli>(syncTime) < profile.syncTimer.remainingTime()))
-        startTimer = true;
-
-    if (startTimer)
-    {
-        quint64 interval = syncTime;
-        quint64 max = SyncManager::maxInterval();
-
-        // If exceeds the maximum value of an qint64
-        if (interval > max)
-            interval = max;
-
-        profile.syncTimer.setInterval(duration_cast<duration<qint64, nano>>(duration<quint64, milli>(interval)));
-        profile.syncTimer.start();
-    }
-}
-
-/*
-===================
-SyncManager::updateNextSyncingTime
-===================
-*/
-void SyncManager::updateNextSyncingTime(SyncProfile &profile)
-{
-    quint64 time = 0;
-
-    if (profile.syncingMode() == SyncProfile::AutomaticAdaptive)
-    {
-        time = profile.syncTime;
-
-        // Multiplies sync time by 2
-        for (quint32 i = 0; i < profile.syncTimeMultiplier() - 1; i++)
-        {
-            time <<= 1;
-            quint64 max = SyncManager::maxInterval();
-
-            // If exceeds the maximum value of an qint64
-            if (time > max)
-            {
-                time = max;
-                break;
-            }
-        }
-    }
-    else if (profile.syncingMode() == SyncProfile::AutomaticFixed)
-    {
-        time = profile.syncIntervalFixed();
-    }
-
-    if (time < SYNC_MIN_DELAY)
-        time = SYNC_MIN_DELAY;
-
-    profile.syncEvery = time;
-}
-
-/*
-===================
 SyncManager::removeAllDatabases
 ===================
 */
@@ -425,20 +335,6 @@ void SyncManager::throttleCpu()
 {
     while (syncApp->processUsage() > syncApp->maxCpuUsage())
         QThread::msleep(CPU_UPDATE_TIME);
-}
-
-/*
-===================
-SyncManager::setSyncTimeMultiplier
-===================
-*/
-void SyncManager::setSyncTimeMultiplier(SyncProfile &profile, int multiplier)
-{
-    if (multiplier <= 0)
-        multiplier = 1;
-
-    profile.setSyncTimeMultiplier(multiplier);
-    updateNextSyncingTime(profile);
 }
 
 /*
@@ -664,10 +560,10 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
     for (auto &folder : profile.folders)
     {
-        folder.PartiallySynchronized = folder.hasUnsyncedFiles();
+        folder.partiallySynchronized = folder.hasUnsyncedFiles();
         folder.unsyncedList.clear();
 
-        if (folder.partiallySynchronized())
+        if (folder.partiallySynchronized)
         {
             for (auto &path : folder.foldersToRename)
                 folder.unsyncedList.append(path.toPath + "\n");
@@ -706,7 +602,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             folder.lastSyncDate = QDateTime::currentDateTime();
 
     updateStatus();
-    updateNextSyncingTime(profile);
+    profile.updateNextSyncingTime();
     emit profileSynced(&profile);
 
     TIMESTAMP(syncTime, "Syncing is complete.");
@@ -2332,14 +2228,14 @@ void SyncManager::syncChanges(SyncProfile &profile)
             continue;
 
         if (profile.deletionMode() == SyncProfile::Versioning)
-            folder.updateVersioningPath(profile);
+            folder.updateVersioningPath();
 
         renameFolders(folder);
         moveFiles(folder);
 
         // In case we add a timestamp to files or keep the last version in the versioning folder,
         // we need to remove the files first. This is mostly because we can't move or delete a folder first
-        // if it contains files and already exists in the versioning folder. As a result, at the end of synchronization,
+        // if it contains files and already eaxists in the versioning folder. As a result, at the end of synchronization,
         // we still have that empty folder remaining. Also, in case if we use file timestamp format
         // we want to avoid adding timestamps to each file individually after placing the parent folder
         // in the versioning folder, as it would impact performance.

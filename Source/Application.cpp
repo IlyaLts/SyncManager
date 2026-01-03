@@ -179,8 +179,8 @@ void Application::setTrayVisible(bool visible)
     {
         m_trayVisible = false;
 
-        QString title = syncApp->translate("MainWindow", "System Tray is not available!");
-        QString text = syncApp->translate("MainWindow", "Your system does not support the system tray.");
+        QString title = syncApp->translate("System Tray is not available!");
+        QString text = syncApp->translate("Your system does not support the system tray.");
         QMessageBox::warning(NULL, title, text);
 
         return;
@@ -322,9 +322,9 @@ Application::quit
 */
 void Application::quit()
 {
-    QString title(syncApp->translate("MainWindow", "Quit"));
-    QString text(syncApp->translate("MainWindow", "Are you sure you want to quit?"));
-    QString syncText(syncApp->translate("MainWindow", "Currently syncing. Are you sure you want to quit?"));
+    QString title(syncApp->translate("Quit"));
+    QString text(syncApp->translate("Are you sure you want to quit?"));
+    QString syncText(syncApp->translate("Currently syncing. Are you sure you want to quit?"));
 
     if ((!m_manager->busy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No, m_window.data())) ||
         (m_manager->busy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, m_window.data())))
@@ -427,7 +427,7 @@ void Application::textDialog(const QString &title, const QString &text)
     QDialog dialog;
     QVBoxLayout *layout = new QVBoxLayout(&dialog);
     QTextBrowser *textBrowser = new QTextBrowser();
-    QPushButton *okButton = new QPushButton(translate("MainWindow", "OK"));
+    QPushButton *okButton = new QPushButton(translate("OK"));
 
     dialog.setWindowTitle(title);
     textBrowser->setText(text);
@@ -449,8 +449,8 @@ bool Application::questionBox(QMessageBox::Icon icon, const QString &title, cons
 {
     QMessageBox messageBox(icon, title, text, QMessageBox::NoButton, parent);
 
-    QPushButton *yes = new QPushButton("&" + translate("MainWindow", "Yes"), parent);
-    QPushButton *no = new QPushButton("&" + translate("MainWindow", "No"), parent);
+    QPushButton *yes = new QPushButton("&" + translate("Yes"), parent);
+    QPushButton *no = new QPushButton("&" + translate("No"), parent);
 
     messageBox.addButton(yes, QMessageBox::YesRole);
     messageBox.addButton(no, QMessageBox::NoRole);
@@ -475,8 +475,8 @@ bool Application::intInputDialog(QWidget *parent, const QString &title, const QS
     dialog->setWindowTitle(title);
     dialog->setLabelText(label);
     dialog->setIntValue(value);
-    dialog->setOkButtonText("&" + translate("MainWindow", "OK"));
-    dialog->setCancelButtonText("&" + translate("MainWindow", "Cancel"));
+    dialog->setOkButtonText("&" + translate("OK"));
+    dialog->setCancelButtonText("&" + translate("Cancel"));
     dialog->deleteLater();
 
     if (dialog->exec())
@@ -503,8 +503,8 @@ bool Application::doubleInputDialog(QWidget *parent, const QString &title, const
     dialog->setWindowTitle(title);
     dialog->setLabelText(label);
     dialog->setDoubleValue(value);
-    dialog->setOkButtonText("&" + translate("MainWindow", "OK"));
-    dialog->setCancelButtonText("&" + translate("MainWindow", "Cancel"));
+    dialog->setOkButtonText("&" + translate("OK"));
+    dialog->setCancelButtonText("&" + translate("Cancel"));
     dialog->deleteLater();
 
     if (dialog->exec())
@@ -529,8 +529,8 @@ bool Application::textInputDialog(QWidget *parent, const QString &title, const Q
     dialog->setWindowTitle(title);
     dialog->setLabelText(label);
     dialog->setTextValue(text);
-    dialog->setOkButtonText("&" + translate("MainWindow", "OK"));
-    dialog->setCancelButtonText("&" + translate("MainWindow", "Cancel"));
+    dialog->setOkButtonText("&" + translate("OK"));
+    dialog->setCancelButtonText("&" + translate("Cancel"));
     dialog->deleteLater();
 
     if (dialog->exec())

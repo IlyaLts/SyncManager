@@ -90,7 +90,7 @@ public:
     void removeSettings() const;
 
     void setSyncingMode(SyncingMode mode);
-    inline void setSyncTimeMultiplier(quint32 multiplier) { m_syncTimeMultiplier = multiplier; }
+    void setSyncTimeMultiplier(quint32 multiplier);
     inline void setSyncIntervalFixed(quint64 interval) { m_syncIntervalFixed = interval; }
     inline void setDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
     void setDeltaCopying(bool enable);
@@ -129,6 +129,8 @@ public:
     inline const QStringList &excludeList() const { return m_excludeList; }
     inline bool ignoreHiddenFiles() const { return m_ignoreHiddenFiles; }
 
+    void updateTimer();
+    void updateNextSyncingTime();
     bool resetLocks();
     void removeNonexistentFileData();
     void saveDatabasesLocally() const;

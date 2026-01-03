@@ -38,8 +38,8 @@ SystemTray::SystemTray()
     m_iconSync.addFile(":/Images/TrayIconSync.png");
     m_iconWarning.addFile(":/Images/TrayIconWarning.png");
 
-    m_showAction = new QAction("&" + syncApp->translate("MainWindow", "Show"), this);
-    m_quitAction = new QAction("&" + syncApp->translate("MainWindow", "Quit"), this);
+    m_showAction = new QAction("&" + syncApp->translate("Show"), this);
+    m_quitAction = new QAction("&" + syncApp->translate("Quit"), this);
 
     m_trayIconMenu = new QMenu(nullptr);
 
@@ -65,8 +65,8 @@ SystemTray::retranslate
 */
 void SystemTray::retranslate()
 {
-    m_showAction->setText("&" + syncApp->translate("MainWindow", "Show"));
-    m_quitAction->setText("&" + syncApp->translate("MainWindow", "Quit"));
+    m_showAction->setText("&" + syncApp->translate("Show"));
+    m_quitAction->setText("&" + syncApp->translate("Quit"));
 }
 
 /*
@@ -76,7 +76,7 @@ SystemTray::setIcon
 */
 void SystemTray::setIcon(const QIcon &icon)
 {
-    // Fixes flickering menu bar
+    // Fixes flickering menu icon
     if (this->icon().cacheKey() != icon.cacheKey())
         QSystemTrayIcon::setIcon(icon);
 }

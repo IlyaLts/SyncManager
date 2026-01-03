@@ -153,6 +153,19 @@ void SyncProfile::setSyncingMode(SyncingMode mode)
 
 /*
 ===================
+SyncProfile::setSyncTimeMultiplier
+===================
+*/
+void SyncProfile::setSyncTimeMultiplier(quint32 multiplier)
+{
+    if (multiplier <= 0)
+        multiplier = 1;
+
+    updateNextSyncingTime();
+}
+
+/*
+===================
 SyncProfile::setDeltaCopying
 ===================
 */
@@ -165,8 +178,8 @@ void SyncProfile::setDeltaCopying(bool enable)
 
     if (deltaCopying())
     {
-        QString title(syncApp->translate("MainWindow", "Enable file delta copying?"));
-        QString text(syncApp->translate("MainWindow", "Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back."));
+        QString title(syncApp->translate("Enable file delta copying?"));
+        QString text(syncApp->translate("Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back."));
 
         if (!syncApp->questionBox(QMessageBox::Warning, title, text, QMessageBox::No, nullptr))
         {
@@ -228,6 +241,96 @@ void SyncProfile::setVersioningLocation(VersioningLocation location)
         location = LocallyNextToFolder;
 
     m_versioningLocation = location;
+}
+
+/*
+===================
+SyncProfile::updateTimer
+===================
+*/
+void SyncProfile::updateTimer()
+{
+    using namespace std;
+    using namespace std::chrono;
+
+    if (!isAutomatic())
+        return;
+
+    QDateTime dateToSync(lastSyncDate);
+
+    if (syncingMode() == AutomaticAdaptive)
+        dateToSync = dateToSync.addMSecs(syncEvery);
+    else if (syncingMode() == AutomaticFixed)
+        dateToSync = dateToSync.addMSecs(syncIntervalFixed());
+
+    qint64 syncTime = 0;
+
+    if (dateToSync >= QDateTime::currentDateTime())
+        syncTime = QDateTime::currentDateTime().msecsTo(dateToSync);
+
+    if (!isActive())
+        if (syncTime < SYNC_MIN_DELAY)
+            syncTime = SYNC_MIN_DELAY;
+
+    bool profileActive = syncTimer.isActive();
+    bool startTimer = false;
+
+    if (!syncApp->manager()->busy() && profileActive)
+        startTimer = true;
+
+    if (!profileActive || (duration<qint64, milli>(syncTime) < syncTimer.remainingTime()))
+        startTimer = true;
+
+    if (startTimer)
+    {
+        quint64 interval = syncTime;
+        quint64 max = SyncManager::maxInterval();
+
+        // If exceeds the maximum value of an qint64
+        if (interval > max)
+            interval = max;
+
+        syncTimer.setInterval(duration_cast<duration<qint64, nano>>(duration<quint64, milli>(interval)));
+        syncTimer.start();
+    }
+}
+
+/*
+===================
+SyncProfile::updateNextSyncingTime
+===================
+*/
+void SyncProfile::updateNextSyncingTime()
+{
+    quint64 time = 0;
+
+    if (syncingMode() == AutomaticAdaptive)
+    {
+        time = syncTime;
+
+        // Multiplies sync time by 2
+        for (quint32 i = 0; i < syncTimeMultiplier() - 1; i++)
+        {
+            time <<= 1;
+            quint64 max = SyncManager::maxInterval();
+
+            // If exceeds the maximum value of an qint64
+            if (time > max)
+            {
+                time = max;
+                break;
+            }
+        }
+    }
+    else if (syncingMode() == AutomaticFixed)
+    {
+        time = syncIntervalFixed();
+    }
+
+    if (time < SYNC_MIN_DELAY)
+        time = SYNC_MIN_DELAY;
+
+    syncEvery = time;
 }
 
 /*
@@ -521,7 +624,7 @@ SyncProfile::partiallySynchronized
 bool SyncProfile::partiallySynchronized() const
 {
     for (const auto &folder : folders)
-        if (folder.partiallySynchronized())
+        if (folder.partiallySynchronized)
             return true;
 
     return false;
@@ -562,36 +665,36 @@ SyncProfile::setupMenus
 */
 void SyncProfile::setupMenus(QWidget *parent)
 {
-    manualAction = new QAction("&" + qApp->translate("MainWindow", "Manual"), parent);
-    automaticAdaptiveAction = new QAction("&" + qApp->translate("MainWindow", "Automatic (Adaptive)"), parent);
-    automaticFixedAction = new QAction("&" + qApp->translate("MainWindow", "Automatic (Fixed)"), parent);
-    detectMovedFilesAction = new QAction("&" + qApp->translate("MainWindow", "Detect Renamed and Moved Files"), parent);
-    deltaCopyingAction = new QAction("&" + qApp->translate("MainWindow", "File Delta Copying") + " (Beta)", parent);
-    increaseSyncTimeAction = new QAction("&" + qApp->translate("MainWindow", "Increase"), parent);
-    syncingTimeAction = new QAction(qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncEvery), parent);
-    decreaseSyncTimeAction = new QAction("&" + qApp->translate("MainWindow", "Decrease"), parent);
-    fixedSyncingTimeAction = new QAction("&" + qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncIntervalFixed()), parent);
-    moveToTrashAction = new QAction("&" + qApp->translate("MainWindow", "Move Files to Trash"), parent);
-    versioningAction = new QAction("&" + qApp->translate("MainWindow", "Versioning"), parent);
-    deletePermanentlyAction = new QAction("&" + qApp->translate("MainWindow", "Delete Files Permanently"), parent);
-    fileTimestampBeforeAction = new QAction("&" + qApp->translate("MainWindow", "File Timestamp (Before Extension)"), parent);
-    fileTimestampAfterAction = new QAction("&" + qApp->translate("MainWindow", "File Timestamp (After Extension)"), parent);
-    folderTimestampAction = new QAction("&" + qApp->translate("MainWindow", "Folder Timestamp"), parent);
-    lastVersionAction = new QAction("&" + qApp->translate("MainWindow", "Last Version"), parent);
-    versioningPostfixAction = new QAction(QString("&" + qApp->translate("MainWindow", "Folder Postfix: %1")).arg(m_versioningFolder), parent);
-    versioningPatternAction = new QAction(QString("&" + qApp->translate("MainWindow", "Pattern: %1")).arg(m_versioningPattern), parent);
-    locallyNextToFolderAction = new QAction("&" + qApp->translate("MainWindow", "Locally Next to Folder"), parent);
-    customLocationAction = new QAction("&" + qApp->translate("MainWindow", "Custom Location"), parent);
-    customLocationPathAction = new QAction(qApp->translate("MainWindow", "Custom Location: ") + m_versioningPath, parent);
-    databaseLocallyAction = new QAction("&" + qApp->translate("MainWindow", "Locally (On the local machine)"), parent);
-    databaseDecentralizedAction = new QAction("&" + qApp->translate("MainWindow", "Decentralized (Inside synchronization folders)"), parent);
-    fileMinSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Minimum File Size: %1")).arg(formatSize((m_fileMinSize))), parent);
-    fileMaxSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Maximum File Size: %1")).arg(formatSize((m_fileMaxSize))), parent);
-    movedFileMinSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Minimum Size for a Moved File: %1")).arg(formatSize((m_movedFileMinSize))), parent);
-    deltaCopyingMinSizeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Minimum Size for Delta Copying: %1")).arg(formatSize((m_deltaCopyingMinSize))), parent);
-    includeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Include: %1")).arg(m_includeList.join("; ")), parent);
-    excludeAction = new QAction(QString("&" + qApp->translate("MainWindow", "Exclude: %1")).arg(m_excludeList.join("; ")), parent);
-    ignoreHiddenFilesAction = new QAction("&" + qApp->translate("MainWindow", "Ignore Hidden Files"), parent);
+    manualAction = new QAction("&" + syncApp->translate("Manual"), parent);
+    automaticAdaptiveAction = new QAction("&" + syncApp->translate("Automatic (Adaptive)"), parent);
+    automaticFixedAction = new QAction("&" + syncApp->translate("Automatic (Fixed)"), parent);
+    detectMovedFilesAction = new QAction("&" + syncApp->translate("Detect Renamed and Moved Files"), parent);
+    deltaCopyingAction = new QAction("&" + syncApp->translate("File Delta Copying") + " (Beta)", parent);
+    increaseSyncTimeAction = new QAction("&" + syncApp->translate("Increase"), parent);
+    syncingTimeAction = new QAction(syncApp->translate("Synchronize Every") + QString(": %1").arg(syncEvery), parent);
+    decreaseSyncTimeAction = new QAction("&" + syncApp->translate("Decrease"), parent);
+    fixedSyncingTimeAction = new QAction("&" + syncApp->translate("Synchronize Every") + QString(": %1").arg(syncIntervalFixed()), parent);
+    moveToTrashAction = new QAction("&" + syncApp->translate("Move Files to Trash"), parent);
+    versioningAction = new QAction("&" + syncApp->translate("Versioning"), parent);
+    deletePermanentlyAction = new QAction("&" + syncApp->translate("Delete Files Permanently"), parent);
+    fileTimestampBeforeAction = new QAction("&" + syncApp->translate("File Timestamp (Before Extension)"), parent);
+    fileTimestampAfterAction = new QAction("&" + syncApp->translate("File Timestamp (After Extension)"), parent);
+    folderTimestampAction = new QAction("&" + syncApp->translate("Folder Timestamp"), parent);
+    lastVersionAction = new QAction("&" + syncApp->translate("Last Version"), parent);
+    versioningPostfixAction = new QAction(QString("&" + syncApp->translate("Folder Postfix: %1")).arg(m_versioningFolder), parent);
+    versioningPatternAction = new QAction(QString("&" + syncApp->translate("Pattern: %1")).arg(m_versioningPattern), parent);
+    locallyNextToFolderAction = new QAction("&" + syncApp->translate("Locally Next to Folder"), parent);
+    customLocationAction = new QAction("&" + syncApp->translate("Custom Location"), parent);
+    customLocationPathAction = new QAction(syncApp->translate("Custom Location: ") + m_versioningPath, parent);
+    databaseLocallyAction = new QAction("&" + syncApp->translate("Locally (On the local machine)"), parent);
+    databaseDecentralizedAction = new QAction("&" + syncApp->translate("Decentralized (Inside synchronization folders)"), parent);
+    fileMinSizeAction = new QAction(QString("&" + syncApp->translate("Minimum File Size: %1")).arg(formatSize((m_fileMinSize))), parent);
+    fileMaxSizeAction = new QAction(QString("&" + syncApp->translate("Maximum File Size: %1")).arg(formatSize((m_fileMaxSize))), parent);
+    movedFileMinSizeAction = new QAction(QString("&" + syncApp->translate("Minimum Size for a Moved File: %1")).arg(formatSize((m_movedFileMinSize))), parent);
+    deltaCopyingMinSizeAction = new QAction(QString("&" + syncApp->translate("Minimum Size for Delta Copying: %1")).arg(formatSize((m_deltaCopyingMinSize))), parent);
+    includeAction = new QAction(QString("&" + syncApp->translate("Include: %1")).arg(m_includeList.join("; ")), parent);
+    excludeAction = new QAction(QString("&" + syncApp->translate("Exclude: %1")).arg(m_excludeList.join("; ")), parent);
+    ignoreHiddenFilesAction = new QAction("&" + syncApp->translate("Ignore Hidden Files"), parent);
 
     syncingTimeAction->setDisabled(true);
     decreaseSyncTimeAction->setDisabled(m_syncTimeMultiplier <= 1);
@@ -617,7 +720,7 @@ void SyncProfile::setupMenus(QWidget *parent)
     databaseDecentralizedAction->setCheckable(true);
     ignoreHiddenFilesAction->setCheckable(true);
 
-    syncingModeMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Syncing Mode"), parent);
+    syncingModeMenu = new UnhidableMenu("&" + syncApp->translate("Syncing Mode"), parent);
     syncingModeMenu->addAction(manualAction);
     syncingModeMenu->addAction(automaticAdaptiveAction);
     syncingModeMenu->addAction(automaticFixedAction);
@@ -632,12 +735,12 @@ void SyncProfile::setupMenus(QWidget *parent)
     syncingModeMenu->addAction(detectMovedFilesAction);
     syncingModeMenu->addAction(deltaCopyingAction);
 
-    deletionModeMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Deletion Mode"), parent);
+    deletionModeMenu = new UnhidableMenu("&" + syncApp->translate("Deletion Mode"), parent);
     deletionModeMenu->addAction(moveToTrashAction);
     deletionModeMenu->addAction(versioningAction);
     deletionModeMenu->addAction(deletePermanentlyAction);
 
-    versioningFormatMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Versioning Format"), parent);
+    versioningFormatMenu = new UnhidableMenu("&" + syncApp->translate("Versioning Format"), parent);
     versioningFormatMenu->addAction(fileTimestampBeforeAction);
     versioningFormatMenu->addAction(fileTimestampAfterAction);
     versioningFormatMenu->addAction(folderTimestampAction);
@@ -646,17 +749,17 @@ void SyncProfile::setupMenus(QWidget *parent)
     versioningFormatMenu->addAction(versioningPostfixAction);
     versioningFormatMenu->addAction(versioningPatternAction);
 
-    versioningLocationMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Versioning Location"), parent);
+    versioningLocationMenu = new UnhidableMenu("&" + syncApp->translate("Versioning Location"), parent);
     versioningLocationMenu->addAction(locallyNextToFolderAction);
     versioningLocationMenu->addAction(customLocationAction);
     versioningLocationMenu->addSeparator();
     versioningLocationMenu->addAction(customLocationPathAction);
 
-    databaseLocationMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Database Location"), parent);
+    databaseLocationMenu = new UnhidableMenu("&" + syncApp->translate("Database Location"), parent);
     databaseLocationMenu->addAction(databaseLocallyAction);
     databaseLocationMenu->addAction(databaseDecentralizedAction);
 
-    filteringMenu = new UnhidableMenu("&" + qApp->translate("MainWindow", "Filtering"), parent);
+    filteringMenu = new UnhidableMenu("&" + syncApp->translate("Filtering"), parent);
     filteringMenu->addAction(fileMinSizeAction);
     filteringMenu->addAction(fileMaxSizeAction);
     filteringMenu->addAction(movedFileMinSizeAction);
@@ -684,9 +787,9 @@ void SyncProfile::updateMenuStates()
     detectMovedFilesAction->setChecked(detectMovedFiles());
     deltaCopyingAction->setChecked(m_deltaCopying);
     syncingTimeAction->setVisible(syncingMode() == AutomaticAdaptive);
-    syncingTimeAction->setText(syncApp->translate("MainWindow", "Synchronize Every"));
+    syncingTimeAction->setText(syncApp->translate("Synchronize Every"));
     fixedSyncingTimeAction->setVisible(syncingMode() == AutomaticFixed);
-    fixedSyncingTimeAction->setText(syncApp->translate("MainWindow", "Synchronize Every"));
+    fixedSyncingTimeAction->setText(syncApp->translate("Synchronize Every"));
     moveToTrashAction->setChecked(deletionMode() == MoveToTrash);
     versioningAction->setChecked(deletionMode() == Versioning);
     deletePermanentlyAction->setChecked(deletionMode() == DeletePermanently);
@@ -694,20 +797,20 @@ void SyncProfile::updateMenuStates()
     fileTimestampAfterAction->setChecked(versioningFormat() == FileTimestampAfter);
     folderTimestampAction->setChecked(versioningFormat() == FolderTimestamp);
     lastVersionAction->setChecked(versioningFormat() == LastVersion);
-    versioningPostfixAction->setText(QString("&" + syncApp->translate("MainWindow", "Folder Postfix: %1")).arg(versioningFolder()));
-    versioningPatternAction->setText(QString("&" + syncApp->translate("MainWindow", "Pattern: %1")).arg(versioningPattern()));
+    versioningPostfixAction->setText(QString("&" + syncApp->translate("Folder Postfix: %1")).arg(versioningFolder()));
+    versioningPatternAction->setText(QString("&" + syncApp->translate("Pattern: %1")).arg(versioningPattern()));
     locallyNextToFolderAction->setChecked(VersioningLocation() == LocallyNextToFolder);
     customLocationAction->setChecked(VersioningLocation() == CustomLocation);
-    customLocationPathAction->setText(syncApp->translate("MainWindow", "Custom Location: ") + versioningPath());
+    customLocationPathAction->setText(syncApp->translate("Custom Location: ") + versioningPath());
     databaseLocallyAction->setChecked(databaseLocation() == Locally);
     databaseDecentralizedAction->setChecked(databaseLocation() == Decentralized);
-    fileMinSizeAction->setText("&" + syncApp->translate("MainWindow", "Minimum File Size: %1").arg(formatSize(fileMinSize())));
-    fileMaxSizeAction->setText("&" + syncApp->translate("MainWindow", "Maximum File Size: %1").arg(formatSize(fileMaxSize())));
-    movedFileMinSizeAction->setText("&" + syncApp->translate("MainWindow", "Minimum Size for a Moved File: %1").arg(formatSize(movedFileMinSize())));
+    fileMinSizeAction->setText("&" + syncApp->translate("Minimum File Size: %1").arg(formatSize(fileMinSize())));
+    fileMaxSizeAction->setText("&" + syncApp->translate("Maximum File Size: %1").arg(formatSize(fileMaxSize())));
+    movedFileMinSizeAction->setText("&" + syncApp->translate("Minimum Size for a Moved File: %1").arg(formatSize(movedFileMinSize())));
     deltaCopyingMinSizeAction->setVisible(deltaCopying());
-    deltaCopyingMinSizeAction->setText("&" + syncApp->translate("MainWindow", "Minimum Size for Delta Copying: %1").arg(formatSize(deltaCopyingMinSize())));
-    includeAction->setText("&" + syncApp->translate("MainWindow", "Include: %1").arg(includeList().join("; ")));
-    excludeAction->setText("&" + syncApp->translate("MainWindow", "Exclude: %1").arg(excludeList().join("; ")));
+    deltaCopyingMinSizeAction->setText("&" + syncApp->translate("Minimum Size for Delta Copying: %1").arg(formatSize(deltaCopyingMinSize())));
+    includeAction->setText("&" + syncApp->translate("Include: %1").arg(includeList().join("; ")));
+    excludeAction->setText("&" + syncApp->translate("Exclude: %1").arg(excludeList().join("; ")));
     ignoreHiddenFilesAction->setChecked(ignoreHiddenFiles());
 
     versioningFormatMenu->setVisible(deletionMode() == Versioning);
@@ -768,40 +871,40 @@ SyncProfile::retranslate
 */
 void SyncProfile::retranslate()
 {
-    manualAction->setText("&" + qApp->translate("MainWindow", "Manual"));
-    automaticAdaptiveAction->setText("&" + qApp->translate("MainWindow", "Automatic (Adaptive)"));
-    automaticFixedAction->setText("&" + qApp->translate("MainWindow", "Automatic (Fixed)"));
-    detectMovedFilesAction->setText("&" + qApp->translate("MainWindow", "Detect Renamed and Moved Files"));
-    deltaCopyingAction->setText("&" + qApp->translate("MainWindow", "File Delta Copying") + " (Beta)");
-    increaseSyncTimeAction->setText("&" + qApp->translate("MainWindow", "Increase"));
-    syncingTimeAction->setText(qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncEvery));
-    decreaseSyncTimeAction->setText("&" + qApp->translate("MainWindow", "Decrease"));
-    fixedSyncingTimeAction->setText("&" + qApp->translate("MainWindow", "Synchronize Every") + QString(": %1").arg(syncIntervalFixed()));
-    moveToTrashAction->setText("&" + qApp->translate("MainWindow", "Move Files to Trash"));
-    versioningAction->setText("&" + qApp->translate("MainWindow", "Versioning"));
-    deletePermanentlyAction->setText("&" + qApp->translate("MainWindow", "Delete Files Permanently"));
-    fileTimestampBeforeAction->setText("&" + qApp->translate("MainWindow", "File Timestamp (Before Extension)"));
-    fileTimestampAfterAction->setText("&" + qApp->translate("MainWindow", "File Timestamp (After Extension)"));
-    folderTimestampAction->setText("&" + qApp->translate("MainWindow", "Folder Timestamp"));
-    lastVersionAction->setText("&" + qApp->translate("MainWindow", "Last Version"));
-    versioningPostfixAction->setText(QString("&" + qApp->translate("MainWindow", "Folder Postfix: %1")).arg(versioningFolder()));
-    versioningPatternAction->setText(QString("&" + qApp->translate("MainWindow", "Pattern: %1")).arg(versioningPattern()));
-    locallyNextToFolderAction->setText("&" + qApp->translate("MainWindow", "Locally Next to Folder"));
-    customLocationAction->setText("&" + qApp->translate("MainWindow", "Custom Location"));
-    customLocationPathAction->setText(qApp->translate("MainWindow", "Custom Location: ") + versioningPath());
-    databaseLocallyAction->setText("&" + qApp->translate("MainWindow", "Locally (On the local machine)"));
-    databaseDecentralizedAction->setText("&" + qApp->translate("MainWindow", "Decentralized (Inside synchronization folders)"));
-    fileMinSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Minimum File Size: %1")).arg(formatSize(fileMinSize())));
-    fileMaxSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Maximum File Size: %1")).arg(formatSize(fileMaxSize())));
-    movedFileMinSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Minimum Size for a Moved File: %1")).arg(formatSize(movedFileMinSize())));
-    deltaCopyingMinSizeAction->setText(QString("&" + qApp->translate("MainWindow", "Minimum Size for Delta Copying: %1")).arg(formatSize(deltaCopyingMinSize())));
-    includeAction->setText(QString("&" + qApp->translate("MainWindow", "Include: %1")).arg(includeList().join("; ")));
-    excludeAction->setText(QString("&" + qApp->translate("MainWindow", "Exclude: %1")).arg(excludeList().join("; ")));
-    ignoreHiddenFilesAction->setText("&" + qApp->translate("MainWindow", "Ignore Hidden Files"));
-    syncingModeMenu->setTitle("&" + qApp->translate("MainWindow", "Syncing Mode"));
-    deletionModeMenu->setTitle("&" + qApp->translate("MainWindow", "Deletion Mode"));
-    versioningFormatMenu->setTitle("&" + qApp->translate("MainWindow", "Versioning Format"));
-    versioningLocationMenu->setTitle("&" + qApp->translate("MainWindow", "Versioning Location"));
-    databaseLocationMenu->setTitle("&" + qApp->translate("MainWindow", "Database Location"));
-    filteringMenu->setTitle("&" + qApp->translate("MainWindow", "Filtering"));
+    manualAction->setText("&" + syncApp->translate("Manual"));
+    automaticAdaptiveAction->setText("&" + syncApp->translate("Automatic (Adaptive)"));
+    automaticFixedAction->setText("&" + syncApp->translate("Automatic (Fixed)"));
+    detectMovedFilesAction->setText("&" + syncApp->translate("Detect Renamed and Moved Files"));
+    deltaCopyingAction->setText("&" + syncApp->translate("File Delta Copying") + " (Beta)");
+    increaseSyncTimeAction->setText("&" + syncApp->translate("Increase"));
+    syncingTimeAction->setText(syncApp->translate("Synchronize Every") + QString(": %1").arg(syncEvery));
+    decreaseSyncTimeAction->setText("&" + syncApp->translate("Decrease"));
+    fixedSyncingTimeAction->setText("&" + syncApp->translate("Synchronize Every") + QString(": %1").arg(syncIntervalFixed()));
+    moveToTrashAction->setText("&" + syncApp->translate("Move Files to Trash"));
+    versioningAction->setText("&" + syncApp->translate("Versioning"));
+    deletePermanentlyAction->setText("&" + syncApp->translate("Delete Files Permanently"));
+    fileTimestampBeforeAction->setText("&" + syncApp->translate("File Timestamp (Before Extension)"));
+    fileTimestampAfterAction->setText("&" + syncApp->translate("File Timestamp (After Extension)"));
+    folderTimestampAction->setText("&" + syncApp->translate("Folder Timestamp"));
+    lastVersionAction->setText("&" + syncApp->translate("Last Version"));
+    versioningPostfixAction->setText(QString("&" + syncApp->translate("Folder Postfix: %1")).arg(versioningFolder()));
+    versioningPatternAction->setText(QString("&" + syncApp->translate("Pattern: %1")).arg(versioningPattern()));
+    locallyNextToFolderAction->setText("&" + syncApp->translate("Locally Next to Folder"));
+    customLocationAction->setText("&" + syncApp->translate("Custom Location"));
+    customLocationPathAction->setText(syncApp->translate("Custom Location: ") + versioningPath());
+    databaseLocallyAction->setText("&" + syncApp->translate("Locally (On the local machine)"));
+    databaseDecentralizedAction->setText("&" + syncApp->translate("Decentralized (Inside synchronization folders)"));
+    fileMinSizeAction->setText(QString("&" + syncApp->translate("Minimum File Size: %1")).arg(formatSize(fileMinSize())));
+    fileMaxSizeAction->setText(QString("&" + syncApp->translate("Maximum File Size: %1")).arg(formatSize(fileMaxSize())));
+    movedFileMinSizeAction->setText(QString("&" + syncApp->translate("Minimum Size for a Moved File: %1")).arg(formatSize(movedFileMinSize())));
+    deltaCopyingMinSizeAction->setText(QString("&" + syncApp->translate("Minimum Size for Delta Copying: %1")).arg(formatSize(deltaCopyingMinSize())));
+    includeAction->setText(QString("&" + syncApp->translate("Include: %1")).arg(includeList().join("; ")));
+    excludeAction->setText(QString("&" + syncApp->translate("Exclude: %1")).arg(excludeList().join("; ")));
+    ignoreHiddenFilesAction->setText("&" + syncApp->translate("Ignore Hidden Files"));
+    syncingModeMenu->setTitle("&" + syncApp->translate("Syncing Mode"));
+    deletionModeMenu->setTitle("&" + syncApp->translate("Deletion Mode"));
+    versioningFormatMenu->setTitle("&" + syncApp->translate("Versioning Format"));
+    versioningLocationMenu->setTitle("&" + syncApp->translate("Versioning Location"));
+    databaseLocationMenu->setTitle("&" + syncApp->translate("Database Location"));
+    filteringMenu->setTitle("&" + syncApp->translate("Filtering"));
 }

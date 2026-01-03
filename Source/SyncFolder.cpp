@@ -40,7 +40,7 @@ void SyncFolder::loadSettings()
     lastSyncDate = settings.value(folderKey + QLatin1String("_LastSyncDate")).toDateTime();
     paused = settings.value(folderKey + QLatin1String("_Paused"), false).toBool();
     syncType = static_cast<SyncFolder::SyncType>(settings.value(folderKey + QLatin1String("_SyncType"), SyncFolder::TWO_WAY).toInt());
-    PartiallySynchronized = settings.value(folderKey + QLatin1String("_PartiallySynchronized")).toBool();
+    partiallySynchronized = settings.value(folderKey + QLatin1String("_PartiallySynchronized")).toBool();
 
     if (!paused)
         syncApp->manager()->setPaused(false);
@@ -62,7 +62,7 @@ void SyncFolder::saveSettings() const
     settings.setValue(folderKey + QLatin1String("_LastSyncDate"), lastSyncDate);
     settings.setValue(folderKey + QLatin1String("_Paused"), paused);
     settings.setValue(folderKey + QLatin1String("_SyncType"), syncType);
-    settings.setValue(folderKey + QLatin1String("_PartiallySynchronized"), PartiallySynchronized);
+    settings.setValue(folderKey + QLatin1String("_PartiallySynchronized"), partiallySynchronized);
 }
 
 /*
@@ -113,27 +113,27 @@ void SyncFolder::optimizeMemoryUsage()
 SyncFolder::updateVersioningPath
 ===================
 */
-void SyncFolder::updateVersioningPath(const SyncProfile &profile)
+void SyncFolder::updateVersioningPath()
 {
-    if (profile.versioningLocation() == SyncProfile::CustomLocation)
+    if (m_profile->versioningLocation() == SyncProfile::CustomLocation)
     {
-        versioningPath.assign(profile.versioningPath());
+        versioningPath.assign(m_profile->versioningPath());
     }
     else
     {
         versioningPath.assign(this->path);
         versioningPath.remove(versioningPath.lastIndexOf("/", 1), versioningPath.size());
         versioningPath.append("_");
-        versioningPath.append(profile.versioningFolder());
+        versioningPath.append(m_profile->versioningFolder());
     }
 
     versioningPath.append("/");
 
-    if (profile.versioningLocation() == SyncProfile::CustomLocation)
-        versioningPath.append(profile.name + "/");
+    if (m_profile->versioningLocation() == SyncProfile::CustomLocation)
+        versioningPath.append(m_profile->name + "/");
 
-    if (profile.versioningFormat() == SyncProfile::FolderTimestamp)
-        versioningPath.append(QDateTime::currentDateTime().toString(profile.versioningPattern()) + "/");
+    if (m_profile->versioningFormat() == SyncProfile::FolderTimestamp)
+        versioningPath.append(QDateTime::currentDateTime().toString(m_profile->versioningPattern()) + "/");
 }
 
 /*

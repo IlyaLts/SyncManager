@@ -103,6 +103,8 @@ public:
     static bool textInputDialog(QWidget *parent, const QString &title, const QString &label,
                                 QString &returnText, const QString &text = QString());
 
+    static QString translate(const char *key, const char *context = nullptr) { return QApplication::translate(context ? context : "MainWindow", key); }
+
 Q_SIGNALS:
 
     void updateFound();

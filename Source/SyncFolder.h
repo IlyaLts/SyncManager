@@ -92,14 +92,13 @@ public:
 
     void clearData();
     void optimizeMemoryUsage();
-    void updateVersioningPath(const SyncProfile &profile);
+    void updateVersioningPath();
     void saveToDatabase(const QString &path) const;
     void loadFromDatabase(const QString &path);
     void removeDatabase() const;
     void removeNonExistentFiles();
     bool isActive() const;
     bool hasUnsyncedFiles() const;
-    inline bool partiallySynchronized() const { return PartiallySynchronized; }
 
     inline SyncProfile &profile() const { return *m_profile; }
 
@@ -116,8 +115,8 @@ public:
     FolderUpdateList foldersToUpdate;
 
     QString unsyncedList;
-    bool PartiallySynchronized = false;
     QDateTime lastSyncDate;
+    bool partiallySynchronized = false;
     bool exists = true;
     bool syncing = false;
     bool paused = false;

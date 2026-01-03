@@ -61,9 +61,7 @@ public:
     void addToQueue(SyncProfile *profile);
     void sync();
 
-    void updateTimer(SyncProfile &profile);
     void updateStatus();
-    void updateNextSyncingTime(SyncProfile &profile);
     void removeAllDatabases();
     void purgeRemovedProfiles();
     void throttleCpu();
@@ -73,7 +71,6 @@ public:
     inline std::list<SyncProfile> &profiles() { return m_profiles; }
 
     inline void shouldQuit() { m_shouldQuit = true; }
-    void setSyncTimeMultiplier(SyncProfile &profile, int multiplier);
     inline void setMaxDiskTransferRate(quint64 rate) { m_maxDiskTransferRate = rate; }
     inline void setPaused(bool paused) { m_paused = paused; }
     inline void enableNotifications(bool enable) { m_notifications = enable; }

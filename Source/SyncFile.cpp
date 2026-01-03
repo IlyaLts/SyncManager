@@ -75,13 +75,13 @@ bool SyncFile::hasOlderAttributes(const SyncFile &other) const
 SyncFile::hasSameSizeAndDate
 ===================
 */
-bool SyncFile::hasSameSizeAndDate(const SyncFile &otherFile) const
+bool SyncFile::hasSameSizeAndDate(const SyncFile &other) const
 {
-    if (size != otherFile.size)
+    if (size != other.size)
         return false;
 
 #if defined(Q_OS_WIN) || defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
-    if (modifiedDate != otherFile.modifiedDate)
+    if (modifiedDate != other.modifiedDate)
         return false;
 #endif
 

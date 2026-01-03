@@ -19,6 +19,7 @@
 
 #include "Common.h"
 #include "SyncFile.h"
+#include "Application.h"
 #include <QDebug>
 #include <QCryptographicHash>
 #include <QDirIterator>
@@ -86,13 +87,13 @@ QString formatSize(quint64 size)
     quint64 gigabytes = (size / 1024 / 1024/ 1024) % 1024;
 
     if (gigabytes)
-        return QString("%1 " + qApp->translate("MainWindow", "gigabytes")).arg(gigabytes);
+        return QString("%1 " + syncApp->translate("gigabytes")).arg(gigabytes);
     else if (megabytes)
-        return QString("%1 " + qApp->translate("MainWindow", "megabytes")).arg(megabytes);
+        return QString("%1 " + syncApp->translate("megabytes")).arg(megabytes);
     else if (kilobytes)
-        return QString("%1 " + qApp->translate("MainWindow", "Kilobytes")).arg(kilobytes);
+        return QString("%1 " + syncApp->translate("Kilobytes")).arg(kilobytes);
     else
-        return QString("%1 " + qApp->translate("MainWindow", "bytes")).arg(bytes);
+        return QString("%1 " + syncApp->translate("bytes")).arg(bytes);
 }
 
 /*

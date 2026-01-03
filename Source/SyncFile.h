@@ -42,14 +42,7 @@ public:
         Folder
     };
 
-    enum LockedFlag : quint8
-    {
-        Unlocked,           // Files can be copied or deleted.
-        Locked,             // Files are scheduled for renaming or moving, and must not be copied or deleted.
-        LockedInternal      // The same as Locked, but for internal subfolders in a case-insensitive renamed folder.
-    };
-
-    enum Flags
+    enum Flag : quint8
     {
         Updated = 0x1,
         Exists = 0x2,
@@ -59,12 +52,21 @@ public:
         Scanned = 0x40
     };
 
+    enum LockedFlag : quint8
+    {
+        Unlocked,           // Files can be copied or deleted.
+        Locked,             // Files are scheduled for renaming or moving, and must not be copied or deleted.
+        LockedInternal      // The same as Locked, but for internal subfolders in a case-insensitive renamed folder.
+    };
+
     SyncFile(){}
     SyncFile(Type type, QDateTime modifiedDate) : modifiedDate(modifiedDate), type(type), flags(Exists){}
 
     bool isOlder(const SyncFile &otherFile) const;
     bool hasOlderAttributes(const SyncFile &otherFile) const;
     bool hasSameSizeAndDate(const SyncFile &otherFile) const;
+    inline bool isFile() const { return type == File; }
+    inline bool isFolder() const { return type == Folder; }
 
     void setUpdated(bool value) { flags = value ? (flags | Updated) : (flags & ~Updated); }
     void setExists(bool value) { flags = value ? (flags | Exists) : (flags & ~Exists); }
@@ -83,8 +85,8 @@ public:
     QDateTime modifiedDate;
     quint64 size = 0;
     Type type = Unknown;
-    LockedFlag lockedFlag = Unlocked;
     qint8 flags = 0;
+    LockedFlag lockedFlag = Unlocked;
     Attributes attributes = 0;
 };
 

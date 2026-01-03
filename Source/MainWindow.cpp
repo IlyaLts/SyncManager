@@ -378,8 +378,8 @@ void MainWindow::addProfile()
     ui->folderListView->update();
     updateProfileTooltip(profile);
     updateStatus();
-    syncApp->manager()->updateNextSyncingTime(profile);
-    syncApp->manager()->updateTimer(profile);
+    profile.updateNextSyncingTime();
+    profile.updateTimer();
     profile.saveSettings();
 }
 
@@ -436,7 +436,7 @@ void MainWindow::removeProfile()
             syncApp->manager()->profiles().remove(*profile);
 
         folderModel->setStringList(QStringList());
-        syncApp->manager()->updateNextSyncingTime(*profile);
+        profile->updateNextSyncingTime();
     }
 
     ui->syncProfilesView->selectionModel()->reset();
@@ -670,8 +670,8 @@ void MainWindow::removeFolder()
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
         profilesData.setValue(profile->name, foldersPaths);
 
-        syncApp->manager()->updateTimer(*profile);
-        syncApp->manager()->updateNextSyncingTime(*profile);
+        profile->updateTimer();
+        profile->updateNextSyncingTime();
     }
 
     ui->folderListView->selectionModel()->reset();
@@ -697,7 +697,7 @@ void MainWindow::pauseSyncing()
         if (profile.paused)
             profile.syncTimer.stop();
         else
-            syncApp->manager()->updateTimer(profile);
+            profile.updateTimer();
 
         if (syncApp->initiated())
             profile.saveSettings();
@@ -768,7 +768,7 @@ void MainWindow::pauseSelected()
                 if (profile->paused)
                     profile->syncTimer.stop();
                 else
-                    syncApp->manager()->updateTimer(*profile);
+                    profile->updateTimer();
 
                 if (syncApp->initiated())
                     profile->saveSettings();
@@ -805,8 +805,8 @@ void MainWindow::switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMod
     // Otherwise, automatic
     else
     {
-        syncApp->manager()->updateNextSyncingTime(profile);
-        syncApp->manager()->updateTimer(profile);
+        profile.updateNextSyncingTime();
+        profile.updateTimer();
     }
 
     updateStatus();
@@ -937,7 +937,7 @@ void MainWindow::increaseSyncTime(SyncProfile &profile)
         return;
     }
 
-    syncApp->manager()->setSyncTimeMultiplier(profile, profile.syncTimeMultiplier() + 1);
+    profile.setSyncTimeMultiplier(profile.syncTimeMultiplier() + 1);
     profile.decreaseSyncTimeAction->setEnabled(true);
     updateMenuSyncTime(profile);
 
@@ -945,7 +945,7 @@ void MainWindow::increaseSyncTime(SyncProfile &profile)
     if (profile.syncEvery >= max)
         profile.increaseSyncTimeAction->setEnabled(false);
 
-    syncApp->manager()->updateTimer(profile);
+    profile.updateTimer();
     updateProfileTooltip(profile);
 
     if (syncApp->initiated())
@@ -959,7 +959,7 @@ MainWindow::decreaseSyncTime
 */
 void MainWindow::decreaseSyncTime(SyncProfile &profile)
 {
-    syncApp->manager()->setSyncTimeMultiplier(profile, profile.syncTimeMultiplier() - 1);
+    profile.setSyncTimeMultiplier(profile.syncTimeMultiplier() - 1);
     updateMenuSyncTime(profile);
 
     quint64 max = SyncManager::maxInterval();
@@ -971,7 +971,7 @@ void MainWindow::decreaseSyncTime(SyncProfile &profile)
     if (profile.syncTimeMultiplier() <= 1)
         profile.decreaseSyncTimeAction->setEnabled(false);
 
-    syncApp->manager()->updateTimer(profile);
+    profile.updateTimer();
     updateProfileTooltip(profile);
 
     if (syncApp->initiated())
@@ -1430,7 +1430,7 @@ void MainWindow::showContextMenu(const QPoint &pos)
 
             menu.addAction(iconRemove, "&" + tr("Remove folder"), this, SLOT(removeFolder()));
 
-            if (folder->partiallySynchronized() && !folder->unsyncedList.isEmpty())
+            if (folder->partiallySynchronized && !folder->unsyncedList.isEmpty())
             {
                 QString menuTitle(tr("Show unsynchronized files"));
                 QString title(tr("Couldn't synchronize the following files"));
@@ -1510,7 +1510,7 @@ MainWindow::profileSynced
 */
 void MainWindow::profileSynced(SyncProfile *profile)
 {
-    syncApp->manager()->updateTimer(*profile);
+    profile->updateTimer();
     updateMenuSyncTime(*profile);
     updateProfileTooltip(*profile);
     syncApp->saveSettings();
@@ -1708,7 +1708,7 @@ void MainWindow::updateStatus()
                         folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
                     else if (!folder->exists)
                         folderModel->setData(index, iconRemove, Qt::DecorationRole);
-                    else if (folder->partiallySynchronized())
+                    else if (folder->partiallySynchronized)
                         folderModel->setData(index, iconDonePartial, Qt::DecorationRole);
                     else
                         folderModel->setData(index, iconDone, Qt::DecorationRole);
@@ -1941,7 +1941,7 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
                 QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate, dateFormat));
                 QString text = QString("Last synchronization: %1.").arg(time) + nextSyncText;
 
-                if (folder.partiallySynchronized())
+                if (folder.partiallySynchronized)
                     text.insert(0, tr("Partially synchronized!") + "\n\n");
 
                 folderModel->setData(folderModel->indexByRow(i), text, Qt::ToolTipRole);
