@@ -67,6 +67,7 @@ public:
     bool hasSameSizeAndDate(const SyncFile &otherFile) const;
     inline bool isFile() const { return type == File; }
     inline bool isFolder() const { return type == Folder; }
+    inline bool isLocked() const { return lockedFlag != Unlocked; }
 
     void setUpdated(bool value) { flags = value ? (flags | Updated) : (flags & ~Updated); }
     void setExists(bool value) { flags = value ? (flags | Exists) : (flags & ~Exists); }

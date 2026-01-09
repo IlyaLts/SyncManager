@@ -328,17 +328,6 @@ void SyncManager::purgeRemovedProfiles()
 
 /*
 ===================
-SyncManager::throttleCpu
-===================
-*/
-void SyncManager::throttleCpu()
-{
-    while (syncApp->processUsage() > syncApp->maxCpuUsage())
-        QThread::msleep(CPU_UPDATE_TIME);
-}
-
-/*
-===================
 SyncManager::hasManualSyncProfile
 ===================
 */
@@ -413,8 +402,8 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         bool existed = folder.exists;
         folder.exists = QFileInfo::exists(folder.path);
 
-        if (!existed && folder.exists)
-            folder.caseSensitive = isPathCaseSensitive(folder.path);
+        if (!existed)
+            folder.checkCaseSensitive();
     }
 
     if (!profile.isActive())
@@ -637,7 +626,7 @@ int SyncManager::scanFiles(SyncFolder &folder)
         if (m_shouldQuit || !folder.isActive())
             return -1;
 
-        throttleCpu();
+        syncApp->throttleCpu();
         dir.next();
 
         QFileInfo fileInfo(dir.fileInfo());
@@ -689,7 +678,7 @@ int SyncManager::scanFiles(SyncFolder &folder)
         // Excludes unwanted files and folder from scanning
         for (const QString &exclude : profile.excludeList())
         {
-            QRegularExpression::PatternOption option = folder.caseSensitive ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
+            QRegularExpression::PatternOption option = folder.caseSensitive() ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
             QRegularExpression re(QRegularExpression::wildcardToRegularExpression(exclude), option);
             re.setPattern(QRegularExpression::anchoredPattern(re.pattern()));
 
@@ -791,11 +780,11 @@ int SyncManager::scanFiles(SyncFolder &folder)
         totalNumOfFiles++;
     }
 
-    // Since we only synchronize one-way folders in one direction,
+    // Since we only synchronize mirroring folders in one direction,
     // we need to clear all file data because files that
     // no longer exist there don't get removed from the database.
-    // This is just the easiest way to make one-way work properly.
-    if (folder.syncType == SyncFolder::ONE_WAY)
+    // This is just the easiest way to make mirroring work properly.
+    if (folder.mirroring())
         folder.removeNonExistentFiles();
 
     folder.optimizeMemoryUsage();
@@ -835,12 +824,12 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
                 if (!otherFileIt.value().exists())
                     continue;
 
-                throttleCpu();
+                syncApp->throttleCpu();
 
                 const SyncFile &file = folderIt->files.value(otherFileIt.key());
                 const SyncFile &otherFile = otherFileIt.value();
 
-                if (file.lockedFlag != SyncFile::Unlocked || otherFile.lockedFlag != SyncFile::Unlocked)
+                if (file.isLocked() || otherFile.isLocked())
                     continue;
 
                 if (!file.exists() || !otherFile.exists())
@@ -888,12 +877,12 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        if (!folderIt->isActive() || folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
+        if (!folderIt->isActive() || !folderIt->bidirectional())
             continue;
 
         for (Files::iterator renamedFolderIt = folderIt->files.begin(); renamedFolderIt != folderIt->files.end(); ++renamedFolderIt)
         {
-            throttleCpu();
+            syncApp->throttleCpu();
 
             // Only a newly added folder can indicate that the case of folder name was changed
             if (renamedFolderIt->type != SyncFile::Folder || !renamedFolderIt->newlyAdded() || !renamedFolderIt->exists())
@@ -931,7 +920,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
             // Adds folders from other sync folders for renaming
             for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
             {
-                throttleCpu();
+                syncApp->throttleCpu();
 
                 if (folderIt == otherFolderIt)
                     continue;
@@ -1044,9 +1033,9 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        throttleCpu();
+        syncApp->throttleCpu();
 
-        if (!folderIt->isActive() || folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
+        if (!folderIt->isActive() || !folderIt->bidirectional())
             continue;
 
         FilePointerList missingFiles;
@@ -1054,7 +1043,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
         // Finds files that no longer exist in our sync folder
         for (Files::iterator missingFileIt = folderIt->files.begin(); missingFileIt != folderIt->files.end(); ++missingFileIt)
-            if (missingFileIt.value().type == SyncFile::File && !missingFileIt.value().exists() && missingFileIt->size >= profile.movedFileMinSize())
+            if (missingFileIt->isFile() && !missingFileIt->exists() && missingFileIt->size >= profile.movedFileMinSize())
                 missingFiles.insert(missingFileIt.key(), &missingFileIt.value());
 
         removeDuplicatesBySizeAndDate(missingFiles);
@@ -1064,7 +1053,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
         // Finds files that are new in our sync folder
         for (Files::iterator newFileIt = folderIt->files.begin(); newFileIt != folderIt->files.end(); ++newFileIt)
-            if (newFileIt->type == SyncFile::File && newFileIt->newlyAdded() && newFileIt->exists() && newFileIt->size >= profile.movedFileMinSize())
+            if (newFileIt->isFile() && newFileIt->newlyAdded() && newFileIt->exists() && newFileIt->size >= profile.movedFileMinSize())
                 newFiles.insert(newFileIt.key(), &newFileIt.value());
 
         removeDuplicatesBySizeAndDate(newFiles);
@@ -1080,7 +1069,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             // Searches for a match between a missed file and a newly added file
             for (FilePointerList::iterator missingFileIt = missingFiles.begin(); missingFileIt != missingFiles.end(); ++missingFileIt)
             {
-                throttleCpu();
+                syncApp->throttleCpu();
 
                 if (!missingFileIt.value()->hasSameSizeAndDate(*newFileIt.value()))
                     continue;
@@ -1128,7 +1117,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 if (QFileInfo::exists(newFullPath))
                 {
                     // Both paths should differ, as in the case of changing case of parent folder name, the file still exists in the destination path
-                    if (folderIt->caseSensitive || profile.filePath(newFileIt.key()).compare(movedFilePath, Qt::CaseInsensitive) != 0)
+                    if (folderIt->caseSensitive() || profile.filePath(newFileIt.key()).compare(movedFilePath, Qt::CaseInsensitive) != 0)
                         break;
                 }
 
@@ -1201,7 +1190,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
     {
         for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
         {
-            if (folderIt == otherFolderIt || !otherFolderIt->exists || otherFolderIt->syncType == SyncFolder::ONE_WAY || otherFolderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
+            if (folderIt == otherFolderIt || !otherFolderIt->exists || !otherFolderIt->bidirectional())
                 continue;
 
             if (!folderIt->isActive())
@@ -1209,7 +1198,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
 
             for (Files::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
             {
-                throttleCpu();
+                syncApp->throttleCpu();
 
                 if (!otherFolderIt->isActive())
                     break;
@@ -1220,14 +1209,14 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                 const SyncFile &file = folderIt->files.value(otherFileIt.key());
                 const SyncFile &otherFile = otherFileIt.value();
 
-                if (file.lockedFlag != SyncFile::Unlocked || otherFile.lockedFlag != SyncFile::Unlocked)
+                if (file.isLocked() || otherFile.isLocked())
                     continue;
 
                 bool alreadyAdded = folderIt->filesToCopy.contains(otherFileIt.key());
                 bool hasNewer = alreadyAdded && folderIt->filesToCopy.value(otherFileIt.key()).modifiedDate < otherFile.modifiedDate;
 
                 // Removes a file path from the "to remove" list if the file was updated
-                if (otherFile.type == SyncFile::File)
+                if (otherFile.isFile())
                 {
                     if (otherFile.updated())
                         otherFolderIt->filesToRemove.remove(otherFileIt.key());
@@ -1235,7 +1224,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                     if (file.updated() || (otherFile.exists() && folderIt->filesToRemove.contains(otherFileIt.key()) && !otherFolderIt->filesToRemove.contains(otherFileIt.key())))
                         folderIt->filesToRemove.remove(otherFileIt.key());
                 }
-                else if (otherFile.type == SyncFile::Folder)
+                else if (otherFile.isFolder())
                 {
                     if (otherFile.updated())
                         otherFolderIt->foldersToRemove.remove(otherFileIt.key());
@@ -1252,7 +1241,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                     // Or if other folders has a new version of a file and our file was removed
                      (!file.exists() && (otherFile.updated() || profile.isTopFolderUpdated(*otherFolderIt, otherFileIt.key().data)))))
                 {
-                    if (otherFile.type == SyncFile::File)
+                    if (otherFile.isFile())
                     {
                         if (otherFolderIt->filesToRemove.contains(otherFileIt.key()))
                             continue;
@@ -1266,7 +1255,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                         it->fromFullPath.squeeze();
                         folderIt->filesToRemove.remove(otherFileIt.key());
                     }
-                    else if (otherFile.type == SyncFile::Folder)
+                    else if (otherFile.isFolder())
                     {
                         if (otherFolderIt->foldersToRemove.contains(otherFileIt.key()))
                             continue;
@@ -1297,23 +1286,23 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
 
     for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
     {
-        if (folderIt->syncType == SyncFolder::ONE_WAY || folderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
+        if (!folderIt->bidirectional())
             continue;
 
         for (Files::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
         {
-            throttleCpu();
+            syncApp->throttleCpu();
 
             if (!folderIt->isActive())
                 break;
 
-            if (fileIt->exists() || fileIt->lockedFlag != SyncFile::Unlocked)
+            if (fileIt->exists() || fileIt->isLocked())
             {
                 ++fileIt;
                 continue;
             }
 
-            if (fileIt->type == SyncFile::File)
+            if (fileIt->isFile())
             {
                 if (folderIt->filesToMove.contains(fileIt.key()) ||
                     folderIt->filesToCopy.contains(fileIt.key()) ||
@@ -1323,7 +1312,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                     continue;
                 }
             }
-            else if (fileIt->type == SyncFile::Folder)
+            else if (fileIt->isFolder())
             {
                 if (folderIt->foldersToRename.contains(fileIt.key()) ||
                     folderIt->foldersToCreate.contains(fileIt.key()) ||
@@ -1335,7 +1324,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
             }
 
             // Aborts if a removed file still exists, but with a different case
-            if (!folderIt->caseSensitive)
+            if (!folderIt->caseSensitive())
             {
                 if (profile.hasFilePath(fileIt.key()))
                 {
@@ -1367,7 +1356,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                 if (folderIt == otherFolderIt || !otherFolderIt->isActive())
                     continue;
 
-                if (otherFolderIt->syncType == SyncFolder::ONE_WAY_UPDATE)
+                if (otherFolderIt->contributing())
                     continue;
 
                 const SyncFile &fileToRemove = otherFolderIt->files.value(fileIt.key());
@@ -1379,7 +1368,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
 
                     QByteArray path = profile.filePath(fileIt.key());
 
-                    if (fileIt.value().type == SyncFile::Folder)
+                    if (fileIt.value().isFolder())
                         otherFolderIt->foldersToRemove.insert(fileIt.key(), path)->squeeze();
                     else
                         otherFolderIt->filesToRemove.insert(fileIt.key(), path)->squeeze();
@@ -1414,95 +1403,6 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
     checkForAddedFiles(profile);
     checkForRemovedFiles(profile);
-}
-
-/*
-===================
-SyncManager::removeFile
-===================
-*/
-bool SyncManager::removeFile(SyncFolder &folder, const QString &path, const QString &fullPath, SyncFile::Type type)
-{
-    SyncProfile &profile = folder.profile();
-
-    // Prevents the deletion of a sync folder itself in case something bad happens
-    if (path.isEmpty())
-        return true;
-
-    if (profile.deletionMode() == SyncProfile::MoveToTrash)
-    {
-        // Used to make sure that moveToTrash function really moved a file/folder
-        // to the trash as it can return true even though it failed to do so
-        QString pathInTrash;
-
-        return QFile::moveToTrash(fullPath, &pathInTrash) && !pathInTrash.isEmpty();
-    }
-    else if (profile.deletionMode() == SyncProfile::Versioning)
-    {
-        QString newLocation(folder.versioningPath);
-        newLocation.append(path);
-
-        if (type == SyncFile::File)
-        {
-            // Adds a timestamp to the end of the filename of a deleted file
-            if (profile.versioningFormat() == SyncProfile::FileTimestampBefore)
-            {
-                int nameEndIndex = newLocation.lastIndexOf('.');
-                int slashIndex = newLocation.lastIndexOf('/');
-                int backlashIndex = newLocation.lastIndexOf('\\');
-
-                if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
-                    nameEndIndex = newLocation.length();
-
-                newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(profile.versioningPattern()));
-            }
-            // Adds a timestamp to a deleted file before the extension
-            else if (profile.versioningFormat() == SyncProfile::FileTimestampAfter)
-            {
-                newLocation.append("_" + QDateTime::currentDateTime().toString(profile.versioningPattern()));
-
-                // Adds a file extension after the timestamp
-                int dotIndex = path.lastIndexOf('.');
-                int slashIndex = path.lastIndexOf('/');
-                int backlashIndex = path.lastIndexOf('\\');
-
-                if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
-                    newLocation.append(path.mid(dotIndex));
-            }
-
-            // As we want to have only the latest version of files,
-            // we need to delete the existing files in the versioning folder first,
-            // but only if the deleted file still exists, in case the parent folder was removed earlier.
-            if (profile.versioningFormat() == SyncProfile::LastVersion)
-            {
-                if (!QFile(fullPath).exists())
-                    return true;
-
-                QFile::remove(newLocation);
-            }
-        }
-
-        createParentFolders(folder, QDir::cleanPath(newLocation).toUtf8());
-        bool renamed = QFile::rename(fullPath, newLocation);
-
-        // If we're using a file timestamp or last version formats for versioning,
-        // a folder might fail to move to the versioning folder if the folder
-        // with the exact same filename already exists. In that case, we need
-        // to check if the existing folder is empty, and if so, delete it permanently.
-        if (!renamed && type == SyncFile::Folder)
-            if (profile.versioningFormat() == SyncProfile::FileTimestampBefore || profile.versioningFormat() == SyncProfile::FileTimestampAfter || profile.versioningFormat() == SyncProfile::LastVersion)
-                if (QDir(fullPath).isEmpty())
-                    return QDir(fullPath).removeRecursively() || !QFileInfo::exists(fullPath);
-
-        return renamed;
-    }
-    else
-    {
-        if (type == SyncFile::Folder)
-            return QDir(fullPath).removeRecursively() || !QFileInfo::exists(fullPath);
-        else
-            return QFile::remove(fullPath) || !QFileInfo::exists(fullPath);
-    }
 }
 
 /*
@@ -1574,7 +1474,7 @@ bool SyncManager::copyFile(SyncProfile &profile, quint64 &deviceRead, const QStr
                 deviceRead += nFrom + nTo;
                 m_usedDevicesMutex.unlock();
 
-                throttleCpu();
+                syncApp->throttleCpu();
 
                 while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
                 {
@@ -1644,7 +1544,7 @@ bool SyncManager::copyFile(SyncProfile &profile, quint64 &deviceRead, const QStr
                 deviceRead += in;
                 m_usedDevicesMutex.unlock();
 
-                throttleCpu();
+                syncApp->throttleCpu();
 
                 while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
                 {
@@ -1681,50 +1581,6 @@ bool SyncManager::copyFile(SyncProfile &profile, quint64 &deviceRead, const QStr
 
 /*
 ===================
-SyncManager::createParentFolders
-
-Creates all necessary parent directories for a given file path
-===================
-*/
-void SyncManager::createParentFolders(SyncFolder &folder, QByteArray path)
-{
-    QStack<QString> foldersToCreate;
-
-    while (!QDir(path = QFileInfo(path).path().toUtf8()).exists())
-        foldersToCreate.append(path);
-
-    while (!foldersToCreate.isEmpty())
-    {
-        throttleCpu();
-
-        if (QDir().mkdir(foldersToCreate.top()))
-        {
-            Qt::CaseSensitivity cs;
-
-            if (folder.caseSensitive)
-                cs = Qt::CaseSensitive;
-            else
-                cs = Qt::CaseInsensitive;
-
-            if (foldersToCreate.top().startsWith(folder.path, cs))
-            {
-                QByteArray relativePath(foldersToCreate.top().toUtf8());
-                relativePath.remove(0, folder.path.size());
-
-                hash64_t hash = hash64(relativePath);
-
-                folder.files.insert(hash, SyncFile(SyncFile::Folder, QFileInfo(foldersToCreate.top()).lastModified()));
-                folder.foldersToCreate.remove(hash);
-                folder.foldersToUpdate.insert(foldersToCreate.top().toUtf8());
-            }
-        }
-
-        foldersToCreate.pop();
-    }
-}
-
-/*
-===================
 SyncManager::renameFolders
 ===================
 */
@@ -1735,7 +1591,7 @@ void SyncManager::renameFolders(SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
-        throttleCpu();
+        syncApp->throttleCpu();
 
         QString fromFullPath(folder.path);
         fromFullPath.append(folderIt->fromPath);
@@ -1788,7 +1644,7 @@ void SyncManager::moveFiles(SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
-        throttleCpu();
+        syncApp->throttleCpu();
 
         QByteArray fromFullPath(folder.path);
         fromFullPath.append(fileIt->fromPath);
@@ -1806,7 +1662,7 @@ void SyncManager::moveFiles(SyncFolder &folder)
         // Removes from the list if the file already exists at the destination location
         if (QFileInfo::exists(toFullPath))
         {
-            if (folder.caseSensitive)
+            if (folder.caseSensitive())
             {
                 fileIt = folder.filesToMove.erase(static_cast<FileMoveList::const_iterator>(fileIt));
                 continue;
@@ -1837,7 +1693,7 @@ void SyncManager::moveFiles(SyncFolder &folder)
             }
         }
 
-        createParentFolders(folder, QDir::cleanPath(toFullPath).toUtf8());
+        folder.createParentFolders(QDir::cleanPath(toFullPath).toUtf8());
 
         if (QFile::rename(fromFullPath, toFullPath))
         {
@@ -1888,7 +1744,7 @@ void SyncManager::removeFolders(SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
-        throttleCpu();
+        syncApp->throttleCpu();
 
         // Prevents the deletion of the main sync folder in case of a false detection during synchronization
         if (folderIt->second.isEmpty())
@@ -1901,7 +1757,7 @@ void SyncManager::removeFolders(SyncFolder &folder)
         QString fullPath(folder.path);
         fullPath.append(folderIt->second);
 
-        if (removeFile(folder, folderIt->second, fullPath, SyncFile::Folder) || !QDir().exists(fullPath))
+        if (folder.removeFile(folderIt->second, SyncFile::Folder) || !QDir().exists(fullPath))
         {
             hash64_t hash = hash64(folderIt->second);
             folder.files.remove(hash);
@@ -1932,7 +1788,7 @@ void SyncManager::removeFiles(SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
-        throttleCpu();
+        syncApp->throttleCpu();
 
         // Prevents the deletion of the main sync folder in case of a false detection during synchronization
         if (fileIt->isEmpty())
@@ -1944,7 +1800,7 @@ void SyncManager::removeFiles(SyncFolder &folder)
         QString fullPath(folder.path);
         fullPath.append(*fileIt);
 
-        if (removeFile(folder, *fileIt, fullPath, SyncFile::File) || !QFile().exists(fullPath))
+        if (folder.removeFile(*fileIt, SyncFile::File) || !QFile().exists(fullPath))
         {
             hash64_t hash = hash64(*fileIt);
             folder.files.remove(hash);
@@ -1974,7 +1830,7 @@ void SyncManager::createFolders(SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
-        throttleCpu();
+        syncApp->throttleCpu();
 
         if (folderIt->path.isEmpty())
         {
@@ -1986,11 +1842,11 @@ void SyncManager::createFolders(SyncFolder &folder)
         fullPath.append(folderIt->path);
         QFileInfo fileInfo(fullPath);
 
-        createParentFolders(folder, QDir::cleanPath(fullPath).toUtf8());
+        folder.createParentFolders(QDir::cleanPath(fullPath).toUtf8());
 
         // Removes a file with the same filename first, if it exists
         if (fileInfo.exists() && fileInfo.isFile())
-            removeFile(folder, folderIt->path, fullPath, SyncFile::File);
+            folder.removeFile(folderIt->path, SyncFile::File);
 
         if (QDir().mkdir(fullPath) || fileInfo.exists())
         {
@@ -2030,7 +1886,7 @@ void SyncManager::copyFiles(SyncFolder &folder)
         if (m_shouldQuit)
             break;
 
-        throttleCpu();
+        syncApp->throttleCpu();
 
         // Removes from the "files to copy" list if the source file doesn't exist
         if (!QFileInfo::exists(fileIt->fromFullPath) || fileIt->toPath.isEmpty() || fileIt->fromFullPath.isEmpty())
@@ -2058,7 +1914,7 @@ void SyncManager::copyFiles(SyncFolder &folder)
 
             // Fixes the case of two new files in two folders (one file for each folder) with the same file names but in different cases (e.g. filename vs. FILENAME)
             // Without this, copy operation causes undefined behavior as some file systems, such as Windows, are case insensitive.
-            if (!folder.caseSensitive)
+            if (!folder.caseSensitive())
             {
                 QByteArray fromFileName = fileIt->fromFullPath;
                 fromFileName.remove(0, fromFileName.lastIndexOf("/") + 1);
@@ -2077,11 +1933,11 @@ void SyncManager::copyFiles(SyncFolder &folder)
             }
         }
 
-        createParentFolders(folder, QDir::cleanPath(toFullPath).toUtf8());
+        folder.createParentFolders(QDir::cleanPath(toFullPath).toUtf8());
 
         // Removes a file with the same filename first if exists
         if ((!folder.profile().deltaCopying() || static_cast<quint64>(toFileInfo.size()) < folder.profile().deltaCopyingMinSize()) && toFileInfo.exists())
-            removeFile(folder, fileIt->toPath, toFullPath, toFile.type);
+            folder.removeFile(fileIt->toPath, toFile.type);
 
         if (copyFile(folder.profile(), deviceRead, fileIt->fromFullPath, toFullPath))
         {
@@ -2127,94 +1983,6 @@ void SyncManager::copyFiles(SyncFolder &folder)
 
 /*
 ===================
-SyncManager::cleanupFolder
-
-Used by one-way synchronization folders.
-Removes files from a synchronization folder that do not exist in other two-way synchronization folders
-===================
-*/
-void SyncManager::cleanupFolder(SyncFolder &folder)
-{
-    if (folder.syncType != SyncFolder::ONE_WAY)
-        return;
-
-    SyncProfile &profile = folder.profile();
-    const int typeSize = 2;
-    SyncFile::Type types[typeSize];
-
-    // In case we add a timestamp to files or keep the last version in the versioning folder,
-    // we need to remove the files first. This is mostly because we can't move or delete a folder first
-    // if it contains files and already exists in the versioning folder. As a result, at the end of synchronization,
-    // we still have that empty folder remaining. Also, in case if we use file timestamp format
-    // we want to avoid adding timestamps to each file individually after placing the parent folder
-    // in the versioning folder, as it would impact performance.
-    if (profile.deletionMode() == SyncProfile::Versioning && (profile.versioningFormat() == SyncProfile::FileTimestampBefore || profile.versioningFormat() == SyncProfile::FileTimestampAfter || profile.versioningFormat() == SyncProfile::LastVersion))
-    {
-        types[0] = SyncFile::File;
-        types[1] = SyncFile::Folder;
-    }
-    else
-    {
-        types[0] = SyncFile::Folder;
-        types[1] = SyncFile::File;
-    }
-
-    for (int i = 0; i < typeSize; i++)
-    {
-        for (Files::iterator fileIt = folder.files.begin(); fileIt != folder.files.end();)
-        {
-            bool exists = false;
-            bool hasTwoWay = false;
-
-            if (fileIt->exists() && fileIt->type != types[i])
-            {
-                ++fileIt;
-                continue;
-            }
-
-            for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
-            {
-                if (&(*otherFolderIt) == &folder || !otherFolderIt->exists || !otherFolderIt->isActive())
-                    continue;
-
-                // Prevents files from being removed if there are no folders to mirror from
-                if (otherFolderIt->syncType == SyncFolder::TWO_WAY)
-                    hasTwoWay = true;
-                else
-                    continue;
-
-                if (otherFolderIt->files.contains(fileIt.key()))
-                {
-                    exists = true;
-                    break;
-                }
-
-                // In case there is a file, but with a different case name
-                if (!otherFolderIt->caseSensitive && QFile(profile.filePath(fileIt.key())).exists())
-                {
-                    exists = true;
-                    break;
-                }
-            }
-
-            if (!exists && hasTwoWay)
-            {
-                QString path(profile.filePath(fileIt.key()));
-                QString fullPath(folder.path + path);
-
-                removeFile(folder, path, fullPath, fileIt->type);
-                fileIt = folder.files.erase(static_cast<Files::const_iterator>(fileIt));
-            }
-            else
-            {
-                ++fileIt;
-            }
-        }
-    }
-}
-
-/*
-===================
 SyncManager::syncChanges
 ===================
 */
@@ -2239,7 +2007,7 @@ void SyncManager::syncChanges(SyncProfile &profile)
         // we still have that empty folder remaining. Also, in case if we use file timestamp format
         // we want to avoid adding timestamps to each file individually after placing the parent folder
         // in the versioning folder, as it would impact performance.
-        if (profile.deletionMode() == SyncProfile::Versioning && (profile.versioningFormat() == SyncProfile::FileTimestampBefore || profile.versioningFormat() == SyncProfile::FileTimestampAfter || profile.versioningFormat() == SyncProfile::LastVersion))
+        if (profile.deletionMode() == SyncProfile::Versioning && profile.versioningFormat() != SyncProfile::FolderTimestamp)
         {
             removeFiles(folder);
             removeFolders(folder);
@@ -2253,11 +2021,9 @@ void SyncManager::syncChanges(SyncProfile &profile)
         createFolders(folder);
         copyFiles(folder);
 
-        // We don't want files in one-way folders that don't exist in other folders
-        if (folder.syncType == SyncFolder::ONE_WAY)
-            cleanupFolder(folder);
-
-        folder.versioningPath.clear();
+        // We don't want files in mirroring folders that don't exist in other folders
+        if (folder.mirroring())
+            folder.cleanup();
 
         // Updates the modified date of parent folders as adding or removing files and folders changes their modified date.
         // This is needed for conflict resolution in cases where a file has been modified in one location and deleted in another.

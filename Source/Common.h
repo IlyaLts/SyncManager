@@ -81,7 +81,6 @@ QString formatSize(quint64 size);
 hash64_t hash64(const QByteArray &str);
 void removeDuplicatesBySizeAndDate (FilePointerList &files);
 QFileInfo getCurrentFileInfo(const QString &path);
-bool isPathCaseSensitive(const QString &path);
 Attributes getFileAttributes(const QString &path);
 bool setFileAttribute(const QString &path, Attributes attributes);
 void setHiddenFileAttribute(const QString &path, bool hidden);

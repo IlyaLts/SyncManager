@@ -75,7 +75,7 @@ class SyncFolder
 {
 public:
 
-    enum SyncType
+    enum Type
     {
         TWO_WAY,
         ONE_WAY,
@@ -90,9 +90,13 @@ public:
     void saveSettings() const;
     void removeSettings() const;
 
+    void createParentFolders(QByteArray path);
+    bool removeFile(const QString &path, SyncFile::Type type);
+    void cleanup();
     void clearData();
     void optimizeMemoryUsage();
     void updateVersioningPath();
+    void checkCaseSensitive();
     void saveToDatabase(const QString &path) const;
     void loadFromDatabase(const QString &path);
     void removeDatabase() const;
@@ -100,9 +104,14 @@ public:
     bool isActive() const;
     bool hasUnsyncedFiles() const;
 
+    inline bool bidirectional() const { return type == TWO_WAY; }
+    inline bool mirroring() const { return type == ONE_WAY; }
+    inline bool contributing() const { return type == ONE_WAY_UPDATE; }
+    inline bool caseSensitive() const { return m_caseSensitive; }
+
     inline SyncProfile &profile() const { return *m_profile; }
 
-    SyncType syncType = TWO_WAY;
+    Type type = TWO_WAY;
     QByteArray path;
     QString versioningPath;
     Files files;
@@ -121,9 +130,10 @@ public:
     bool syncing = false;
     bool paused = false;
     bool toBeRemoved = false;
-    bool caseSensitive = false;
 
 private:
+
+    bool m_caseSensitive = false;
 
     SyncProfile *m_profile;
 };

@@ -25,6 +25,8 @@
 #include <QMutex>
 #include <QStandardPaths>
 #include <QSettings>
+#include <QStack>
+#include <QRandomGenerator>
 
 /*
 ===================
@@ -39,7 +41,7 @@ void SyncFolder::loadSettings()
     exists = QFileInfo::exists(path);
     lastSyncDate = settings.value(folderKey + QLatin1String("_LastSyncDate")).toDateTime();
     paused = settings.value(folderKey + QLatin1String("_Paused"), false).toBool();
-    syncType = static_cast<SyncFolder::SyncType>(settings.value(folderKey + QLatin1String("_SyncType"), SyncFolder::TWO_WAY).toInt());
+    type = static_cast<SyncFolder::Type>(settings.value(folderKey + QLatin1String("_SyncType"), SyncFolder::TWO_WAY).toInt());
     partiallySynchronized = settings.value(folderKey + QLatin1String("_PartiallySynchronized")).toBool();
 
     if (!paused)
@@ -61,7 +63,7 @@ void SyncFolder::saveSettings() const
 
     settings.setValue(folderKey + QLatin1String("_LastSyncDate"), lastSyncDate);
     settings.setValue(folderKey + QLatin1String("_Paused"), paused);
-    settings.setValue(folderKey + QLatin1String("_SyncType"), syncType);
+    settings.setValue(folderKey + QLatin1String("_SyncType"), type);
     settings.setValue(folderKey + QLatin1String("_PartiallySynchronized"), partiallySynchronized);
 }
 
@@ -74,6 +76,224 @@ void SyncFolder::removeSettings() const
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     settings.remove(m_profile->name + QLatin1String("_profile/") + path);
+}
+
+/*
+===================
+SyncFolder::createParentFolders
+
+Creates all necessary parent directories for a given file path
+===================
+*/
+void SyncFolder::createParentFolders(QByteArray path)
+{
+    QStack<QString> foldersToCreate;
+
+    while (!QDir(path = QFileInfo(path).path().toUtf8()).exists())
+        foldersToCreate.append(path);
+
+    while (!foldersToCreate.isEmpty())
+    {
+        syncApp->throttleCpu();
+
+        if (QDir().mkdir(foldersToCreate.top()))
+        {
+            Qt::CaseSensitivity cs;
+
+            if (m_caseSensitive)
+                cs = Qt::CaseSensitive;
+            else
+                cs = Qt::CaseInsensitive;
+
+            if (foldersToCreate.top().startsWith(path, cs))
+            {
+                QByteArray relativePath(foldersToCreate.top().toUtf8());
+                relativePath.remove(0, path.size());
+
+                hash64_t hash = hash64(relativePath);
+
+                files.insert(hash, SyncFile(SyncFile::Folder, QFileInfo(foldersToCreate.top()).lastModified()));
+                foldersToCreate.remove(hash);
+                foldersToUpdate.insert(foldersToCreate.top().toUtf8());
+            }
+        }
+
+        foldersToCreate.pop();
+    }
+}
+
+/*
+===================
+SyncFolder::removeFile
+===================
+*/
+bool SyncFolder::removeFile(const QString &path, SyncFile::Type type)
+{
+    QString fullPath(this->path);
+    fullPath.append(path);
+
+    // Prevents the deletion of a sync folder itself in case something bad happens
+    if (path.isEmpty())
+        return true;
+
+    if (profile().deletionMode() == SyncProfile::MoveToTrash)
+    {
+        // Used to make sure that moveToTrash function really moved a file/folder
+        // to the trash as it can return true even though it failed to do so
+        QString pathInTrash;
+
+        return QFile::moveToTrash(fullPath, &pathInTrash) && !pathInTrash.isEmpty();
+    }
+    else if (profile().deletionMode() == SyncProfile::Versioning)
+    {
+        QString newLocation(versioningPath);
+        newLocation.append(path);
+
+        if (type == SyncFile::File)
+        {
+            // Adds a timestamp to the end of the filename of a deleted file
+            if (profile().versioningFormat() == SyncProfile::FileTimestampBefore)
+            {
+                int nameEndIndex = newLocation.lastIndexOf('.');
+                int slashIndex = newLocation.lastIndexOf('/');
+                int backlashIndex = newLocation.lastIndexOf('\\');
+
+                if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
+                    nameEndIndex = newLocation.length();
+
+                newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(profile().versioningPattern()));
+            }
+            // Adds a timestamp to a deleted file before the extension
+            else if (profile().versioningFormat() == SyncProfile::FileTimestampAfter)
+            {
+                newLocation.append("_" + QDateTime::currentDateTime().toString(profile().versioningPattern()));
+
+                // Adds a file extension after the timestamp
+                int dotIndex = path.lastIndexOf('.');
+                int slashIndex = path.lastIndexOf('/');
+                int backlashIndex = path.lastIndexOf('\\');
+
+                if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
+                    newLocation.append(path.mid(dotIndex));
+            }
+
+            // As we want to have only the latest version of files,
+            // we need to delete the existing files in the versioning folder first,
+            // but only if the deleted file still exists, in case the parent folder was removed earlier.
+            if (profile().versioningFormat() == SyncProfile::LastVersion)
+            {
+                if (!QFile(fullPath).exists())
+                    return true;
+
+                QFile::remove(newLocation);
+            }
+        }
+
+        createParentFolders(QDir::cleanPath(newLocation).toUtf8());
+        bool renamed = QFile::rename(fullPath, newLocation);
+
+        // If we're using a file timestamp or last version formats for versioning,
+        // a folder might fail to move to the versioning folder if the folder
+        // with the exact same filename already exists. In that case, we need
+        // to check if the existing folder is empty, and if so, delete it permanently.
+        if (!renamed && type == SyncFile::Folder)
+            if (profile().versioningFormat() != SyncProfile::FolderTimestamp)
+                if (QDir(fullPath).isEmpty())
+                    return QDir(fullPath).removeRecursively() || !QFileInfo::exists(fullPath);
+
+        return renamed;
+    }
+    else
+    {
+        if (type == SyncFile::Folder)
+            return QDir(fullPath).removeRecursively() || !QFileInfo::exists(fullPath);
+        else
+            return QFile::remove(fullPath) || !QFileInfo::exists(fullPath);
+    }
+}
+
+/*
+===================
+SyncFolder::cleanup
+
+Used by one-way synchronization folders.
+Removes files from a synchronization folder that do not exist in other two-way synchronization folders
+===================
+*/
+void SyncFolder::cleanup()
+{
+    if (type != ONE_WAY)
+        return;
+
+    const int typeSize = 2;
+    SyncFile::Type types[typeSize];
+
+    // In case we add a timestamp to files or keep the last version in the versioning folder,
+    // we need to remove the files first. This is mostly because we can't move or delete a folder first
+    // if it contains files and already exists in the versioning folder. As a result, at the end of synchronization,
+    // we still have that empty folder remaining. Also, in case if we use file timestamp format
+    // we want to avoid adding timestamps to each file individually after placing the parent folder
+    // in the versioning folder, as it would impact performance.
+    if (profile().deletionMode() == SyncProfile::Versioning && profile().versioningFormat() != SyncProfile::FolderTimestamp)
+    {
+        types[0] = SyncFile::File;
+        types[1] = SyncFile::Folder;
+    }
+    else
+    {
+        types[0] = SyncFile::Folder;
+        types[1] = SyncFile::File;
+    }
+
+    for (int i = 0; i < typeSize; i++)
+    {
+        for (Files::iterator fileIt = files.begin(); fileIt != files.end();)
+        {
+            bool exists = false;
+            bool hasTwoWay = false;
+
+            if (fileIt->exists() && fileIt->type != types[i])
+            {
+                ++fileIt;
+                continue;
+            }
+
+            for (auto otherFolderIt = profile().folders.begin(); otherFolderIt != profile().folders.end(); ++otherFolderIt)
+            {
+                if (&(*otherFolderIt) == this || !otherFolderIt->exists || !otherFolderIt->isActive())
+                    continue;
+
+                // Prevents files from being removed if there are no folders to mirror from
+                if (otherFolderIt->type == TWO_WAY)
+                    hasTwoWay = true;
+                else
+                    continue;
+
+                if (otherFolderIt->files.contains(fileIt.key()))
+                {
+                    exists = true;
+                    break;
+                }
+
+                // In case there is a file, but with a different case name
+                if (!otherFolderIt->m_caseSensitive && QFile(profile().filePath(fileIt.key())).exists())
+                {
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists && hasTwoWay)
+            {
+                removeFile(profile().filePath(fileIt.key()), fileIt->type);
+                fileIt = files.erase(static_cast<Files::const_iterator>(fileIt));
+            }
+            else
+            {
+                ++fileIt;
+            }
+        }
+    }
 }
 
 /*
@@ -134,6 +354,53 @@ void SyncFolder::updateVersioningPath()
 
     if (m_profile->versioningFormat() == SyncProfile::FolderTimestamp)
         versioningPath.append(QDateTime::currentDateTime().toString(m_profile->versioningPattern()) + "/");
+}
+
+/*
+===================
+SyncFolder::checkCaseSensitive
+===================
+*/
+void SyncFolder::checkCaseSensitive()
+{
+    if (!exists)
+        return;
+
+    QDir dir(path);
+
+    if (!dir.exists())
+        return;
+
+    QString uniqueFilename;
+    QString letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    int numberOfLetters = letters.length();
+
+    for (int i = 0; i < 10; ++i)
+        uniqueFilename.append(letters.at(QRandomGenerator::global()->bounded(numberOfLetters)));
+
+    uniqueFilename.append(".tmp");
+
+    QString lowerCaseFilename = uniqueFilename.toLower();
+    QString upperCaseFilename = uniqueFilename.toUpper();
+    QString fullPath = dir.absoluteFilePath(uniqueFilename);
+    bool caseSensitive = true;
+
+    QFile file(fullPath);
+    if (!file.open(QIODevice::WriteOnly))
+        return;
+
+    file.close();
+
+    if (uniqueFilename != lowerCaseFilename)
+        if (QFile::exists(dir.absoluteFilePath(lowerCaseFilename)))
+            caseSensitive = false;
+
+    if (caseSensitive && uniqueFilename != upperCaseFilename)
+        if (QFile::exists(dir.absoluteFilePath(upperCaseFilename)))
+            caseSensitive = false;
+
+    QFile::remove(fullPath);
+    this->m_caseSensitive = caseSensitive;
 }
 
 /*

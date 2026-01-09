@@ -70,6 +70,7 @@ public:
     void setCheckForUpdates(bool enable);
     void setMaxCpuUsage(float percentage);
     void checkForUpdates();
+    void throttleCpu();
 
     int exec();
 

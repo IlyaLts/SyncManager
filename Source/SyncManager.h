@@ -64,7 +64,6 @@ public:
     void updateStatus();
     void removeAllDatabases();
     void purgeRemovedProfiles();
-    void throttleCpu();
 
     inline const QQueue<SyncProfile *> &queue() const { return m_queue; }
     inline const std::list<SyncProfile> &profiles() const { return m_profiles; }
@@ -106,16 +105,13 @@ private:
     void checkForAddedFiles(SyncProfile &profile);
     void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);
-    bool removeFile(SyncFolder &folder, const QString &path, const QString &fullPath, SyncFile::Type type);
     bool copyFile(SyncProfile &profile, quint64 &deviceRead, const QString &fileName, const QString &newName);
     void renameFolders(SyncFolder &folder);
     void moveFiles(SyncFolder &folder);
-    void createParentFolders(SyncFolder &folder, QByteArray path);
     void removeFolders(SyncFolder &folder);
     void removeFiles(SyncFolder &folder);
     void createFolders(SyncFolder &folder);
     void copyFiles(SyncFolder &folder);
-    void cleanupFolder(SyncFolder &folder);
     void syncChanges(SyncProfile &profile);
 
     QQueue<SyncProfile *> m_queue;

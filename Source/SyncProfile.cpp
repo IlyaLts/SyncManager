@@ -581,7 +581,7 @@ SyncProfile::isAnyFolderCaseSensitive
 bool SyncProfile::isAnyFolderCaseSensitive() const
 {
     for (const auto &folder : folders)
-        if (folder.caseSensitive)
+        if (folder.caseSensitive())
             return true;
 
     return false;
@@ -653,7 +653,7 @@ SyncProfile::folderByPath
 SyncFolder *SyncProfile::folderByPath(const QString &path)
 {
     for (auto &folder : folders)
-        if (folder.path.compare(path.toUtf8(), folder.caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive) == 0)
+        if (folder.path.compare(path.toUtf8(), folder.caseSensitive() ? Qt::CaseSensitive : Qt::CaseInsensitive) == 0)
             return &folder;
 
     return nullptr;

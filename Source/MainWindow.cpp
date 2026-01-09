@@ -593,7 +593,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         {
             for (const auto &existedFolderPath : existedFolders)
             {
-                if (existedFolderPath.compare(newFolderPath, folder->caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive) == 0)
+                if (existedFolderPath.compare(newFolderPath, folder->caseSensitive() ? Qt::CaseSensitive : Qt::CaseInsensitive) == 0)
                 {
                     exists = true;
                     break;
@@ -892,12 +892,12 @@ void MainWindow::switchVersioningLocation(SyncProfile &profile, SyncProfile::Ver
 MainWindow::switchSyncingType
 ===================
 */
-void MainWindow::switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::SyncType type)
+void MainWindow::switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::Type type)
 {
     if (type < SyncFolder::TWO_WAY || type > SyncFolder::ONE_WAY_UPDATE)
         type = SyncFolder::TWO_WAY;
 
-    folder.syncType = type;
+    folder.type = type;
     updateStatus();
 
     if (syncApp->initiated())
@@ -1442,13 +1442,13 @@ void MainWindow::showContextMenu(const QPoint &pos)
 
             menu.addSeparator();
 
-            if (folder->syncType != SyncFolder::TWO_WAY)
+            if (folder->type != SyncFolder::TWO_WAY)
                 menu.addAction(iconTwoWay, "&" + tr("Switch to two-way synchronization"), this, [profile, folder, this](){ switchSyncingType(*profile, *folder, SyncFolder::TWO_WAY); });
 
-            if (folder->syncType != SyncFolder::ONE_WAY)
+            if (folder->type != SyncFolder::ONE_WAY)
                 menu.addAction(iconOneWay, "&" + tr("Switch to one-way synchronization"), this, [profile, folder, this](){ switchSyncingType(*profile, *folder, SyncFolder::ONE_WAY); });
 
-            if (folder->syncType != SyncFolder::ONE_WAY_UPDATE)
+            if (folder->type != SyncFolder::ONE_WAY_UPDATE)
                 menu.addAction(iconOneWayUpdate, "&" + tr("Switch to one-way update synchronization"), this, [profile, folder, this](){ switchSyncingType(*profile, *folder, SyncFolder::ONE_WAY_UPDATE); });
         }
 
@@ -1693,11 +1693,11 @@ void MainWindow::updateStatus()
 
                     QIcon *icon = nullptr;
 
-                    if (folder->syncType == SyncFolder::TWO_WAY)
+                    if (folder->type == SyncFolder::TWO_WAY)
                         icon = &iconTwoWay;
-                    else if (folder->syncType == SyncFolder::ONE_WAY)
+                    else if (folder->type == SyncFolder::ONE_WAY)
                         icon = &iconOneWay;
-                    else if (folder->syncType == SyncFolder::ONE_WAY_UPDATE)
+                    else if (folder->type == SyncFolder::ONE_WAY_UPDATE)
                         icon = &iconOneWayUpdate;
 
                     if (icon)

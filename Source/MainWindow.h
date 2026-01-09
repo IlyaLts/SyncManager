@@ -81,7 +81,7 @@ private Q_SLOTS:
     void switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionMode mode);
     void switchVersioningFormat(SyncProfile &profile, SyncProfile::VersioningFormat format);
     void switchVersioningLocation(SyncProfile &profile, SyncProfile::VersioningLocation location);
-    void switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::SyncType type);
+    void switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::Type type);
     void switchDatabaseLocation(SyncProfile &profile, SyncProfile::DatabaseLocation location);
     void increaseSyncTime(SyncProfile &profile);
     void decreaseSyncTime(SyncProfile &profile);

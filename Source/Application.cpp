@@ -301,6 +301,17 @@ void Application::checkForUpdates()
 
 /*
 ===================
+Application::throttleCpu
+===================
+*/
+void Application::throttleCpu()
+{
+    while (processUsage() > maxCpuUsage())
+        QThread::msleep(CPU_UPDATE_TIME);
+}
+
+/*
+===================
 Application::exec
 ===================
 */

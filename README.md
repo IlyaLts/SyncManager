@@ -6,7 +6,7 @@
 
 # How It Works
 Here's an overview of how it works:
-1. Loads its databases from disk to remember what your files looked like during the last sync.
+1. Loads its databases from disk to remember what your files looked like during the last synchronization.
 1. Scans the designated folders for files and folders, checking for any changes in file modification dates or sizes.
 1. Detects changes and the type of synchronization that should be performed between folders.
 1. Based on the detected changes, synchronizes files across all folders.
@@ -18,9 +18,9 @@ There are three synchronization types that determine how a folder should be sync
 - **One-way update** - *This mode is for simple updates. Files are copied only once from two-way folders to the one-way update folder. Unlike the one-way type, files that are deleted from two-way folders will not be deleted from the one-way update folder. This is useful for backups where you don't want to lose old data.*
 ### Syncing Modes
 Synchronization can be triggered using the following modes:
-- **Manual** - *Will only sync your files when you tell it to.*
-- **Automatic (Adaptive)** - *This is a smart, automatic mode. SyncManager learns the average time it takes to sync your files and uses that to determine the next sync interval. This interval is multiplied by a user-defined frequency multiplier. The minimum interval is 1 second.*
-- **Automatic (Fixed)** - *This is a simple, scheduled mode. SyncManager will sync your files at a specific, regular time interval that you set.*
+- **Manual** - *Will only synchronize your files when you tell it to.*
+- **Automatic (Adaptive)** - *This is a smart, automatic mode. SyncManager learns the average time it takes to synchronize your files and uses that to determine the next synchronization interval. This interval is multiplied by a user-defined frequency multiplier. The minimum interval is 1 second.*
+- **Automatic (Fixed)** - *This is a simple, scheduled mode. SyncManager will synchronize your files at a specific, regular time interval that you set.*
 ### Change Detection Order
 SyncManager uses sophisticated algorithms to detect changes since the last synchronization to determine which files and folders must be synchronized in the following order:
 1. **File attribute changes**
@@ -34,7 +34,7 @@ Since SyncManager doesn't store the original paths of files in a database, it re
 ### Detection of Moved and Renamed Files
 SyncManager searches for matches between removed and new files based on their modified date and size. If a match is found, the file is considered to be the same, and SyncManager renames or moves the corresponding file to other locations to match the new location in the source. In cases where there are multiple matches with the same modified date and size, SyncManager falls back to the standard synchronization method, copying files from one location to another.
 ### File Delta Copying
-While standard file synchronization replaces a destination file with an entirely new copy of the source file, delta synchronization utilizes a more efficient block-level approach. It only synchronizes the specific blocks of data that were actually changed. Once the sync is complete, the destination file is overwritten, and older versions of that file cannot be recovered. This could be ideal for synchronizing large files, as it significantly reduces wear and tear on your storage drives.
+While standard file synchronization replaces a destination file with an entirely new copy of the source file, delta synchronization utilizes a more efficient block-level approach. It only synchronizes the specific blocks of data that were actually changed. Once the synchronization is complete, the destination file is overwritten, and older versions of that file cannot be recovered. This could be ideal for synchronizing large files, as it significantly reduces wear and tear on your storage drives.
 ### Synchronization Order
 Based on the changes detected, SyncManager performs the synchronization operations in the following order:
 1. **Synchronizes file attributes**
@@ -69,8 +69,8 @@ Files can be filtered from synchronization using the following options:
 - **Exclude** - *(Blacklist)*
 ### Database Location
 SyncManager stores a database file to keep track of your files in the following locations:
-- **Locally** - *The database is saved on your computer in a dedicated application data folder. It keeps your sync data separate from your actual synchronized files.*
-- **Decentralized** - *The database is stored inside each of your synchronization folders, within a special hidden folder named .SyncManager. This is useful if you need to move your entire sync setup to another computer, as the database files will travel with your folders.*
+- **Locally** - *The database is saved on your computer in a dedicated application data folder. It keeps your synchronization databases separate from your actual synchronized files.*
+- **Decentralized** - *The database is stored inside each of your synchronization folders, within a special hidden folder named .SyncManager. This is useful if you need to move your entire synchronization setup to another computer, as the database files will travel with your folders.*
 ### Conflict Resolution
 In cases where conflicts arise, SyncManager resolves them according to the following rules:
 - **Latest modification date wins:** If a file has been modified in both locations, SyncManager will synchronize the file with the latest modification date.
