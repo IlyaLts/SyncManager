@@ -82,9 +82,9 @@ public:
         ONE_WAY_UPDATE
     };
 
-    explicit SyncFolder(SyncProfile *profile) { m_profile = profile; }
+    explicit SyncFolder(SyncProfile *profile, const QByteArray &path);
 
-    inline bool operator ==(const SyncFolder &other) { return path == other.path; }
+    inline bool operator ==(const SyncFolder &other) { return m_path == other.m_path; }
 
     void loadSettings();
     void saveSettings() const;
@@ -103,17 +103,30 @@ public:
     void removeNonExistentFiles();
     bool isActive() const;
     bool hasUnsyncedFiles() const;
+    void updateUnsyncedList();
+    void remove();
 
-    inline bool bidirectional() const { return type == TWO_WAY; }
-    inline bool mirroring() const { return type == ONE_WAY; }
-    inline bool contributing() const { return type == ONE_WAY_UPDATE; }
+    void setType(Type type);
+    inline void setLastSyncDate(const QDateTime &date) { m_lastSyncDate = date; }
+    inline void setSyncing(bool syncing) { m_syncing = syncing; }
+    void setPaused(bool paused);
+    inline void checkExistence(){ m_exists = QFileInfo::exists(m_path); }
+
+    inline bool bidirectional() const { return m_type == TWO_WAY; }
+    inline bool mirroring() const { return m_type == ONE_WAY; }
+    inline bool contributing() const { return m_type == ONE_WAY_UPDATE; }
+    inline Type type() const { return m_type; }
+    inline const QByteArray &path() const { return m_path; }
+    inline const QDateTime &lastSyncDate() const { return m_lastSyncDate; }
+    inline const QString &unsyncedList() const { return m_unsyncedList; }
+    inline bool exists() const { return m_exists; }
+    inline bool syncing() const { return m_syncing; }
+    inline bool paused() const { return m_paused; }
+    inline bool toBeRemoved() const { return m_toBeRemoved; }
     inline bool caseSensitive() const { return m_caseSensitive; }
 
     inline SyncProfile &profile() const { return *m_profile; }
 
-    Type type = TWO_WAY;
-    QByteArray path;
-    QString versioningPath;
     Files files;
     FolderRenameList foldersToRename;
     FileMoveList filesToMove;
@@ -123,16 +136,17 @@ public:
     FileRemoveList filesToRemove;
     FolderUpdateList foldersToUpdate;
 
-    QString unsyncedList;
-    QDateTime lastSyncDate;
-    bool partiallySynchronized = false;
-    bool exists = true;
-    bool syncing = false;
-    bool paused = false;
-    bool toBeRemoved = false;
-
 private:
 
+    Type m_type = TWO_WAY;
+    QByteArray m_path;
+    QDateTime m_lastSyncDate;
+    QString m_unsyncedList;
+    QString m_versioningPath;
+    bool m_exists = true;
+    bool m_syncing = false;
+    bool m_paused = false;
+    bool m_toBeRemoved = false;
     bool m_caseSensitive = false;
 
     SyncProfile *m_profile;

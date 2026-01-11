@@ -30,21 +30,33 @@
 
 /*
 ===================
+SyncFolder::SyncFolder
+===================
+*/
+SyncFolder::SyncFolder(SyncProfile *profile, const QByteArray &path)
+{
+    m_profile = profile;
+    m_path = path;
+
+    m_paused = profile->paused();
+}
+
+/*
+===================
 SyncFolder::loadSettings
 ===================
 */
 void SyncFolder::loadSettings()
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    QString folderKey(m_profile->name + QLatin1String("_profile/") + path);
+    QString folderKey(m_profile->name + QLatin1String("_profile/") + m_path);
 
-    exists = QFileInfo::exists(path);
-    lastSyncDate = settings.value(folderKey + QLatin1String("_LastSyncDate")).toDateTime();
-    paused = settings.value(folderKey + QLatin1String("_Paused"), false).toBool();
-    type = static_cast<SyncFolder::Type>(settings.value(folderKey + QLatin1String("_SyncType"), SyncFolder::TWO_WAY).toInt());
-    partiallySynchronized = settings.value(folderKey + QLatin1String("_PartiallySynchronized")).toBool();
+    m_exists = QFileInfo::exists(m_path);
+    m_lastSyncDate = settings.value(folderKey + QLatin1String("_LastSyncDate")).toDateTime();
+    m_paused = settings.value(folderKey + QLatin1String("_Paused"), false).toBool();
+    setType(static_cast<SyncFolder::Type>(settings.value(folderKey + QLatin1String("_SyncType"), SyncFolder::TWO_WAY).toInt()));
 
-    if (!paused)
+    if (!m_paused)
         syncApp->manager()->setPaused(false);
 }
 
@@ -55,16 +67,15 @@ SyncFolder::saveSettings
 */
 void SyncFolder::saveSettings() const
 {
-    if (toBeRemoved)
+    if (m_toBeRemoved)
         return;
 
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    QString folderKey(m_profile->name + QLatin1String("_profile/") + path);
+    QString folderKey(m_profile->name + QLatin1String("_profile/") + m_path);
 
-    settings.setValue(folderKey + QLatin1String("_LastSyncDate"), lastSyncDate);
-    settings.setValue(folderKey + QLatin1String("_Paused"), paused);
-    settings.setValue(folderKey + QLatin1String("_SyncType"), type);
-    settings.setValue(folderKey + QLatin1String("_PartiallySynchronized"), partiallySynchronized);
+    settings.setValue(folderKey + QLatin1String("_LastSyncDate"), m_lastSyncDate);
+    settings.setValue(folderKey + QLatin1String("_Paused"), m_paused);
+    settings.setValue(folderKey + QLatin1String("_SyncType"), m_type);
 }
 
 /*
@@ -75,7 +86,7 @@ SyncFolder::removeSettings
 void SyncFolder::removeSettings() const
 {
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    settings.remove(m_profile->name + QLatin1String("_profile/") + path);
+    settings.remove(m_profile->name + QLatin1String("_profile/") + m_path);
 }
 
 /*
@@ -129,7 +140,7 @@ SyncFolder::removeFile
 */
 bool SyncFolder::removeFile(const QString &path, SyncFile::Type type)
 {
-    QString fullPath(this->path);
+    QString fullPath(this->m_path);
     fullPath.append(path);
 
     // Prevents the deletion of a sync folder itself in case something bad happens
@@ -146,7 +157,7 @@ bool SyncFolder::removeFile(const QString &path, SyncFile::Type type)
     }
     else if (profile().deletionMode() == SyncProfile::Versioning)
     {
-        QString newLocation(versioningPath);
+        QString newLocation(m_versioningPath);
         newLocation.append(path);
 
         if (type == SyncFile::File)
@@ -222,7 +233,7 @@ Removes files from a synchronization folder that do not exist in other two-way s
 */
 void SyncFolder::cleanup()
 {
-    if (type != ONE_WAY)
+    if (m_type != ONE_WAY)
         return;
 
     const int typeSize = 2;
@@ -260,11 +271,11 @@ void SyncFolder::cleanup()
 
             for (auto otherFolderIt = profile().folders.begin(); otherFolderIt != profile().folders.end(); ++otherFolderIt)
             {
-                if (&(*otherFolderIt) == this || !otherFolderIt->exists || !otherFolderIt->isActive())
+                if (&(*otherFolderIt) == this || !otherFolderIt->m_exists || !otherFolderIt->isActive())
                     continue;
 
                 // Prevents files from being removed if there are no folders to mirror from
-                if (otherFolderIt->type == TWO_WAY)
+                if (otherFolderIt->type() == TWO_WAY)
                     hasTwoWay = true;
                 else
                     continue;
@@ -337,23 +348,23 @@ void SyncFolder::updateVersioningPath()
 {
     if (m_profile->versioningLocation() == SyncProfile::CustomLocation)
     {
-        versioningPath.assign(m_profile->versioningPath());
+        m_versioningPath.assign(m_profile->versioningPath());
     }
     else
     {
-        versioningPath.assign(this->path);
-        versioningPath.remove(versioningPath.lastIndexOf("/", 1), versioningPath.size());
-        versioningPath.append("_");
-        versioningPath.append(m_profile->versioningFolder());
+        m_versioningPath.assign(this->m_path);
+        m_versioningPath.remove(m_versioningPath.lastIndexOf("/", 1), m_versioningPath.size());
+        m_versioningPath.append("_");
+        m_versioningPath.append(m_profile->versioningFolder());
     }
 
-    versioningPath.append("/");
+    m_versioningPath.append("/");
 
     if (m_profile->versioningLocation() == SyncProfile::CustomLocation)
-        versioningPath.append(m_profile->name + "/");
+        m_versioningPath.append(m_profile->name + "/");
 
     if (m_profile->versioningFormat() == SyncProfile::FolderTimestamp)
-        versioningPath.append(QDateTime::currentDateTime().toString(m_profile->versioningPattern()) + "/");
+        m_versioningPath.append(QDateTime::currentDateTime().toString(m_profile->versioningPattern()) + "/");
 }
 
 /*
@@ -363,10 +374,10 @@ SyncFolder::checkCaseSensitive
 */
 void SyncFolder::checkCaseSensitive()
 {
-    if (!exists)
+    if (!m_exists)
         return;
 
-    QDir dir(path);
+    QDir dir(m_path);
 
     if (!dir.exists())
         return;
@@ -709,9 +720,9 @@ SyncFolder::removeDatabase
 */
 void SyncFolder::removeDatabase() const
 {
-    QByteArray filename = QByteArray::number(hash64(path));
+    QByteArray filename = QByteArray::number(hash64(m_path));
     QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename + ".db");
-    QDir(path + DATA_FOLDER_PATH).removeRecursively();
+    QDir(m_path + DATA_FOLDER_PATH).removeRecursively();
 }
 
 /*
@@ -737,7 +748,7 @@ SyncFolder::isActive
 */
 bool SyncFolder::isActive() const
 {
-    return !paused && !toBeRemoved && exists;
+    return !m_paused && !m_toBeRemoved && m_exists;
 }
 
 /*
@@ -755,3 +766,70 @@ bool SyncFolder::hasUnsyncedFiles() const
            !filesToRemove.isEmpty();
 }
 
+/*
+===================
+SyncFolder::updateUnsyncedList
+===================
+*/
+void SyncFolder::updateUnsyncedList()
+{
+    m_unsyncedList.clear();
+
+    if (hasUnsyncedFiles())
+    {
+        for (auto &path : foldersToRename)
+            m_unsyncedList.append(path.toPath + "\n");
+
+        for (auto &path : filesToMove)
+            m_unsyncedList.append(path.toPath + "\n");
+
+        for (auto &path : foldersToCreate)
+            m_unsyncedList.append(path.path + "\n");
+
+        for (auto &path : filesToCopy)
+            m_unsyncedList.append(path.toPath + "\n");
+
+        for (auto &path : foldersToRemove)
+            m_unsyncedList.append(path + "\n");
+
+        for (auto &path : filesToRemove)
+            m_unsyncedList.append(path + "\n");
+    }
+}
+
+/*
+===================
+SyncFolder::remove
+===================
+*/
+void SyncFolder::remove()
+{
+    setPaused(true);
+    m_toBeRemoved = true;
+    removeSettings();
+    removeDatabase();
+}
+
+/*
+===================
+SyncFolder::setType
+===================
+*/
+void SyncFolder::setType(Type type)
+{
+    if (type < TWO_WAY || type > ONE_WAY_UPDATE)
+        type = TWO_WAY;
+
+    m_type = type;
+}
+
+/*
+===================
+SyncFolder::setPaused
+===================
+*/
+void SyncFolder::setPaused(bool paused)
+{
+    m_paused = paused;
+    m_profile->updatePausedState();
+}

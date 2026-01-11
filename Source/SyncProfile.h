@@ -89,6 +89,7 @@ public:
     void saveSettings() const;
     void removeSettings() const;
 
+    void setSyncHidden(bool hidden) { m_syncHidden = hidden; }
     void setSyncingMode(SyncingMode mode);
     void setSyncTimeMultiplier(quint32 multiplier);
     inline void setSyncIntervalFixed(quint64 interval) { m_syncIntervalFixed = interval; }
@@ -107,8 +108,12 @@ public:
     inline void setDeltaCopyingMinSize(quint64 size) { m_deltaCopyingMinSize = size; }
     inline void setIncludeList(const QStringList &list) { m_includeList = list; }
     inline void setExcludeList(const QStringList &list) { m_excludeList = list; }
+    inline void setSyncing(bool syncing) { m_syncing = syncing; }
+    void setPaused(bool paused);
     inline void setIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
+    inline void setIndex(const QModelIndex &index) { m_index = index; }
 
+    inline bool syncHidden() const { return m_syncHidden; }
     inline SyncingMode syncingMode() const { return m_syncingMode; }
     inline quint32 syncTimeMultiplier() const { return m_syncTimeMultiplier; }
     inline quint64 syncIntervalFixed() const { return m_syncIntervalFixed; }
@@ -127,10 +132,17 @@ public:
     inline quint64 deltaCopyingMinSize() const { return m_deltaCopyingMinSize; }
     inline const QStringList &includeList() const { return m_includeList; }
     inline const QStringList &excludeList() const { return m_excludeList; }
+    inline bool syncing() const { return m_syncing; }
+    inline bool paused() const { return m_paused; }
+    void remove();
+    inline bool toBeRemoved() const { return m_toBeRemoved; }
     inline bool ignoreHiddenFiles() const { return m_ignoreHiddenFiles; }
+    inline QModelIndex index() const { return m_index; }
 
+    void updateStatus();
     void updateTimer();
     void updateNextSyncingTime();
+    void updatePausedState();
     bool resetLocks();
     void removeNonexistentFileData();
     void saveDatabasesLocally() const;
@@ -139,10 +151,10 @@ public:
     void loadDatebasesDecentralised();
     void addFilePath(hash64_t hash, const QByteArray &path);
     void removeUnneededFilePath(hash64_t hash);
-    inline void clearFilePaths() { filePaths.clear(); }
+    inline void clearFilePaths() { m_filePaths.clear(); }
 
-    inline QByteArray filePath(Hash hash) const { return filePaths.value(hash); }
-    inline bool hasFilePath(Hash hash) const { return filePaths.contains(hash); }
+    inline QByteArray filePath(Hash hash) const { return m_filePaths.value(hash); }
+    inline bool hasFilePath(Hash hash) const { return m_filePaths.contains(hash); }
     bool isActive() const;
     bool isAutomatic() const;
     bool isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) const;
@@ -158,7 +170,6 @@ public:
     void destroyMenus();
     void retranslate();
 
-    QModelIndex index;
     std::list<SyncFolder> folders;
 
     QAction *manualAction;
@@ -199,10 +210,6 @@ public:
     UnhidableMenu *databaseLocationMenu;
     UnhidableMenu *filteringMenu;
 
-    bool syncing = false;
-    bool paused = false;
-    bool toBeRemoved = false;
-    bool syncHidden = false;
     quint64 syncEvery = 0;
     quint64 syncTime = 0;
     QChronoTimer syncTimer;
@@ -227,12 +234,17 @@ private:
     QStringList m_includeList;
     QStringList m_excludeList;
     quint32 m_syncTimeMultiplier = 1;
+    bool m_syncHidden = false;
+    bool m_syncing = false;
+    bool m_paused = false;
+    bool m_toBeRemoved = false;
     bool m_detectMovedFiles = true;
     bool m_deltaCopying = false;
     bool m_ignoreHiddenFiles = false;
 
-    QHash<Hash, QByteArray> filePaths;
-    QMutex mutex;
+    QHash<Hash, QByteArray> m_filePaths;
+    QModelIndex m_index;
+    QMutex m_mutex;
 };
 
 #endif // SYNCPROFILE_H

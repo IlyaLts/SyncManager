@@ -35,7 +35,7 @@ SyncProfile::SyncProfile
 */
 SyncProfile::SyncProfile(const QString &name, const QModelIndex &index)
 {
-    this->index = index;
+    this->m_index = index;
     this->name = name;
     m_versioningFolder = "[Deletions]";
     m_versioningPattern = "yyyy_M_d_h_m_s_z";
@@ -53,7 +53,7 @@ SyncProfile::~SyncProfile
 */
 SyncProfile::~SyncProfile()
 {
-    if (!toBeRemoved)
+    if (!m_toBeRemoved)
         saveSettings();
 }
 
@@ -85,7 +85,7 @@ void SyncProfile::loadSettings()
     setVersioningPattern(settings.value(keyName + "VersionPattern", "yyyy_M_d_h_m_s_z").toString());
 
     lastSyncDate = settings.value(keyName + "LastSyncDate").toDateTime();
-    paused = settings.value(keyName + "Paused", false).toBool();
+    m_paused = settings.value(keyName + "Paused", false).toBool();
     syncTime = settings.value(keyName + "SyncTime", 0).toULongLong();
 }
 
@@ -120,7 +120,7 @@ void SyncProfile::saveSettings() const
     settings.setValue(profileKey + "VersionPattern", versioningPattern());
 
     settings.setValue(profileKey + QLatin1String("LastSyncDate"), lastSyncDate);
-    settings.setValue(profileKey + QLatin1String("Paused"), paused);
+    settings.setValue(profileKey + QLatin1String("Paused"), m_paused);
     settings.setValue(profileKey + QLatin1String("SyncTime"), syncTime);
 
     for (const auto &folder : folders)
@@ -246,6 +246,67 @@ void SyncProfile::setVersioningLocation(VersioningLocation location)
 
 /*
 ===================
+SyncProfile::setPaused
+===================
+*/
+void SyncProfile::setPaused(bool paused)
+{
+    m_paused = paused;
+
+    for (auto &folder : folders)
+        folder.setPaused(paused);
+
+    if (paused)
+        syncTimer.stop();
+    else
+        updateTimer();
+}
+
+/*
+===================
+SyncProfile::remove
+===================
+*/
+void SyncProfile::remove()
+{
+    setPaused(true);
+
+    m_toBeRemoved = true;
+    removeSettings();
+
+    for (auto &folder : folders)
+        folder.remove();
+}
+
+/*
+===================
+SyncProfile::updateStatus
+===================
+*/
+void SyncProfile::updateStatus()
+{/*
+    m_syncing = false;
+
+    if (toBeRemoved())
+        continue;
+
+    for (auto &folder : profile.folders)
+    {
+        folder.m_syncing = false;
+
+        if (folder.toBeRemoved())
+            continue;
+
+        if (m_busy && folder.isActive() && folder.hasUnsyncedFiles())
+        {
+            m_syncing = true;
+            folder.m_syncing = true;
+        }
+    }*/
+}
+
+/*
+===================
 SyncProfile::updateTimer
 ===================
 */
@@ -336,6 +397,22 @@ void SyncProfile::updateNextSyncingTime()
 
 /*
 ===================
+SyncProfile::updatePausedState
+===================
+*/
+void SyncProfile::updatePausedState()
+{
+    bool paused = true;
+
+    for (auto &folder : folders)
+        if (!folder.paused())
+            paused = false;
+
+    m_paused = paused;
+}
+
+/*
+===================
 SyncProfile::resetLocks
 ===================
 */
@@ -413,10 +490,10 @@ void SyncProfile::saveDatabasesLocally() const
 {
     for (const auto &folder : folders)
     {
-        if (!folder.isActive() || folder.toBeRemoved)
+        if (!folder.isActive() || folder.toBeRemoved())
             continue;
 
-        QByteArray filename(QByteArray::number(hash64(folder.path)) + ".db");
+        QByteArray filename(QByteArray::number(hash64(folder.path())) + ".db");
         folder.saveToDatabase(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename);
     }
 }
@@ -430,19 +507,19 @@ void SyncProfile::saveDatabasesDecentralised() const
 {
     for (auto &folder : folders)
     {
-        if (!folder.isActive() || folder.toBeRemoved)
+        if (!folder.isActive() || folder.toBeRemoved())
             continue;
 
-        QDir().mkdir(folder.path + DATA_FOLDER_PATH);
+        QDir().mkdir(folder.path() + DATA_FOLDER_PATH);
 
-        if (!QDir(folder.path + DATA_FOLDER_PATH).exists())
+        if (!QDir(folder.path() + DATA_FOLDER_PATH).exists())
             continue;
 
-        folder.saveToDatabase(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
+        folder.saveToDatabase(folder.path() + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
 
 #ifdef Q_OS_WIN
-        setHiddenFileAttribute(QString(folder.path + DATA_FOLDER_PATH), true);
-        setHiddenFileAttribute(QString(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME), true);
+        setHiddenFileAttribute(QString(folder.path() + DATA_FOLDER_PATH), true);
+        setHiddenFileAttribute(QString(folder.path() + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME), true);
 #endif
     }
 }
@@ -456,10 +533,10 @@ void SyncProfile::loadDatabasesLocally()
 {
     for (auto &folder : folders)
     {
-        if (!folder.isActive() || folder.toBeRemoved)
+        if (!folder.isActive() || folder.toBeRemoved())
             continue;
 
-        QByteArray filename(QByteArray::number(hash64(folder.path)) + ".db");
+        QByteArray filename(QByteArray::number(hash64(folder.path())) + ".db");
         folder.loadFromDatabase(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename);
     }
 }
@@ -473,10 +550,10 @@ void SyncProfile::loadDatebasesDecentralised()
 {
     for (auto &folder : folders)
     {
-        if (!folder.isActive() || folder.toBeRemoved)
+        if (!folder.isActive() || folder.toBeRemoved())
             continue;
 
-        folder.loadFromDatabase(folder.path + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
+        folder.loadFromDatabase(folder.path() + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
     }
 }
 
@@ -487,15 +564,15 @@ SyncProfile::addFilePath
 */
 void SyncProfile::addFilePath(hash64_t hash, const QByteArray &path)
 {
-    mutex.lock();
+    m_mutex.lock();
 
-    if (!filePaths.contains(Hash(hash)))
+    if (!m_filePaths.contains(Hash(hash)))
     {
-        auto it = filePaths.insert(Hash(hash), path);
+        auto it = m_filePaths.insert(Hash(hash), path);
         it->squeeze();
     }
 
-    mutex.unlock();
+    m_mutex.unlock();
 }
 
 /*
@@ -522,18 +599,18 @@ void SyncProfile::removeUnneededFilePath(hash64_t hash)
             return;
     }
 
-    mutex.lock();
-    filePaths.remove(hash);
+    m_mutex.lock();
+    m_filePaths.remove(hash);
 
     // I don't know exactly what squeeze() does internally,
     // but calling it repeatedly significantly impacts performance.
     // So, since QHash capacity is always doubled, we should just check
     // if we really need to squeeze it. That, itself, brings performance back.
     // Also, the minimum capacity for QHash is 64 bytes.
-    if (filePaths.size() < filePaths.capacity() / 2 && filePaths.size() > 64)
-        filePaths.squeeze();
+    if (m_filePaths.size() < m_filePaths.capacity() / 2 && m_filePaths.size() > 64)
+        m_filePaths.squeeze();
 
-    mutex.unlock();
+    m_mutex.unlock();
 }
 
 /*
@@ -549,7 +626,7 @@ bool SyncProfile::isActive() const
         if (folder.isActive())
             activeFolders++;
 
-    return !paused && !toBeRemoved && activeFolders >= 2;
+    return !m_paused && !m_toBeRemoved && activeFolders >= 2;
 }
 
 /*
@@ -597,7 +674,7 @@ int SyncProfile::countExistingFolders() const
     int n = 0;
 
     for (const auto &folder : folders)
-        if (folder.exists)
+        if (folder.exists())
             n++;
 
     return n;
@@ -611,7 +688,7 @@ SyncProfile::hasMissingFolders
 bool SyncProfile::hasMissingFolders() const
 {
     for (const auto &folder : folders)
-        if (!folder.exists)
+        if (!folder.exists())
             return true;
 
     return false;
@@ -619,13 +696,13 @@ bool SyncProfile::hasMissingFolders() const
 
 /*
 ===================
-SyncProfile::partiallySynchronized
+SyncProfile::m_partiallySynchronized
 ===================
 */
 bool SyncProfile::partiallySynchronized() const
 {
     for (const auto &folder : folders)
-        if (folder.partiallySynchronized)
+        if (folder.hasUnsyncedFiles())
             return true;
 
     return false;
@@ -639,7 +716,7 @@ SyncProfile::folderByIndex
 SyncFolder *SyncProfile::folderByIndex(QModelIndex index)
 {
     for (auto &folder : folders)
-        if (folder.path == index.data(Qt::DisplayRole).toString())
+        if (folder.path() == index.data(Qt::DisplayRole).toString())
             return &folder;
 
     return nullptr;
@@ -653,7 +730,7 @@ SyncProfile::folderByPath
 SyncFolder *SyncProfile::folderByPath(const QString &path)
 {
     for (auto &folder : folders)
-        if (folder.path.compare(path.toUtf8(), folder.caseSensitive() ? Qt::CaseSensitive : Qt::CaseInsensitive) == 0)
+        if (folder.path().compare(path.toUtf8(), folder.caseSensitive() ? Qt::CaseSensitive : Qt::CaseInsensitive) == 0)
             return &folder;
 
     return nullptr;

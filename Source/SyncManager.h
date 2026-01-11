@@ -37,6 +37,7 @@
 #define SYNC_MIN_DELAY          1000
 #define NOTIFICATION_COOLDOWN   300000
 #define CPU_UPDATE_TIME         50
+#define DISK_USAGE_RESET_TIME   1000
 #define COPY_BUFFER_SIZE        4096
 
 /*

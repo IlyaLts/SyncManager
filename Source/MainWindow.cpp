@@ -79,17 +79,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     {
         syncApp->manager()->profiles().emplace_back(name, profileIndexByName(name));
         SyncProfile &profile = syncApp->manager()->profiles().back();
-        profile.paused = syncApp->manager()->paused();
+        profile.setPaused(syncApp->manager()->paused());
 
         QStringList paths = profilesData.value(name).toStringList();
         paths.sort();
 
         for (auto &path : paths)
-        {
-            profile.folders.emplace_back(&profile);
-            profile.folders.back().paused = syncApp->manager()->paused();
-            profile.folders.back().path = path.toUtf8();
-        }
+            profile.folders.emplace_back(&profile, path.toUtf8());
     }
 
     connect(ui->syncProfilesView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(profileClicked(QItemSelection,QItemSelection)));
@@ -118,8 +114,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (const auto &profile : syncApp->manager()->profiles())
         for (const auto &folder : profile.folders)
-            if (!folder.exists)
-                syncApp->tray()->notify(tr("Couldn't find folder"), folder.path, QSystemTrayIcon::Warning);
+            if (!folder.exists())
+                syncApp->tray()->notify(tr("Couldn't find folder"), folder.path(), QSystemTrayIcon::Warning);
 }
 
 /*
@@ -224,16 +220,16 @@ void MainWindow::loadSettings()
         switchDatabaseLocation(*profile, static_cast<SyncProfile::DatabaseLocation>(settings.value(profileKeyname + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
 
         // Loads saved pause states and checks if synchronization folders exist
-        profile->paused = settings.value(profileKeyPath + QLatin1String("Paused"), false).toBool();
+        profile->setPaused(settings.value(profileKeyPath + QLatin1String("Paused"), false).toBool());
 
-        if (!profile->paused)
+        if (!profile->paused())
             syncApp->manager()->setPaused(false);
 
         for (auto &folder : profile->folders)
         {
             folder.loadSettings();
 
-            if (!folder.paused)
+            if (!folder.paused())
                 syncApp->manager()->setPaused(false);
         }
 
@@ -362,7 +358,7 @@ void MainWindow::addProfile()
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
     SyncProfile &profile = syncApp->manager()->profiles().emplace_back(newName, profileIndexByName(newName));
-    profile.paused = syncApp->manager()->paused();
+    profile.setPaused(syncApp->manager()->paused());
     profile.setupMenus(this);
     connectProfileMenu(profile);
     rebindProfiles();
@@ -404,7 +400,7 @@ void MainWindow::removeProfile()
         QString title(tr("Remove profile"));
         QString text;
 
-        if (profile->syncing)
+        if (profile->syncing())
             text.assign(tr("The profile is currently syncing. Are you sure you want to remove it?"));
         else
             text.assign(tr("Are you sure you want to remove the profile?"));
@@ -422,16 +418,7 @@ void MainWindow::removeProfile()
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
         profilesData.remove(profile->name);
 
-        profile->paused = true;
-        profile->toBeRemoved = true;
-        profile->removeSettings();
-
-        for (auto &folder : profile->folders)
-        {
-            folder.paused = true;
-            folder.toBeRemoved = true;
-            folder.removeDatabase();
-        }
+        profile->remove();
 
         if (!syncApp->manager()->busy())
             syncApp->manager()->profiles().remove(*profile);
@@ -467,7 +454,7 @@ void MainWindow::profileClicked(const QItemSelection &selected, const QItemSelec
         return;
 
     for (const auto &folder : profile->folders)
-        folderPaths.append(folder.path);
+        folderPaths.append(folder.path());
 
     folderModel->setStringList(folderPaths);
     updateProfileTooltip(*profile);
@@ -505,7 +492,7 @@ void MainWindow::profileNameChanged(const QModelIndex &topLeft, const QModelInde
         return;
 
     for (const auto &folder : profile->folders)
-        folderPaths.append(folder.path);
+        folderPaths.append(folder.path());
 
     // Sets its name back to original if there's the profile name that already exists
     if (newName.compare(profile->name, Qt::CaseInsensitive) && (newName.isEmpty() || profileNames.contains(newName, Qt::CaseInsensitive)))
@@ -556,8 +543,8 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         return;
 
     for (const auto &folder : profile->folders)
-        if (!folder.toBeRemoved)
-            existedFolders.append(folder.path);
+        if (!folder.toBeRemoved())
+            existedFolders.append(folder.path());
 
     // Drag & drop
     if (mimeData)
@@ -603,11 +590,9 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
         if (!exists)
         {
-            SyncFolder &folder = profile->folders.emplace_back(profile);
-            folder.paused = profile->paused;
-            folder.path = newFolderPath.toUtf8();
+            SyncFolder &folder = profile->folders.emplace_back(profile, newFolderPath.toUtf8());
             folder.saveSettings();
-            existedFolders.append(folder.path);
+            existedFolders.append(folder.path());
 
             QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
             profilesData.setValue(profile->name, existedFolders);
@@ -642,7 +627,7 @@ void MainWindow::removeFolder()
         QString title(tr("Remove folder"));
         QString text;
 
-        if (folder->syncing)
+        if (folder->syncing())
             text.assign(tr("The folder is currently syncing. Are you sure you want to remove it?"));
         else
             text.assign(tr("Are you sure you want to remove the folder?"));
@@ -650,15 +635,15 @@ void MainWindow::removeFolder()
         if (!syncApp->questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
             return;
 
-        folder->paused = true;
-        folder->toBeRemoved = true;
+        folder->setPaused(true);
+        folder->remove();
         ui->folderListView->model()->removeRow(folderIndex.row());
 
         folder->removeDatabase();
         folder->removeSettings();
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-        settings.remove(profile->name + QLatin1String("_profile/") + folder->path + QLatin1String("_Paused"));
+        settings.remove(profile->name + QLatin1String("_profile/") + folder->path() + QLatin1String("_Paused"));
 
         if (!syncApp->manager()->busy())
             profile->folders.remove(*folder);
@@ -666,7 +651,7 @@ void MainWindow::removeFolder()
         QStringList foldersPaths;
 
         for (const auto &folder : profile->folders)
-            foldersPaths.append(folder.path);
+            foldersPaths.append(folder.path());
 
         QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
         profilesData.setValue(profile->name, foldersPaths);
@@ -690,15 +675,7 @@ void MainWindow::pauseSyncing()
 
     for (auto &profile : syncApp->manager()->profiles())
     {
-        profile.paused = syncApp->manager()->paused();
-
-        for (auto &folder : profile.folders)
-            folder.paused = syncApp->manager()->paused();
-
-        if (profile.paused)
-            profile.syncTimer.stop();
-        else
-            profile.updateTimer();
+        profile.setPaused(syncApp->manager()->paused());
 
         if (syncApp->initiated())
             profile.saveSettings();
@@ -737,14 +714,8 @@ void MainWindow::pauseSelected()
                 if (!folder)
                     continue;
 
-                folder->paused = !folder->paused;
+                folder->setPaused(!folder->paused());
             }
-
-            profile->paused = true;
-
-            for (const auto &folder : profile->folders)
-                if (!folder.paused)
-                    profile->paused = false;
 
             if (syncApp->initiated())
                 profile->saveSettings();
@@ -761,15 +732,7 @@ void MainWindow::pauseSelected()
                 if (!profile)
                     return;
 
-                profile->paused = !profile->paused;
-
-                for (auto &folder : profile->folders)
-                    folder.paused = profile->paused;
-
-                if (profile->paused)
-                    profile->syncTimer.stop();
-                else
-                    profile->updateTimer();
+                profile->setPaused(!profile->paused());
 
                 if (syncApp->initiated())
                     profile->saveSettings();
@@ -894,10 +857,7 @@ MainWindow::switchSyncingType
 */
 void MainWindow::switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::Type type)
 {
-    if (type < SyncFolder::TWO_WAY || type > SyncFolder::ONE_WAY_UPDATE)
-        type = SyncFolder::TWO_WAY;
-
-    folder.type = type;
+    folder.setType(type);
     updateStatus();
 
     if (syncApp->initiated())
@@ -1381,7 +1341,7 @@ void MainWindow::showContextMenu(const QPoint &pos)
             if (!profile)
                 return;
 
-            if (profile->paused)
+            if (profile->paused())
             {
                 menu.addAction(iconResume, "&" + tr("Resume syncing profile"), this, SLOT(pauseSelected()));
             }
@@ -1424,31 +1384,31 @@ void MainWindow::showContextMenu(const QPoint &pos)
             if (!profile || !folder)
                 return;
 
-            if (folder->paused)
+            if (folder->paused())
                 menu.addAction(iconResume, "&" + tr("Resume syncing folder"), this, SLOT(pauseSelected()));
             else
                 menu.addAction(iconPause, "&" + tr("Pause syncing folder"), this, SLOT(pauseSelected()));
 
             menu.addAction(iconRemove, "&" + tr("Remove folder"), this, SLOT(removeFolder()));
 
-            if (folder->partiallySynchronized && !folder->unsyncedList.isEmpty())
+            if (folder->hasUnsyncedFiles() && !folder->unsyncedList().isEmpty())
             {
                 QString menuTitle(tr("Show unsynchronized files"));
                 QString title(tr("Couldn't synchronize the following files"));
 
                 menu.addSeparator();
-                menu.addAction(iconWarning, "&" + menuTitle, this, [title, folder](){ syncApp->textDialog(title, folder->unsyncedList); });
+                menu.addAction(iconWarning, "&" + menuTitle, this, [title, folder](){ syncApp->textDialog(title, folder->unsyncedList()); });
             }
 
             menu.addSeparator();
 
-            if (folder->type != SyncFolder::TWO_WAY)
+            if (folder->type() != SyncFolder::TWO_WAY)
                 menu.addAction(iconTwoWay, "&" + tr("Switch to two-way synchronization"), this, [profile, folder, this](){ switchSyncingType(*profile, *folder, SyncFolder::TWO_WAY); });
 
-            if (folder->type != SyncFolder::ONE_WAY)
+            if (folder->type() != SyncFolder::ONE_WAY)
                 menu.addAction(iconOneWay, "&" + tr("Switch to one-way synchronization"), this, [profile, folder, this](){ switchSyncingType(*profile, *folder, SyncFolder::ONE_WAY); });
 
-            if (folder->type != SyncFolder::ONE_WAY_UPDATE)
+            if (folder->type() != SyncFolder::ONE_WAY_UPDATE)
                 menu.addAction(iconOneWayUpdate, "&" + tr("Switch to one-way update synchronization"), this, [profile, folder, this](){ switchSyncingType(*profile, *folder, SyncFolder::ONE_WAY_UPDATE); });
         }
 
@@ -1468,12 +1428,12 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         if (syncApp->manager()->queue().contains(profile))
             return;
 
-        profile->syncHidden = hidden;
+        profile->setSyncHidden(hidden);
     }
     else
     {
         for (auto &profile : syncApp->manager()->profiles())
-            profile.syncHidden = false;
+            profile.setSyncHidden(false);
     }
 
     syncApp->manager()->addToQueue(profile);
@@ -1542,7 +1502,7 @@ void MainWindow::rebindProfiles()
         for (auto &profile : syncApp->manager()->profiles())
         {
             if (profileModel->indexByRow(i).data(Qt::DisplayRole).toString()  == profile.name)
-                profile.index = profileModel->indexByRow(i);
+                profile.setIndex(profileModel->indexByRow(i));
         }
     }
 }
@@ -1644,7 +1604,7 @@ void MainWindow::updateStatus()
             if (!profile)
                 continue;
 
-            if (profile->toBeRemoved)
+            if (profile->toBeRemoved())
                 continue;
 
             int posInQueue = syncApp->manager()->queue().indexOf(profile);
@@ -1656,9 +1616,9 @@ void MainWindow::updateStatus()
             else
                 profileModel->setData(index, QString(""), QueueStatusRole);
 
-            if (profile->paused)
+            if (profile->paused())
                 profileModel->setData(index, iconPause, Qt::DecorationRole);
-            else if (profile->syncing || (!profile->syncHidden && syncApp->manager()->queue().contains(profile)))
+            else if (profile->syncing() || (!profile->syncHidden() && syncApp->manager()->queue().contains(profile)))
                 profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
             else if (!profile->folders.empty() && profile->countExistingFolders() < 2 && profile->folders.size() >= 2)
                 profileModel->setData(index, iconRemove, Qt::DecorationRole);
@@ -1688,28 +1648,28 @@ void MainWindow::updateStatus()
                     if (!folder)
                         continue;
 
-                    if (folder->toBeRemoved)
+                    if (folder->toBeRemoved())
                         continue;
 
                     QIcon *icon = nullptr;
 
-                    if (folder->type == SyncFolder::TWO_WAY)
+                    if (folder->type() == SyncFolder::TWO_WAY)
                         icon = &iconTwoWay;
-                    else if (folder->type == SyncFolder::ONE_WAY)
+                    else if (folder->type() == SyncFolder::ONE_WAY)
                         icon = &iconOneWay;
-                    else if (folder->type == SyncFolder::ONE_WAY_UPDATE)
+                    else if (folder->type() == SyncFolder::ONE_WAY_UPDATE)
                         icon = &iconOneWayUpdate;
 
                     if (icon)
                         folderModel->setData(index, *icon, SyncTypeRole);
 
-                    if (folder->paused)
+                    if (folder->paused())
                         folderModel->setData(index, iconPause, Qt::DecorationRole);
-                    else if (folder->syncing || (syncApp->manager()->queue().contains(profile) && !syncApp->manager()->syncing() && !profile->syncHidden))
+                    else if (folder->syncing() || (syncApp->manager()->queue().contains(profile) && !syncApp->manager()->syncing() && !profile->syncHidden()))
                         folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-                    else if (!folder->exists)
+                    else if (!folder->exists())
                         folderModel->setData(index, iconRemove, Qt::DecorationRole);
-                    else if (folder->partiallySynchronized)
+                    else if (folder->hasUnsyncedFiles())
                         folderModel->setData(index, iconDonePartial, Qt::DecorationRole);
                     else
                         folderModel->setData(index, iconDone, Qt::DecorationRole);
@@ -1725,7 +1685,7 @@ void MainWindow::updateStatus()
     // Pause status
     for (const auto &profile : syncApp->manager()->profiles())
     {
-        if (profile.toBeRemoved)
+        if (profile.toBeRemoved())
             continue;
 
         if (syncApp->manager()->paused())
@@ -1933,16 +1893,16 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
     {
         for (int i = 0; auto &folder : profile.folders)
         {
-            if (!folder.exists)
+            if (!folder.exists())
             {
                 folderModel->setData(folderModel->indexByRow(i), tr("The folder is currently unavailable."), Qt::ToolTipRole);
             }
-            else if (!folder.lastSyncDate.isNull())
+            else if (!folder.lastSyncDate().isNull())
             {
-                QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate, dateFormat));
+                QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate(), dateFormat));
                 QString text = QString("Last synchronization: %1.").arg(time) + nextSyncText;
 
-                if (folder.partiallySynchronized)
+                if (folder.hasUnsyncedFiles())
                     text.insert(0, tr("Partially synchronized!") + "\n\n");
 
                 folderModel->setData(folderModel->indexByRow(i), text, Qt::ToolTipRole);
@@ -2114,7 +2074,7 @@ MainWindow::profileByIndex
 SyncProfile *MainWindow::profileByIndex(const QModelIndex &index)
 {
     for (auto &profile : syncApp->manager()->profiles())
-        if (profile.index == index)
+        if (profile.index() == index)
             return &profile;
 
     return nullptr;
@@ -2128,7 +2088,7 @@ MainWindow::indexByProfile
 QModelIndex MainWindow::indexByProfile(const SyncProfile &profile)
 {
     for (int i = 0; i < profileModel->rowCount(); i++)
-        if (profileModel->indexByRow(i) == profile.index)
+        if (profileModel->indexByRow(i) == profile.index())
             return profileModel->indexByRow(i);
 
     return QModelIndex();
