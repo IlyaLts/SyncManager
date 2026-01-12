@@ -1014,7 +1014,7 @@ void MainWindow::toggleCheckForUpdates()
     updateAvailableButton->setVisible(syncApp->checkForUpdatesEnabled() && syncApp->updateAvailable());
 
     if (syncApp->checkForUpdatesEnabled())
-        syncApp->checkForUpdates();
+        syncApp->checkForUpdate();
 }
 
 /*

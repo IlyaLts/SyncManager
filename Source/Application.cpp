@@ -96,13 +96,13 @@ void Application::init()
 {
     m_netManager = new QNetworkAccessManager(this);
     connect(m_netManager, &QNetworkAccessManager::finished, this, &Application::onUpdateReply);
-    connect(&m_updateTimer, &QTimer::timeout, this, &Application::checkForUpdates);
+    connect(&m_updateTimer, &QTimer::timeout, this, &Application::checkForUpdate);
 
     m_syncThread = new QThread(this);
-    m_tray = new SystemTray;
+    m_cpuUsage = new CpuUsage(this);
+    m_tray.reset(new SystemTray);
     m_manager.reset(new SyncManager);
     m_window.reset(new MainWindow);
-    m_cpuUsage = new CpuUsage(this);
 
     m_manager->moveToThread(m_syncThread);
     connect(m_syncThread, &QThread::started, m_manager.data(), [this](){ m_manager->sync(); });
@@ -113,6 +113,82 @@ void Application::init()
 
     loadSettings();
     m_initiated = true;
+}
+
+/*
+===================
+Application::exec
+===================
+*/
+int Application::exec()
+{
+    if (!m_initiated)
+        return -1;
+
+    if (!syncApp->trayVisible())
+        m_window->show();
+
+    return QApplication::exec();
+}
+
+/*
+===================
+Application::throttleCpu
+===================
+*/
+void Application::throttleCpu()
+{
+    while (processUsage() > maxCpuUsage())
+        QThread::msleep(CPU_UPDATE_TIME);
+}
+
+/*
+===================
+Application::checkForUpdate
+===================
+*/
+void Application::checkForUpdate()
+{
+    QNetworkRequest request;
+    request.setUrl(QUrl(LATEST_RELEASE_API_URL));
+    request.setRawHeader("User-Agent", "SyncManager");
+    m_netManager->get(request);
+}
+
+/*
+===================
+Application::loadSettings
+===================
+*/
+void Application::loadSettings()
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+
+    setMaxCpuUsage(settings.value("MaximumCpuUsage", 100).toUInt());
+    setLanguage(static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt()));
+    setTrayVisible(settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool());
+    setCheckForUpdates(settings.value("CheckForUpdates", true).toBool());
+
+    if (syncApp->checkForUpdatesEnabled())
+        syncApp->checkForUpdate();
+}
+
+/*
+===================
+Application::saveSettings
+===================
+*/
+void Application::saveSettings() const
+{
+    if (!initiated())
+        return;
+
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+
+    settings.setValue("MaximumCpuUsage", maxCpuUsage());
+    settings.setValue("Language", m_language);
+    settings.setValue("ShowInTray", trayVisible());
+    settings.setValue("CheckForUpdates", m_checkForUpdates);
 }
 
 /*
@@ -288,46 +364,6 @@ void Application::setMaxCpuUsage(float percentage)
 
 /*
 ===================
-Application::checkForUpdates
-===================
-*/
-void Application::checkForUpdates()
-{
-    QNetworkRequest request;
-    request.setUrl(QUrl(LATEST_RELEASE_API_URL));
-    request.setRawHeader("User-Agent", "SyncManager");
-    m_netManager->get(request);
-}
-
-/*
-===================
-Application::throttleCpu
-===================
-*/
-void Application::throttleCpu()
-{
-    while (processUsage() > maxCpuUsage())
-        QThread::msleep(CPU_UPDATE_TIME);
-}
-
-/*
-===================
-Application::exec
-===================
-*/
-int Application::exec()
-{
-    if (!m_initiated)
-        return -1;
-
-    if (!syncApp->trayVisible())
-        m_window->show();
-
-    return QApplication::exec();
-}
-
-/*
-===================
 Application::quit
 ===================
 */
@@ -343,42 +379,6 @@ void Application::quit()
         m_manager->shouldQuit();
         QApplication::quit();
     }
-}
-
-/*
-===================
-Application::loadSettings
-===================
-*/
-void Application::loadSettings()
-{
-    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-
-    setMaxCpuUsage(settings.value("MaximumCpuUsage", 100).toUInt());
-    setLanguage(static_cast<QLocale::Language>(settings.value("Language", QLocale::system().language()).toInt()));
-    setTrayVisible(settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool());
-    setCheckForUpdates(settings.value("CheckForUpdates", true).toBool());
-
-    if (syncApp->checkForUpdatesEnabled())
-        syncApp->checkForUpdates();
-}
-
-/*
-===================
-Application::saveSettings
-===================
-*/
-void Application::saveSettings() const
-{
-    if (!initiated())
-        return;
-
-    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-
-    settings.setValue("MaximumCpuUsage", maxCpuUsage());
-    settings.setValue("Language", m_language);
-    settings.setValue("ShowInTray", trayVisible());
-    settings.setValue("CheckForUpdates", m_checkForUpdates);
 }
 
 /*

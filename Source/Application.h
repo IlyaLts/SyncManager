@@ -64,30 +64,32 @@ public:
     ~Application();
 
     void init();
+    int exec();
+    void throttleCpu();
+    void checkForUpdate();
+    void loadSettings();
+    void saveSettings() const;
+
     void setLanguage(QLocale::Language language);
     void setTrayVisible(bool visible);
     void setLaunchOnStartup(bool enable);
     void setCheckForUpdates(bool enable);
     void setMaxCpuUsage(float percentage);
-    void checkForUpdates();
-    void throttleCpu();
-
-    int exec();
-
-    inline MainWindow *window() const { return m_window.data(); }
-    inline SyncManager *manager() const { return m_manager.data(); }
-    inline SystemTray *tray() const { return m_tray; }
-    inline QThread *syncThread() const { return m_syncThread; }
 
     inline bool initiated() const { return m_initiated; }
     inline QLocale::Language language() const { return m_language; }
     inline bool trayVisible() const { return m_trayVisible; }
-    inline bool updateAvailable() const { return m_updateAvailable; };
-    inline QString toLocalizedDateTime(const QDateTime &dateTime, const QString &format) { return m_locale.toString(dateTime, format); }
-    inline float processUsage() const { return m_processUsage; }
-    inline float systemUsage() const { return m_systemUsage; }
     inline float maxCpuUsage() const { return m_maxCpuUsage; }
     inline bool checkForUpdatesEnabled() const { return m_checkForUpdates; }
+    inline bool updateAvailable() const { return m_updateAvailable; };
+    inline float processUsage() const { return m_processUsage; }
+    inline float systemUsage() const { return m_systemUsage; }
+    inline QString toLocalizedDateTime(const QDateTime &dateTime, const QString &format) { return m_locale.toString(dateTime, format); }
+
+    inline QThread *syncThread() const { return m_syncThread; }
+    inline SystemTray *tray() const { return m_tray.data(); }
+    inline MainWindow *window() const { return m_window.data(); }
+    inline SyncManager *manager() const { return m_manager.data(); }
 
     static int languageCount();
     static void textDialog(const QString &title, const QString &text);
@@ -114,8 +116,6 @@ Q_SIGNALS:
 public Q_SLOTS:
 
     void quit();
-    void loadSettings();
-    void saveSettings() const;
 
 private Q_SLOTS:
 
@@ -124,24 +124,24 @@ private Q_SLOTS:
 
 private:
 
+    QNetworkAccessManager *m_netManager = nullptr;
+    QThread *m_syncThread = nullptr;
+    CpuUsage *m_cpuUsage = nullptr;
+    QScopedPointer<SystemTray> m_tray;
     QScopedPointer<MainWindow> m_window;
     QScopedPointer<SyncManager> m_manager;
-    SystemTray *m_tray = nullptr;
-    QThread *m_syncThread = nullptr;
     QTranslator m_translator;
     QLocale m_locale;
 
-    bool m_initiated = false;
-    bool m_trayVisible = true;
-    bool m_updateAvailable = false;
     QTimer m_updateTimer;
-    QNetworkAccessManager *m_netManager;
-    CpuUsage *m_cpuUsage;
+    QLocale::Language m_language;
     float m_processUsage = 0.0;
     float m_systemUsage = 0.0;
     float m_maxCpuUsage = 100.0;
-    QLocale::Language m_language;
+    bool m_initiated = false;
+    bool m_trayVisible = true;
     bool m_checkForUpdates;
+    bool m_updateAvailable = false;
 };
 
 #endif // APPLICATION_H

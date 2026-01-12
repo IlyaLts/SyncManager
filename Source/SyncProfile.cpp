@@ -67,18 +67,18 @@ void SyncProfile::loadSettings()
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     QString keyName(name + QLatin1String("_profile/"));
 
-    setSyncTimeMultiplier(settings.value(keyName + "SyncTimeMultiplier", 1).toInt());
-    setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", 1).toInt());
+    setSyncTimeMultiplier(settings.value(keyName + "SyncTimeMultiplier", 1).toUInt());
+    setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", 1).toULongLong());
     setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
     setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
     setDeltaCopying(settings.value(keyName + "DeltaCopying", false).toBool());
     setVersioningPath(settings.value(keyName + "VersioningPath", "").toString());
     setDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(keyName + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
     setIgnoreHiddenFiles(settings.value(keyName + "IgnoreHiddenFiles", false).toBool());
-    setFileMinSize(settings.value(keyName + "FileMinSize", 0).toInt());
-    setFileMaxSize(settings.value(keyName + "FileMaxSize", 0).toInt());
-    setMovedFileMinSize(settings.value(keyName + "MovedFileMinSize", MOVED_FILES_MIN_SIZE).toInt());
-    setDeltaCopyingMinSize(settings.value(keyName + "DeltaCopyingMinSize", DELTA_COPYING_MIN_SIZE).toInt());
+    setFileMinSize(settings.value(keyName + "FileMinSize", 0).toULongLong());
+    setFileMaxSize(settings.value(keyName + "FileMaxSize", 0).toULongLong());
+    setMovedFileMinSize(settings.value(keyName + "MovedFileMinSize", MovedFilesMinSize).toULongLong());
+    setDeltaCopyingMinSize(settings.value(keyName + "DeltaCopyingMinSize", DeltaCopyingMinSize).toULongLong());
     setIncludeList(settings.value(keyName + "IncludeList").toStringList());
     setExcludeList(settings.value(keyName + "ExcludeList").toStringList());
     setVersioningFolder(settings.value(keyName + "VersionFolder", "[Deletions]").toString());
