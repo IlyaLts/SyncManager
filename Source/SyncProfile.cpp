@@ -403,13 +403,13 @@ SyncProfile::updatePausedState
 */
 void SyncProfile::updatePausedState()
 {
-    bool paused = true;
+    int unpausedFolders = 0;
 
     for (auto &folder : folders)
         if (!folder.paused())
-            paused = false;
+            unpausedFolders++;
 
-    m_paused = paused;
+    m_paused = unpausedFolders < 2;
 }
 
 /*

@@ -68,6 +68,7 @@ void SyncManager::loadSettings()
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
 
     setMaxDiskTransferRate(settings.value("MaximumDiskUsage", 0).toULongLong());
+    setPaused(settings.value("Paused", false).toBool());
     enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
 
     for (auto &profile : profiles())
@@ -347,7 +348,7 @@ SyncManager::inPausedState
 bool SyncManager::inPausedState() const
 {
     if (profiles().empty())
-        return false;
+        return m_paused;
 
     for (const auto &profile : profiles())
     {
