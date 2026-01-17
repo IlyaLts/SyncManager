@@ -69,7 +69,7 @@ void SyncProfile::loadSettings()
     QString keyName(name + QLatin1String("_profile/"));
 
     setSyncTimeMultiplier(settings.value(keyName + "SyncTimeMultiplier", 1).toUInt());
-    setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", 1).toULongLong());
+    setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", defaultFixedInterval).toULongLong());
     setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
     setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
     setDeltaCopying(settings.value(keyName + "DeltaCopying", false).toBool());
@@ -755,9 +755,9 @@ void SyncProfile::setupMenus(QWidget *parent)
     detectMovedFilesAction = new QAction("&" + syncApp->translate("Detect Renamed and Moved Files"), parent);
     deltaCopyingAction = new QAction("&" + syncApp->translate("File Delta Copying") + " (Beta)", parent);
     increaseSyncTimeAction = new QAction("&" + syncApp->translate("Increase"), parent);
-    syncingTimeAction = new QAction(syncApp->translate("Synchronize Every") + QString(": %1").arg(syncEvery), parent);
+    syncingTimeAction = new QAction(syncApp->translate("Synchronize Every") + QString(": %1").arg(formatTime(syncEvery)), parent);
     decreaseSyncTimeAction = new QAction("&" + syncApp->translate("Decrease"), parent);
-    fixedSyncingTimeAction = new QAction("&" + syncApp->translate("Synchronize Every") + QString(": %1").arg(syncIntervalFixed()), parent);
+    fixedSyncingTimeAction = new QAction("&" + syncApp->translate("Synchronize Every") + QString(": %1").arg(formatTime(syncIntervalFixed())), parent);
     moveToTrashAction = new QAction("&" + syncApp->translate("Move Files to Trash"), parent);
     versioningAction = new QAction("&" + syncApp->translate("Versioning"), parent);
     deletePermanentlyAction = new QAction("&" + syncApp->translate("Delete Files Permanently"), parent);
@@ -871,9 +871,9 @@ void SyncProfile::updateMenuStates()
     detectMovedFilesAction->setChecked(detectMovedFiles());
     deltaCopyingAction->setChecked(m_deltaCopying);
     syncingTimeAction->setVisible(syncingMode() == AutomaticAdaptive);
-    syncingTimeAction->setText(syncApp->translate("Synchronize Every"));
+    syncingTimeAction->setText(syncApp->translate("Synchronize Every") + QString(": %1").arg(formatTime(syncEvery)));
     fixedSyncingTimeAction->setVisible(syncingMode() == AutomaticFixed);
-    fixedSyncingTimeAction->setText(syncApp->translate("Synchronize Every"));
+    fixedSyncingTimeAction->setText("&" + syncApp->translate("Synchronize Every") + QString(": %1").arg(formatTime(syncIntervalFixed())));
     moveToTrashAction->setChecked(deletionMode() == MoveToTrash);
     versioningAction->setChecked(deletionMode() == Versioning);
     deletePermanentlyAction->setChecked(deletionMode() == DeletePermanently);
@@ -961,9 +961,9 @@ void SyncProfile::retranslate()
     detectMovedFilesAction->setText("&" + syncApp->translate("Detect Renamed and Moved Files"));
     deltaCopyingAction->setText("&" + syncApp->translate("File Delta Copying") + " (Beta)");
     increaseSyncTimeAction->setText("&" + syncApp->translate("Increase"));
-    syncingTimeAction->setText(syncApp->translate("Synchronize Every") + QString(": %1").arg(syncEvery));
+    syncingTimeAction->setText(syncApp->translate("Synchronize Every") + QString(": %1").arg(formatTime(syncEvery)));
     decreaseSyncTimeAction->setText("&" + syncApp->translate("Decrease"));
-    fixedSyncingTimeAction->setText("&" + syncApp->translate("Synchronize Every") + QString(": %1").arg(syncIntervalFixed()));
+    fixedSyncingTimeAction->setText("&" + syncApp->translate("Synchronize Every") + QString(": %1").arg(formatTime(syncIntervalFixed())));
     moveToTrashAction->setText("&" + syncApp->translate("Move Files to Trash"));
     versioningAction->setText("&" + syncApp->translate("Versioning"));
     deletePermanentlyAction->setText("&" + syncApp->translate("Delete Files Permanently"));

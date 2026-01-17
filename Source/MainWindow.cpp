@@ -1827,22 +1827,7 @@ void MainWindow::updateMenuSyncTime(const SyncProfile &profile)
         return;
     }
 
-    QString text(tr("Synchronize Every") + ": ");
-    quint64 seconds = (syncEvery / 1000) % 60;
-    quint64 minutes = (syncEvery / 1000 / 60) % 60;
-    quint64 hours = (syncEvery / 1000 / 60 / 60) % 24;
-    quint64 days = (syncEvery / 1000 / 60 / 60 / 24);
-
-    if (days)
-        text.append(tr("%1 days").arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
-    else if (hours)
-        text.append(tr("%1 hours").arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
-    else if (minutes)
-        text.append(tr("%1 minutes").arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
-    else if (seconds)
-        text.append(tr("%1 seconds").arg(seconds));
-
-    action->setText(text);
+    action->setText(QString(tr("Synchronize Every") + ": ").append(formatTime(syncEvery)));
 }
 
 /*

@@ -27,6 +27,7 @@
 #include <QMutex>
 #include <QModelIndex>
 
+static constexpr quint64 defaultFixedInterval = 1000;
 static constexpr quint64 MovedFilesMinSize = 0;
 static constexpr quint64 DeltaCopyingMinSize = 1073741824;
 
@@ -219,7 +220,7 @@ public:
 private:
 
     SyncingMode m_syncingMode = AutomaticAdaptive;
-    quint64 m_syncIntervalFixed = 1;
+    quint64 m_syncIntervalFixed = defaultFixedInterval;
     DeletionMode m_deletionMode = MoveToTrash;
     VersioningLocation m_versioningLocation = LocallyNextToFolder;
     VersioningFormat m_versioningFormat = FileTimestampAfter;

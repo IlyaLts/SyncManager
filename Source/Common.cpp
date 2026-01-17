@@ -97,6 +97,30 @@ QString formatSize(quint64 size)
 
 /*
 ===================
+formatTime
+===================
+*/
+QString formatTime(quint64 time)
+{
+    quint64 seconds = (time / 1000) % 60;
+    quint64 minutes = (time / 1000 / 60) % 60;
+    quint64 hours = (time / 1000 / 60 / 60) % 24;
+    quint64 days = (time / 1000 / 60 / 60 / 24);
+
+    if (days)
+       return QString(syncApp->translate("%1 days").arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
+    else if (hours)
+        return QString(syncApp->translate("%1 hours").arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
+    else if (minutes)
+        return QString(syncApp->translate("%1 minutes").arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
+    else if (seconds)
+        return QString(syncApp->translate("%1 seconds").arg(seconds));
+
+    return QString("0 seconds");
+}
+
+/*
+===================
 hash64
 ===================
 */

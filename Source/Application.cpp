@@ -138,7 +138,7 @@ Application::throttleCpu
 */
 void Application::throttleCpu()
 {
-    while (processUsage() > maxCpuUsage())
+    while (m_processUsage > maxCpuUsage())
         QThread::msleep(CPU_UPDATE_TIME);
 }
 
@@ -341,7 +341,7 @@ void Application::setCheckForUpdates(bool enable)
     m_checkForUpdates = enable;
 
     if (enable)
-        m_updateTimer.start(CHECK_FOR_UPDATE_TIME);
+        m_updateTimer.start(CheckForUpdateTime);
     else
         m_updateTimer.stop();
 }

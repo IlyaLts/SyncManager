@@ -38,11 +38,12 @@
 #define BUG_TRACKER_URL         "https://github.com/IlyaLts/SyncManager/issues"
 #define LATEST_RELEASE_API_URL  "https://api.github.com/repos/IlyaLts/SyncManager/releases/latest"
 #define LATEST_RELEASE_URL      "https://github.com/IlyaLts/SyncManager/releases/latest"
-#define CHECK_FOR_UPDATE_TIME   1000 * 60 * 60 * 24
-#define UPDATE_TIME             40
 
 #define DISABLE_DOUBLE_HASHING
 #define PRESERVE_MODIFICATION_DATE_ON_LINUX
+
+static constexpr quint64 CheckForUpdateTime = 1000 * 60 * 60 * 24;
+static constexpr quint64 UpdateTime = 40;
 
 extern Language defaultLanguage;
 extern Language languages[];
@@ -82,8 +83,6 @@ public:
     inline float maxCpuUsage() const { return m_maxCpuUsage; }
     inline bool checkForUpdatesEnabled() const { return m_checkForUpdates; }
     inline bool updateAvailable() const { return m_updateAvailable; };
-    inline float processUsage() const { return m_processUsage; }
-    inline float systemUsage() const { return m_systemUsage; }
     inline QString toLocalizedDateTime(const QDateTime &dateTime, const QString &format) { return m_locale.toString(dateTime, format); }
 
     inline QThread *syncThread() const { return m_syncThread; }
