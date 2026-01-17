@@ -33,7 +33,7 @@
 SyncProfile::SyncProfile
 ===================
 */
-SyncProfile::SyncProfile(const QString &name, const QModelIndex &index)
+SyncProfile::SyncProfile(QWidget *parent, const QString &name, const QModelIndex &index)
 {
     this->m_index = index;
     this->name = name;
@@ -43,6 +43,7 @@ SyncProfile::SyncProfile(const QString &name, const QModelIndex &index)
     syncTimer.setSingleShot(true);
     syncTimer.setTimerType(Qt::VeryCoarseTimer);
 
+    setupMenus(parent);
     loadSettings();
 }
 

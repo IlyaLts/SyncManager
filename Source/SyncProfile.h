@@ -80,7 +80,7 @@ public:
         CustomLocation
     };
 
-    explicit SyncProfile(const QString &name, const QModelIndex &index);
+    explicit SyncProfile(QWidget *parent, const QString &name, const QModelIndex &index);
     ~SyncProfile();
 
     inline bool operator ==(const SyncProfile &other) { return name == other.name; }

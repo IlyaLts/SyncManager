@@ -77,7 +77,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (auto &name : profileNames)
     {
-        syncApp->manager()->profiles().emplace_back(name, profileIndexByName(name));
+        syncApp->manager()->profiles().emplace_back(this, name, profileIndexByName(name));
         SyncProfile &profile = syncApp->manager()->profiles().back();
         profile.setPaused(syncApp->manager()->paused());
 
@@ -357,9 +357,8 @@ void MainWindow::addProfile()
     profileNames.append(newName);
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
-    SyncProfile &profile = syncApp->manager()->profiles().emplace_back(newName, profileIndexByName(newName));
+    SyncProfile &profile = syncApp->manager()->profiles().emplace_back(this, newName, profileIndexByName(newName));
     profile.setPaused(syncApp->manager()->paused());
-    profile.setupMenus(this);
     connectProfileMenu(profile);
     rebindProfiles();
 
@@ -1445,7 +1444,7 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         if (!syncApp->syncThread()->isRunning())
         {
             syncApp->syncThread()->start();
-            updateTimer.start(UPDATE_TIME);
+            updateTimer.start(UpdateTime);
         }
     }
 }
