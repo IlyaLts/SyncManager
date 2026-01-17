@@ -1,4 +1,12 @@
 ==========================
+2.3.1 - Jan 17, 2026
+==========================
+- Fixed a crash when adding a new profile.
+- Fixed profile synchronization is not triggered when unpausing a folder.
+- Fixed incorrect fixed syncing time in menu.
+- Fixed incorrect pause states for profiles.
+
+==========================
 2.3 - Dec 31, 2025
 ==========================
 - Added file delta synchronization support.

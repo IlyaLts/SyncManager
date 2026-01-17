@@ -1,6 +1,6 @@
 /*
 ===============================================================================
-    Copyright (C) 2022-2025 Ilya Lyakhovets
+    Copyright (C) 2022-2026 Ilya Lyakhovets
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 
 #define syncApp (static_cast<Application *>(QCoreApplication::instance()))
 
-#define SYNCMANAGER_VERSION     "2.3"
+#define SYNCMANAGER_VERSION     "2.3.1"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
 #define USER_MANUAL_PATH        "SyncManagerUserManual.pdf"
