@@ -410,6 +410,11 @@ void SyncProfile::updatePausedState()
             unpausedFolders++;
 
     m_paused = unpausedFolders < 2;
+
+    if (m_paused)
+        syncTimer.stop();
+    else
+        updateTimer();
 }
 
 /*
