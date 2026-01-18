@@ -98,16 +98,16 @@ Creates all necessary parent directories for a given file path
 */
 void SyncFolder::createParentFolders(QByteArray path)
 {
-    QStack<QString> foldersToCreate;
+    QStack<QString> list;
 
     while (!QDir(path = QFileInfo(path).path().toUtf8()).exists())
-        foldersToCreate.append(path);
+        list.append(path);
 
-    while (!foldersToCreate.isEmpty())
+    while (!list.isEmpty())
     {
         syncApp->throttleCpu();
 
-        if (QDir().mkdir(foldersToCreate.top()))
+        if (QDir().mkdir(list.top()))
         {
             Qt::CaseSensitivity cs;
 
@@ -116,20 +116,20 @@ void SyncFolder::createParentFolders(QByteArray path)
             else
                 cs = Qt::CaseInsensitive;
 
-            if (foldersToCreate.top().startsWith(path, cs))
+            if (list.top().startsWith(path, cs))
             {
-                QByteArray relativePath(foldersToCreate.top().toUtf8());
+                QByteArray relativePath(list.top().toUtf8());
                 relativePath.remove(0, path.size());
 
                 hash64_t hash = hash64(relativePath);
 
-                files.insert(hash, SyncFile(SyncFile::Folder, QFileInfo(foldersToCreate.top()).lastModified()));
+                files.insert(hash, SyncFile(SyncFile::Folder, QFileInfo(list.top()).lastModified()));
                 foldersToCreate.remove(hash);
-                foldersToUpdate.insert(foldersToCreate.top().toUtf8());
+                foldersToUpdate.insert(list.top().toUtf8());
             }
         }
 
-        foldersToCreate.pop();
+        list.pop();
     }
 }
 
