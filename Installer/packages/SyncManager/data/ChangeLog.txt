@@ -1,4 +1,9 @@
 ==========================
+2.3.2 - Jan 18, 2026
+==========================
+- Fixed a crash when synchronizing new nested folders.
+
+==========================
 2.3.1 - Jan 17, 2026
 ==========================
 - Fixed a crash when adding a new profile.

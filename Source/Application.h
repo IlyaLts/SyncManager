@@ -31,7 +31,7 @@
 
 #define syncApp (static_cast<Application *>(QCoreApplication::instance()))
 
-#define SYNCMANAGER_VERSION     "2.3.1"
+#define SYNCMANAGER_VERSION     "2.3.2"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define PROFILES_FILENAME       "Profiles.ini"
 #define USER_MANUAL_PATH        "SyncManagerUserManual.pdf"
