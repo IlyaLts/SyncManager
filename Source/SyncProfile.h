@@ -140,7 +140,6 @@ public:
     inline bool ignoreHiddenFiles() const { return m_ignoreHiddenFiles; }
     inline QModelIndex index() const { return m_index; }
 
-    void updateStatus();
     void updateTimer();
     void updateNextSyncingTime();
     void updatePausedState();

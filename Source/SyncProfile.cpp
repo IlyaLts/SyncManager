@@ -281,33 +281,6 @@ void SyncProfile::remove()
 
 /*
 ===================
-SyncProfile::updateStatus
-===================
-*/
-void SyncProfile::updateStatus()
-{/*
-    m_syncing = false;
-
-    if (toBeRemoved())
-        continue;
-
-    for (auto &folder : profile.folders)
-    {
-        folder.m_syncing = false;
-
-        if (folder.toBeRemoved())
-            continue;
-
-        if (m_busy && folder.isActive() && folder.hasUnsyncedFiles())
-        {
-            m_syncing = true;
-            folder.m_syncing = true;
-        }
-    }*/
-}
-
-/*
-===================
 SyncProfile::updateTimer
 ===================
 */
