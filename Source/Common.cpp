@@ -168,29 +168,63 @@ void removeDuplicatesBySizeAndDate(FilePointerList &files)
 /*
 ===================
 getCurrentFileInfo
+
+Gets the fileinfo with the current filepath on the disk
+
+The question is should we get the current filename instead of the whole file pat.
+If so, then we can get it using FILE_NAME_OPENED instead of FILE_NAME_NORMALIZED argument
+
+Or use the following way:
+
+WIN32_FIND_DATAW findData;
+
+HANDLE hFind = FindFirstFileW(path.toStdWString().c_str(), &findData);
+if (hFind == INVALID_HANDLE_VALUE)
+    return QFileInfo(path);
+
+FindClose(hFind);
+
+QString filename(findData.cFileName);
+
 ===================
 */
 QFileInfo getCurrentFileInfo(const QString &path)
 {
 #ifdef Q_OS_WIN
     QVector<wchar_t> buffer(MAX_PATH);
-    DWORD length = GetLongPathNameW(path.toStdWString().c_str(), buffer.data(), MAX_PATH);
+    DWORD length;
 
-    if (!length)
+    HANDLE handle = CreateFileW(path.toStdWString().c_str(),
+                                0,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                NULL,
+                                OPEN_EXISTING,
+                                FILE_FLAG_BACKUP_SEMANTICS,
+                                NULL);
+
+    if (handle == INVALID_HANDLE_VALUE)
         return QFileInfo(path);
+
+    length = GetFinalPathNameByHandleW(handle, buffer.data(), MAX_PATH, FILE_NAME_NORMALIZED);
 
     // If the buffer is too small to contain the path, the return value is the size
     // of the buffer that is required to hold the path and the terminating null character
     if (length > MAX_PATH)
     {
         buffer.resize(length);
-        length = GetLongPathNameW(path.toStdWString().c_str(), buffer.data(), length);
-
-        if (!length)
-            return QFileInfo(path);
+        length = GetFinalPathNameByHandleW(handle, buffer.data(), MAX_PATH, FILE_NAME_NORMALIZED);
     }
 
-    return QFileInfo(QString(buffer.data()));
+    if (handle != INVALID_HANDLE_VALUE)
+        CloseHandle(handle);
+
+    QString curPath(buffer);
+
+    // Removes long path prefix
+    if (curPath.startsWith("\\\\?\\"))
+        curPath.remove(0, 4);
+
+    return QFileInfo(curPath);
 #else
     return QFileInfo(path);
 #endif
