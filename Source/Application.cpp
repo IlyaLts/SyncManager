@@ -85,6 +85,8 @@ Application::~Application()
             syncApp->m_syncThread->wait();
         }
     }
+
+    saveSettings();
 }
 
 /*
@@ -231,12 +233,12 @@ void Application::setLanguage(QLocale::Language language)
     QCoreApplication::installTranslator(&m_translator);
 
     m_language = language;
+    saveSettings();
 
     if (initiated())
     {
         m_window->retranslate();
         m_tray->retranslate();
-        saveSettings();
 
         emit languageChanged();
     }
@@ -254,6 +256,7 @@ void Application::setTrayVisible(bool visible)
     if (!QSystemTrayIcon::isSystemTrayAvailable())
     {
         m_trayVisible = false;
+    	saveSettings();
 
         QString title = syncApp->translate("System Tray is not available!");
         QString text = syncApp->translate("Your system does not support the system tray.");
@@ -275,6 +278,8 @@ void Application::setTrayVisible(bool visible)
         if (initiated())
             m_window->QMainWindow::show();
     }
+
+    saveSettings();
 }
 
 /*
@@ -339,6 +344,7 @@ Application::setCheckForUpdates
 void Application::setCheckForUpdates(bool enable)
 {
     m_checkForUpdates = enable;
+    saveSettings();
 
     if (enable)
         m_updateTimer.start(CheckForUpdateTime);
@@ -360,6 +366,7 @@ void Application::setMaxCpuUsage(float percentage)
         percentage = 100.0f;
 
     m_maxCpuUsage = percentage;
+    saveSettings();
 }
 
 /*
