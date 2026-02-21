@@ -2,14 +2,14 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "SyncManager"
-#define MyAppVersion "2.3.2"
+#define MyAppVersion "2.3.3"
 #define MyAppURL "https://github.com/IlyaLts/SyncManager"
 #define MyAppExeName "SyncManager.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-//SignTool=signtool
+; SignTool=signtool
 AppId={{87B6CAC9-49B2-493F-8576-BBF95CFDF095}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}

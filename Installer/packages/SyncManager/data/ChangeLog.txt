@@ -1,4 +1,10 @@
 ==========================
+2.3.3 - Feb 21, 2026
+==========================
+- Fixed the issue where update checking could not be disabled.
+- Fixed (Regression) synchronization for files that were renamed or moved and have the same filename, but differ in case.
+
+==========================
 2.3.2 - Jan 18, 2026
 ==========================
 - Fixed a crash when synchronizing new nested folders.
