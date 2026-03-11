@@ -1884,7 +1884,7 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
             else if (!folder.lastSyncDate().isNull())
             {
                 QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate(), dateFormat));
-                QString text = QString("Last synchronization: %1.").arg(time) + nextSyncText;
+                QString text = tr("Last synchronization: %1.").arg(time) + nextSyncText;
 
                 if (folder.hasUnsyncedFiles())
                     text.insert(0, tr("Partially synchronized!") + "\n\n");
