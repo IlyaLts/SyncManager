@@ -763,7 +763,8 @@ bool SyncFolder::hasUnsyncedFiles() const
            !foldersToCreate.isEmpty() ||
            !filesToCopy.isEmpty() ||
            !foldersToRemove.isEmpty() ||
-           !filesToRemove.isEmpty();
+           !filesToRemove.isEmpty() ||
+           !m_unsyncedList.isEmpty() ;
 }
 
 /*
