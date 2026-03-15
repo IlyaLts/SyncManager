@@ -55,6 +55,7 @@ void SyncFolder::loadSettings()
     m_lastSyncDate = settings.value(folderKey + QLatin1String("_LastSyncDate")).toDateTime();
     m_paused = settings.value(folderKey + QLatin1String("_Paused"), false).toBool();
     setType(static_cast<SyncFolder::Type>(settings.value(folderKey + QLatin1String("_SyncType"), SyncFolder::TWO_WAY).toInt()));
+    m_unsyncedList = settings.value(folderKey + QLatin1String("_UnsyncedFiles")).toString();
 
     if (!m_paused)
         syncApp->manager()->setPaused(false);
@@ -76,6 +77,7 @@ void SyncFolder::saveSettings() const
     settings.setValue(folderKey + QLatin1String("_LastSyncDate"), m_lastSyncDate);
     settings.setValue(folderKey + QLatin1String("_Paused"), m_paused);
     settings.setValue(folderKey + QLatin1String("_SyncType"), m_type);
+    settings.setValue(folderKey + QLatin1String("_UnsyncedFiles"), m_unsyncedList);
 }
 
 /*
