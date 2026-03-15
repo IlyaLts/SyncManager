@@ -67,8 +67,6 @@ int main(int argc, char *argv[])
     if (QCoreApplication::arguments().contains("reset", Qt::CaseInsensitive))
     {
         QString localDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-
-        QSettings(localDataPath + "/" + PROFILES_FILENAME, QSettings::IniFormat).clear();
         QSettings(localDataPath + "/" + SETTINGS_FILENAME, QSettings::IniFormat).clear();
     }
 

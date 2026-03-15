@@ -99,6 +99,20 @@ void SyncManager::saveSettings() const
     settings.setValue("MaximumDiskUsage", maxDiskTransferRate());
     settings.setValue("Paused", paused());
     settings.setValue("Notifications", notificationsEnabled());
+
+    settings.beginGroup("Profiles");
+
+    for (auto &profile : m_profiles)
+    {
+        QStringList folderList;
+
+        for (auto &folder : profile.folders)
+            folderList.append(folder.path());
+
+        settings.setValue(profile.name, folderList);
+    }
+
+    settings.endGroup();
 }
 
 /*

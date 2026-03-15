@@ -33,7 +33,6 @@
 
 #define SYNCMANAGER_VERSION     "2.3.3"
 #define SETTINGS_FILENAME       "Settings.ini"
-#define PROFILES_FILENAME       "Profiles.ini"
 #define USER_MANUAL_PATH        "SyncManagerUserManual.pdf"
 #define BUG_TRACKER_URL         "https://github.com/IlyaLts/SyncManager/issues"
 #define LATEST_RELEASE_API_URL  "https://api.github.com/repos/IlyaLts/SyncManager/releases/latest"

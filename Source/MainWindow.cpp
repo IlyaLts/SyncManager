@@ -70,8 +70,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
 
     // Loads synchronization profiles
-    QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-    QStringList profileNames = profilesData.allKeys();
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    settings.beginGroup("Profiles");
+    QStringList profileNames = settings.childKeys();
+
+    // Deprecated profile data location
+    QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/Profiles.ini", QSettings::IniFormat);
+    bool oldProfileLocation = false;
+
+    if (profileNames.isEmpty())
+    {
+        oldProfileLocation = true;
+        profileNames = profilesData.allKeys();
+    }
+    else
+    {
+        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/Profiles.ini");
+    }
+
     profileNames.sort();
     profileModel->setStringList(profileNames);
 
@@ -81,12 +97,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         SyncProfile &profile = syncApp->manager()->profiles().back();
         profile.setPaused(syncApp->manager()->paused());
 
-        QStringList paths = profilesData.value(name).toStringList();
+        QStringList paths;
+
+        if (oldProfileLocation)
+            paths = profilesData.value(name).toStringList();
+        else
+            paths = settings.value(name).toStringList();
+
         paths.sort();
 
         for (auto &path : paths)
             profile.folders.emplace_back(&profile, path.toUtf8());
     }
+
+    settings.endGroup();
 
     connect(ui->syncProfilesView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(profileClicked(QItemSelection,QItemSelection)));
     connect(ui->syncProfilesView->model(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)), SLOT(profileNameChanged(QModelIndex,QModelIndex,QList<int>)));
@@ -362,8 +386,10 @@ void MainWindow::addProfile()
     connectProfileMenu(profile);
     rebindProfiles();
 
-    QSettings profileData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-    profileData.setValue(newName, folderModel->stringList());
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    settings.beginGroup("Profiles");
+    settings.setValue(newName, folderModel->stringList());
+    settings.endGroup();
 
     // Avoids reloading a newly added profile as it's already loaded.
     ui->syncProfilesView->selectionModel()->blockSignals(true);
@@ -413,9 +439,9 @@ void MainWindow::removeProfile()
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
         settings.remove(profile->name + QLatin1String("_profile"));
-
-        QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-        profilesData.remove(profile->name);
+        settings.beginGroup("Profiles");
+        settings.remove(profile->name);
+        settings.endGroup();
 
         profile->remove();
 
@@ -516,9 +542,10 @@ void MainWindow::profileNameChanged(const QModelIndex &topLeft, const QModelInde
         settings.remove(key);
     }
 
-    QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-    profilesData.remove(profile->name);
-    profilesData.setValue(newName, folderPaths);
+    settings.beginGroup("Profiles");
+    settings.remove(profile->name);
+    settings.setValue(newName, folderPaths);
+    settings.endGroup();
 
     profile->name = newName;
 }
@@ -593,8 +620,10 @@ void MainWindow::addFolder(const QMimeData *mimeData)
             folder.saveSettings();
             existedFolders.append(folder.path());
 
-            QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-            profilesData.setValue(profile->name, existedFolders);
+            QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+            settings.beginGroup("Profiles");
+            settings.setValue(profile->name, existedFolders);
+            settings.endGroup();
 
             folderModel->setStringList(existedFolders);
             updateStatus();
@@ -652,8 +681,9 @@ void MainWindow::removeFolder()
         for (const auto &folder : profile->folders)
             foldersPaths.append(folder.path());
 
-        QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + PROFILES_FILENAME, QSettings::IniFormat);
-        profilesData.setValue(profile->name, foldersPaths);
+        settings.beginGroup("Profiles");
+        settings.setValue(profile->name, foldersPaths);
+        settings.endGroup();
 
         profile->updateTimer();
         profile->updateNextSyncingTime();
