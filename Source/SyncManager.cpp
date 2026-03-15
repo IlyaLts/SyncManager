@@ -536,6 +536,9 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
     if (m_databaseChanged)
     {
+        for (auto &folder : profile.folders)
+            folder.removeDatabase();
+
         if (profile.databaseLocation() == SyncProfile::Decentralized)
             profile.saveDatabasesDecentralised();
         else
