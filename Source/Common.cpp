@@ -218,7 +218,7 @@ QFileInfo getCurrentFileInfo(const QString &path)
     if (handle != INVALID_HANDLE_VALUE)
         CloseHandle(handle);
 
-    QString curPath(buffer);
+    QString curPath = QString::fromWCharArray(buffer.data(), length);
 
     // Removes long path prefix
     if (curPath.startsWith("\\\\?\\"))
