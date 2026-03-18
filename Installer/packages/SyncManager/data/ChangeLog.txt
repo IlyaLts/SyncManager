@@ -1,4 +1,10 @@
 ==========================
+2.3.4 - Mar 17, 2026
+==========================
+- Fixed partially synchronized files status not being displayed.
+- Fixed detection of case-changed folders that was not working properly.
+
+==========================
 2.3.3 - Feb 21, 2026
 ==========================
 - Fixed the issue where update checking could not be disabled.

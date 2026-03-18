@@ -31,7 +31,7 @@
 
 #define syncApp (static_cast<Application *>(QCoreApplication::instance()))
 
-#define SYNCMANAGER_VERSION     "2.3.3"
+#define SYNCMANAGER_VERSION     "2.3.4"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define USER_MANUAL_PATH        "SyncManagerUserManual.pdf"
 #define BUG_TRACKER_URL         "https://github.com/IlyaLts/SyncManager/issues"
