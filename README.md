@@ -5,20 +5,20 @@
 ![SyncManagerLight](https://github.com/user-attachments/assets/10558a09-0d79-4a14-9be5-627cf785b0f9)
 
 # How It Works
-Here's an overview of how it works:
+SyncManager works by keeping track of changes to your files. It follows the following steps:
 1. Loads its databases from disk to remember what your files looked like during the last synchronization.
-1. Scans the designated folders for files and folders, checking for any changes in file modification dates or sizes.
+1. Scans your specified folders for files and folders, checking for any changes in file modification dates or sizes.
 1. Detects changes and the type of synchronization that should be performed between folders.
 1. Based on the detected changes, synchronizes files across all folders.
 1. Updates its databases on disk, saving the latest file information for the next synchronization.
 ### Synchronization Types
-There are three synchronization types that determine how a folder should be synchronized.
-- **Two-way** - *The most common type. It keeps all files and folders identical in both locations. If you add, delete, or change a file in one folder, the same change will happen in the other.*
+SyncManager offers three distinct synchronization types, which determine how files are synchronized between your folders.
+- **Two-way** - *The default type. It keeps all files and folders identical in two-way folders. If you add, delete, or change a file in one folder, the same change will happen in the other.*
 - **One-way** - *A mirror image. It copies all files and folders from two-way folders. Any files in the one-way folder that don't exist in two-way folders will be deleted.*
-- **One-way update** - *This mode is for simple updates. Files are copied only once from two-way folders to the one-way update folder. Unlike the one-way type, files that are deleted from two-way folders will not be deleted from the one-way update folder. This is useful for backups where you don't want to lose old data.*
+- **One-way update** - *This mode is for simple updates. Files are copied only once from two-way folders to the one-way update folder. Unlike the one-way type, files that are deleted from two-way folders will not be deleted from the one-way update folder. This is sometimes useful, for example, for synchronizing only new photos from a camera's SD card to a designated folder.*
 ### Syncing Modes
-Synchronization can be triggered using the following modes:
-- **Manual** - *Will only synchronize your files when you tell it to.*
+You can control when SyncManager performs its synchronization using one of three modes:
+- **Manual** - *This mode gives you complete control. SyncManager will only sync your files when you tell it to.*
 - **Automatic (Adaptive)** - *This is a smart, automatic mode. SyncManager learns the average time it takes to synchronize your files and uses that to determine the next synchronization interval. This interval is multiplied by a user-defined frequency multiplier. The minimum interval is 1 second.*
 - **Automatic (Fixed)** - *This is a simple, scheduled mode. SyncManager will synchronize your files at a specific, regular time interval that you set.*
 ### Change Detection Order
@@ -45,20 +45,20 @@ Based on the changes detected, SyncManager performs the synchronization operatio
 1. **Creates new folders**
 1. **Copies new or modified files**
 ### Deletion Modes
-When SyncManager needs to synchronize a file from one location to another but finds an older version of the file in the destination, it must delete the existing file first using the following methods:
-- **Move files to Trash** - *(Allows recovery, does not free storage)*
-- **Versioning** - *(Moves files to the versioning folder according to the designated versioning format)*
-- **Delete Files Permanently** - *(Irreversible, frees storage immediately)*  
-### Versioning Formats
-Files can be versioned in the following formats:
-- **File timestamp before extension** - *(The timestamp is added right before the file's extension (e.g., [Filename][Timestamp].[Extension]))*
-- **File timestamp after extension** - *(The timestamp is added after the file's extension (e.g., [Filename].[Extension].[Timestamp].[Extension]))*
-- **Folder timestamp** - *(Files are moved into a new folder named with a timestamp, while keeping their original filename and extension (e.g., [folder timestamp]/[filename].[Extension]))*
-- **Last version** - *(Only the most recently deleted version of your files is kept, overwriting any older deleted versions)*
-### Versioning Location
-Files can be moved for versioning in the following locations:
-1. Locally, in a separate folder next to a synchronization folder, that has the same name, but with the specified versioning postfix added.
-2. In a custom location designated by a user, within folders that follow this pattern: [Versioning folder]/[Profile name]/[Folder name], without the specified versioning prefix.
+When SyncManager needs to synchronize a file from one location to another but finds an older version of the file in the destination, it must delete the existing file first. You can choose how it handles these deletions:
+- **Move files to Trash** - *(The file is sent to your computer's Recycle Bin or Trash, allowing you to recover it later. Note that this doesn't immediately free up storage space)*
+- **Versioning** - *(The old file is saved in a special versioning folder. This is a great way to keep a history of your files)*
+- **Delete Files Permanently** - *(The file is deleted immediately and cannot be recovered. This option frees up storage space right away)*  
+### Versioning Formats and Locations
+If you choose to use the versioning deletion mode, you can customize how and where your old files are stored.
+#### Versioning Formats
+- **File timestamp before extension** - *(A timestamp is added right before the file's extension. For example, document.txt becomes document_2025_08_08_08_15_412.txt)*
+- **File timestamp after extension** - *(The timestamp is added after the file's extension. For example, document.txt becomes document.txt_2025_08_08_08_15_412.txt)*
+- **Folder timestamp** - *(Old files are moved into a new folder named with a timestamp, while keeping their original filename. For example, document.txt would be moved to a folder named 2025_08_08_08_15_412/document.txt)*
+- **Last version** - *(This option only keeps the most recently deleted version of a file. Any older versions are overwritten)*
+#### Versioning Location
+1. **Locally** - Old files are stored in a new folder, next to your synchronization folder. This new folder will have the same name as the sync synchronization folder, plus a special designated postfix.
+2. **Custom Location** - You can specify a separate location for all your versioned files. SyncManager will then organize them into folders like [Custom location]/[Profile name].
 ### Filtering
 Files can be filtered from synchronization using the following options:
 - **Minimum file size**
@@ -68,14 +68,14 @@ Files can be filtered from synchronization using the following options:
 - **Include** - *(Whitelist)*
 - **Exclude** - *(Blacklist)*
 ### Database Location
-SyncManager stores a database file to keep track of your files in the following locations:
-- **Locally** - *The database is saved on your computer in a dedicated application data folder. It keeps your synchronization databases separate from your actual synchronized files.*
+SyncManager stores a database file to keep track of your files for future synchronizations. You can choose where this database is saved:
+- **Locally** - *The database is saved on your computer in a dedicated application data folder. It keeps your synchronization data separate from your actual synchronized files.*
 - **Decentralized** - *The database is stored inside each of your synchronization folders, within a special hidden folder named .SyncManager. This is useful if you need to move your entire synchronization setup to another computer, as the database files will travel with your folders.*
 ### Conflict Resolution
-In cases where conflicts arise, SyncManager resolves them according to the following rules:
+Sometimes, changes are made to the same file in two different locations before a synchronization. SyncManager has clear rules to resolve these conflicts:
 - **Latest modification date wins:** If a file has been modified in both locations, SyncManager will synchronize the file with the latest modification date.
-- **Modified files take precedence:** If a file has been modified in one location and deleted in another, SyncManager will synchronize the modified file, effectively ignoring the deletion.
-- **Folder content changes take precedence:** If a folder has had new files added or existing files removed in one location, and the same folder has been deleted in another, SyncManager will synchronize the folder with the updated content, effectively ignoring the deletion. Single changes to existing files within the folder do not trigger this precedence.
+- **Modified files take precedence:** If a file is modified in one folder but deleted in the other, SyncManager will prioritize the modified file. The deletion will be ignored, and the modified file will be copied.
+- **Folder content changes take precedence:** If a folder has had files added or removed in one location but was completely deleted in another, the folder with the updated content will be copied.
 # Building
 Requires Qt 6.9 or newer. Buildable with Qt Creator.
 

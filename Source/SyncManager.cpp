@@ -436,56 +436,9 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     SET_TIME(startTime);
 
     int result = 0;
-    QEventLoop scanLoop;
-    QHash<SyncFolder *, QSharedPointer<QFutureWatcher<int>>> scanList;
 
-    for (auto &folder : profile.folders)
-        if (!folder.paused())
-            scanList.insert(&folder, QSharedPointer<QFutureWatcher<int>>::create());
-
-    while (!scanList.isEmpty())
-    {
-        for (auto scanListIt = scanList.begin(); scanListIt != scanList.end();)
-        {
-            m_usedDevicesMutex.lock();
-            hash64_t requiredDevice = hash64(QStorageInfo(scanListIt.key()->path()).device());
-
-            if (!m_usedDevices.contains(requiredDevice))
-            {
-                m_usedDevices.insert(requiredDevice);
-                SyncFolder &folder = *scanListIt.key();
-                QObject::connect(scanListIt->data(), &QFutureWatcher<int>::finished, &scanLoop, &QEventLoop::quit);
-
-                // To avoid a race condition, it is important to call this function after doing the connections
-                scanListIt->data()->setFuture(QFuture(QtConcurrent::run([&](){ return scanFiles(folder); })));
-            }
-
-            scanListIt++;
-            m_usedDevicesMutex.unlock();
-        }
-
-        scanLoop.exec();
-
-        for (auto scanListIt = scanList.begin(); scanListIt != scanList.end();)
-        {
-            if (scanListIt->data()->future().isValid() && scanListIt->data()->isFinished())
-            {
-                m_usedDevicesMutex.lock();
-                m_usedDevices.remove(hash64(QStorageInfo(scanListIt.key()->path()).device()));
-                m_usedDevicesMutex.unlock();
-
-                result += scanListIt->data()->result();
-                scanListIt = scanList.erase(static_cast<QHash<SyncFolder *, QSharedPointer<QFutureWatcher<int>>>::const_iterator>(scanListIt));
-            }
-            else
-            {
-                scanListIt++;
-            }
-        }
-
-        if (m_shouldQuit)
-            return false;
-    }
+    if (!executeFolderScans(profile, result))
+        return false;
 
     TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(profile.name));
 
@@ -542,6 +495,80 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     if (m_shouldQuit)
         return false;
 
+    executeSyncProfile(profile);
+
+    TIMESTAMP(syncTime, "Syncing is complete.");
+    return true;
+}
+
+/*
+===================
+SyncManager::executeFolderScans
+===================
+*/
+bool SyncManager::executeFolderScans(SyncProfile &profile, int &result)
+{
+    QEventLoop scanLoop;
+    QHash<SyncFolder *, QSharedPointer<QFutureWatcher<int>>> scanList;
+
+    for (auto &folder : profile.folders)
+        if (!folder.paused())
+            scanList.insert(&folder, QSharedPointer<QFutureWatcher<int>>::create());
+
+    while (!scanList.isEmpty())
+    {
+        for (auto scanListIt = scanList.begin(); scanListIt != scanList.end();)
+        {
+            m_usedDevicesMutex.lock();
+            hash64_t requiredDevice = hash64(QStorageInfo(scanListIt.key()->path()).device());
+
+            if (!m_usedDevices.contains(requiredDevice))
+            {
+                m_usedDevices.insert(requiredDevice, 0);
+                SyncFolder &folder = *scanListIt.key();
+                QObject::connect(scanListIt->data(), &QFutureWatcher<int>::finished, &scanLoop, &QEventLoop::quit);
+
+                // To avoid a race condition, it is important to call this function after doing the connections
+                scanListIt->data()->setFuture(QFuture(QtConcurrent::run([&](){ return scanFiles(folder); })));
+            }
+
+            scanListIt++;
+            m_usedDevicesMutex.unlock();
+        }
+
+        scanLoop.exec();
+
+        for (auto scanListIt = scanList.begin(); scanListIt != scanList.end();)
+        {
+            if (scanListIt->data()->future().isValid() && scanListIt->data()->isFinished())
+            {
+                m_usedDevicesMutex.lock();
+                m_usedDevices.remove(hash64(QStorageInfo(scanListIt.key()->path()).device()));
+                m_usedDevicesMutex.unlock();
+
+                result += scanListIt->data()->result();
+                scanListIt = scanList.erase(static_cast<QHash<SyncFolder *, QSharedPointer<QFutureWatcher<int>>>::const_iterator>(scanListIt));
+            }
+            else
+            {
+                scanListIt++;
+            }
+        }
+
+        if (m_shouldQuit)
+            return false;
+    }
+
+    return true;
+}
+
+/*
+===================
+SyncManager::executeSyncProfile
+===================
+*/
+void SyncManager::executeSyncProfile(SyncProfile &profile)
+{
     syncChanges(profile);
     profile.removeNonexistentFileData();
 
@@ -582,9 +609,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     updateStatus();
     profile.updateNextSyncingTime();
     emit profileSynced(&profile);
-
-    TIMESTAMP(syncTime, "Syncing is complete.");
-    return true;
 }
 
 /*
@@ -1419,153 +1443,174 @@ bool SyncManager::copyFile(SyncProfile &profile, quint64 &deviceRead, const QStr
 
     if (!m_maxDiskTransferRate && (!profile.deltaCopying() || static_cast<quint64>(QFileInfo(newName).size()) < profile.deltaCopyingMinSize()))
     {
-        if (QFile(newName).exists())
-            return false;
-
-        QString tempName = newName + "." + TEMP_EXTENSION;
-
-        if (!QFile::copy(fileName, tempName))
-            return false;
-
-        setFileModificationDate(tempName, from.fileTime(QFileDevice::FileModificationTime));
-
-        from.close();
-        return QFile::rename(tempName, newName);
+        return copyFileNative(from, fileName, newName);
     }
     else
     {
         if (profile.deltaCopying() && static_cast<quint64>(QFileInfo(newName).size()) >= profile.deltaCopyingMinSize() && QFile::exists(newName))
-        {
-            QFile to(newName);
-
-            if(!to.open(QFile::ReadWrite))
-                return false;
-
-            qint64 nFrom;
-            qint64 nTo;
-            qint64 fromPos = 0;
-            qint64 toPos = 0;
-            char fromChunk[COPY_BUFFER_SIZE];
-            char toChunk[COPY_BUFFER_SIZE];
-
-            while(!from.atEnd())
-            {
-                if (quitting())
-                    return false;
-
-                nFrom = from.read(fromChunk, sizeof(fromChunk));
-                nTo = to.read(toChunk, sizeof(toChunk));
-
-                if (nFrom <= 0)
-                    break;
-
-                m_usedDevicesMutex.lock();
-                deviceRead += nFrom + nTo;
-                m_usedDevicesMutex.unlock();
-
-                syncApp->throttleCpu();
-
-                while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
-                {
-                    int sleep = m_diskUsageResetTimer.remainingTime();
-
-                    if (sleep < 0)
-                        sleep = 0;
-
-                    QThread::msleep(sleep);
-                }
-
-                if (nFrom != nTo || memcmp(fromChunk, toChunk, COPY_BUFFER_SIZE) != 0)
-                {
-                    to.seek(fromPos);
-                    to.write(fromChunk, nFrom);
-                }
-
-                fromPos += nFrom;
-                toPos += nTo;
-            }
-
-            // Trims trailing data from the destination if the source file has less data
-            if (from.size() != to.size())
-                to.resize(from.size());
-
-            to.setFileTime(from.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
-
-            if (!to.setPermissions(from.permissions()))
-                return false;
-
-            from.close();
-            to.close();
-            return true;
-        }
+            return copyFileDelta(deviceRead, from, newName);
         else
-        {
-            if (QFile(newName).exists())
-                return false;
-
-            QString fileTemplate = QString("%1/.XXXXXX.") + TEMP_EXTENSION;
-            QTemporaryFile tempFile(fileTemplate.arg(QFileInfo(newName).path()));
-
-            if (!tempFile.open())
-            {
-                tempFile.setFileTemplate(fileTemplate.arg(QDir::tempPath()));
-
-                if (!tempFile.open())
-                    return false;
-            }
-
-            char chunkSize[COPY_BUFFER_SIZE];
-            qint64 totalRead = 0;
-
-            while(!from.atEnd())
-            {
-                if (quitting())
-                    return false;
-
-                qint64 in = from.read(chunkSize, sizeof(chunkSize));
-
-                if (in <= 0)
-                    break;
-
-                totalRead += in;
-
-                m_usedDevicesMutex.lock();
-                deviceRead += in;
-                m_usedDevicesMutex.unlock();
-
-                syncApp->throttleCpu();
-
-                while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
-                {
-                    int sleep = m_diskUsageResetTimer.remainingTime();
-
-                    if (sleep < 0)
-                        sleep = 0;
-
-                    QThread::msleep(sleep);
-                }
-
-                if(in != tempFile.write(chunkSize, in))
-                    return false;
-            }
-
-            if (totalRead != from.size())
-                return false;
-
-            // It must be done before renaming, otherwise it won't work.
-            tempFile.setFileTime(from.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
-
-            if (!tempFile.rename(newName))
-                return false;
-
-            if (!tempFile.setPermissions(from.permissions()))
-                return false;
-
-            from.close();
-            tempFile.setAutoRemove(false);
-            return true;
-        }
+            return copyFileManual(deviceRead, from, newName);
     }
+}
+
+/*
+===================
+SyncManager::copyFileNative
+===================
+*/
+bool SyncManager::copyFileNative(QFile &from, const QString &fileName, const QString &newName)
+{
+    if (QFile(newName).exists())
+        return false;
+
+    QString tempName = newName + "." + TEMP_EXTENSION;
+
+    if (!QFile::copy(fileName, tempName))
+        return false;
+
+    setFileModificationDate(tempName, from.fileTime(QFileDevice::FileModificationTime));
+    return QFile::rename(tempName, newName);
+}
+
+/*
+===================
+SyncManager::copyFileDelta
+===================
+*/
+bool SyncManager::copyFileDelta(quint64 &deviceRead, QFile &from, const QString &newName)
+{
+    QFile to(newName);
+
+    if (!to.open(QFile::ReadWrite))
+        return false;
+
+    qint64 nFrom;
+    qint64 nTo;
+    qint64 fromPos = 0;
+    qint64 toPos = 0;
+    char fromChunk[COPY_BUFFER_SIZE];
+    char toChunk[COPY_BUFFER_SIZE];
+
+    while (!from.atEnd())
+    {
+        if (quitting())
+            return false;
+
+        nFrom = from.read(fromChunk, sizeof(fromChunk));
+        nTo = to.read(toChunk, sizeof(toChunk));
+
+        if (nFrom <= 0)
+            break;
+
+        m_usedDevicesMutex.lock();
+        deviceRead += nFrom + nTo;
+        m_usedDevicesMutex.unlock();
+
+        syncApp->throttleCpu();
+
+        while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
+        {
+            int sleep = m_diskUsageResetTimer.remainingTime();
+
+            if (sleep < 0)
+                sleep = 0;
+
+            QThread::msleep(sleep);
+        }
+
+        if (nFrom != nTo || memcmp(fromChunk, toChunk, COPY_BUFFER_SIZE) != 0)
+        {
+            to.seek(fromPos);
+            to.write(fromChunk, nFrom);
+        }
+
+        fromPos += nFrom;
+        toPos += nTo;
+    }
+
+    // Trims trailing data from the destination if the source file has less data
+    if (from.size() != to.size())
+        to.resize(from.size());
+
+    to.setFileTime(from.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
+
+    if (!to.setPermissions(from.permissions()))
+        return false;
+
+    return true;
+}
+
+/*
+===================
+SyncManager::copyFileManual
+===================
+*/
+bool SyncManager::copyFileManual(quint64 &deviceRead, QFile &from, const QString &newName)
+{
+    if (QFile(newName).exists())
+        return false;
+
+    QString fileTemplate = QString("%1/.XXXXXX.") + TEMP_EXTENSION;
+    QTemporaryFile tempFile(fileTemplate.arg(QFileInfo(newName).path()));
+
+    if (!tempFile.open())
+    {
+        tempFile.setFileTemplate(fileTemplate.arg(QDir::tempPath()));
+
+        if (!tempFile.open())
+            return false;
+    }
+
+    char chunkSize[COPY_BUFFER_SIZE];
+    qint64 totalRead = 0;
+
+    while (!from.atEnd())
+    {
+        if (quitting())
+            return false;
+
+        qint64 in = from.read(chunkSize, sizeof(chunkSize));
+
+        if (in <= 0)
+            break;
+
+        totalRead += in;
+
+        m_usedDevicesMutex.lock();
+        deviceRead += in;
+        m_usedDevicesMutex.unlock();
+
+        syncApp->throttleCpu();
+
+        while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
+        {
+            int sleep = m_diskUsageResetTimer.remainingTime();
+
+            if (sleep < 0)
+                sleep = 0;
+
+            QThread::msleep(sleep);
+        }
+
+        if (in != tempFile.write(chunkSize, in))
+            return false;
+    }
+
+    if (totalRead != from.size())
+        return false;
+
+    // It must be done before renaming, otherwise it won't work.
+    tempFile.setFileTime(from.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
+
+    if (!tempFile.rename(newName))
+        return false;
+
+    if (!tempFile.setPermissions(from.permissions()))
+        return false;
+
+    tempFile.setAutoRemove(false);
+    return true;
 }
 
 /*

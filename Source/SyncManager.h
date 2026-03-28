@@ -99,6 +99,8 @@ Q_SIGNALS:
 private:
 
     bool syncProfile(SyncProfile &profile);
+    bool executeFolderScans(SyncProfile &profile, int &result);
+    void executeSyncProfile(SyncProfile &profile);
     int scanFiles(SyncFolder &folder);
     void synchronizeFileAttributes(SyncProfile &profile);
     void checkForRenamedFolders(SyncProfile &profile);
@@ -107,6 +109,9 @@ private:
     void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);
     bool copyFile(SyncProfile &profile, quint64 &deviceRead, const QString &fileName, const QString &newName);
+    bool copyFileNative(QFile &from, const QString &fileName, const QString &newName);
+    bool copyFileDelta(quint64 &deviceRead, QFile &from, const QString &newName);
+    bool copyFileManual(quint64 &deviceRead, QFile &from, const QString &newName);
     void renameFolders(SyncFolder &folder);
     void moveFiles(SyncFolder &folder);
     void removeFolders(SyncFolder &folder);

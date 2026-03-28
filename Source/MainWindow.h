@@ -117,6 +117,11 @@ private:
     void connectProfileMenu(SyncProfile &profile);
     void disconnectProfileMenu(SyncProfile &profile);
     void updateStatus();
+    void updateProfilesStatus();
+    void updateFoldersStatus();
+    void updatePauseState();
+    void updateIcons();
+    void updateWindowTitle();
     void updateMenuMaxDiskTransferRate();
     void updateMenuSyncTime(const SyncProfile &profile);
     void updateProfileTooltip(const SyncProfile &profile);

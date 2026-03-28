@@ -1624,158 +1624,201 @@ void MainWindow::updateStatus()
 
     if (isVisible())
     {
-        // Profiles
-        for (size_t i = 0; i < syncApp->manager()->profiles().size(); i++)
-        {
-            QModelIndex index = profileModel->indexByRow(i);
-            SyncProfile *profile = profileByIndex(index);
-
-            if (!profile)
-                continue;
-
-            if (profile->toBeRemoved())
-                continue;
-
-            int posInQueue = syncApp->manager()->queue().indexOf(profile);
-
-            if (posInQueue == 0)
-                profileModel->setData(index, tr("Syncing"), QueueStatusRole);
-            else if (posInQueue > 0)
-                profileModel->setData(index, tr("In queue") + QString(" (%1)").arg(posInQueue), QueueStatusRole);
-            else
-                profileModel->setData(index, QString(""), QueueStatusRole);
-
-            if (profile->paused())
-                profileModel->setData(index, iconPause, Qt::DecorationRole);
-            else if (profile->syncing() || (!profile->syncHidden() && syncApp->manager()->queue().contains(profile)))
-                profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-            else if (!profile->folders.empty() && profile->countExistingFolders() < 2 && profile->folders.size() >= 2)
-                profileModel->setData(index, iconRemove, Qt::DecorationRole);
-            else if (profile->hasMissingFolders())
-                profileModel->setData(index, iconWarning, Qt::DecorationRole);
-            else if (profile->partiallySynchronized())
-                profileModel->setData(index, iconDonePartial, Qt::DecorationRole);
-            else
-                profileModel->setData(index, iconDone, Qt::DecorationRole);
-
-            ui->syncProfilesView->update(index);
-        }
-
-        // Folders
-        if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
-        {
-            QModelIndex profileIndex = ui->syncProfilesView->selectionModel()->selectedRows()[0];
-            SyncProfile *profile = profileByIndex(profileIndex);
-
-            if (profile)
-            {
-                for (int i = 0; i < folderModel->rowCount(); i++)
-                {
-                    QModelIndex index = folderModel->indexByRow(i);
-                    const SyncFolder *folder = profile->folderByIndex(index);
-
-                    if (!folder)
-                        continue;
-
-                    if (folder->toBeRemoved())
-                        continue;
-
-                    QIcon *icon = nullptr;
-
-                    if (folder->type() == SyncFolder::TWO_WAY)
-                        icon = &iconTwoWay;
-                    else if (folder->type() == SyncFolder::ONE_WAY)
-                        icon = &iconOneWay;
-                    else if (folder->type() == SyncFolder::ONE_WAY_UPDATE)
-                        icon = &iconOneWayUpdate;
-
-                    if (icon)
-                        folderModel->setData(index, *icon, SyncTypeRole);
-
-                    if (folder->paused())
-                        folderModel->setData(index, iconPause, Qt::DecorationRole);
-                    else if (folder->syncing() || (syncApp->manager()->queue().contains(profile) && !syncApp->manager()->syncing() && !profile->syncHidden()))
-                        folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-                    else if (!folder->exists())
-                        folderModel->setData(index, iconRemove, Qt::DecorationRole);
-                    else if (folder->hasUnsyncedFiles())
-                        folderModel->setData(index, iconDonePartial, Qt::DecorationRole);
-                    else
-                        folderModel->setData(index, iconDone, Qt::DecorationRole);
-
-                    ui->folderListView->update(index);
-                }
-            }
-        }
+        updateProfilesStatus();
+        updateFoldersStatus();
     }
 
-    bool paused = syncApp->manager()->paused();
+    updatePauseState();
+    updateIcons();
+    updateWindowTitle();
+}
 
-    // Pause status
-    for (const auto &profile : syncApp->manager()->profiles())
+/*
+===================
+MainWindow::updateProfilesStatus
+===================
+*/
+void MainWindow::updateProfilesStatus()
+{
+    SyncManager *manager = syncApp->manager();
+
+    for (size_t i = 0; i < manager->profiles().size(); i++)
+    {
+        QModelIndex index = profileModel->indexByRow(i);
+        SyncProfile *profile = profileByIndex(index);
+
+        if (!profile)
+            continue;
+
+        if (profile->toBeRemoved())
+            continue;
+
+        int posInQueue = manager->queue().indexOf(profile);
+
+        if (posInQueue == 0)
+            profileModel->setData(index, tr("Syncing"), QueueStatusRole);
+        else if (posInQueue > 0)
+            profileModel->setData(index, tr("In queue") + QString(" (%1)").arg(posInQueue), QueueStatusRole);
+        else
+            profileModel->setData(index, QString(""), QueueStatusRole);
+
+        if (profile->paused())
+            profileModel->setData(index, iconPause, Qt::DecorationRole);
+        else if (profile->syncing() || (!profile->syncHidden() && manager->queue().contains(profile)))
+            profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
+        else if (!profile->folders.empty() && profile->countExistingFolders() < 2 && profile->folders.size() >= 2)
+            profileModel->setData(index, iconRemove, Qt::DecorationRole);
+        else if (profile->hasMissingFolders())
+            profileModel->setData(index, iconWarning, Qt::DecorationRole);
+        else if (profile->partiallySynchronized())
+            profileModel->setData(index, iconDonePartial, Qt::DecorationRole);
+        else
+            profileModel->setData(index, iconDone, Qt::DecorationRole);
+
+        ui->syncProfilesView->update(index);
+    }
+}
+
+/*
+===================
+MainWindow::updateFoldersStatus
+===================
+*/
+void MainWindow::updateFoldersStatus()
+{
+    SyncManager *manager = syncApp->manager();
+
+    if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
+        return;
+
+    QModelIndex profileIndex = ui->syncProfilesView->selectionModel()->selectedRows()[0];
+    SyncProfile *profile = profileByIndex(profileIndex);
+
+    if (!profile)
+        return;
+
+    for (int i = 0; i < folderModel->rowCount(); i++)
+    {
+        QModelIndex index = folderModel->indexByRow(i);
+        const SyncFolder *folder = profile->folderByIndex(index);
+
+        if (!folder)
+            continue;
+
+        if (folder->toBeRemoved())
+            continue;
+
+        QIcon *icon = nullptr;
+
+        if (folder->type() == SyncFolder::TWO_WAY)
+            icon = &iconTwoWay;
+        else if (folder->type() == SyncFolder::ONE_WAY)
+            icon = &iconOneWay;
+        else if (folder->type() == SyncFolder::ONE_WAY_UPDATE)
+            icon = &iconOneWayUpdate;
+
+        if (icon)
+            folderModel->setData(index, *icon, SyncTypeRole);
+
+        if (folder->paused())
+            folderModel->setData(index, iconPause, Qt::DecorationRole);
+        else if (folder->syncing() || (manager->queue().contains(profile) && !manager->syncing() && !profile->syncHidden()))
+            folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
+        else if (!folder->exists())
+            folderModel->setData(index, iconRemove, Qt::DecorationRole);
+        else if (folder->hasUnsyncedFiles())
+            folderModel->setData(index, iconDonePartial, Qt::DecorationRole);
+        else
+            folderModel->setData(index, iconDone, Qt::DecorationRole);
+
+        ui->folderListView->update(index);
+    }
+}
+
+/*
+===================
+MainWindow::updatePauseState
+===================
+*/
+void MainWindow::updatePauseState()
+{
+    SyncManager *manager = syncApp->manager();
+    bool paused = manager->paused();
+
+    for (const auto &profile : manager->profiles())
     {
         if (profile.toBeRemoved())
             continue;
 
-        if (syncApp->manager()->paused())
+        if (manager->paused())
             paused = true;
 
-        if (!syncApp->manager()->paused())
+        if (!manager->paused())
         {
             paused = false;
             break;
         }
     }
 
-    syncApp->manager()->setPaused(paused);
+    manager->setPaused(paused);
+}
 
-    // Tray & Icon
-    if (syncApp->manager()->inPausedState())
+/*
+===================
+MainWindow::updateIcons
+===================
+*/
+void MainWindow::updateIcons()
+{
+    SystemTray *tray = syncApp->tray();
+    SyncManager *manager = syncApp->manager();
+
+    if (manager->inPausedState())
     {
-        syncApp->tray()->setIcon(syncApp->tray()->iconPause());
-        setWindowIcon(syncApp->tray()->icon());
+        tray->setIcon(tray->iconPause());
+        setWindowIcon(tray->icon());
 
         // Fixes flickering menu bar
         if (pauseSyncingAction->icon().cacheKey() != iconResume.cacheKey())
             pauseSyncingAction->setIcon(iconResume);
 
         pauseSyncingAction->setText("&" + tr("Resume Syncing"));
-        syncApp->manager()->setPaused(true);
+        manager->setPaused(true);
     }
     else
     {
-        if (syncApp->manager()->syncing() || syncApp->manager()->hasManualSyncProfile())
+        if (manager->syncing() || manager->hasManualSyncProfile())
         {
-            syncApp->tray()->setIcon(syncApp->tray()->iconSync());
-            setWindowIcon(syncApp->tray()->iconSync());
+            tray->setIcon(tray->iconSync());
+            setWindowIcon(tray->iconSync());
         }
-        else if (syncApp->manager()->issue())
+        else if (manager->issue())
         {
-            syncApp->tray()->setIcon(syncApp->tray()->iconIssue());
-            setWindowIcon(syncApp->tray()->iconIssue());
+            tray->setIcon(tray->iconIssue());
+            setWindowIcon(tray->iconIssue());
         }
-        else if (syncApp->manager()->warning())
+        else if (manager->warning())
         {
-            syncApp->tray()->setIcon(syncApp->tray()->iconWarning());
-            setWindowIcon(syncApp->tray()->iconWarning());
+            tray->setIcon(tray->iconWarning());
+            setWindowIcon(tray->iconWarning());
         }
         else
         {
             bool incomplete = false;
 
-            for (auto &profile : syncApp->manager()->profiles())
+            for (auto &profile : manager->profiles())
                 if (profile.partiallySynchronized())
                     incomplete = true;
 
             if (incomplete)
             {
-                syncApp->tray()->setIcon(syncApp->tray()->iconDonePartial());
-                setWindowIcon(syncApp->tray()->iconDonePartial());
+                tray->setIcon(tray->iconDonePartial());
+                setWindowIcon(tray->iconDonePartial());
             }
             else
             {
-                syncApp->tray()->setIcon(syncApp->tray()->iconDone());
-                setWindowIcon(syncApp->tray()->iconDone());
+                tray->setIcon(tray->iconDone());
+                setWindowIcon(tray->iconDone());
             }
         }
 
@@ -1784,14 +1827,23 @@ void MainWindow::updateStatus()
             pauseSyncingAction->setIcon(iconPause);
 
         pauseSyncingAction->setText("&" + tr("Pause Syncing"));
-        syncApp->manager()->setPaused(false);
+        manager->setPaused(false);
     }
+}
 
-    // Title
-    if (syncApp->manager()->filesToSync())
+/*
+===================
+MainWindow::updateWindowTitle
+===================
+*/
+void MainWindow::updateWindowTitle()
+{
+    SyncManager *manager = syncApp->manager();
+
+    if (manager->filesToSync())
     {
-        syncApp->tray()->setToolTip(tr("Sync Manager - %1 files to synchronize").arg(syncApp->manager()->filesToSync()));
-        setWindowTitle(tr("Sync Manager - %1 files to synchronize").arg(syncApp->manager()->filesToSync()));
+        syncApp->tray()->setToolTip(tr("Sync Manager - %1 files to synchronize").arg(manager->filesToSync()));
+        setWindowTitle(tr("Sync Manager - %1 files to synchronize").arg(manager->filesToSync()));
     }
     else
     {
