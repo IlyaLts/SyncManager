@@ -23,6 +23,7 @@
 #include "SyncFile.h"
 #include "SyncFolder.h"
 #include "SyncProfile.h"
+#include "Common.h"
 #include <QList>
 #include <QSet>
 #include <QMap>
@@ -34,11 +35,12 @@
 #define DATABASE_FILENAME       "db"
 #define TEMP_EXTENSION          "sm_temp"
 #define DATABASE_VERSION        4
-#define SYNC_MIN_DELAY          1000
-#define NOTIFICATION_COOLDOWN   300000
-#define CPU_UPDATE_TIME         50
-#define DISK_USAGE_RESET_TIME   1000
-#define COPY_BUFFER_SIZE        4096
+
+static constexpr quint64 SyncMinDelay = 1000;
+static constexpr quint64 NotificationCooldown = 300000;
+static constexpr quint64 CpuUpdateTime = 50;
+static constexpr quint64 DiskUsageResetTime = 1000;
+static constexpr quint64 CopyBufferSize = 4096;
 
 /*
 ===========================================================
@@ -101,10 +103,14 @@ private:
     bool syncProfile(SyncProfile &profile);
     bool executeFolderScans(SyncProfile &profile, int &result);
     void executeSyncProfile(SyncProfile &profile);
+    bool processScannedFile(SyncFolder &folder, SyncProfile &profile, const QFileInfo &fileInfo, quint64 &deviceRead, int &totalNumOfFiles);
     int scanFiles(SyncFolder &folder);
     void synchronizeFileAttributes(SyncProfile &profile);
     void checkForRenamedFolders(SyncProfile &profile);
+    void findMissingAndNewFiles(SyncFolder &folder, quint64 minSize, FilePointerList &missingFiles, FilePointerList &newFiles);
+    bool processMovedFileMatch(SyncProfile &profile, SyncFolder &folder, FilePointerList::iterator &newFileIt, FilePointerList &missingFiles);
     void checkForMovedFiles(SyncProfile &profile);
+    void processAddedFileMatch(SyncProfile &profile, SyncFolder &folder, SyncFolder &otherFolder, Files::iterator &otherFileIt);
     void checkForAddedFiles(SyncProfile &profile);
     void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);

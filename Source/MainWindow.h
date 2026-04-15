@@ -105,7 +105,8 @@ private Q_SLOTS:
     void setExcludeList(SyncProfile &profile);
     void toggleIgnoreHiddenFiles(SyncProfile &profile);
     void toggleDetectMoved(SyncProfile &profile);
-    void showContextMenu(const QPoint &pos);
+    void showProfileContextMenu(const QPoint &pos);
+    void showFolderContextMenu(const QPoint &pos);
     void sync(SyncProfile *profile, bool hidden = false);
     void syncDone();
     void profileSynced(SyncProfile *profile);

@@ -159,9 +159,7 @@ SyncProfile::setSyncTimeMultiplier
 */
 void SyncProfile::setSyncTimeMultiplier(quint32 multiplier)
 {
-    if (multiplier <= 0)
-        multiplier = 1;
-
+    qMax(1U, multiplier);
     m_syncTimeMultiplier = multiplier;
     updateNextSyncingTime();
 }
@@ -299,14 +297,13 @@ void SyncProfile::updateTimer()
     else if (syncingMode() == AutomaticFixed)
         dateToSync = dateToSync.addMSecs(syncIntervalFixed());
 
-    qint64 syncTime = 0;
+    quint64 syncTime = 0;
 
     if (dateToSync >= QDateTime::currentDateTime())
         syncTime = QDateTime::currentDateTime().msecsTo(dateToSync);
 
     if (!isActive())
-        if (syncTime < SYNC_MIN_DELAY)
-            syncTime = SYNC_MIN_DELAY;
+        syncTime = qMax(syncTime, SyncMinDelay);
 
     bool profileActive = syncTimer.isActive();
     bool startTimer = false;
@@ -319,12 +316,7 @@ void SyncProfile::updateTimer()
 
     if (startTimer)
     {
-        quint64 interval = syncTime;
-        quint64 max = SyncManager::maxInterval();
-
-        // If exceeds the maximum value of an qint64
-        if (interval > max)
-            interval = max;
+        quint64 interval = qMin(syncTime, SyncManager::maxInterval());
 
         syncTimer.setInterval(duration_cast<duration<qint64, nano>>(duration<quint64, milli>(interval)));
         syncTimer.start();
@@ -347,13 +339,13 @@ void SyncProfile::updateNextSyncingTime()
         // Multiplies sync time by 2
         for (quint32 i = 0; i < syncTimeMultiplier() - 1; i++)
         {
+            quint64 maxInterval = SyncManager::maxInterval();
             time <<= 1;
-            quint64 max = SyncManager::maxInterval();
 
             // If exceeds the maximum value of an qint64
-            if (time > max)
+            if (time > maxInterval)
             {
-                time = max;
+                time = maxInterval;
                 break;
             }
         }
@@ -363,10 +355,7 @@ void SyncProfile::updateNextSyncingTime()
         time = syncIntervalFixed();
     }
 
-    if (time < SYNC_MIN_DELAY)
-        time = SYNC_MIN_DELAY;
-
-    syncEvery = time;
+    syncEvery = qMax(time, SyncMinDelay);
 }
 
 /*

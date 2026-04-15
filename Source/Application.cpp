@@ -111,7 +111,7 @@ void Application::init()
     connect(m_manager.data(), &SyncManager::finished, this, [this](){ m_syncThread->quit(); });
 
     connect(m_cpuUsage, &CpuUsage::cpuUsageUpdated, this, &Application::updateCpuUsage);
-    m_cpuUsage->startMonitoring(CPU_UPDATE_TIME);
+    m_cpuUsage->startMonitoring(CpuUpdateTime);
 
     loadSettings();
     m_initiated = true;
@@ -141,7 +141,7 @@ Application::throttleCpu
 void Application::throttleCpu()
 {
     while (m_processUsage > maxCpuUsage())
-        QThread::msleep(CPU_UPDATE_TIME);
+        QThread::msleep(CpuUpdateTime);
 }
 
 /*
@@ -359,12 +359,7 @@ Application::setMaxCpuUsage
 */
 void Application::setMaxCpuUsage(float percentage)
 {
-    if (percentage <= 0.0f)
-        percentage = 0.1f;
-
-    if (percentage > 100.0f)
-        percentage = 100.0f;
-
+    qBound(0.1f, percentage, 100.0f);
     m_maxCpuUsage = percentage;
     saveSettings();
 }

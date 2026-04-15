@@ -44,7 +44,7 @@ SyncManager::SyncManager
 SyncManager::SyncManager()
 {
     connect(&m_diskUsageResetTimer, &QTimer::timeout, this, [this](){ for (auto &device : m_deviceRead) device = 0; });
-    m_diskUsageResetTimer.start(DISK_USAGE_RESET_TIME);
+    m_diskUsageResetTimer.start(DiskUsageResetTime);
     loadSettings();
 }
 
@@ -524,7 +524,7 @@ bool SyncManager::executeFolderScans(SyncProfile &profile, int &result)
 
             if (!m_usedDevices.contains(requiredDevice))
             {
-                m_usedDevices.insert(requiredDevice, 0);
+                m_usedDevices.insert(requiredDevice);
                 SyncFolder &folder = *scanListIt.key();
                 QObject::connect(scanListIt->data(), &QFutureWatcher<int>::finished, &scanLoop, &QEventLoop::quit);
 
@@ -1489,8 +1489,8 @@ bool SyncManager::copyFileDelta(quint64 &deviceRead, QFile &from, const QString 
     qint64 nTo;
     qint64 fromPos = 0;
     qint64 toPos = 0;
-    char fromChunk[COPY_BUFFER_SIZE];
-    char toChunk[COPY_BUFFER_SIZE];
+    char fromChunk[CopyBufferSize];
+    char toChunk[CopyBufferSize];
 
     while (!from.atEnd())
     {
@@ -1519,7 +1519,7 @@ bool SyncManager::copyFileDelta(quint64 &deviceRead, QFile &from, const QString 
             QThread::msleep(sleep);
         }
 
-        if (nFrom != nTo || memcmp(fromChunk, toChunk, COPY_BUFFER_SIZE) != 0)
+        if (nFrom != nTo || memcmp(fromChunk, toChunk, CopyBufferSize) != 0)
         {
             to.seek(fromPos);
             to.write(fromChunk, nFrom);
@@ -1562,7 +1562,7 @@ bool SyncManager::copyFileManual(quint64 &deviceRead, QFile &from, const QString
             return false;
     }
 
-    char chunkSize[COPY_BUFFER_SIZE];
+    char chunkSize[CopyBufferSize];
     qint64 totalRead = 0;
 
     while (!from.atEnd())
@@ -2006,7 +2006,7 @@ void SyncManager::copyFiles(SyncFolder &folder)
                     folder.foldersToUpdate.insert(parentPath);
 
                 shouldNotify = false;
-                m_notificationList.value(rootPath)->start(NOTIFICATION_COOLDOWN);
+                m_notificationList.value(rootPath)->start(NotificationCooldown);
                 emit message(tr("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path()).displayName(), rootPath), "");
             }
 
