@@ -2,7 +2,8 @@
 
 **SyncManager** is a custom-made lightweight synchronization manager that helps you synchronize files and folders across different locations. SyncManager lets you synchronize your data using three synchronization modes: manually, automatic (adaptive), or automatic (fixed). Manual syncing mode lets you decide what and when to synchronize data, while automatic (adaptive) mode synchronizes data based on its average synchronization time, and automatic (fixed) mode synchronizes data at predetermined intervals. It also offers three distinct synchronization types: two-way, one-way, and one-way update, allowing you to synchronize data between folders in different ways. Furthermore, it has filtering and customizable versioning settings. You can also decide how to handle old versions of files and folders: move them to the trash, delete them permanently, or version them in a special folder. The utility is primarily designed to run in the system tray, but it can also function without system tray interaction, operating as a fully automated solution that seamlessly launches at system startup. Written using Qt Framework for Windows/Linux.
 
-![SyncManagerLight](https://github.com/user-attachments/assets/10558a09-0d79-4a14-9be5-627cf785b0f9)
+<img width="49%" height="auto" alt="SyncManager" src="https://github.com/user-attachments/assets/38b46008-c0dc-4a8c-93d1-467935cf6d3c" />
+<img width="49%" height="auto" alt="SyncManager_2 3" src="https://github.com/user-attachments/assets/83d4dd12-540a-4eaa-bddd-f4005a4e670c" />
 
 # How It Works
 SyncManager works by keeping track of changes to your files. It follows the following steps:
