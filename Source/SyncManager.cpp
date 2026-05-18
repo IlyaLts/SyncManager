@@ -202,8 +202,8 @@ void SyncManager::sync()
 
         if (!success)
         {
-            return;
             m_busy = false;
+            return;
         }
 
         m_queue.head()->setSyncHidden(false);
