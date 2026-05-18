@@ -90,7 +90,7 @@ public:
     void saveSettings() const;
     void removeSettings() const;
 
-    void createParentFolders(QByteArray path);
+    void createParentFolders(const QByteArray &path);
     bool removeFile(const QString &path, SyncFile::Type type);
     void cleanup();
     void clearData();

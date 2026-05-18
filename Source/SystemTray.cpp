@@ -40,7 +40,7 @@ SystemTray::SystemTray()
     m_showAction = new QAction("&" + syncApp->translate("Show"), this);
     m_quitAction = new QAction("&" + syncApp->translate("Quit"), this);
 
-    m_trayIconMenu = new QMenu(nullptr);
+    m_trayIconMenu = new QMenu();
 
 #ifdef Q_OS_LINUX
     m_trayIconMenu->addAction(m_showAction);
@@ -55,6 +55,16 @@ SystemTray::SystemTray()
     connect(this, &QSystemTrayIcon::activated, this, &SystemTray::iconActivated);
     connect(m_showAction, &QAction::triggered, this, [this](){ iconActivated(QSystemTrayIcon::DoubleClick); });
     connect(m_quitAction, &QAction::triggered, syncApp, &Application::quit);
+}
+
+/*
+===================
+SystemTray::~SystemTray
+===================
+*/
+SystemTray::~SystemTray()
+{
+    delete m_trayIconMenu;
 }
 
 /*

@@ -359,8 +359,7 @@ Application::setMaxCpuUsage
 */
 void Application::setMaxCpuUsage(float percentage)
 {
-    qBound(0.1f, percentage, 100.0f);
-    m_maxCpuUsage = percentage;
+    m_maxCpuUsage = qBound(0.1f, percentage, 100.0f);
     saveSettings();
 }
 
@@ -462,8 +461,8 @@ bool Application::questionBox(QMessageBox::Icon icon, const QString &title, cons
 {
     QMessageBox messageBox(icon, title, text, QMessageBox::NoButton, parent);
 
-    QPushButton *yes = new QPushButton("&" + translate("Yes"), parent);
-    QPushButton *no = new QPushButton("&" + translate("No"), parent);
+    QPushButton *yes = new QPushButton("&" + translate("Yes"), &messageBox);
+    QPushButton *no = new QPushButton("&" + translate("No"), &messageBox);
 
     messageBox.addButton(yes, QMessageBox::YesRole);
     messageBox.addButton(no, QMessageBox::NoRole);
@@ -481,20 +480,19 @@ Application::intInputDialog
 bool Application::intInputDialog(QWidget *parent, const QString &title, const QString &label,
                                  int &returnValue, int value, int minValue, int maxValue)
 {
-    QInputDialog *dialog = new QInputDialog(parent);
-    dialog->setInputMode(QInputDialog::IntInput);
-    dialog->setIntMinimum(minValue);
-    dialog->setIntMaximum(maxValue);
-    dialog->setWindowTitle(title);
-    dialog->setLabelText(label);
-    dialog->setIntValue(value);
-    dialog->setOkButtonText("&" + translate("OK"));
-    dialog->setCancelButtonText("&" + translate("Cancel"));
-    dialog->deleteLater();
+    QInputDialog dialog(parent);
+    dialog.setInputMode(QInputDialog::IntInput);
+    dialog.setIntMinimum(minValue);
+    dialog.setIntMaximum(maxValue);
+    dialog.setWindowTitle(title);
+    dialog.setLabelText(label);
+    dialog.setIntValue(value);
+    dialog.setOkButtonText("&" + translate("OK"));
+    dialog.setCancelButtonText("&" + translate("Cancel"));
 
-    if (dialog->exec())
+    if (dialog.exec())
     {
-        returnValue = dialog->intValue();
+        returnValue = dialog.intValue();
         return true;
     }
 
@@ -509,20 +507,19 @@ Application::doubleInputDialog
 bool Application::doubleInputDialog(QWidget *parent, const QString &title, const QString &label,
                                     double &returnValue, double value, double minValue, double maxValue)
 {
-    QInputDialog *dialog = new QInputDialog(parent);
-    dialog->setInputMode(QInputDialog::DoubleInput);
-    dialog->setDoubleMinimum(minValue);
-    dialog->setDoubleMaximum(maxValue);
-    dialog->setWindowTitle(title);
-    dialog->setLabelText(label);
-    dialog->setDoubleValue(value);
-    dialog->setOkButtonText("&" + translate("OK"));
-    dialog->setCancelButtonText("&" + translate("Cancel"));
-    dialog->deleteLater();
+    QInputDialog dialog(parent);
+    dialog.setInputMode(QInputDialog::DoubleInput);
+    dialog.setDoubleMinimum(minValue);
+    dialog.setDoubleMaximum(maxValue);
+    dialog.setWindowTitle(title);
+    dialog.setLabelText(label);
+    dialog.setDoubleValue(value);
+    dialog.setOkButtonText("&" + translate("OK"));
+    dialog.setCancelButtonText("&" + translate("Cancel"));
 
-    if (dialog->exec())
+    if (dialog.exec())
     {
-        returnValue = dialog->doubleValue();
+        returnValue = dialog.doubleValue();
         return true;
     }
 
@@ -537,18 +534,17 @@ Application::textInputDialog
 bool Application::textInputDialog(QWidget *parent, const QString &title, const QString &label,
                                   QString &returnText, const QString &text)
 {
-    QInputDialog *dialog = new QInputDialog(parent);
-    dialog->setInputMode(QInputDialog::TextInput);
-    dialog->setWindowTitle(title);
-    dialog->setLabelText(label);
-    dialog->setTextValue(text);
-    dialog->setOkButtonText("&" + translate("OK"));
-    dialog->setCancelButtonText("&" + translate("Cancel"));
-    dialog->deleteLater();
+    QInputDialog dialog(parent);
+    dialog.setInputMode(QInputDialog::TextInput);
+    dialog.setWindowTitle(title);
+    dialog.setLabelText(label);
+    dialog.setTextValue(text);
+    dialog.setOkButtonText("&" + translate("OK"));
+    dialog.setCancelButtonText("&" + translate("Cancel"));
 
-    if (dialog->exec())
+    if (dialog.exec())
     {
-        returnText = dialog->textValue();
+        returnText = dialog.textValue();
         return true;
     }
 

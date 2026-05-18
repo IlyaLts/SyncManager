@@ -159,8 +159,7 @@ SyncProfile::setSyncTimeMultiplier
 */
 void SyncProfile::setSyncTimeMultiplier(quint32 multiplier)
 {
-    qMax(1U, multiplier);
-    m_syncTimeMultiplier = multiplier;
+    m_syncTimeMultiplier = qMax(1U, multiplier);
     updateNextSyncingTime();
 }
 

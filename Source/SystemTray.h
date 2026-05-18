@@ -38,6 +38,7 @@ class SystemTray : public QSystemTrayIcon
 public:
 
     SystemTray();
+    ~SystemTray();
 
     void retranslate();
     void setIcon(const QIcon &icon);

@@ -56,8 +56,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     setWindowTitle("Sync Manager");
     setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
 
-    profileModel = new DecoratedStringListModel;
-    folderModel = new DecoratedStringListModel;
+    profileModel = new DecoratedStringListModel(this);
+    folderModel = new DecoratedStringListModel(this);
     ui->syncProfilesView->setModel(profileModel);
     ui->syncProfilesView->setItemDelegate(new ProfileStyleDelegate(ui->syncProfilesView));
     ui->folderListView->setModel(folderModel);

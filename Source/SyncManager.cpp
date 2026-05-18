@@ -257,8 +257,8 @@ void SyncManager::updateStatus()
             }
         }
 
-        if (existingFolders >= 2)
-            m_issue = false;
+        if (profile.folders.size() >= 2 && existingFolders < 2)
+            m_issue = true;
     }
 
     // Number of files left to sync
@@ -684,7 +684,7 @@ int SyncManager::scanFiles(SyncFolder &folder)
         filePath.remove(0, folder.path().size());
 
         if (fileInfo.isFile() && fileInfo.suffix().compare(TEMP_EXTENSION, Qt::CaseInsensitive) == 0)
-            QFile::remove(absoluteFilePath);;
+            QFile::remove(absoluteFilePath);
 
         bool shouldExclude = false;
 
@@ -1998,7 +1998,7 @@ void SyncManager::copyFiles(SyncFolder &folder)
             if (m_notifications && shouldNotify && QStorageInfo(folder.path()).bytesAvailable() < QFile(fileIt->fromFullPath).size())
             {
                 if (!m_notificationList.contains(rootPath))
-                    m_notificationList.insert(rootPath, new QTimer()).value()->setSingleShot(true);
+                    m_notificationList.insert(rootPath, new QTimer(this)).value()->setSingleShot(true);
 
                 QByteArray parentPath = toFileInfo.path().toUtf8();
 

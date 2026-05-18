@@ -98,12 +98,13 @@ SyncFolder::createParentFolders
 Creates all necessary parent directories for a given file path
 ===================
 */
-void SyncFolder::createParentFolders(QByteArray path)
+void SyncFolder::createParentFolders(const QByteArray &path)
 {
     QStack<QString> list;
+    QByteArray currentPath = path;
 
-    while (!QDir(path = QFileInfo(path).path().toUtf8()).exists())
-        list.append(path);
+    while (!QDir(currentPath = QFileInfo(currentPath).path().toUtf8()).exists())
+        list.append(currentPath);
 
     while (!list.isEmpty())
     {
@@ -118,10 +119,10 @@ void SyncFolder::createParentFolders(QByteArray path)
             else
                 cs = Qt::CaseInsensitive;
 
-            if (list.top().startsWith(path, cs))
+            if (list.top().startsWith(currentPath, cs))
             {
                 QByteArray relativePath(list.top().toUtf8());
-                relativePath.remove(0, path.size());
+                relativePath.remove(0, currentPath.size());
 
                 hash64_t hash = hash64(relativePath);
 
