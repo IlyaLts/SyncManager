@@ -97,7 +97,12 @@ SystemTray::addAction
 */
 void SystemTray::addAction(QAction *action)
 {
-    m_trayIconMenu->insertAction(m_trayIconMenu->actions()[0], action);
+    QList<QAction *> actions = m_trayIconMenu->actions();
+
+    if (actions.isEmpty())
+        m_trayIconMenu->addAction(action);
+    else
+        m_trayIconMenu->insertAction(actions[0], action);
 }
 
 /*
@@ -107,7 +112,12 @@ SystemTray::addMenu
 */
 void SystemTray::addMenu(QMenu *menu)
 {
-    m_trayIconMenu->insertMenu(m_trayIconMenu->actions()[0], menu);
+    QList<QAction *> actions = m_trayIconMenu->actions();
+
+    if (actions.isEmpty())
+        m_trayIconMenu->addMenu(menu);
+    else
+        m_trayIconMenu->insertMenu(actions[0], menu);
 }
 
 /*
@@ -117,7 +127,12 @@ SystemTray::addSeparator
 */
 void SystemTray::addSeparator()
 {
-    m_trayIconMenu->insertSeparator(m_trayIconMenu->actions()[0]);
+    QList<QAction *> actions = m_trayIconMenu->actions();
+
+    if (actions.isEmpty())
+        m_trayIconMenu->addSeparator();
+    else
+        m_trayIconMenu->insertSeparator(actions[0]);
 }
 
 /*

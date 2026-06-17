@@ -1871,7 +1871,7 @@ void MainWindow::updateMenuMaxDiskTransferRate()
         quint64 bytes = syncApp->manager()->maxDiskTransferRate() % 1024;
         quint64 kilobytes = (syncApp->manager()->maxDiskTransferRate() / 1024) % 1024;
         quint64 megabytes = (syncApp->manager()->maxDiskTransferRate() / 1024 / 1024) % 1024;
-        quint64 gigabytes = (syncApp->manager()->maxDiskTransferRate() / 1024 / 1024/ 1024) % 1024;
+        quint64 gigabytes = (syncApp->manager()->maxDiskTransferRate() / 1024 / 1024/ 1024);
 
         if (gigabytes)
             text.append(tr("%1 GB/s").arg(QString::number(static_cast<float>(gigabytes) + static_cast<float>(megabytes) / 1024.0f, 'f', 1)));

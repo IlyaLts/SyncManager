@@ -47,11 +47,11 @@ ProfileStyleDelegate::sizeHint
 QSize ProfileStyleDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     QSize baseSize = QStyledItemDelegate::sizeHint(option, index);
+    QString queueStatusText = index.data(QueueStatusRole).toString();
 
-    if (!index.model()->data(index, QueueStatusRole).value<QString>().isEmpty())
+    if (!queueStatusText.isEmpty())
     {
         QFontMetrics fm(option.font);
-        QString queueStatusText = index.data(QueueStatusRole).toString();
         baseSize.setWidth(baseSize.width() + option.decorationSize.width() + fm.boundingRect(queueStatusText).width());
     }
 

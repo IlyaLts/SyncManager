@@ -1,4 +1,4 @@
-﻿/*
+/*
 ===============================================================================
     Copyright (C) 2022-2026 Ilya Lyakhovets
 
@@ -83,7 +83,7 @@ QString formatSize(quint64 size)
     quint64 bytes = size % 1024;
     quint64 kilobytes = (size / 1024) % 1024;
     quint64 megabytes = (size / 1024 / 1024) % 1024;
-    quint64 gigabytes = (size / 1024 / 1024/ 1024) % 1024;
+    quint64 gigabytes = (size / 1024 / 1024 / 1024);
 
     if (gigabytes)
         return QString("%1 " + syncApp->translate("gigabytes")).arg(gigabytes);
@@ -171,7 +171,12 @@ getCurrentFileInfo
 
 Gets the fileinfo with the current filepath on the disk
 
-The question is should we get the current filename instead of the whole file pat.
+If we just use QFileInfo with our provided path, QFileInfo will return the filepath
+with the same filepath case as the provided path, even though it actually differs on the disk.
+So, this is a workaround for this, where we get the correct file path with proper case first,
+and only then use it with QFileInfo.
+
+The question is should we get the current filename instead of the whole file path.
 If so, then we can get it using FILE_NAME_OPENED instead of FILE_NAME_NORMALIZED argument
 
 Or use the following way:

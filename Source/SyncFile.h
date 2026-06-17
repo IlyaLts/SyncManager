@@ -69,19 +69,21 @@ public:
     inline bool isFolder() const { return type == Folder; }
     inline bool isLocked() const { return lockedFlag != Unlocked; }
 
-    void setUpdated(bool value) { flags = value ? (flags | Updated) : (flags & ~Updated); }
-    void setExists(bool value) { flags = value ? (flags | Exists) : (flags & ~Exists); }
-    void setNewlyAdded(bool value) { flags = value ? (flags | NewlyAdded) : (flags & ~NewlyAdded); }
-    void setReadOnly(bool value) { flags = value ? (flags | ReadOnly) : (flags & ~ReadOnly); }
-    void setAttributesUpdated(bool value) { flags = value ? (flags | AttributesUpdated) : (flags & ~AttributesUpdated); }
-    void setScanned(bool value) { flags = value ? (flags | Scanned) : (flags & ~Scanned); }
+    inline void setUpdated(bool value) { setFlag(Updated, value); }
+    inline void setExists(bool value) { setFlag(Exists, value); }
+    inline void setNewlyAdded(bool value) { setFlag(NewlyAdded, value); }
+    inline void setReadOnly(bool value) { setFlag(ReadOnly, value); }
+    inline void setAttributesUpdated(bool value) { setFlag(AttributesUpdated, value); }
+    inline void setScanned(bool value) { setFlag(Scanned, value); }
+    void setFlag(Flag flag, bool value) { flags = value ? (flags | flag) : (flags & ~flag); }
 
-    inline bool updated() const { return flags & Updated; }
-    inline bool exists() const { return flags & Exists; }
-    inline bool newlyAdded() const { return flags & NewlyAdded; }
-    inline bool readOnly() const { return flags & ReadOnly; }
-    inline bool attributesUpdated() const { return flags & AttributesUpdated; }
-    inline bool scanned() const { return flags & Scanned; }
+    inline bool updated() const { return flag(Updated); }
+    inline bool exists() const { return flag(Exists); }
+    inline bool newlyAdded() const { return flag(NewlyAdded); }
+    inline bool readOnly() const { return flag(ReadOnly); }
+    inline bool attributesUpdated() const { return flag(AttributesUpdated); }
+    inline bool scanned() const { return flag(Scanned); }
+    inline bool flag(Flag flag) const { return flags & flag; }
 
     QDateTime modifiedDate;
     quint64 size = 0;

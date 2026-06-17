@@ -42,7 +42,7 @@ RemovableListView::keyPressEvent
 */
 void RemovableListView::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Delete && selectionModel()->selectedIndexes().size())
+    if (event->key() == Qt::Key_Delete && selectionModel()->hasSelection())
         emit deletePressed();
 
     QListView::keyPressEvent(event);
