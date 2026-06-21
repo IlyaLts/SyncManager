@@ -112,13 +112,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     settings.endGroup();
 
-    connect(ui->syncProfilesView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(profileClicked(QItemSelection,QItemSelection)));
-    connect(ui->syncProfilesView->model(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QList<int>)), SLOT(profileNameChanged(QModelIndex,QModelIndex,QList<int>)));
-    connect(ui->syncProfilesView, SIGNAL(deletePressed()), SLOT(removeProfile()));
+    connect(ui->syncProfilesView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &MainWindow::profileClicked);
+    connect(ui->syncProfilesView->model(), &QAbstractItemModel::dataChanged, this, &MainWindow::profileNameChanged);
+    connect(ui->syncProfilesView, &RemovableListView::deletePressed, this, &MainWindow::removeProfile);
     connect(ui->folderListView, &FolderListView::drop, this, &MainWindow::addFolder);
-    connect(ui->folderListView, SIGNAL(deletePressed()), SLOT(removeFolder()));
-    connect(ui->syncProfilesView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showProfileContextMenu(QPoint)));
-    connect(ui->folderListView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showFolderContextMenu(QPoint)));
+    connect(ui->folderListView, &RemovableListView::deletePressed, this, &MainWindow::removeFolder);
+    connect(ui->syncProfilesView, &RemovableListView::customContextMenuRequested, this, &MainWindow::showProfileContextMenu);
+    connect(ui->folderListView, &FolderListView::customContextMenuRequested, this, &MainWindow::showFolderContextMenu);
     connect(syncApp->manager(), &SyncManager::message, this, [this](const QString &title, const QString &message){ syncApp->tray()->notify(title, message, QSystemTrayIcon::Critical); });
     connect(syncApp->manager(), &SyncManager::profileSynced, this, &MainWindow::profileSynced);
 
@@ -1357,7 +1357,7 @@ void MainWindow::showProfileContextMenu(const QPoint &pos)
     static QMenu menu;
     menu.clear();
 
-    menu.addAction(iconAdd, "&" + tr("Add a new profile"), this, SLOT(addProfile()));
+    menu.addAction(iconAdd, "&" + tr("Add a new profile"), this, &MainWindow::addProfile);
 
     if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
     {
@@ -1369,17 +1369,17 @@ void MainWindow::showProfileContextMenu(const QPoint &pos)
 
         if (profile->paused())
         {
-            menu.addAction(iconResume, "&" + tr("Resume syncing profile"), this, SLOT(pauseSelected()));
+            menu.addAction(iconResume, "&" + tr("Resume syncing profile"), this, &MainWindow::pauseSelected);
         }
         else
         {
-            menu.addAction(iconPause, "&" + tr("Pause syncing profile"), this, SLOT(pauseSelected()));
+            menu.addAction(iconPause, "&" + tr("Pause syncing profile"), this, &MainWindow::pauseSelected);
 
             QAction *action = menu.addAction(iconSync, "&" + tr("Synchronize profile"), this, [=, this](){ sync(profile, false); });
             action->setDisabled(syncApp->manager()->queue().contains(profile));
         }
 
-        menu.addAction(iconRemove, "&" + tr("Remove profile"), this, SLOT(removeProfile()));
+        menu.addAction(iconRemove, "&" + tr("Remove profile"), this, &MainWindow::removeProfile);
 
         menu.addSeparator();
         menu.addMenu(profile->syncingModeMenu);
@@ -1407,7 +1407,7 @@ void MainWindow::showFolderContextMenu(const QPoint &pos)
     if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
         return;
 
-    menu.addAction(iconAdd, "&" + tr("Add a new folder"), this, SLOT(addFolder()));
+    menu.addAction(iconAdd, "&" + tr("Add a new folder"), this, [this]() { addFolder(); });
 
     if (!ui->folderListView->selectionModel()->selectedIndexes().isEmpty())
     {
@@ -1420,11 +1420,11 @@ void MainWindow::showFolderContextMenu(const QPoint &pos)
             return;
 
         if (folder->paused())
-            menu.addAction(iconResume, "&" + tr("Resume syncing folder"), this, SLOT(pauseSelected()));
+            menu.addAction(iconResume, "&" + tr("Resume syncing folder"), this, &MainWindow::pauseSelected);
         else
-            menu.addAction(iconPause, "&" + tr("Pause syncing folder"), this, SLOT(pauseSelected()));
+            menu.addAction(iconPause, "&" + tr("Pause syncing folder"), this, &MainWindow::pauseSelected);
 
-        menu.addAction(iconRemove, "&" + tr("Remove folder"), this, SLOT(removeFolder()));
+        menu.addAction(iconRemove, "&" + tr("Remove folder"), this, &MainWindow::removeFolder);
 
         if (folder->hasUnsyncedFiles() && !folder->unsyncedList().isEmpty())
         {
@@ -2102,9 +2102,9 @@ void MainWindow::setupMenus()
         profile.setupMenus(this);
 
     connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
-    connect(pauseSyncingAction, SIGNAL(triggered()), this, SLOT(pauseSyncing()));
-    connect(maximumDiskTransferRateAction, SIGNAL(triggered()), this, SLOT(setMaximumTransferRateUsage()));
-    connect(maximumCpuUsageAction, SIGNAL(triggered()), this, SLOT(setMaximumCpuUsage()));
+    connect(pauseSyncingAction, &QAction::triggered, this, &MainWindow::pauseSyncing);
+    connect(maximumDiskTransferRateAction, &QAction::triggered, this, &MainWindow::setMaximumTransferRateUsage);
+    connect(maximumCpuUsageAction, &QAction::triggered, this, &MainWindow::setMaximumCpuUsage);
 
     for (int i = 0; i < Application::languageCount(); i++)
         connect(languageActions[i], &QAction::triggered, this, [i, this](){ switchLanguage(languages[i].language); });
