@@ -93,7 +93,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (auto &name : profileNames)
     {
-        syncApp->manager()->profiles().emplace_back(this, name, profileIndexByName(name));
+        syncApp->manager()->profiles().emplace_back(this, name, ui->syncProfilesView->profileIndexByName(name));
         SyncProfile &profile = syncApp->manager()->profiles().back();
         profile.setPaused(syncApp->manager()->paused());
 
@@ -230,7 +230,7 @@ void MainWindow::loadSettings()
     {
         QModelIndex index = profileModel->indexByRow(i);
         QString profileKeyPath(index.data(Qt::DisplayRole).toString() + QLatin1String("_profile/"));
-        SyncProfile *profile = profileByIndex(index);
+        SyncProfile *profile = ui->syncProfilesView->profileByIndex(index);
 
         if (!profile)
             continue;
@@ -381,7 +381,7 @@ void MainWindow::addProfile()
     profileNames.append(newName);
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
-    SyncProfile &profile = syncApp->manager()->profiles().emplace_back(this, newName, profileIndexByName(newName));
+    SyncProfile &profile = syncApp->manager()->profiles().emplace_back(this, newName, ui->syncProfilesView->profileIndexByName(newName));
     profile.setPaused(syncApp->manager()->paused());
     connectProfileMenu(profile);
     rebindProfiles();
@@ -417,7 +417,7 @@ void MainWindow::removeProfile()
 
     for (auto &index : ui->syncProfilesView->selectionModel()->selectedIndexes())
     {
-        SyncProfile *profile = profileByIndex(index);
+        SyncProfile *profile = ui->syncProfilesView->profileByIndex(index);
 
         if (!profile)
             continue;
@@ -473,7 +473,7 @@ void MainWindow::profileClicked(const QItemSelection &selected, const QItemSelec
     }
 
     QStringList folderPaths;
-    const SyncProfile *profile = profileByIndex(ui->syncProfilesView->currentIndex());
+    const SyncProfile *profile = ui->syncProfilesView->profileByIndex(ui->syncProfilesView->currentIndex());
 
     if (!profile)
         return;
@@ -508,7 +508,7 @@ void MainWindow::profileNameChanged(const QModelIndex &topLeft, const QModelInde
     for (const auto &profile : syncApp->manager()->profiles())
         profileNames.append(profile.name);
 
-    SyncProfile *profile = profileByIndex(topLeft);
+    SyncProfile *profile = ui->syncProfilesView->profileByIndex(topLeft);
 
     if (!profile)
         return;
@@ -561,7 +561,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
         return;
 
     QModelIndex index = ui->syncProfilesView->selectionModel()->selectedIndexes()[0];
-    SyncProfile *profile = profileByIndex(index);
+    SyncProfile *profile = ui->syncProfilesView->profileByIndex(index);
     QStringList existedFolders;
     QStringList foldersToAdd;
 
@@ -646,7 +646,7 @@ void MainWindow::removeFolder()
     for (auto &folderIndex : ui->folderListView->selectionModel()->selectedIndexes())
     {
         QModelIndex profileIndex = ui->syncProfilesView->selectionModel()->selectedIndexes()[0];
-        SyncProfile *profile = profileByIndex(profileIndex);
+        SyncProfile *profile = ui->syncProfilesView->profileByIndex(profileIndex);
         SyncFolder *folder = profile->folderByIndex(folderIndex);
 
         if (!profile || !folder)
@@ -729,7 +729,7 @@ void MainWindow::pauseSelected()
         if (!ui->folderListView->selectionModel()->selectedIndexes().isEmpty() && ui->folderListView->hasFocus())
         {
             QModelIndex profileIndex = ui->syncProfilesView->selectionModel()->selectedIndexes()[0];
-            SyncProfile *profile = profileByIndex(profileIndex);
+            SyncProfile *profile = ui->syncProfilesView->profileByIndex(profileIndex);
 
             if (!profile)
                 return;
@@ -756,7 +756,7 @@ void MainWindow::pauseSelected()
 
             for (const auto &index : selectedIndexes)
             {
-                SyncProfile *profile = profileByIndex(index);
+                SyncProfile *profile = ui->syncProfilesView->profileByIndex(index);
 
                 if (!profile)
                     return;
@@ -1362,7 +1362,7 @@ void MainWindow::showProfileContextMenu(const QPoint &pos)
     if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
     {
         QModelIndex profileIndex = ui->syncProfilesView->selectionModel()->selectedIndexes()[0];
-        SyncProfile *profile = profileByIndex(profileIndex);
+        SyncProfile *profile = ui->syncProfilesView->profileByIndex(profileIndex);
 
         if (!profile)
             return;
@@ -1413,7 +1413,7 @@ void MainWindow::showFolderContextMenu(const QPoint &pos)
     {
         QModelIndex profileIndex = ui->syncProfilesView->selectionModel()->selectedIndexes()[0];
         QModelIndex folderIndex = ui->folderListView->selectionModel()->selectedIndexes()[0];
-        SyncProfile *profile = profileByIndex(profileIndex);
+        SyncProfile *profile = ui->syncProfilesView->profileByIndex(profileIndex);
         SyncFolder *folder = profile->folderByIndex(folderIndex);
 
         if (!profile || !folder)
@@ -1650,7 +1650,7 @@ void MainWindow::updateProfilesStatus()
     for (size_t i = 0; i < manager->profiles().size(); i++)
     {
         QModelIndex index = profileModel->indexByRow(i);
-        SyncProfile *profile = profileByIndex(index);
+        SyncProfile *profile = ui->syncProfilesView->profileByIndex(index);
 
         if (!profile)
             continue;
@@ -1697,7 +1697,7 @@ void MainWindow::updateFoldersStatus()
         return;
 
     QModelIndex profileIndex = ui->syncProfilesView->selectionModel()->selectedRows()[0];
-    SyncProfile *profile = profileByIndex(profileIndex);
+    SyncProfile *profile = ui->syncProfilesView->profileByIndex(profileIndex);
 
     if (!profile)
         return;
@@ -1924,7 +1924,7 @@ MainWindow::updateProfileTooltip
 */
 void MainWindow::updateProfileTooltip(const SyncProfile &profile)
 {
-    QModelIndex index = indexByProfile(profile);
+    QModelIndex index = ui->syncProfilesView->indexByProfile(profile);
     QString nextSyncText;
     QString dateFormat("dddd, MMMM d, yyyy h:mm:ss AP");
 
@@ -2135,46 +2135,4 @@ void MainWindow::updateLaunchOnStartupState()
     QString path(QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/SyncManager.desktop");
     launchOnStartupAction->setChecked(QFile::exists(path));
 #endif
-}
-
-/*
-===================
-MainWindow::profileByIndex
-===================
-*/
-SyncProfile *MainWindow::profileByIndex(const QModelIndex &index)
-{
-    for (auto &profile : syncApp->manager()->profiles())
-        if (profile.index() == index)
-            return &profile;
-
-    return nullptr;
-}
-
-/*
-===================
-MainWindow::indexByProfile
-===================
-*/
-QModelIndex MainWindow::indexByProfile(const SyncProfile &profile)
-{
-    for (int i = 0; i < profileModel->rowCount(); i++)
-        if (profileModel->indexByRow(i) == profile.index())
-            return profileModel->indexByRow(i);
-
-    return QModelIndex();
-}
-
-/*
-===================
-MainWindow::profileIndexByName
-===================
-*/
-QModelIndex MainWindow::profileIndexByName(const QString &name)
-{
-    for (int i = 0; i < profileModel->rowCount(); i++)
-        if (profileModel->indexByRow(i).data(Qt::DisplayRole).toString()  == name)
-            return profileModel->indexByRow(i);
-
-    return QModelIndex();
 }

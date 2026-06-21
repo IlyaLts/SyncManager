@@ -39,7 +39,7 @@
      <item>
       <widget class="QSplitter" name="horizontalSplitter">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="childrenCollapsible">
         <bool>false</bool>
@@ -54,7 +54,7 @@
           </widget>
          </item>
          <item>
-          <widget class="RemovableListView" name="syncProfilesView">
+          <widget class="ProfileListView" name="syncProfilesView">
            <property name="minimumSize">
             <size>
              <width>200</width>
@@ -67,7 +67,7 @@
             </font>
            </property>
            <property name="contextMenuPolicy">
-            <enum>Qt::CustomContextMenu</enum>
+            <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
            </property>
           </widget>
          </item>
@@ -96,10 +96,10 @@
             </font>
            </property>
            <property name="contextMenuPolicy">
-            <enum>Qt::CustomContextMenu</enum>
+            <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
            </property>
            <property name="editTriggers">
-            <set>QAbstractItemView::NoEditTriggers</set>
+            <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
            </property>
           </widget>
          </item>
@@ -113,14 +113,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>RemovableListView</class>
-   <extends>QListView</extends>
-   <header>Source/RemovableListView.h</header>
-  </customwidget>
-  <customwidget>
    <class>FolderListView</class>
    <extends>QListView</extends>
    <header>Source/FolderListView.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProfileListView</class>
+   <extends>QListView</extends>
+   <header>Source/ProfileListView.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

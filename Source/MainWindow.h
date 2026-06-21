@@ -128,9 +128,6 @@ private:
     void updateProfileTooltip(const SyncProfile &profile);
     void setupMenus();
     void updateLaunchOnStartupState();
-    SyncProfile *profileByIndex(const QModelIndex &index);
-    QModelIndex indexByProfile(const SyncProfile &profile);
-    QModelIndex profileIndexByName(const QString &name);
 
     Ui::MainWindow *ui;
 
