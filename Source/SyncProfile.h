@@ -84,11 +84,15 @@ public:
     explicit SyncProfile(QWidget *parent, const QString &name, const QModelIndex &index);
     ~SyncProfile();
 
-    inline bool operator ==(const SyncProfile &other) { return name == other.name; }
+    inline bool operator ==(const SyncProfile &other) { return m_name == other.m_name; }
 
     void loadSettings();
     void saveSettings() const;
     void removeSettings() const;
+
+    inline void setName(const QString &name) { m_name = name; }
+    inline void setSyncTime(quint64 time) { m_syncTime = time; }
+    inline void setLastSyncDate(const QDateTime &dateTime) { m_lastSyncDate = dateTime; }
 
     void setSyncHidden(bool hidden) { m_syncHidden = hidden; }
     void setSyncingMode(SyncingMode mode);
@@ -113,6 +117,14 @@ public:
     void setPaused(bool paused);
     inline void setIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
     inline void setIndex(const QModelIndex &index) { m_index = index; }
+
+    inline std::list<SyncFolder> &folders() { return m_folders; }
+    inline const std::list<SyncFolder> &folders() const { return m_folders; }
+    inline const QString &name() const { return m_name; }
+    inline quint64 syncEvery() const { return m_syncEvery; }
+    inline quint64 syncTime() const { return m_syncTime; }
+    inline const QChronoTimer &syncTimer() const { return m_syncTimer; }
+    inline const QDateTime &lastSyncDate() const { return m_lastSyncDate; }
 
     inline bool syncHidden() const { return m_syncHidden; }
     inline SyncingMode syncingMode() const { return m_syncingMode; }
@@ -170,7 +182,74 @@ public:
     void destroyMenus();
     void retranslate();
 
-    std::list<SyncFolder> folders;
+    void updateMenuSyncTime();
+    void addActionsToMenu(QMenu *menu);
+    void enableContextMenus(bool enable);
+
+Q_SIGNALS:
+
+    void syncingModeChanged();
+    void syncingTimeChanged();
+
+public Q_SLOTS:
+
+    void switchSyncingMode(SyncingMode mode);
+    void increaseSyncTime();
+    void decreaseSyncTime();
+    void setFixedInterval();
+    void toggleDetectMoved();
+    void switchDeletionMode(DeletionMode mode);
+    void switchVersioningFormat(VersioningFormat format);
+    void setVersioningPostfix();
+    void setVersioningPattern();
+    void switchVersioningLocation(VersioningLocation location);
+    void setVersioningLocationPath();
+    void switchDatabaseLocation(DatabaseLocation location);
+    void setFileMinSize();
+    void setFileMaxSize();
+    void setMovedFileMinSize();
+    void setDeltaCopyingMinSize();
+    void setIncludeList();
+    void setExcludeList();
+    void toggleIgnoreHiddenFiles();
+
+private:
+
+    std::list<SyncFolder> m_folders;
+
+    QString m_name;
+    quint64 m_syncEvery = 0;
+    quint64 m_syncTime = 0;
+    QChronoTimer m_syncTimer;
+    QDateTime m_lastSyncDate;
+
+    SyncingMode m_syncingMode = AutomaticAdaptive;
+    quint64 m_syncIntervalFixed = defaultFixedInterval;
+    DeletionMode m_deletionMode = MoveToTrash;
+    VersioningLocation m_versioningLocation = LocallyNextToFolder;
+    VersioningFormat m_versioningFormat = FileTimestampAfter;
+    QString m_versioningFolder;
+    QString m_versioningPattern;
+    QString m_versioningPath;
+    DatabaseLocation m_databaseLocation = Decentralized;
+    quint64 m_fileMinSize = 0;
+    quint64 m_fileMaxSize = 0;
+    quint64 m_movedFileMinSize = MovedFilesMinSize;
+    quint64 m_deltaCopyingMinSize = DeltaCopyingMinSize;
+    QStringList m_includeList;
+    QStringList m_excludeList;
+    quint32 m_syncTimeMultiplier = 1;
+    bool m_syncHidden = false;
+    bool m_syncing = false;
+    bool m_paused = false;
+    bool m_toBeRemoved = false;
+    bool m_detectMovedFiles = true;
+    bool m_deltaCopying = false;
+    bool m_ignoreHiddenFiles = false;
+
+    QHash<Hash, QByteArray> m_filePaths;
+    QModelIndex m_index;
+    QMutex m_mutex;
 
     QAction *manualAction;
     QAction *automaticAdaptiveAction;
@@ -209,42 +288,6 @@ public:
     UnhidableMenu *versioningLocationMenu;
     UnhidableMenu *databaseLocationMenu;
     UnhidableMenu *filteringMenu;
-
-    quint64 syncEvery = 0;
-    quint64 syncTime = 0;
-    QChronoTimer syncTimer;
-    QDateTime lastSyncDate;
-    QString name;
-
-private:
-
-    SyncingMode m_syncingMode = AutomaticAdaptive;
-    quint64 m_syncIntervalFixed = defaultFixedInterval;
-    DeletionMode m_deletionMode = MoveToTrash;
-    VersioningLocation m_versioningLocation = LocallyNextToFolder;
-    VersioningFormat m_versioningFormat = FileTimestampAfter;
-    QString m_versioningFolder;
-    QString m_versioningPattern;
-    QString m_versioningPath;
-    DatabaseLocation m_databaseLocation = Decentralized;
-    quint64 m_fileMinSize = 0;
-    quint64 m_fileMaxSize = 0;
-    quint64 m_movedFileMinSize = MovedFilesMinSize;
-    quint64 m_deltaCopyingMinSize = DeltaCopyingMinSize;
-    QStringList m_includeList;
-    QStringList m_excludeList;
-    quint32 m_syncTimeMultiplier = 1;
-    bool m_syncHidden = false;
-    bool m_syncing = false;
-    bool m_paused = false;
-    bool m_toBeRemoved = false;
-    bool m_detectMovedFiles = true;
-    bool m_deltaCopying = false;
-    bool m_ignoreHiddenFiles = false;
-
-    QHash<Hash, QByteArray> m_filePaths;
-    QModelIndex m_index;
-    QMutex m_mutex;
 };
 
 #endif // SYNCPROFILE_H

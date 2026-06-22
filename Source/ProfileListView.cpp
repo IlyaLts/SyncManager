@@ -18,8 +18,6 @@
 */
 
 #include "Application.h"
-#include "ProfileListView.h"
-#include "DecoratedStringListModel.h"
 
 /*
 ===================

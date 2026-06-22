@@ -77,14 +77,7 @@ private Q_SLOTS:
     void removeFolder();
     void pauseSyncing();
     void pauseSelected();
-    void switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMode mode);
-    void switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionMode mode);
-    void switchVersioningFormat(SyncProfile &profile, SyncProfile::VersioningFormat format);
-    void switchVersioningLocation(SyncProfile &profile, SyncProfile::VersioningLocation location);
-    void switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::Type type);
-    void switchDatabaseLocation(SyncProfile &profile, SyncProfile::DatabaseLocation location);
-    void increaseSyncTime(SyncProfile &profile);
-    void decreaseSyncTime(SyncProfile &profile);
+    void switchSyncingType(SyncFolder &folder, SyncFolder::Type type);
     void switchLanguage(QLocale::Language language);
     void updateLanguageMenu();
     void toggleLaunchOnStartup();
@@ -93,18 +86,6 @@ private Q_SLOTS:
     void toggleCheckForUpdates();
     void setMaximumTransferRateUsage();
     void setMaximumCpuUsage();
-    void setFixedInterval(SyncProfile &profile);
-    void setVersioningPostfix(SyncProfile &profile);
-    void setVersioningPattern(SyncProfile &profile);
-    void setVersioningLocationPath(SyncProfile &profile);
-    void setFileMinSize(SyncProfile &profile);
-    void setFileMaxSize(SyncProfile &profile);
-    void setMovedFileMinSize(SyncProfile &profile);
-    void setDeltaCopyingMinSize(SyncProfile &profile);
-    void setIncludeList(SyncProfile &profile);
-    void setExcludeList(SyncProfile &profile);
-    void toggleIgnoreHiddenFiles(SyncProfile &profile);
-    void toggleDetectMoved(SyncProfile &profile);
     void showProfileContextMenu(const QPoint &pos);
     void showFolderContextMenu(const QPoint &pos);
     void sync(SyncProfile *profile, bool hidden = false);
@@ -115,8 +96,6 @@ private Q_SLOTS:
 private:
 
     void rebindProfiles();
-    void connectProfileMenu(SyncProfile &profile);
-    void disconnectProfileMenu(SyncProfile &profile);
     void updateStatus();
     void updateProfilesStatus();
     void updateFoldersStatus();
@@ -124,7 +103,6 @@ private:
     void updateIcons();
     void updateWindowTitle();
     void updateMenuMaxDiskTransferRate();
-    void updateMenuSyncTime(const SyncProfile &profile);
     void updateProfileTooltip(const SyncProfile &profile);
     void setupMenus();
     void updateLaunchOnStartupState();

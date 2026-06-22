@@ -107,7 +107,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         paths.sort();
 
         for (auto &path : paths)
-            profile.folders.emplace_back(&profile, path.toUtf8());
+            profile.folders().emplace_back(&profile, path.toUtf8());
+
+        connect(&profile, &SyncProfile::syncingModeChanged, this, &MainWindow::updateStatus);
+        connect(&profile, &SyncProfile::syncingTimeChanged, this, [this, &profile](){ updateProfileTooltip(profile);});
     }
 
     settings.endGroup();
@@ -128,16 +131,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (auto &profile : syncApp->manager()->profiles())
     {
-        connect(&profile.syncTimer, &QChronoTimer::timeout, this, [&profile, this](){ sync(&const_cast<SyncProfile &>(profile), true); });
-        switchDatabaseLocation(profile, profile.databaseLocation());
-        updateMenuSyncTime(profile);
+        connect(&profile.syncTimer(), &QChronoTimer::timeout, this, [&profile, this](){ sync(&const_cast<SyncProfile &>(profile), true); });
+        profile.switchDatabaseLocation(profile.databaseLocation());
+        profile.updateMenuSyncTime();
     }
 
     updateStatus();
     updateLanguageMenu();
 
     for (const auto &profile : syncApp->manager()->profiles())
-        for (const auto &folder : profile.folders)
+        for (const auto &folder : profile.folders())
             if (!folder.exists())
                 syncApp->tray()->notify(tr("Couldn't find folder"), folder.path(), QSystemTrayIcon::Warning);
 }
@@ -196,7 +199,7 @@ void MainWindow::retranslate()
     for (auto &profile : syncApp->manager()->profiles())
     {
         profile.retranslate();
-        updateMenuSyncTime(profile);
+        profile.updateMenuSyncTime();
         updateProfileTooltip(profile);
     }
 }
@@ -235,13 +238,13 @@ void MainWindow::loadSettings()
         if (!profile)
             continue;
 
-        QString profileKeyname(profile->name + QLatin1String("_profile/"));
+        QString profileKeyname(profile->name() + QLatin1String("_profile/"));
 
-        switchSyncingMode(*profile, static_cast<SyncProfile::SyncingMode>(settings.value(profileKeyname + "SyncingMode", SyncProfile::AutomaticAdaptive).toInt()));
-        switchDeletionMode(*profile, static_cast<SyncProfile::DeletionMode>(settings.value(profileKeyname + "DeletionMode", SyncProfile::MoveToTrash).toInt()));
-        switchVersioningFormat(*profile, static_cast<SyncProfile::VersioningFormat>(settings.value(profileKeyname + "VersioningFormat", SyncProfile::FolderTimestamp).toInt()));
-        switchVersioningLocation(*profile, static_cast<SyncProfile::VersioningLocation>(settings.value(profileKeyname + "VersioningLocation", SyncProfile::LocallyNextToFolder).toInt()));
-        switchDatabaseLocation(*profile, static_cast<SyncProfile::DatabaseLocation>(settings.value(profileKeyname + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
+        profile->switchSyncingMode(static_cast<SyncProfile::SyncingMode>(settings.value(profileKeyname + "SyncingMode", SyncProfile::AutomaticAdaptive).toInt()));
+        profile->switchDeletionMode(static_cast<SyncProfile::DeletionMode>(settings.value(profileKeyname + "DeletionMode", SyncProfile::MoveToTrash).toInt()));
+        profile->switchVersioningFormat(static_cast<SyncProfile::VersioningFormat>(settings.value(profileKeyname + "VersioningFormat", SyncProfile::FolderTimestamp).toInt()));
+        profile->switchVersioningLocation(static_cast<SyncProfile::VersioningLocation>(settings.value(profileKeyname + "VersioningLocation", SyncProfile::LocallyNextToFolder).toInt()));
+        profile->switchDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(profileKeyname + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
 
         // Loads saved pause states and checks if synchronization folders exist
         profile->setPaused(settings.value(profileKeyPath + QLatin1String("Paused"), false).toBool());
@@ -249,7 +252,7 @@ void MainWindow::loadSettings()
         if (!profile->paused())
             syncApp->manager()->setPaused(false);
 
-        for (auto &folder : profile->folders)
+        for (auto &folder : profile->folders())
         {
             folder.loadSettings();
 
@@ -370,7 +373,7 @@ void MainWindow::addProfile()
     QStringList profileNames;
 
     for (const auto &profile : syncApp->manager()->profiles())
-        profileNames.append(profile.name);
+        profileNames.append(profile.name());
 
     for (int i = 2; profileNames.contains(newName); i++)
     {
@@ -383,8 +386,10 @@ void MainWindow::addProfile()
     folderModel->setStringList(QStringList());
     SyncProfile &profile = syncApp->manager()->profiles().emplace_back(this, newName, ui->syncProfilesView->profileIndexByName(newName));
     profile.setPaused(syncApp->manager()->paused());
-    connectProfileMenu(profile);
     rebindProfiles();
+
+    connect(&profile, &SyncProfile::syncingModeChanged, this, &MainWindow::updateStatus);
+    connect(&profile, &SyncProfile::syncingTimeChanged, this, [this, &profile](){ updateProfileTooltip(profile);});
 
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     settings.beginGroup("Profiles");
@@ -434,13 +439,12 @@ void MainWindow::removeProfile()
             continue;
 
         ui->syncProfilesView->model()->removeRow(index.row());
-        disconnectProfileMenu(*profile);
         rebindProfiles();
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-        settings.remove(profile->name + QLatin1String("_profile"));
+        settings.remove(profile->name() + QLatin1String("_profile"));
         settings.beginGroup("Profiles");
-        settings.remove(profile->name);
+        settings.remove(profile->name());
         settings.endGroup();
 
         profile->remove();
@@ -473,12 +477,12 @@ void MainWindow::profileClicked(const QItemSelection &selected, const QItemSelec
     }
 
     QStringList folderPaths;
-    const SyncProfile *profile = ui->syncProfilesView->profileByIndex(ui->syncProfilesView->currentIndex());
+    SyncProfile *profile = ui->syncProfilesView->profileByIndex(ui->syncProfilesView->currentIndex());
 
     if (!profile)
         return;
 
-    for (const auto &folder : profile->folders)
+    for (const auto &folder : profile->folders())
         folderPaths.append(folder.path());
 
     folderModel->setStringList(folderPaths);
@@ -506,28 +510,28 @@ void MainWindow::profileNameChanged(const QModelIndex &topLeft, const QModelInde
     QStringList folderPaths;
 
     for (const auto &profile : syncApp->manager()->profiles())
-        profileNames.append(profile.name);
+        profileNames.append(profile.name());
 
     SyncProfile *profile = ui->syncProfilesView->profileByIndex(topLeft);
 
     if (!profile)
         return;
 
-    if (newName == profile->name)
+    if (newName == profile->name())
         return;
 
-    for (const auto &folder : profile->folders)
+    for (const auto &folder : profile->folders())
         folderPaths.append(folder.path());
 
     // Sets its name back to original if there's the profile name that already exists
-    if (newName.compare(profile->name, Qt::CaseInsensitive) && (newName.isEmpty() || profileNames.contains(newName, Qt::CaseInsensitive)))
+    if (newName.compare(profile->name(), Qt::CaseInsensitive) && (newName.isEmpty() || profileNames.contains(newName, Qt::CaseInsensitive)))
     {
-        ui->syncProfilesView->model()->setData(topLeft, profile->name, Qt::DisplayRole);
+        ui->syncProfilesView->model()->setData(topLeft, profile->name(), Qt::DisplayRole);
         return;
     }
 
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-    QString oldProfilePrefix = profile->name + QLatin1String("_profile");
+    QString oldProfilePrefix = profile->name() + QLatin1String("_profile");
     QStringList allKeys = settings.allKeys();
     QStringList keysToRename;
 
@@ -543,11 +547,11 @@ void MainWindow::profileNameChanged(const QModelIndex &topLeft, const QModelInde
     }
 
     settings.beginGroup("Profiles");
-    settings.remove(profile->name);
+    settings.remove(profile->name());
     settings.setValue(newName, folderPaths);
     settings.endGroup();
 
-    profile->name = newName;
+    profile->setName(newName);
 }
 
 /*
@@ -568,7 +572,7 @@ void MainWindow::addFolder(const QMimeData *mimeData)
     if (!profile)
         return;
 
-    for (const auto &folder : profile->folders)
+    for (const auto &folder : profile->folders())
         if (!folder.toBeRemoved())
             existedFolders.append(folder.path());
 
@@ -616,13 +620,13 @@ void MainWindow::addFolder(const QMimeData *mimeData)
 
         if (!exists)
         {
-            SyncFolder &folder = profile->folders.emplace_back(profile, newFolderPath.toUtf8());
+            SyncFolder &folder = profile->folders().emplace_back(profile, newFolderPath.toUtf8());
             folder.saveSettings();
             existedFolders.append(folder.path());
 
             QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
             settings.beginGroup("Profiles");
-            settings.setValue(profile->name, existedFolders);
+            settings.setValue(profile->name(), existedFolders);
             settings.endGroup();
 
             folderModel->setStringList(existedFolders);
@@ -671,18 +675,18 @@ void MainWindow::removeFolder()
         folder->removeSettings();
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
-        settings.remove(profile->name + QLatin1String("_profile/") + folder->path() + QLatin1String("_Paused"));
+        settings.remove(profile->name() + QLatin1String("_profile/") + folder->path() + QLatin1String("_Paused"));
 
         if (!syncApp->manager()->busy())
-            profile->folders.remove(*folder);
+            profile->folders().remove(*folder);
 
         QStringList foldersPaths;
 
-        for (const auto &folder : profile->folders)
+        for (const auto &folder : profile->folders())
             foldersPaths.append(folder.path());
 
         settings.beginGroup("Profiles");
-        settings.setValue(profile->name, foldersPaths);
+        settings.setValue(profile->name(), foldersPaths);
         settings.endGroup();
 
         profile->updateTimer();
@@ -774,198 +778,16 @@ void MainWindow::pauseSelected()
 
 /*
 ===================
-MainWindow::switchSyncingMode
-===================
-*/
-void MainWindow::switchSyncingMode(SyncProfile &profile, SyncProfile::SyncingMode mode)
-{
-    if (mode < SyncProfile::Manual || mode > SyncProfile::AutomaticFixed)
-        mode = SyncProfile::AutomaticAdaptive;
-
-    profile.setSyncingMode(mode);
-    profile.manualAction->setChecked(mode == SyncProfile::Manual);
-    profile.automaticAdaptiveAction->setChecked(mode == SyncProfile::AutomaticAdaptive);
-    profile.automaticFixedAction->setChecked(mode == SyncProfile::AutomaticFixed);
-    profile.increaseSyncTimeAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
-    profile.syncingTimeAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
-    profile.decreaseSyncTimeAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
-    profile.fixedSyncingTimeAction->setVisible(mode == SyncProfile::AutomaticFixed);
-
-    if (mode == SyncProfile::Manual)
-    {
-        profile.syncTimer.stop();
-    }
-    // Otherwise, automatic
-    else
-    {
-        profile.updateNextSyncingTime();
-        profile.updateTimer();
-    }
-
-    updateStatus();
-    updateProfileTooltip(profile);
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::switchDeletionMode
-===================
-*/
-void MainWindow::switchDeletionMode(SyncProfile &profile, SyncProfile::DeletionMode mode)
-{
-    if (mode < SyncProfile::MoveToTrash || mode > SyncProfile::DeletePermanently)
-        mode = SyncProfile::MoveToTrash;
-
-    if (syncApp->initiated() && mode == SyncProfile::DeletePermanently && mode != profile.deletionMode())
-    {
-        QString title(tr("Switch deletion mode to delete files permanently?"));
-        QString text(tr("Are you sure? Beware: this could lead to data loss!"));
-
-        if (!syncApp->questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
-            mode = profile.deletionMode();
-    }
-
-    profile.setDeletionMode(mode);
-    profile.moveToTrashAction->setChecked(mode == SyncProfile::MoveToTrash);
-    profile.versioningAction->setChecked(mode == SyncProfile::Versioning);
-    profile.deletePermanentlyAction->setChecked(mode == SyncProfile::DeletePermanently);
-    profile.versioningFormatMenu->menuAction()->setVisible(mode == SyncProfile::Versioning);
-    profile.versioningLocationMenu->menuAction()->setVisible(mode == SyncProfile::Versioning);
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::switchVersioningFormat
-===================
-*/
-void MainWindow::switchVersioningFormat(SyncProfile &profile, SyncProfile::VersioningFormat format)
-{
-    if (format < SyncProfile::FileTimestampBefore || format > SyncProfile::LastVersion)
-        format = SyncProfile::FileTimestampAfter;
-
-    profile.fileTimestampBeforeAction->setChecked(format == SyncProfile::FileTimestampBefore);
-    profile.fileTimestampAfterAction->setChecked(format == SyncProfile::FileTimestampAfter);
-    profile.folderTimestampAction->setChecked(format == SyncProfile::FolderTimestamp);
-    profile.lastVersionAction->setChecked(format == SyncProfile::LastVersion);
-    profile.setVersioningFormat(format);
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::switchVersioningLocation
-===================
-*/
-void MainWindow::switchVersioningLocation(SyncProfile &profile, SyncProfile::VersioningLocation location)
-{
-    if (location < SyncProfile::LocallyNextToFolder || location > SyncProfile::CustomLocation)
-        location = SyncProfile::LocallyNextToFolder;
-
-    profile.versioningPostfixAction->setVisible(location == SyncProfile::LocallyNextToFolder);
-    profile.locallyNextToFolderAction->setChecked(location == SyncProfile::LocallyNextToFolder);
-    profile.customLocationAction->setChecked(location == SyncProfile::CustomLocation);
-    profile.customLocationPathAction->setVisible(location == SyncProfile::CustomLocation);
-    profile.setVersioningLocation(location);
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
 MainWindow::switchSyncingType
 ===================
 */
-void MainWindow::switchSyncingType(SyncProfile &profile, SyncFolder &folder, SyncFolder::Type type)
+void MainWindow::switchSyncingType(SyncFolder &folder, SyncFolder::Type type)
 {
     folder.setType(type);
     updateStatus();
 
     if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::switchDatabaseLocation
-===================
-*/
-void MainWindow::switchDatabaseLocation(SyncProfile &profile, SyncProfile::DatabaseLocation location)
-{
-    if (location < SyncProfile::Locally || location > SyncProfile::Decentralized)
-        location = SyncProfile::Decentralized;
-
-    profile.databaseLocallyAction->setChecked(location == false);
-    profile.databaseDecentralizedAction->setChecked(location == true);
-    profile.setDatabaseLocation(location);
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::increaseSyncTime
-===================
-*/
-void MainWindow::increaseSyncTime(SyncProfile &profile)
-{
-    quint64 max = SyncManager::maxInterval();
-
-    // If exceeds the maximum value of an qint64
-    if (profile.syncEvery >= max)
-    {
-        profile.increaseSyncTimeAction->setEnabled(false);
-        return;
-    }
-
-    profile.setSyncTimeMultiplier(profile.syncTimeMultiplier() + 1);
-    profile.decreaseSyncTimeAction->setEnabled(true);
-    updateMenuSyncTime(profile);
-
-    // If exceeds the maximum value of an qint64
-    if (profile.syncEvery >= max)
-        profile.increaseSyncTimeAction->setEnabled(false);
-
-    profile.updateTimer();
-    updateProfileTooltip(profile);
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::decreaseSyncTime
-===================
-*/
-void MainWindow::decreaseSyncTime(SyncProfile &profile)
-{
-    profile.setSyncTimeMultiplier(profile.syncTimeMultiplier() - 1);
-    updateMenuSyncTime(profile);
-
-    quint64 max = SyncManager::maxInterval();
-
-    // If exceeds the maximum value of an qint64
-    if (profile.syncEvery < max)
-        profile.increaseSyncTimeAction->setEnabled(true);
-
-    if (profile.syncTimeMultiplier() <= 1)
-        profile.decreaseSyncTimeAction->setEnabled(false);
-
-    profile.updateTimer();
-    updateProfileTooltip(profile);
-
-    if (syncApp->initiated())
-        profile.saveSettings();
+        folder.profile().saveSettings();
 }
 
 /*
@@ -1086,269 +908,6 @@ void MainWindow::setMaximumCpuUsage()
 
 /*
 ===================
-MainWindow::setFixedInterval
-===================
-*/
-void MainWindow::setFixedInterval(SyncProfile &profile)
-{
-    QString title(tr("Synchronize Every"));
-    QString text(tr("Please enter the synchronization interval in seconds:"));
-    int size;
-
-    if (!syncApp->intInputDialog(this, title, text, size, profile.syncIntervalFixed() / 1000, 0))
-        return;
-
-    profile.setSyncIntervalFixed(size * 1000);
-    updateMenuSyncTime(profile);
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::setVersioningPostfix
-===================
-*/
-void MainWindow::setVersioningPostfix(SyncProfile &profile)
-{
-    QString postfix = profile.versioningFolder();
-    QString title(tr("Versioning Folder Postfix"));
-    QString text(tr("Please enter the versioning folder postfix:"));
-
-    if (!syncApp->textInputDialog(this, title, text, postfix, postfix))
-        return;
-
-    profile.setVersioningFolder(postfix);
-    profile.versioningPostfixAction->setText(QString("&" + tr("Folder Postfix: %1")).arg(profile.versioningFolder()));
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::setVersioningPattern
-===================
-*/
-void MainWindow::setVersioningPattern(SyncProfile &profile)
-{
-    QString pattern = profile.versioningPattern();
-    QString title(tr("Versioning Pattern"));
-    QString text(tr("Please enter the versioning pattern:"));
-    text.append("\n\n");
-    text.append(tr("Examples:"));
-    text.append("\nyyyy_M_d_h_m_s_z - 2001_5_21_14_13_09_120");
-    text.append("\nyyyy_MM_dd - 2001_05_21");
-    text.append("\nyy_MMMM_d - 01_May_21");
-    text.append("\nhh_mm_ss_zzz - 14_13_09_120");
-    text.append("\nap_h_m_s - pm_2_13_9");
-
-    if (!syncApp->textInputDialog(this, title, text, pattern, pattern))
-        return;
-
-    profile.setVersioningPattern(pattern);
-    profile.versioningPatternAction->setText(QString("&" + tr("Pattern: %1")).arg(profile.versioningPattern()));
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::setVersioningLocationPath
-===================
-*/
-void MainWindow::setVersioningLocationPath(SyncProfile &profile)
-{
-    if (profile.versioningLocation() == SyncProfile::CustomLocation && syncApp->initiated())
-    {
-        QString title(tr("Browse for Versioning Folder"));
-        QString path = QFileDialog::getExistingDirectory(this, title, QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
-
-        if (!path.isEmpty())
-        {
-            profile.setVersioningPath(path);
-            profile.customLocationPathAction->setText(tr("Custom Location: ") + path);
-        }
-    }
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::setFileMinSize
-===================
-*/
-void MainWindow::setFileMinSize(SyncProfile &profile)
-{
-    QString title(tr("Minimum File Size"));
-    QString text(tr("Please enter the minimum size in bytes:"));
-    int size;
-
-    if (!syncApp->intInputDialog(this, title, text, size, profile.fileMinSize(), 0))
-        return;
-
-    if (size && profile.fileMaxSize() && static_cast<quint64>(size) > profile.fileMaxSize())
-        size = profile.fileMaxSize();
-
-    profile.setFileMinSize(size);
-    profile.fileMinSizeAction->setText("&" + tr("Minimum File Size: %1").arg(formatSize(profile.fileMinSize())));
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::setFileMaxSize
-===================
-*/
-void MainWindow::setFileMaxSize(SyncProfile &profile)
-{
-    QString title(tr("Maximum File Size"));
-    QString text(tr("Please enter the maximum size in bytes:"));
-    int size;
-
-    if (!syncApp->intInputDialog(this, title, text, size, profile.fileMaxSize(), 0))
-        return;
-
-    if (size && static_cast<quint64>(size) < profile.fileMinSize())
-        size = profile.fileMinSize();
-
-    profile.setFileMaxSize(size);
-    profile.fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1").arg(formatSize(profile.fileMaxSize())));
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::setMovedFileMinSize
-===================
-*/
-void MainWindow::setMovedFileMinSize(SyncProfile &profile)
-{
-    QString title(tr("Minimum Size for Moved File"));
-    QString text(tr("Please enter the minimum size for a moved file in bytes:"));
-    int size;
-
-    if (!syncApp->intInputDialog(this, title, text, size, profile.movedFileMinSize(), 0))
-        return;
-
-    profile.setMovedFileMinSize(size);
-    profile.movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1").arg(formatSize(profile.movedFileMinSize())));
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::setDeltaCopyingMinSize
-===================
-*/
-void MainWindow::setDeltaCopyingMinSize(SyncProfile &profile)
-{
-    QString title(tr("Minimum Size for Delta Copying"));
-    QString text(tr("Please enter the minimum size for delta copying in bytes:"));
-    int size;
-
-    if (!syncApp->intInputDialog(this, title, text, size, profile.deltaCopyingMinSize(), 0))
-        return;
-
-    profile.setDeltaCopyingMinSize(size);
-    profile.deltaCopyingMinSizeAction->setText("&" + tr("Minimum Size for delta copying: %1").arg(formatSize(profile.deltaCopyingMinSize())));
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::setIncludeList
-===================
-*/
-void MainWindow::setIncludeList(SyncProfile &profile)
-{
-    QString includeString = profile.includeList().join("; ");
-    QString title(tr("Include List"));
-    QString text(tr("Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
-
-    if (!syncApp->textInputDialog(this, title, text, includeString, includeString))
-        return;
-
-    QStringList includeList = includeString.split(";");
-
-    for (auto &include : includeList)
-        include = include.trimmed();
-
-    includeString = includeList.join("; ");
-    profile.setIncludeList(includeList);
-    profile.includeAction->setText("&" + tr("Include: %1").arg(includeString));
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::setExcludeList
-===================
-*/
-void MainWindow::setExcludeList(SyncProfile &profile)
-{
-    QString excludeString = profile.excludeList().join("; ");
-    QString title(tr("Exclude List"));
-    QString text(tr("Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
-
-    if (!syncApp->textInputDialog(this, title, text, excludeString, excludeString))
-        return;
-
-    QStringList excludeList = excludeString.split(";");
-
-    for (auto &exclude : excludeList)
-        exclude = exclude.trimmed();
-
-    excludeString = excludeList.join("; ");
-    profile.setExcludeList(excludeList);
-    profile.excludeAction->setText("&" + tr("Exclude: %1").arg(excludeString));
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::toggleIgnoreHiddenFiles
-===================
-*/
-void MainWindow::toggleIgnoreHiddenFiles(SyncProfile &profile)
-{
-    profile.setIgnoreHiddenFiles(!profile.ignoreHiddenFiles());
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
-MainWindow::detectMovedFiles
-===================
-*/
-void MainWindow::toggleDetectMoved(SyncProfile &profile)
-{
-    profile.setDetectMovedFiles(!profile.detectMovedFiles());
-
-    if (syncApp->initiated())
-        profile.saveSettings();
-}
-
-/*
-===================
 MainWindow::showProfileContextMenu
 ===================
 */
@@ -1382,12 +941,7 @@ void MainWindow::showProfileContextMenu(const QPoint &pos)
         menu.addAction(iconRemove, "&" + tr("Remove profile"), this, &MainWindow::removeProfile);
 
         menu.addSeparator();
-        menu.addMenu(profile->syncingModeMenu);
-        menu.addMenu(profile->deletionModeMenu);
-        menu.addMenu(profile->versioningFormatMenu);
-        menu.addMenu(profile->versioningLocationMenu);
-        menu.addMenu(profile->databaseLocationMenu);
-        menu.addMenu(profile->filteringMenu);
+        profile->addActionsToMenu(&menu);
     }
 
     menu.popup(ui->syncProfilesView->mapToGlobal(pos));
@@ -1438,13 +992,13 @@ void MainWindow::showFolderContextMenu(const QPoint &pos)
         menu.addSeparator();
 
         if (folder->type() != SyncFolder::TWO_WAY)
-            menu.addAction(iconTwoWay, "&" + tr("Switch to two-way synchronization"), this, [profile, folder, this](){ switchSyncingType(*profile, *folder, SyncFolder::TWO_WAY); });
+            menu.addAction(iconTwoWay, "&" + tr("Switch to two-way synchronization"), this, [profile, folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
 
         if (folder->type() != SyncFolder::ONE_WAY)
-            menu.addAction(iconOneWay, "&" + tr("Switch to one-way synchronization"), this, [profile, folder, this](){ switchSyncingType(*profile, *folder, SyncFolder::ONE_WAY); });
+            menu.addAction(iconOneWay, "&" + tr("Switch to one-way synchronization"), this, [profile, folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
 
         if (folder->type() != SyncFolder::ONE_WAY_UPDATE)
-            menu.addAction(iconOneWayUpdate, "&" + tr("Switch to one-way update synchronization"), this, [profile, folder, this](){ switchSyncingType(*profile, *folder, SyncFolder::ONE_WAY_UPDATE); });
+            menu.addAction(iconOneWayUpdate, "&" + tr("Switch to one-way update synchronization"), this, [profile, folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY_UPDATE); });
     }
 
     menu.popup(ui->folderListView->mapToGlobal(pos));
@@ -1506,7 +1060,7 @@ MainWindow::profileSynced
 void MainWindow::profileSynced(SyncProfile *profile)
 {
     profile->updateTimer();
-    updateMenuSyncTime(*profile);
+    profile->updateMenuSyncTime();
     updateProfileTooltip(*profile);
     syncApp->saveSettings();
 }
@@ -1535,86 +1089,10 @@ void MainWindow::rebindProfiles()
     {
         for (auto &profile : syncApp->manager()->profiles())
         {
-            if (profileModel->indexByRow(i).data(Qt::DisplayRole).toString()  == profile.name)
+            if (profileModel->indexByRow(i).data(Qt::DisplayRole).toString()  == profile.name())
                 profile.setIndex(profileModel->indexByRow(i));
         }
     }
-}
-
-/*
-===================
-MainWindow::connectProfileMenu
-===================
-*/
-void MainWindow::connectProfileMenu(SyncProfile &profile)
-{
-    connect(&profile.syncTimer, &QChronoTimer::timeout, this, [this, &profile](){ sync(&profile, true); });
-    connect(profile.manualAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::Manual); });
-    connect(profile.automaticAdaptiveAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticAdaptive); });
-    connect(profile.automaticFixedAction, &QAction::triggered, this, [this, &profile](){ switchSyncingMode(profile, SyncProfile::AutomaticFixed); });
-    connect(profile.increaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ increaseSyncTime(profile); });
-    connect(profile.decreaseSyncTimeAction, &QAction::triggered, this, [this, &profile](){ decreaseSyncTime(profile); });
-    connect(profile.fixedSyncingTimeAction, &QAction::triggered, this, [this, &profile](){ setFixedInterval(profile); });
-    connect(profile.detectMovedFilesAction, &QAction::triggered, this, [this, &profile](){ toggleDetectMoved(profile); });
-    connect(profile.moveToTrashAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::MoveToTrash); });
-    connect(profile.versioningAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::Versioning); });
-    connect(profile.deletePermanentlyAction, &QAction::triggered, this, [this, &profile](){ switchDeletionMode(profile, SyncProfile::DeletePermanently); });
-    connect(profile.fileTimestampBeforeAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FileTimestampBefore); });
-    connect(profile.fileTimestampAfterAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FileTimestampAfter); });
-    connect(profile.folderTimestampAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::FolderTimestamp); });
-    connect(profile.lastVersionAction, &QAction::triggered, this, [this, &profile](){ switchVersioningFormat(profile, SyncProfile::LastVersion); });
-    connect(profile.versioningPostfixAction, &QAction::triggered, this, [this, &profile](){ setVersioningPostfix(profile); });
-    connect(profile.versioningPatternAction, &QAction::triggered, this, [this, &profile](){ setVersioningPattern(profile); });
-    connect(profile.locallyNextToFolderAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::LocallyNextToFolder); });
-    connect(profile.customLocationAction, &QAction::triggered, this, [this, &profile](){ switchVersioningLocation(profile, SyncProfile::CustomLocation); });
-    connect(profile.customLocationPathAction, &QAction::triggered, this, [this, &profile](){ setVersioningLocationPath(profile); });
-    connect(profile.databaseLocallyAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Locally); });
-    connect(profile.databaseDecentralizedAction, &QAction::triggered, this, [this, &profile](){ switchDatabaseLocation(profile, SyncProfile::Decentralized); });
-    connect(profile.fileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMinSize(profile); });
-    connect(profile.fileMaxSizeAction, &QAction::triggered, this, [this, &profile](){ setFileMaxSize(profile); });
-    connect(profile.movedFileMinSizeAction, &QAction::triggered, this, [this, &profile](){ setMovedFileMinSize(profile); });
-    connect(profile.deltaCopyingMinSizeAction, &QAction::triggered, this, [this, &profile](){ setDeltaCopyingMinSize(profile); });
-    connect(profile.includeAction, &QAction::triggered, this, [this, &profile](){ setIncludeList(profile); });
-    connect(profile.excludeAction, &QAction::triggered, this, [this, &profile](){ setExcludeList(profile); });
-    connect(profile.ignoreHiddenFilesAction, &QAction::triggered, this, [this, &profile](){ toggleIgnoreHiddenFiles(profile); });
-}
-
-
-/*
-===================
-MainWindow::disconnectProfileMenu
-===================
-*/
-void MainWindow::disconnectProfileMenu(SyncProfile &profile)
-{
-    disconnect(&profile.syncTimer, nullptr, nullptr, nullptr);
-    disconnect(profile.manualAction, nullptr, nullptr, nullptr);
-    disconnect(profile.automaticAdaptiveAction, nullptr, nullptr, nullptr);
-    disconnect(profile.automaticFixedAction, nullptr, nullptr, nullptr);
-    disconnect(profile.increaseSyncTimeAction, nullptr, nullptr, nullptr);
-    disconnect(profile.decreaseSyncTimeAction, nullptr, nullptr, nullptr);
-    disconnect(profile.fixedSyncingTimeAction, nullptr, nullptr, nullptr);
-    disconnect(profile.detectMovedFilesAction, nullptr, nullptr, nullptr);
-    disconnect(profile.moveToTrashAction, nullptr, nullptr, nullptr);
-    disconnect(profile.versioningAction, nullptr, nullptr, nullptr);
-    disconnect(profile.deletePermanentlyAction, nullptr, nullptr, nullptr);
-    disconnect(profile.fileTimestampBeforeAction, nullptr, nullptr, nullptr);
-    disconnect(profile.fileTimestampAfterAction, nullptr, nullptr, nullptr);
-    disconnect(profile.folderTimestampAction, nullptr, nullptr, nullptr);
-    disconnect(profile.lastVersionAction, nullptr, nullptr, nullptr);
-    disconnect(profile.versioningPostfixAction, nullptr, nullptr, nullptr);
-    disconnect(profile.versioningPatternAction, nullptr, nullptr, nullptr);
-    disconnect(profile.locallyNextToFolderAction, nullptr, nullptr, nullptr);
-    disconnect(profile.customLocationAction, nullptr, nullptr, nullptr);
-    disconnect(profile.databaseLocallyAction, nullptr, nullptr, nullptr);
-    disconnect(profile.databaseDecentralizedAction, nullptr, nullptr, nullptr);
-    disconnect(profile.fileMinSizeAction, nullptr, nullptr, nullptr);
-    disconnect(profile.fileMaxSizeAction, nullptr, nullptr, nullptr);
-    disconnect(profile.movedFileMinSizeAction, nullptr, nullptr, nullptr);
-    disconnect(profile.deltaCopyingMinSizeAction, nullptr, nullptr, nullptr);
-    disconnect(profile.includeAction, nullptr, nullptr, nullptr);
-    disconnect(profile.excludeAction, nullptr, nullptr, nullptr);
-    disconnect(profile.ignoreHiddenFilesAction, nullptr, nullptr, nullptr);
 }
 
 /*
@@ -1671,7 +1149,7 @@ void MainWindow::updateProfilesStatus()
             profileModel->setData(index, iconPause, Qt::DecorationRole);
         else if (profile->syncing() || (!profile->syncHidden() && manager->queue().contains(profile)))
             profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-        else if (!profile->folders.empty() && profile->countExistingFolders() < 2 && profile->folders.size() >= 2)
+        else if (!profile->folders().empty() && profile->countExistingFolders() < 2 && profile->folders().size() >= 2)
             profileModel->setData(index, iconRemove, Qt::DecorationRole);
         else if (profile->hasMissingFolders())
             profileModel->setData(index, iconWarning, Qt::DecorationRole);
@@ -1891,34 +1369,6 @@ void MainWindow::updateMenuMaxDiskTransferRate()
 
 /*
 ===================
-MainWindow::updateMenuSyncTime
-===================
-*/
-void MainWindow::updateMenuSyncTime(const SyncProfile &profile)
-{
-    quint64 syncEvery = 0;
-    QAction *action = nullptr;
-
-    if (profile.syncingMode() == SyncProfile::AutomaticAdaptive)
-    {
-        syncEvery = profile.syncEvery;
-        action = profile.syncingTimeAction;
-    }
-    else if (profile.syncingMode() == SyncProfile::AutomaticFixed)
-    {
-        syncEvery = profile.syncIntervalFixed();
-        action = profile.fixedSyncingTimeAction;
-    }
-    else
-    {
-        return;
-    }
-
-    action->setText(QString(tr("Synchronize Every") + ": ").append(formatTime(syncEvery)));
-}
-
-/*
-===================
 MainWindow::updateProfileTooltip
 ===================
 */
@@ -1934,8 +1384,8 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
     if (profile.syncingMode() != SyncProfile::Manual)
     {
         nextSyncText.append("\n" + tr("Next Synchronization: "));
-        QDateTime dateTime = profile.lastSyncDate;
-        dateTime += std::chrono::duration<quint64, std::milli>(profile.syncEvery);
+        QDateTime dateTime = profile.lastSyncDate();
+        dateTime += std::chrono::duration<quint64, std::milli>(profile.syncEvery());
         nextSyncText.append(syncApp->toLocalizedDateTime(dateTime, dateFormat));
         nextSyncText.append(".");
     }
@@ -1944,9 +1394,9 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
     {
         profileModel->setData(index, tr("The profile has no folders available."), Qt::ToolTipRole);
     }
-    else if (!profile.lastSyncDate.isNull())
+    else if (!profile.lastSyncDate().isNull())
     {
-        QString time(syncApp->toLocalizedDateTime(profile.lastSyncDate, dateFormat));
+        QString time(syncApp->toLocalizedDateTime(profile.lastSyncDate(), dateFormat));
         QString text = tr("Last synchronization: %1.").arg(time) + nextSyncText;
 
         if (profile.partiallySynchronized())
@@ -1962,7 +1412,7 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
 
     if (ui->syncProfilesView->selectionModel()->selectedIndexes().contains(index))
     {
-        for (int i = 0; auto &folder : profile.folders)
+        for (int i = 0; auto &folder : profile.folders())
         {
             if (!folder.exists())
             {
@@ -2116,9 +1566,6 @@ void MainWindow::setupMenus()
     connect(checkForUpdatesAction, &QAction::triggered, this, &MainWindow::toggleCheckForUpdates);
     connect(userManualAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_PATH)); });
     connect(reportBugAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_URL)); });
-
-    for (auto &profile : syncApp->manager()->profiles())
-        connectProfileMenu(profile);
 }
 
 /*

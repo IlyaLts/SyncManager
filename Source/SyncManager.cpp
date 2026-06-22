@@ -70,21 +70,6 @@ void SyncManager::loadSettings()
     setMaxDiskTransferRate(settings.value("MaximumDiskUsage", 0).toULongLong());
     setPaused(settings.value("Paused", false).toBool());
     enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
-
-    for (auto &profile : profiles())
-    {
-        profile.ignoreHiddenFilesAction->setChecked(profile.ignoreHiddenFiles());
-        profile.detectMovedFilesAction->setChecked(profile.detectMovedFiles());
-
-        profile.updateNextSyncingTime();
-
-        // If exceeds the maximum value of an quint64
-        if (profile.syncEvery >= SyncManager::maxInterval())
-            profile.increaseSyncTimeAction->setEnabled(false);
-
-        if (profile.syncTimeMultiplier() <= 1)
-            profile.decreaseSyncTimeAction->setEnabled(false);
-    }
 }
 
 /*
@@ -106,10 +91,10 @@ void SyncManager::saveSettings() const
     {
         QStringList folderList;
 
-        for (auto &folder : profile.folders)
+        for (auto &folder : profile.folders())
             folderList.append(folder.path());
 
-        settings.setValue(profile.name, folderList);
+        settings.setValue(profile.name(), folderList);
     }
 
     settings.endGroup();
@@ -155,50 +140,9 @@ void SyncManager::sync()
 
     while (!m_queue.empty())
     {
-        for (auto &action : m_queue.head()->syncingModeMenu->actions())
-            action->setEnabled(false);
-
-        for (auto &action : m_queue.head()->deletionModeMenu->actions())
-            action->setEnabled(false);
-
-        for (auto &action : m_queue.head()->versioningFormatMenu->actions())
-            action->setEnabled(false);
-
-        for (auto &action : m_queue.head()->versioningLocationMenu->actions())
-            action->setEnabled(false);
-
-        for (auto &action : m_queue.head()->databaseLocationMenu->actions())
-            action->setEnabled(false);
-
-        for (auto &action : m_queue.head()->filteringMenu->actions())
-            action->setEnabled(false);
-
+        m_queue.head()->enableContextMenus(false);
         bool success = syncProfile(*m_queue.head());
-
-        for (auto &action : m_queue.head()->syncingModeMenu->actions())
-            action->setEnabled(true);
-
-        for (auto &action : m_queue.head()->deletionModeMenu->actions())
-            action->setEnabled(true);
-
-        for (auto &action : m_queue.head()->versioningFormatMenu->actions())
-            action->setEnabled(true);
-
-        for (auto &action : m_queue.head()->versioningLocationMenu->actions())
-            action->setEnabled(true);
-
-        for (auto &action : m_queue.head()->databaseLocationMenu->actions())
-            action->setEnabled(true);
-
-        for (auto &action : m_queue.head()->filteringMenu->actions())
-            action->setEnabled(true);
-
-        // If exceeds the maximum value of an quint64
-        if (m_queue.head()->syncEvery >= SyncManager::maxInterval())
-            m_queue.head()->increaseSyncTimeAction->setEnabled(false);
-
-        if (m_queue.head()->syncTimeMultiplier() <= 1)
-            m_queue.head()->decreaseSyncTimeAction->setEnabled(false);
+        m_queue.head()->enableContextMenus(true);
 
         if (!success)
         {
@@ -237,7 +181,7 @@ void SyncManager::updateStatus()
 
         m_existingProfiles++;
 
-        for (auto &folder : profile.folders)
+        for (auto &folder : profile.folders())
         {
             folder.setSyncing(false);
 
@@ -257,7 +201,7 @@ void SyncManager::updateStatus()
             }
         }
 
-        if (profile.folders.size() >= 2 && existingFolders < 2)
+        if (profile.folders().size() >= 2 && existingFolders < 2)
             m_issue = true;
     }
 
@@ -266,7 +210,7 @@ void SyncManager::updateStatus()
 
     if (m_busy)
     {
-        for (const auto &folder : m_queue.head()->folders)
+        for (const auto &folder : m_queue.head()->folders())
         {
             if (folder.isActive())
             {
@@ -300,7 +244,7 @@ void SyncManager::removeAllDatabases()
     }
 
     for (const auto &profile : m_profiles)
-        for (const auto &folder : profile.folders)
+        for (const auto &folder : profile.folders())
             QDir(folder.path() + DATA_FOLDER_PATH).removeRecursively();
 }
 
@@ -323,10 +267,10 @@ void SyncManager::purgeRemovedProfiles()
         }
 
         // Folders
-        for (auto folderIt = profileIt->folders.begin(); folderIt != profileIt->folders.end();)
+        for (auto folderIt = profileIt->folders().begin(); folderIt != profileIt->folders().end();)
         {
             if (folderIt->toBeRemoved())
-                folderIt = profileIt->folders.erase(static_cast<std::list<SyncFolder>::const_iterator>(folderIt));
+                folderIt = profileIt->folders().erase(static_cast<std::list<SyncFolder>::const_iterator>(folderIt));
             else
                 folderIt++;
         }
@@ -406,7 +350,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     QElapsedTimer timer;
     timer.start();
 
-    for (auto &folder : profile.folders)
+    for (auto &folder : profile.folders())
     {
         bool existed = folder.exists();
         folder.checkExistence();
@@ -423,7 +367,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
 #ifdef DEBUG
     qDebug() << "=======================================";
-    qDebug() << "Started syncing" << qUtf8Printable(profile.name);
+    qDebug() << "Started syncing" << qUtf8Printable(profile.name());
     qDebug() << "=======================================";
 #endif
 
@@ -440,15 +384,15 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     if (!executeFolderScans(profile, result))
         return false;
 
-    TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(profile.name));
+    TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(profile.name()));
 
     checkForChanges(profile);
 
-    bool countAverage = profile.syncTime ? true : false;
-    profile.syncTime += timer.elapsed();
+    bool countAverage = profile.syncTime() ? true : false;
+    profile.setSyncTime(profile.syncTime() + timer.elapsed());
 
     if (countAverage)
-        profile.syncTime /= 2;
+        profile.setSyncTime(profile.syncTime() / 2);
 
     int numOfFoldersToRename = 0;
     int numOfFilesToMove = 0;
@@ -457,7 +401,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     int numOfFoldersToRemove = 0;
     int numOfFilesToRemove = 0;
 
-    for (const auto &folder : profile.folders)
+    for (const auto &folder : profile.folders())
     {
         numOfFoldersToRename += folder.foldersToRename.size();
         numOfFilesToMove += folder.filesToMove.size();
@@ -496,6 +440,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         return false;
 
     executeSyncProfile(profile);
+    profile.updateMenuSyncTime();
 
     TIMESTAMP(syncTime, "Syncing is complete.");
     return true;
@@ -511,7 +456,7 @@ bool SyncManager::executeFolderScans(SyncProfile &profile, int &result)
     QEventLoop scanLoop;
     QHash<SyncFolder *, QSharedPointer<QFutureWatcher<int>>> scanList;
 
-    for (auto &folder : profile.folders)
+    for (auto &folder : profile.folders())
         if (!folder.paused())
             scanList.insert(&folder, QSharedPointer<QFutureWatcher<int>>::create());
 
@@ -577,7 +522,7 @@ void SyncManager::executeSyncProfile(SyncProfile &profile)
 
     if (m_databaseChanged)
     {
-        for (auto &folder : profile.folders)
+        for (auto &folder : profile.folders())
             folder.removeDatabase();
 
         if (profile.databaseLocation() == SyncProfile::Decentralized)
@@ -586,7 +531,7 @@ void SyncManager::executeSyncProfile(SyncProfile &profile)
             profile.saveDatabasesLocally();
     }
 
-    for (auto &folder : profile.folders)
+    for (auto &folder : profile.folders())
     {
         folder.updateUnsyncedList();
         folder.clearData();
@@ -594,15 +539,15 @@ void SyncManager::executeSyncProfile(SyncProfile &profile)
 
     m_databaseChanged = false;
 
-    for (auto &folder : profile.folders)
+    for (auto &folder : profile.folders())
         folder.optimizeMemoryUsage();
 
     profile.clearFilePaths();
 
     // Last sync date update
-    profile.lastSyncDate = QDateTime::currentDateTime();
+    profile.setLastSyncDate(QDateTime::currentDateTime());
 
-    for (auto &folder : profile.folders)
+    for (auto &folder : profile.folders())
         if (folder.isActive())
             folder.setLastSyncDate(QDateTime::currentDateTime());
 
@@ -816,12 +761,12 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
 {
     SET_TIME(startTime);
 
-    for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
+    for (auto folderIt = profile.folders().begin(); folderIt != profile.folders().end(); ++folderIt)
     {
         if (!folderIt->exists())
             continue;
 
-        for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
+        for (auto otherFolderIt = profile.folders().begin(); otherFolderIt != profile.folders().end(); ++otherFolderIt)
         {
             if (folderIt == otherFolderIt || !otherFolderIt->exists())
                 continue;
@@ -888,7 +833,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 
     SET_TIME(startTime);
 
-    for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
+    for (auto folderIt = profile.folders().begin(); folderIt != profile.folders().end(); ++folderIt)
     {
         if (!folderIt->isActive() || !folderIt->bidirectional())
             continue;
@@ -909,7 +854,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
             bool abort = false;
 
             // Aborts if the folder doesn't exist in any other sync folder
-            for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
+            for (auto otherFolderIt = profile.folders().begin(); otherFolderIt != profile.folders().end(); ++otherFolderIt)
             {
                 if (folderIt == otherFolderIt)
                     continue;
@@ -931,7 +876,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 continue;
 
             // Adds folders from other sync folders for renaming
-            for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
+            for (auto otherFolderIt = profile.folders().begin(); otherFolderIt != profile.folders().end(); ++otherFolderIt)
             {
                 syncApp->throttleCpu();
 
@@ -1030,7 +975,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
         }
     }
 
-    TIMESTAMP(startTime, "Checked for changed case of folders.");
+    TIMESTAMP(startTime, "Checked for changed case of folders().");
 }
 
 /*
@@ -1044,7 +989,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 {
     SET_TIME(startTime);
 
-    for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
+    for (auto folderIt = profile.folders().begin(); folderIt != profile.folders().end(); ++folderIt)
     {
         syncApp->throttleCpu();
 
@@ -1098,7 +1043,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 continue;
 
             // Additional checks for other sync folders
-            for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
+            for (auto otherFolderIt = profile.folders().begin(); otherFolderIt != profile.folders().end(); ++otherFolderIt)
             {
                 if (folderIt == otherFolderIt)
                     continue;
@@ -1152,7 +1097,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             fullNewPathToFile.append(newPathToFile);
 
             // Adds files for moving
-            for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
+            for (auto otherFolderIt = profile.folders().begin(); otherFolderIt != profile.folders().end(); ++otherFolderIt)
             {
                 if (folderIt == otherFolderIt)
                     continue;
@@ -1199,9 +1144,9 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
 {
     SET_TIME(startTime);
 
-    for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
+    for (auto folderIt = profile.folders().begin(); folderIt != profile.folders().end(); ++folderIt)
     {
-        for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
+        for (auto otherFolderIt = profile.folders().begin(); otherFolderIt != profile.folders().end(); ++otherFolderIt)
         {
             if (folderIt == otherFolderIt || !otherFolderIt->exists() || !otherFolderIt->bidirectional())
                 continue;
@@ -1285,7 +1230,7 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
         }
     }
 
-    TIMESTAMP(startTime, "Checked for added/modified files and folders.");
+    TIMESTAMP(startTime, "Checked for added/modified files and folders().");
 }
 
 /*
@@ -1297,7 +1242,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
 {
     SET_TIME(startTime);
 
-    for (auto folderIt = profile.folders.begin(); folderIt != profile.folders.end(); ++folderIt)
+    for (auto folderIt = profile.folders().begin(); folderIt != profile.folders().end(); ++folderIt)
     {
         if (!folderIt->bidirectional())
             continue;
@@ -1352,10 +1297,10 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
                 }
             }
 
-            // Prevents the removal of folders that do not have a file path in any sync folders.
+            // Prevents the removal of folders that do not have a file path in any sync folders().
             // This fixes the issue where, after renaming the case of a folder containing nested folders,
             // the nested folders from their previous location would incorrectly be detected as removed.
-            // This was caused by the database retaining the old hashes of the renamed nested folders.
+            // This was caused by the database retaining the old hashes of the renamed nested folders().
             // This could also lead to the deletion of the sync folder itself, as the profile does not have paths under these old hashes.
             if (!profile.hasFilePath(fileIt.key()))
             {
@@ -1364,7 +1309,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
             }
 
             // Adds files from other folders for removal
-            for (auto otherFolderIt = profile.folders.begin(); otherFolderIt != profile.folders.end(); ++otherFolderIt)
+            for (auto otherFolderIt = profile.folders().begin(); otherFolderIt != profile.folders().end(); ++otherFolderIt)
             {
                 if (folderIt == otherFolderIt || !otherFolderIt->isActive())
                     continue;
@@ -2024,7 +1969,7 @@ void SyncManager::syncChanges(SyncProfile &profile)
 {
     synchronizeFileAttributes(profile);
 
-    for (auto &folder : profile.folders)
+    for (auto &folder : profile.folders())
     {
         if (!folder.isActive())
             continue;
