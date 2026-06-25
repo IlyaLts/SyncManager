@@ -99,7 +99,7 @@ public:
     void setSyncTimeMultiplier(quint32 multiplier);
     inline void setSyncIntervalFixed(quint64 interval) { m_syncIntervalFixed = interval; }
     inline void setDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
-    void setDeltaCopying(bool enable);
+    void setDeltaCopying(bool enable) { m_deltaCopying = enable; }
     void setDeletionMode(DeletionMode mode);
     void setDatabaseLocation(DatabaseLocation location);
     void setVersioningFormat(VersioningFormat format);
@@ -124,6 +124,7 @@ public:
     inline quint64 syncEvery() const { return m_syncEvery; }
     inline quint64 syncTime() const { return m_syncTime; }
     inline const QChronoTimer &syncTimer() const { return m_syncTimer; }
+    inline QChronoTimer &syncTimer() { return m_syncTimer; }
     inline const QDateTime &lastSyncDate() const { return m_lastSyncDate; }
 
     inline bool syncHidden() const { return m_syncHidden; }
@@ -177,41 +178,10 @@ public:
     SyncFolder *folderByIndex(QModelIndex index);
     SyncFolder *folderByPath(const QString &path);
 
-    void setupMenus(QWidget *parent = nullptr);
-    void updateMenuStates();
-    void destroyMenus();
-    void retranslate();
-
-    void updateMenuSyncTime();
-    void addActionsToMenu(QMenu *menu);
-    void enableContextMenus(bool enable);
-
 Q_SIGNALS:
 
     void syncingModeChanged();
     void syncingTimeChanged();
-
-public Q_SLOTS:
-
-    void switchSyncingMode(SyncingMode mode);
-    void increaseSyncTime();
-    void decreaseSyncTime();
-    void setFixedInterval();
-    void toggleDetectMoved();
-    void switchDeletionMode(DeletionMode mode);
-    void switchVersioningFormat(VersioningFormat format);
-    void setVersioningPostfix();
-    void setVersioningPattern();
-    void switchVersioningLocation(VersioningLocation location);
-    void setVersioningLocationPath();
-    void switchDatabaseLocation(DatabaseLocation location);
-    void setFileMinSize();
-    void setFileMaxSize();
-    void setMovedFileMinSize();
-    void setDeltaCopyingMinSize();
-    void setIncludeList();
-    void setExcludeList();
-    void toggleIgnoreHiddenFiles();
 
 private:
 
@@ -250,44 +220,6 @@ private:
     QHash<Hash, QByteArray> m_filePaths;
     QModelIndex m_index;
     QMutex m_mutex;
-
-    QAction *manualAction;
-    QAction *automaticAdaptiveAction;
-    QAction *automaticFixedAction;
-    QAction *detectMovedFilesAction;
-    QAction *deltaCopyingAction;
-    QAction *increaseSyncTimeAction;
-    QAction *syncingTimeAction;
-    QAction *decreaseSyncTimeAction;
-    QAction *fixedSyncingTimeAction;
-    QAction *moveToTrashAction;
-    QAction *versioningAction;
-    QAction *deletePermanentlyAction;
-    QAction *fileTimestampBeforeAction;
-    QAction *fileTimestampAfterAction;
-    QAction *folderTimestampAction;
-    QAction *lastVersionAction;
-    QAction *versioningPostfixAction;
-    QAction *versioningPatternAction;
-    QAction *locallyNextToFolderAction;
-    QAction *customLocationAction;
-    QAction *customLocationPathAction;
-    QAction *databaseLocallyAction;
-    QAction *databaseDecentralizedAction;
-    QAction *fileMinSizeAction;
-    QAction *fileMaxSizeAction;
-    QAction *movedFileMinSizeAction;
-    QAction *deltaCopyingMinSizeAction;
-    QAction *includeAction;
-    QAction *excludeAction;
-    QAction *ignoreHiddenFilesAction;
-
-    UnhidableMenu *syncingModeMenu;
-    UnhidableMenu *deletionModeMenu;
-    UnhidableMenu *versioningFormatMenu;
-    UnhidableMenu *versioningLocationMenu;
-    UnhidableMenu *databaseLocationMenu;
-    UnhidableMenu *filteringMenu;
 };
 
 #endif // SYNCPROFILE_H

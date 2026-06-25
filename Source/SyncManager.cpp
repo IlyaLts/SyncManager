@@ -20,6 +20,7 @@
 #include "SyncManager.h"
 #include "Application.h"
 #include "MainWindow.h"
+#include "ProfileMenu.h"
 #include "UnhidableMenu.h"
 #include "Common.h"
 #include <QStringListModel>
@@ -140,9 +141,9 @@ void SyncManager::sync()
 
     while (!m_queue.empty())
     {
-        m_queue.head()->enableContextMenus(false);
+        syncApp->window()->profileMenus.value(m_queue.head())->enableContextMenus(false);
         bool success = syncProfile(*m_queue.head());
-        m_queue.head()->enableContextMenus(true);
+        syncApp->window()->profileMenus.value(m_queue.head())->enableContextMenus(true);
 
         if (!success)
         {
@@ -261,7 +262,7 @@ void SyncManager::purgeRemovedProfiles()
         // Profiles
         if (profileIt->toBeRemoved())
         {
-            profileIt->destroyMenus();
+            syncApp->window()->profileMenus.remove(&*profileIt);
             profileIt = m_profiles.erase(static_cast<std::list<SyncProfile>::const_iterator>(profileIt));
             continue;
         }
@@ -440,7 +441,9 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         return false;
 
     executeSyncProfile(profile);
-    profile.updateMenuSyncTime();
+
+    ProfileMenu *menu = syncApp->window()->profileMenus.value(&profile);
+    menu->updateMenuSyncTime();
 
     TIMESTAMP(syncTime, "Syncing is complete.");
     return true;
@@ -1952,7 +1955,9 @@ void SyncManager::copyFiles(SyncFolder &folder)
 
                 shouldNotify = false;
                 m_notificationList.value(rootPath)->start(NotificationCooldown);
-                emit message(tr("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path()).displayName(), rootPath), "");
+
+                QString title(tr("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path()).displayName(), rootPath));
+                syncApp->tray()->notify(title, "", QSystemTrayIcon::Critical);
             }
 
             ++fileIt;

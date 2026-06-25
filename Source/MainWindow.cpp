@@ -25,6 +25,7 @@
 #include "FolderListView.h"
 #include "MenuProxyStyle.h"
 #include "Common.h"
+#include "ProfileMenu.h"
 #include "FolderStyleDelegate.h"
 #include "ProfileStyleDelegate.h"
 #include <QStringListModel>
@@ -122,7 +123,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->folderListView, &RemovableListView::deletePressed, this, &MainWindow::removeFolder);
     connect(ui->syncProfilesView, &RemovableListView::customContextMenuRequested, this, &MainWindow::showProfileContextMenu);
     connect(ui->folderListView, &FolderListView::customContextMenuRequested, this, &MainWindow::showFolderContextMenu);
-    connect(syncApp->manager(), &SyncManager::message, this, [this](const QString &title, const QString &message){ syncApp->tray()->notify(title, message, QSystemTrayIcon::Critical); });
     connect(syncApp->manager(), &SyncManager::profileSynced, this, &MainWindow::profileSynced);
 
     setupMenus();
@@ -132,8 +132,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     for (auto &profile : syncApp->manager()->profiles())
     {
         connect(&profile.syncTimer(), &QChronoTimer::timeout, this, [&profile, this](){ sync(&const_cast<SyncProfile &>(profile), true); });
-        profile.switchDatabaseLocation(profile.databaseLocation());
-        profile.updateMenuSyncTime();
+
+        ProfileMenu *menu = profileMenus.value(&profile);
+        menu->switchDatabaseLocation(profile.databaseLocation());
+        menu->updateMenuSyncTime();
     }
 
     updateStatus();
@@ -198,8 +200,9 @@ void MainWindow::retranslate()
 
     for (auto &profile : syncApp->manager()->profiles())
     {
-        profile.retranslate();
-        profile.updateMenuSyncTime();
+        ProfileMenu *menu = profileMenus.value(&profile);
+        menu->retranslate();
+        menu->updateMenuSyncTime();
         updateProfileTooltip(profile);
     }
 }
@@ -240,11 +243,13 @@ void MainWindow::loadSettings()
 
         QString profileKeyname(profile->name() + QLatin1String("_profile/"));
 
-        profile->switchSyncingMode(static_cast<SyncProfile::SyncingMode>(settings.value(profileKeyname + "SyncingMode", SyncProfile::AutomaticAdaptive).toInt()));
-        profile->switchDeletionMode(static_cast<SyncProfile::DeletionMode>(settings.value(profileKeyname + "DeletionMode", SyncProfile::MoveToTrash).toInt()));
-        profile->switchVersioningFormat(static_cast<SyncProfile::VersioningFormat>(settings.value(profileKeyname + "VersioningFormat", SyncProfile::FolderTimestamp).toInt()));
-        profile->switchVersioningLocation(static_cast<SyncProfile::VersioningLocation>(settings.value(profileKeyname + "VersioningLocation", SyncProfile::LocallyNextToFolder).toInt()));
-        profile->switchDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(profileKeyname + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
+        ProfileMenu *menu = profileMenus.value(profile);
+
+        menu->switchSyncingMode(static_cast<SyncProfile::SyncingMode>(settings.value(profileKeyname + "SyncingMode", SyncProfile::AutomaticAdaptive).toInt()));
+        menu->switchDeletionMode(static_cast<SyncProfile::DeletionMode>(settings.value(profileKeyname + "DeletionMode", SyncProfile::MoveToTrash).toInt()));
+        menu->switchVersioningFormat(static_cast<SyncProfile::VersioningFormat>(settings.value(profileKeyname + "VersioningFormat", SyncProfile::FolderTimestamp).toInt()));
+        menu->switchVersioningLocation(static_cast<SyncProfile::VersioningLocation>(settings.value(profileKeyname + "VersioningLocation", SyncProfile::LocallyNextToFolder).toInt()));
+        menu->switchDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(profileKeyname + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
 
         // Loads saved pause states and checks if synchronization folders exist
         profile->setPaused(settings.value(profileKeyPath + QLatin1String("Paused"), false).toBool());
@@ -388,6 +393,8 @@ void MainWindow::addProfile()
     profile.setPaused(syncApp->manager()->paused());
     rebindProfiles();
 
+    profileMenus.insert(&profile, new ProfileMenu(this, &profile));
+
     connect(&profile, &SyncProfile::syncingModeChanged, this, &MainWindow::updateStatus);
     connect(&profile, &SyncProfile::syncingTimeChanged, this, [this, &profile](){ updateProfileTooltip(profile);});
 
@@ -448,6 +455,7 @@ void MainWindow::removeProfile()
         settings.endGroup();
 
         profile->remove();
+        profileMenus.remove(profile);
 
         if (!syncApp->manager()->busy())
             syncApp->manager()->profiles().remove(*profile);
@@ -941,7 +949,7 @@ void MainWindow::showProfileContextMenu(const QPoint &pos)
         menu.addAction(iconRemove, "&" + tr("Remove profile"), this, &MainWindow::removeProfile);
 
         menu.addSeparator();
-        profile->addActionsToMenu(&menu);
+        profileMenus.value(profile)->addActionsToMenu(&menu);
     }
 
     menu.popup(ui->syncProfilesView->mapToGlobal(pos));
@@ -1060,7 +1068,7 @@ MainWindow::profileSynced
 void MainWindow::profileSynced(SyncProfile *profile)
 {
     profile->updateTimer();
-    profile->updateMenuSyncTime();
+    profileMenus.value(profile)->updateMenuSyncTime();
     updateProfileTooltip(*profile);
     syncApp->saveSettings();
 }
@@ -1526,9 +1534,8 @@ void MainWindow::setupMenus()
     updateAvailableButton = new QPushButton(tr("New Update Available"));
     updateAvailableButton->setStyleSheet("QPushButton { margin: 2px 5px 0px 0px; padding: 5px 8px }");
     updateAvailableButton->setVisible(false);
+    this->menuBar()->setCornerWidget(updateAvailableButton);
 
-    QMenuBar *menuBar = this->menuBar();
-    menuBar->setCornerWidget(updateAvailableButton);
     connect(updateAvailableButton, &QPushButton::clicked, this, [](){ QDesktopServices::openUrl(QUrl(LATEST_RELEASE_URL)); });
     connect(syncApp, &Application::updateFound, this, &MainWindow::updateAvailable);
 
@@ -1548,9 +1555,6 @@ void MainWindow::setupMenus()
     ui->folderListView->setStyleSheet("QListView::item { padding: 3px; }");
 #endif
 
-    for (auto &profile : syncApp->manager()->profiles())
-        profile.setupMenus(this);
-
     connect(syncNowAction, &QAction::triggered, this, [this](){ sync(nullptr); });
     connect(pauseSyncingAction, &QAction::triggered, this, &MainWindow::pauseSyncing);
     connect(maximumDiskTransferRateAction, &QAction::triggered, this, &MainWindow::setMaximumTransferRateUsage);
@@ -1566,6 +1570,9 @@ void MainWindow::setupMenus()
     connect(checkForUpdatesAction, &QAction::triggered, this, &MainWindow::toggleCheckForUpdates);
     connect(userManualAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_PATH)); });
     connect(reportBugAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_URL)); });
+
+    for (auto &profile : syncApp->manager()->profiles())
+        profileMenus.insert(&profile, new ProfileMenu(this, &profile));
 }
 
 /*

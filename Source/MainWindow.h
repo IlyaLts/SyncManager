@@ -37,6 +37,7 @@ class QItemSelection;
 class QMimeData;
 class UnhidableMenu;
 class QPushButton;
+class ProfileMenu;
 
 /*
 ===========================================================
@@ -57,6 +58,8 @@ public:
     void retranslate();
     void loadSettings();
     void saveSettings() const;
+
+    QMap<SyncProfile *, ProfileMenu *> profileMenus;
 
 public Q_SLOTS:
 

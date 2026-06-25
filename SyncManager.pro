@@ -15,6 +15,7 @@ SOURCES += \
     Source/MainWindow.cpp \
     Source/MenuProxyStyle.cpp \
     Source/ProfileListView.cpp \
+    Source/ProfileMenu.cpp \
     Source/ProfileStyleDelegate.cpp \
     Source/RemovableListView.cpp \
     Source/SyncFile.cpp \
@@ -34,6 +35,7 @@ HEADERS += \
     Source/MainWindow.h \
     Source/MenuProxyStyle.h \
     Source/ProfileListView.h \
+    Source/ProfileMenu.h \
     Source/ProfileStyleDelegate.h \
     Source/RemovableListView.h \
     Source/SyncFile.h \
