@@ -81,10 +81,10 @@ public:
         CustomLocation
     };
 
-    explicit SyncProfile(QWidget *parent, const QString &name, const QModelIndex &index);
+    explicit SyncProfile(const QString &name, const QModelIndex &index);
     ~SyncProfile();
 
-    inline bool operator ==(const SyncProfile &other) { return m_name == other.m_name; }
+    inline bool operator ==(const SyncProfile &other) const { return m_name == other.m_name; }
 
     void loadSettings();
     void saveSettings() const;

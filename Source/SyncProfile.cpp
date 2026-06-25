@@ -32,7 +32,7 @@
 SyncProfile::SyncProfile
 ===================
 */
-SyncProfile::SyncProfile(QWidget *parent, const QString &name, const QModelIndex &index)
+SyncProfile::SyncProfile(const QString &name, const QModelIndex &index)
 {
     this->m_index = index;
     this->m_name = name;
@@ -68,7 +68,6 @@ void SyncProfile::loadSettings()
 
     setSyncTimeMultiplier(settings.value(keyName + "SyncTimeMultiplier", 1).toUInt());
     setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", defaultFixedInterval).toULongLong());
-    setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
     setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
     setDeltaCopying(settings.value(keyName + "DeltaCopying", false).toBool());
     setVersioningPath(settings.value(keyName + "VersioningPath", "").toString());

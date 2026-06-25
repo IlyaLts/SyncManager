@@ -31,7 +31,7 @@ ProfileMenu::ProfileMenu
 */
 ProfileMenu::ProfileMenu(QWidget *parent, SyncProfile *profile) : QWidget(parent), profile(profile)
 {
-    setupMenus();
+    setupMenus(this);
 
     ignoreHiddenFilesAction->setChecked(profile->ignoreHiddenFiles());
     detectMovedFilesAction->setChecked(profile->detectMovedFiles());
@@ -183,51 +183,6 @@ void ProfileMenu::setupMenus(QWidget *parent)
     connect(ignoreHiddenFilesAction, &QAction::triggered, this, [this](){ toggleIgnoreHiddenFiles(); });
 }
 
-/*
-===================
-ProfileMenu::destroyMenus
-===================
-*/
-void ProfileMenu::destroyMenus()
-{
-    manualAction->deleteLater();
-    automaticAdaptiveAction->deleteLater();
-    automaticFixedAction->deleteLater();
-    detectMovedFilesAction->deleteLater();
-    deltaCopyingAction->deleteLater();
-    increaseSyncTimeAction->deleteLater();
-    syncingTimeAction->deleteLater();
-    decreaseSyncTimeAction->deleteLater();
-    fixedSyncingTimeAction->deleteLater();
-    moveToTrashAction->deleteLater();
-    versioningAction->deleteLater();
-    deletePermanentlyAction->deleteLater();
-    fileTimestampBeforeAction->deleteLater();
-    fileTimestampAfterAction->deleteLater();
-    folderTimestampAction->deleteLater();
-    lastVersionAction->deleteLater();
-    versioningPostfixAction->deleteLater();
-    versioningPatternAction->deleteLater();
-    locallyNextToFolderAction->deleteLater();
-    customLocationAction->deleteLater();
-    customLocationPathAction->deleteLater();
-    databaseLocallyAction->deleteLater();
-    databaseDecentralizedAction->deleteLater();
-    fileMinSizeAction->deleteLater();
-    fileMaxSizeAction->deleteLater();
-    movedFileMinSizeAction->deleteLater();
-    deltaCopyingMinSizeAction->deleteLater();
-    includeAction->deleteLater();
-    excludeAction->deleteLater();
-    ignoreHiddenFilesAction->deleteLater();
-
-    syncingModeMenu->deleteLater();
-    deletionModeMenu->deleteLater();
-    versioningFormatMenu->deleteLater();
-    versioningLocationMenu->deleteLater();
-    databaseLocationMenu->deleteLater();
-    filteringMenu->deleteLater();
-}
 
 /*
 ===================
@@ -686,8 +641,8 @@ void ProfileMenu::switchDatabaseLocation(SyncProfile::DatabaseLocation location)
     if (location < SyncProfile::Locally || location > SyncProfile::Decentralized)
         location = SyncProfile::Decentralized;
 
-    databaseLocallyAction->setChecked(location == false);
-    databaseDecentralizedAction->setChecked(location == true);
+    databaseLocallyAction->setChecked(location == SyncProfile::Locally);
+    databaseDecentralizedAction->setChecked(location == SyncProfile::Decentralized);
     profile->setDatabaseLocation(location);
 
     if (syncApp->initiated())

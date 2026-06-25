@@ -94,7 +94,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     for (auto &name : profileNames)
     {
-        syncApp->manager()->profiles().emplace_back(this, name, ui->syncProfilesView->profileIndexByName(name));
+        syncApp->manager()->profiles().emplace_back(name, ui->syncProfilesView->profileIndexByName(name));
         SyncProfile &profile = syncApp->manager()->profiles().back();
         profile.setPaused(syncApp->manager()->paused());
 
@@ -389,7 +389,7 @@ void MainWindow::addProfile()
     profileNames.append(newName);
     profileModel->setStringList(profileNames);
     folderModel->setStringList(QStringList());
-    SyncProfile &profile = syncApp->manager()->profiles().emplace_back(this, newName, ui->syncProfilesView->profileIndexByName(newName));
+    SyncProfile &profile = syncApp->manager()->profiles().emplace_back(newName, ui->syncProfilesView->profileIndexByName(newName));
     profile.setPaused(syncApp->manager()->paused());
     rebindProfiles();
 
@@ -455,7 +455,10 @@ void MainWindow::removeProfile()
         settings.endGroup();
 
         profile->remove();
-        profileMenus.remove(profile);
+        ProfileMenu *menu = profileMenus.take(profile);
+
+        if (menu)
+            menu->deleteLater();
 
         if (!syncApp->manager()->busy())
             syncApp->manager()->profiles().remove(*profile);

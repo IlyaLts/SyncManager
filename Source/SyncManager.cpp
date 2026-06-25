@@ -262,7 +262,11 @@ void SyncManager::purgeRemovedProfiles()
         // Profiles
         if (profileIt->toBeRemoved())
         {
-            syncApp->window()->profileMenus.remove(&*profileIt);
+            auto menu = syncApp->window()->profileMenus.take(&*profileIt);
+
+            if (menu)
+                menu->deleteLater();
+
             profileIt = m_profiles.erase(static_cast<std::list<SyncProfile>::const_iterator>(profileIt));
             continue;
         }

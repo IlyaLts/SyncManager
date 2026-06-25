@@ -38,7 +38,6 @@ public:
     ProfileMenu(QWidget *parent, SyncProfile *profile);
 
     void setupMenus(QWidget *parent = nullptr);
-    void destroyMenus();
     void updateMenuStates();
     void retranslate();
     void addActionsToMenu(QMenu *menu);
