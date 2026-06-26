@@ -135,7 +135,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         ProfileMenu *menu = profileMenus.value(&profile);
         menu->switchDatabaseLocation(profile.databaseLocation());
-        menu->updateMenuSyncTime();
+        menu->updateSyncTime();
     }
 
     updateStatus();
@@ -202,7 +202,7 @@ void MainWindow::retranslate()
     {
         ProfileMenu *menu = profileMenus.value(&profile);
         menu->retranslate();
-        menu->updateMenuSyncTime();
+        menu->updateSyncTime();
         updateProfileTooltip(profile);
     }
 }
@@ -296,6 +296,19 @@ void MainWindow::saveSettings() const
         settings.setValue("Width", size().width());
         settings.setValue("Height", size().height());
     }
+}
+
+/*
+===================
+MainWindow::removeProfileMenu
+===================
+*/
+void MainWindow::removeProfileMenu(SyncProfile *profile)
+{
+    ProfileMenu *menu = profileMenus.take(profile);
+
+    if (menu)
+        menu->deleteLater();
 }
 
 /*
@@ -952,7 +965,7 @@ void MainWindow::showProfileContextMenu(const QPoint &pos)
         menu.addAction(iconRemove, "&" + tr("Remove profile"), this, &MainWindow::removeProfile);
 
         menu.addSeparator();
-        profileMenus.value(profile)->addActionsToMenu(&menu);
+        profileMenus.value(profile)->exportMenu(&menu);
     }
 
     menu.popup(ui->syncProfilesView->mapToGlobal(pos));
@@ -1071,7 +1084,7 @@ MainWindow::profileSynced
 void MainWindow::profileSynced(SyncProfile *profile)
 {
     profile->updateTimer();
-    profileMenus.value(profile)->updateMenuSyncTime();
+    profileMenus.value(profile)->updateSyncTime();
     updateProfileTooltip(*profile);
     syncApp->saveSettings();
 }
@@ -1537,6 +1550,8 @@ void MainWindow::setupMenus()
     updateAvailableButton = new QPushButton(tr("New Update Available"));
     updateAvailableButton->setStyleSheet("QPushButton { margin: 2px 5px 0px 0px; padding: 5px 8px }");
     updateAvailableButton->setVisible(false);
+
+    //QMenuBar *menuBar = ;
     this->menuBar()->setCornerWidget(updateAvailableButton);
 
     connect(updateAvailableButton, &QPushButton::clicked, this, [](){ QDesktopServices::openUrl(QUrl(LATEST_RELEASE_URL)); });

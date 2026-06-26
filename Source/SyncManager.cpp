@@ -141,9 +141,9 @@ void SyncManager::sync()
 
     while (!m_queue.empty())
     {
-        syncApp->window()->profileMenus.value(m_queue.head())->enableContextMenus(false);
+        syncApp->window()->profileMenu(m_queue.head())->enable(false);
         bool success = syncProfile(*m_queue.head());
-        syncApp->window()->profileMenus.value(m_queue.head())->enableContextMenus(true);
+        syncApp->window()->profileMenu(m_queue.head())->enable(true);
 
         if (!success)
         {
@@ -262,11 +262,7 @@ void SyncManager::purgeRemovedProfiles()
         // Profiles
         if (profileIt->toBeRemoved())
         {
-            auto menu = syncApp->window()->profileMenus.take(&*profileIt);
-
-            if (menu)
-                menu->deleteLater();
-
+            syncApp->window()->removeProfileMenu(&*profileIt);
             profileIt = m_profiles.erase(static_cast<std::list<SyncProfile>::const_iterator>(profileIt));
             continue;
         }
@@ -445,9 +441,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         return false;
 
     executeSyncProfile(profile);
-
-    ProfileMenu *menu = syncApp->window()->profileMenus.value(&profile);
-    menu->updateMenuSyncTime();
+    syncApp->window()->profileMenu(&profile)->updateSyncTime();
 
     TIMESTAMP(syncTime, "Syncing is complete.");
     return true;

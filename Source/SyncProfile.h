@@ -97,25 +97,25 @@ public:
     void setSyncHidden(bool hidden) { m_syncHidden = hidden; }
     void setSyncingMode(SyncingMode mode);
     void setSyncTimeMultiplier(quint32 multiplier);
-    inline void setSyncIntervalFixed(quint64 interval) { m_syncIntervalFixed = interval; }
-    inline void setDetectMovedFiles(bool enable) { m_detectMovedFiles = enable; }
+    void setSyncIntervalFixed(quint64 interval);
+    void setDetectMovedFiles(bool enable);
     void setDeltaCopying(bool enable) { m_deltaCopying = enable; }
     void setDeletionMode(DeletionMode mode);
     void setDatabaseLocation(DatabaseLocation location);
     void setVersioningFormat(VersioningFormat format);
     void setVersioningLocation(VersioningLocation location);
-    inline void setVersioningPath(const QString &path) { m_versioningPath = path; }
-    inline void setVersioningFolder(const QString &name) { m_versioningFolder = name; }
-    inline void setVersioningPattern(const QString &pattern) { m_versioningPattern = pattern; }
-    inline void setFileMinSize(quint64 size) { m_fileMinSize = size; }
-    inline void setFileMaxSize(quint64 size) { m_fileMaxSize = size; }
-    inline void setMovedFileMinSize(quint64 size) { m_movedFileMinSize = size; }
-    inline void setDeltaCopyingMinSize(quint64 size) { m_deltaCopyingMinSize = size; }
-    inline void setIncludeList(const QStringList &list) { m_includeList = list; }
-    inline void setExcludeList(const QStringList &list) { m_excludeList = list; }
+    void setVersioningPath(const QString &path);
+    void setVersioningFolder(const QString &name);
+    void setVersioningPattern(const QString &pattern);
+    void setFileMinSize(quint64 size);
+    void setFileMaxSize(quint64 size);
+    void setMovedFileMinSize(quint64 size);
+    void setDeltaCopyingMinSize(quint64 size);
+    void setIncludeList(const QStringList &list);
+    void setExcludeList(const QStringList &list);
     inline void setSyncing(bool syncing) { m_syncing = syncing; }
     void setPaused(bool paused);
-    inline void setIgnoreHiddenFiles(bool enable) { m_ignoreHiddenFiles = enable; }
+    void setIgnoreHiddenFiles(bool enable);
     inline void setIndex(const QModelIndex &index) { m_index = index; }
 
     inline std::list<SyncFolder> &folders() { return m_folders; }
@@ -124,7 +124,6 @@ public:
     inline quint64 syncEvery() const { return m_syncEvery; }
     inline quint64 syncTime() const { return m_syncTime; }
     inline const QChronoTimer &syncTimer() const { return m_syncTimer; }
-    inline QChronoTimer &syncTimer() { return m_syncTimer; }
     inline const QDateTime &lastSyncDate() const { return m_lastSyncDate; }
 
     inline bool syncHidden() const { return m_syncHidden; }

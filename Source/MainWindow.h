@@ -59,7 +59,8 @@ public:
     void loadSettings();
     void saveSettings() const;
 
-    QMap<SyncProfile *, ProfileMenu *> profileMenus;
+    ProfileMenu *profileMenu(SyncProfile *profile) { return profileMenus.value(profile); }
+    void removeProfileMenu(SyncProfile *profile);
 
 public Q_SLOTS:
 
@@ -109,6 +110,8 @@ private:
     void updateProfileTooltip(const SyncProfile &profile);
     void setupMenus();
     void updateLaunchOnStartupState();
+
+    QMap<SyncProfile *, ProfileMenu *> profileMenus;
 
     Ui::MainWindow *ui;
 

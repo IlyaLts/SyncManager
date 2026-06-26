@@ -148,7 +148,23 @@ void SyncProfile::setSyncingMode(SyncingMode mode)
     if (mode < Manual || mode > AutomaticFixed)
         mode = AutomaticAdaptive;
 
+    if (mode == SyncProfile::Manual)
+    {
+        m_syncTimer.stop();
+    }
+    // Otherwise, automatic
+    else
+    {
+        updateNextSyncingTime();
+        updateTimer();
+    }
+
     m_syncingMode = mode;
+    emit syncingModeChanged();
+    emit syncingTimeChanged();
+
+    if (syncApp->initiated())
+        saveSettings();
 }
 
 /*
@@ -160,6 +176,37 @@ void SyncProfile::setSyncTimeMultiplier(quint32 multiplier)
 {
     m_syncTimeMultiplier = qMax(1U, multiplier);
     updateNextSyncingTime();
+    updateTimer();
+    emit syncingTimeChanged();
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setSyncIntervalFixed
+===================
+*/
+void SyncProfile::setSyncIntervalFixed(quint64 interval)
+{
+    m_syncIntervalFixed = interval;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setDetectMovedFiles
+===================
+*/
+void SyncProfile::setDetectMovedFiles(bool enable)
+{
+    m_detectMovedFiles = enable;
+
+    if (syncApp->initiated())
+        saveSettings();
 }
 
 /*
@@ -173,6 +220,9 @@ void SyncProfile::setDeletionMode(DeletionMode mode)
         mode = MoveToTrash;
 
     m_deletionMode = mode;
+
+    if (syncApp->initiated())
+        saveSettings();
 }
 
 /*
@@ -186,6 +236,9 @@ void SyncProfile::setDatabaseLocation(SyncProfile::DatabaseLocation location)
         location = Decentralized;
 
     m_databaseLocation = location;
+
+    if (syncApp->initiated())
+        saveSettings();
 }
 
 /*
@@ -199,6 +252,9 @@ void SyncProfile::setVersioningFormat(VersioningFormat format)
         format = FileTimestampAfter;
 
     m_versioningFormat = format;
+
+    if (syncApp->initiated())
+        saveSettings();
 }
 
 /*
@@ -212,6 +268,126 @@ void SyncProfile::setVersioningLocation(VersioningLocation location)
         location = LocallyNextToFolder;
 
     m_versioningLocation = location;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setVersioningPath
+===================
+*/
+void SyncProfile::setVersioningPath(const QString &path)
+{
+    m_versioningPath = path;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setVersioningFolder
+===================
+*/
+void SyncProfile::setVersioningFolder(const QString &name)
+{
+    m_versioningFolder = name;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setVersioningPattern
+===================
+*/
+void SyncProfile::setVersioningPattern(const QString &pattern)
+{
+    m_versioningPattern = pattern;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setFileMinSize
+===================
+*/
+void SyncProfile::setFileMinSize(quint64 size)
+{
+    m_fileMinSize = size;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setFileMaxSize
+===================
+*/
+void SyncProfile::setFileMaxSize(quint64 size)
+{
+    m_fileMaxSize = size;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setMovedFileMinSize
+===================
+*/
+void SyncProfile::setMovedFileMinSize(quint64 size)
+{
+    m_movedFileMinSize = size;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setDeltaCopyingMinSize
+===================
+*/
+void SyncProfile::setDeltaCopyingMinSize(quint64 size)
+{
+    m_deltaCopyingMinSize = size;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setIncludeList
+===================
+*/
+void SyncProfile::setIncludeList(const QStringList &list)
+{
+    m_includeList = list;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setExcludeList
+===================
+*/
+void SyncProfile::setExcludeList(const QStringList &list)
+{
+    m_excludeList = list;
+
+    if (syncApp->initiated())
+        saveSettings();
 }
 
 /*
@@ -230,6 +406,19 @@ void SyncProfile::setPaused(bool paused)
         m_syncTimer.stop();
     else
         updateTimer();
+}
+
+/*
+===================
+SyncProfile::setIgnoreHiddenFiles
+===================
+*/
+void SyncProfile::setIgnoreHiddenFiles(bool enable)
+{
+    m_ignoreHiddenFiles = enable;
+
+    if (syncApp->initiated())
+        saveSettings();
 }
 
 /*

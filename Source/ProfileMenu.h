@@ -37,12 +37,12 @@ public:
 
     ProfileMenu(QWidget *parent, SyncProfile *profile);
 
-    void setupMenus(QWidget *parent = nullptr);
-    void updateMenuStates();
+    void setup(QWidget *parent = nullptr);
+    void updateStates();
     void retranslate();
-    void addActionsToMenu(QMenu *menu);
-    void enableContextMenus(bool enable);
-    void updateMenuSyncTime();
+    void exportMenu(QMenu *menu);
+    void enable(bool enable);
+    void updateSyncTime();
 
 public Q_SLOTS:
 

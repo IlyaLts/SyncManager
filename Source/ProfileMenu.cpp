@@ -31,20 +31,20 @@ ProfileMenu::ProfileMenu
 */
 ProfileMenu::ProfileMenu(QWidget *parent, SyncProfile *profile) : QWidget(parent), profile(profile)
 {
-    setupMenus(this);
+    setup(this);
 
     ignoreHiddenFilesAction->setChecked(profile->ignoreHiddenFiles());
     detectMovedFilesAction->setChecked(profile->detectMovedFiles());
 
-    updateMenuSyncTime();
+    updateSyncTime();
 }
 
 /*
 ===================
-ProfileMenu::setupMenus
+ProfileMenu::setup
 ===================
 */
-void ProfileMenu::setupMenus(QWidget *parent)
+void ProfileMenu::setup(QWidget *parent)
 {
     manualAction = new QAction("&" + syncApp->translate("Manual"), parent);
     automaticAdaptiveAction = new QAction("&" + syncApp->translate("Automatic (Adaptive)"), parent);
@@ -150,7 +150,7 @@ void ProfileMenu::setupMenus(QWidget *parent)
     filteringMenu->addSeparator();
     filteringMenu->addAction(ignoreHiddenFilesAction);
 
-    updateMenuStates();
+    updateStates();
 
     connect(manualAction, &QAction::triggered, this, [this](){ switchSyncingMode(SyncProfile::Manual); });
     connect(deltaCopyingAction, &QAction::triggered, this, &ProfileMenu::setDeltaCopying);
@@ -181,15 +181,18 @@ void ProfileMenu::setupMenus(QWidget *parent)
     connect(includeAction, &QAction::triggered, this, [this](){ setIncludeList(); });
     connect(excludeAction, &QAction::triggered, this, [this](){ setExcludeList(); });
     connect(ignoreHiddenFilesAction, &QAction::triggered, this, [this](){ toggleIgnoreHiddenFiles(); });
+
+    // The simplest way to fix unclickable menu icons
+    lower();
 }
 
 
 /*
 ===================
-ProfileMenu::updateMenuStates
+ProfileMenu::updateStates
 ===================
 */
-void ProfileMenu::updateMenuStates()
+void ProfileMenu::updateStates()
 {
     manualAction->setChecked(profile->syncingMode() == SyncProfile::Manual);
     automaticAdaptiveAction->setChecked(profile->syncingMode() == SyncProfile::AutomaticAdaptive);
@@ -275,10 +278,10 @@ void ProfileMenu::retranslate()
 
 /*
 ===================
-ProfileMenu::addActionsToMenu
+ProfileMenu::exportMenu
 ===================
 */
-void ProfileMenu::addActionsToMenu(QMenu *menu)
+void ProfileMenu::exportMenu(QMenu *menu)
 {
     menu->addMenu(syncingModeMenu);
     menu->addMenu(deletionModeMenu);
@@ -290,10 +293,10 @@ void ProfileMenu::addActionsToMenu(QMenu *menu)
 
 /*
 ===================
-ProfileMenu::enableContextMenus
+ProfileMenu::enable
 ===================
 */
-void ProfileMenu::enableContextMenus(bool enable)
+void ProfileMenu::enable(bool enable)
 {
     for (auto &action : syncingModeMenu->actions())
         action->setEnabled(enable);
@@ -316,10 +319,10 @@ void ProfileMenu::enableContextMenus(bool enable)
 
 /*
 ===================
-ProfileMenu::updateMenuSyncTime
+ProfileMenu::updateSyncTime
 ===================
 */
-void ProfileMenu::updateMenuSyncTime()
+void ProfileMenu::updateSyncTime()
 {
     quint64 time = 0;
     QAction *action = nullptr;
@@ -359,7 +362,6 @@ void ProfileMenu::switchSyncingMode(SyncProfile::SyncingMode mode)
     if (mode < SyncProfile::Manual || mode > SyncProfile::AutomaticFixed)
         mode = SyncProfile::AutomaticAdaptive;
 
-    profile->setSyncingMode(mode);
     manualAction->setChecked(mode == SyncProfile::Manual);
     automaticAdaptiveAction->setChecked(mode == SyncProfile::AutomaticAdaptive);
     automaticFixedAction->setChecked(mode == SyncProfile::AutomaticFixed);
@@ -367,23 +369,7 @@ void ProfileMenu::switchSyncingMode(SyncProfile::SyncingMode mode)
     syncingTimeAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
     decreaseSyncTimeAction->setVisible(mode == SyncProfile::AutomaticAdaptive);
     fixedSyncingTimeAction->setVisible(mode == SyncProfile::AutomaticFixed);
-
-    if (mode == SyncProfile::Manual)
-    {
-        profile->syncTimer().stop();
-    }
-    // Otherwise, automatic
-    else
-    {
-        profile->updateNextSyncingTime();
-        profile->updateTimer();
-    }
-
-    emit profile->syncingModeChanged();
-    emit profile->syncingTimeChanged();
-
-    if (syncApp->initiated())
-        profile->saveSettings();
+    profile->setSyncingMode(mode);
 }
 
 /*
@@ -425,18 +411,12 @@ void ProfileMenu::increaseSyncTime()
     // If exceeds the maximum value of an qint64
     if (profile->syncEvery() >= max)
     {
-        updateMenuSyncTime();
+        updateSyncTime();
         return;
     }
 
     profile->setSyncTimeMultiplier(profile->syncTimeMultiplier() + 1);
     decreaseSyncTimeAction->setEnabled(true);
-    updateMenuSyncTime();
-    profile->updateTimer();
-    emit profile->syncingTimeChanged();
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -447,12 +427,7 @@ ProfileMenu::decreaseSyncTime
 void ProfileMenu::decreaseSyncTime()
 {
     profile->setSyncTimeMultiplier(profile->syncTimeMultiplier() - 1);
-    updateMenuSyncTime();
-    profile->updateTimer();
-    emit profile->syncingTimeChanged();
-
-    if (syncApp->initiated())
-        profile->saveSettings();
+    updateSyncTime();
 }
 
 /*
@@ -470,10 +445,7 @@ void ProfileMenu::setFixedInterval()
         return;
 
     profile->setSyncIntervalFixed(size * 1000);
-    updateMenuSyncTime();
-
-    if (syncApp->initiated())
-        profile->saveSettings();
+    updateSyncTime();
 }
 
 /*
@@ -484,9 +456,6 @@ ProfileMenu::detectMovedFiles
 void ProfileMenu::toggleDetectMoved()
 {
     profile->setDetectMovedFiles(!profile->detectMovedFiles());
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -508,15 +477,12 @@ void ProfileMenu::switchDeletionMode(SyncProfile::DeletionMode mode)
             mode = profile->deletionMode();
     }
 
-    profile->setDeletionMode(mode);
     moveToTrashAction->setChecked(mode == SyncProfile::MoveToTrash);
     versioningAction->setChecked(mode == SyncProfile::Versioning);
     deletePermanentlyAction->setChecked(mode == SyncProfile::DeletePermanently);
     versioningFormatMenu->menuAction()->setVisible(mode == SyncProfile::Versioning);
     versioningLocationMenu->menuAction()->setVisible(mode == SyncProfile::Versioning);
-
-    if (syncApp->initiated())
-        profile->saveSettings();
+    profile->setDeletionMode(mode);
 }
 
 /*
@@ -534,9 +500,6 @@ void ProfileMenu::switchVersioningFormat(SyncProfile::VersioningFormat format)
     folderTimestampAction->setChecked(format == SyncProfile::FolderTimestamp);
     lastVersionAction->setChecked(format == SyncProfile::LastVersion);
     profile->setVersioningFormat(format);
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -555,9 +518,6 @@ void ProfileMenu::setVersioningPostfix()
 
     profile->setVersioningFolder(postfix);
     versioningPostfixAction->setText(QString("&" + tr("Folder Postfix: %1")).arg(profile->versioningFolder()));
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -583,9 +543,6 @@ void ProfileMenu::setVersioningPattern()
 
     profile->setVersioningPattern(pattern);
     versioningPatternAction->setText(QString("&" + tr("Pattern: %1")).arg(profile->versioningPattern()));
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -603,9 +560,6 @@ void ProfileMenu::switchVersioningLocation(SyncProfile::VersioningLocation locat
     customLocationAction->setChecked(location == SyncProfile::CustomLocation);
     customLocationPathAction->setVisible(location == SyncProfile::CustomLocation);
     profile->setVersioningLocation(location);
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -615,20 +569,18 @@ ProfileMenu::setVersioningLocationPath
 */
 void ProfileMenu::setVersioningLocationPath()
 {
-    if (profile->versioningLocation() == SyncProfile::CustomLocation && syncApp->initiated())
-    {
-        QString title(tr("Browse for Versioning Folder"));
-        QString path = QFileDialog::getExistingDirectory(this, title, QStandardPaths::writableLocation(QStandardPaths::HomeLocation), QFileDialog::ShowDirsOnly);
+    if (profile->versioningLocation() != SyncProfile::CustomLocation || !syncApp->initiated())
+        return;
 
-        if (!path.isEmpty())
-        {
-            profile->setVersioningPath(path);
-            customLocationPathAction->setText(tr("Custom Location: ") + path);
-        }
-    }
+    QString title(tr("Browse for Versioning Folder"));
+    QString dir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
+    QString path = QFileDialog::getExistingDirectory(this, title, dir, QFileDialog::ShowDirsOnly);
 
-    if (syncApp->initiated())
-        profile->saveSettings();
+    if (path.isEmpty())
+        return;
+
+    profile->setVersioningPath(path);
+    customLocationPathAction->setText(tr("Custom Location: ") + path);
 }
 
 /*
@@ -644,9 +596,6 @@ void ProfileMenu::switchDatabaseLocation(SyncProfile::DatabaseLocation location)
     databaseLocallyAction->setChecked(location == SyncProfile::Locally);
     databaseDecentralizedAction->setChecked(location == SyncProfile::Decentralized);
     profile->setDatabaseLocation(location);
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -668,9 +617,6 @@ void ProfileMenu::setFileMinSize()
 
     profile->setFileMinSize(size);
     fileMinSizeAction->setText("&" + tr("Minimum File Size: %1").arg(formatSize(profile->fileMinSize())));
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -692,9 +638,6 @@ void ProfileMenu::setFileMaxSize()
 
     profile->setFileMaxSize(size);
     fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1").arg(formatSize(profile->fileMaxSize())));
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -713,9 +656,6 @@ void ProfileMenu::setMovedFileMinSize()
 
     profile->setMovedFileMinSize(size);
     movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1").arg(formatSize(profile->movedFileMinSize())));
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -734,9 +674,6 @@ void ProfileMenu::setDeltaCopyingMinSize()
 
     profile->setDeltaCopyingMinSize(size);
     deltaCopyingMinSizeAction->setText("&" + tr("Minimum Size for delta copying: %1").arg(formatSize(profile->deltaCopyingMinSize())));
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -761,9 +698,6 @@ void ProfileMenu::setIncludeList()
     includeString = includeList.join("; ");
     profile->setIncludeList(includeList);
     includeAction->setText("&" + tr("Include: %1").arg(includeString));
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -788,9 +722,6 @@ void ProfileMenu::setExcludeList()
     excludeString = excludeList.join("; ");
     profile->setExcludeList(excludeList);
     excludeAction->setText("&" + tr("Exclude: %1").arg(excludeString));
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }
 
 /*
@@ -801,7 +732,4 @@ ProfileMenu::toggleIgnoreHiddenFiles
 void ProfileMenu::toggleIgnoreHiddenFiles()
 {
     profile->setIgnoreHiddenFiles(!profile->ignoreHiddenFiles());
-
-    if (syncApp->initiated())
-        profile->saveSettings();
 }

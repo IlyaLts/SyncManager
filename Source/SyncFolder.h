@@ -84,7 +84,7 @@ public:
 
     explicit SyncFolder(SyncProfile *profile, const QByteArray &path);
 
-    inline bool operator ==(const SyncFolder &other) { return m_path == other.m_path; }
+    inline bool operator ==(const SyncFolder &other) const { return m_path == other.m_path; }
 
     void loadSettings();
     void saveSettings() const;
