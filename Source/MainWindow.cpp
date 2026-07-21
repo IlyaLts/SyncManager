@@ -449,6 +449,7 @@ void MainWindow::removeProfile()
 
         QString title(tr("Remove profile"));
         QString text;
+        bool removeDatabase = false;
 
         if (profile->syncing())
             text.assign(tr("The profile is currently syncing. Are you sure you want to remove it?"));
@@ -458,6 +459,12 @@ void MainWindow::removeProfile()
         if (!syncApp->questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
             continue;
 
+        title = tr("Remove databases");
+        text = tr("Do you want to remove databases?");
+
+        if (syncApp->questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
+            removeDatabase = true;
+
         ui->syncProfilesView->model()->removeRow(index.row());
         rebindProfiles();
 
@@ -466,6 +473,10 @@ void MainWindow::removeProfile()
         settings.beginGroup("Profiles");
         settings.remove(profile->name());
         settings.endGroup();
+
+        if (removeDatabase)
+            for (auto &folder : profile->folders())
+                folder.removeDatabase();
 
         profile->remove();
         ProfileMenu *menu = profileMenus.take(profile);
@@ -682,6 +693,7 @@ void MainWindow::removeFolder()
 
         QString title(tr("Remove folder"));
         QString text;
+        bool removeDatabase = false;
 
         if (folder->syncing())
             text.assign(tr("The folder is currently syncing. Are you sure you want to remove it?"));
@@ -691,11 +703,19 @@ void MainWindow::removeFolder()
         if (!syncApp->questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
             return;
 
+        title = tr("Remove database");
+        text = tr("Do you want to remove database?");
+
+        if (syncApp->questionBox(QMessageBox::Question, title, text, QMessageBox::Yes, this))
+            removeDatabase = true;
+
         folder->setPaused(true);
         folder->remove();
         ui->folderListView->model()->removeRow(folderIndex.row());
 
-        folder->removeDatabase();
+        if (removeDatabase)
+            folder->removeDatabase();
+
         folder->removeSettings();
 
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
