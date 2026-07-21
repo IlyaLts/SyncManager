@@ -810,6 +810,19 @@ int SyncProfile::countExistingFolders() const
 
 /*
 ===================
+SyncProfile::hasInsufficientFolders
+===================
+*/
+bool SyncProfile::hasInsufficientFolders() const
+{
+    if (folders().empty())
+        return false;
+
+    return folders().size() >= 2 && countExistingFolders() < 2;
+}
+
+/*
+===================
 SyncProfile::hasMissingFolders
 ===================
 */

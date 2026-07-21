@@ -172,6 +172,7 @@ public:
     bool isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) const;
     bool isAnyFolderCaseSensitive() const;
     int countExistingFolders() const;
+    bool hasInsufficientFolders() const;
     bool hasMissingFolders() const;
     bool partiallySynchronized() const;
     SyncFolder *folderByIndex(QModelIndex index);

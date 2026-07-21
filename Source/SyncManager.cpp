@@ -201,9 +201,14 @@ void SyncManager::updateStatus()
                 folder.setSyncing(true);
             }
         }
+    }
 
-        if (profile.folders().size() >= 2 && existingFolders < 2)
-            m_issue = true;
+    for (auto &profile : m_profiles)
+    {
+        m_issue = profile.hasInsufficientFolders();
+
+        if (!m_issue)
+            break;
     }
 
     // Number of files left to sync

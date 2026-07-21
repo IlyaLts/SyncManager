@@ -1193,7 +1193,7 @@ void MainWindow::updateProfilesStatus()
             profileModel->setData(index, iconPause, Qt::DecorationRole);
         else if (profile->syncing() || (!profile->syncHidden() && manager->queue().contains(profile)))
             profileModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
-        else if (!profile->folders().empty() && profile->countExistingFolders() < 2 && profile->folders().size() >= 2)
+        else if (profile->hasInsufficientFolders())
             profileModel->setData(index, iconRemove, Qt::DecorationRole);
         else if (profile->hasMissingFolders())
             profileModel->setData(index, iconWarning, Qt::DecorationRole);
