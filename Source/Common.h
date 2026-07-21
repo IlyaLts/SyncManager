@@ -25,7 +25,7 @@
 #include <QMessageBox>
 
 using hash64_t = quint64;
-using Attributes = quint32;
+using attributes_t = quint32;
 
 struct Language
 {
@@ -77,13 +77,13 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 
 #endif // DEBUG
 
+hash64_t hash64(const QByteArray &str);
 QString formatSize(quint64 size);
 QString formatTime(quint64 time);
-hash64_t hash64(const QByteArray &str);
 void removeDuplicatesBySizeAndDate (FilePointerList &files);
 QFileInfo getCurrentFileInfo(const QString &path);
-Attributes getFileAttributes(const QString &path);
-bool setFileAttribute(const QString &path, Attributes attributes);
+attributes_t getFileAttributes(const QString &path);
+bool setFileAttribute(const QString &path, attributes_t attributes);
 void setHiddenFileAttribute(const QString &path, bool hidden);
 bool setFileModificationDate(const QString &path, const QDateTime &dateTime);
 

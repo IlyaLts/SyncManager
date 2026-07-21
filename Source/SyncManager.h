@@ -97,19 +97,19 @@ Q_SIGNALS:
     void profileSynced(SyncProfile *profile);
     void finished();
 
+private Q_SLOTS:
+
+    void resetUsedDevices();
+
 private:
 
     bool syncProfile(SyncProfile &profile);
     bool executeFolderScans(SyncProfile &profile, int &result);
     void executeSyncProfile(SyncProfile &profile);
-    bool processScannedFile(SyncFolder &folder, SyncProfile &profile, const QFileInfo &fileInfo, quint64 &deviceRead, int &totalNumOfFiles);
     int scanFiles(SyncFolder &folder);
     void synchronizeFileAttributes(SyncProfile &profile);
     void checkForRenamedFolders(SyncProfile &profile);
-    void findMissingAndNewFiles(SyncFolder &folder, quint64 minSize, FilePointerList &missingFiles, FilePointerList &newFiles);
-    bool processMovedFileMatch(SyncProfile &profile, SyncFolder &folder, FilePointerList::iterator &newFileIt, FilePointerList &missingFiles);
     void checkForMovedFiles(SyncProfile &profile);
-    void processAddedFileMatch(SyncProfile &profile, SyncFolder &folder, SyncFolder &otherFolder, Files::iterator &otherFileIt);
     void checkForAddedFiles(SyncProfile &profile);
     void checkForRemovedFiles(SyncProfile &profile);
     void checkForChanges(SyncProfile &profile);
@@ -142,8 +142,7 @@ private:
     quint64 m_maxDiskTransferRate = 0;
     QTimer m_diskUsageResetTimer;
     QMap<QString, QTimer *> m_notificationList;
-    QSet<hash64_t> m_usedDevices;
-    QMap<hash64_t, quint64> m_deviceRead;
+    QMap<hash64_t, quint64> m_usedDevices;
     QMutex m_usedDevicesMutex;
 };
 

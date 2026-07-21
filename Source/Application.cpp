@@ -135,10 +135,10 @@ int Application::exec()
 
 /*
 ===================
-Application::throttleCpu
+Application::throttleDown
 ===================
 */
-void Application::throttleCpu()
+void Application::throttleDown()
 {
     while (m_processUsage > maxCpuUsage())
         QThread::msleep(CpuUpdateTime);

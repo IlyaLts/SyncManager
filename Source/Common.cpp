@@ -75,6 +75,20 @@ void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startT
 
 /*
 ===================
+hash64
+===================
+*/
+hash64_t hash64(const QByteArray &str)
+{
+    QByteArray hash = QCryptographicHash::hash(str, QCryptographicHash::Md5);
+    QDataStream stream(hash);
+    quint64 a, b;
+    stream >> a >> b;
+    return a ^ b;
+}
+
+/*
+===================
 formatSize
 ===================
 */
@@ -117,20 +131,6 @@ QString formatTime(quint64 time)
         return QString(syncApp->translate("%1 seconds").arg(seconds));
 
     return QString("0 seconds");
-}
-
-/*
-===================
-hash64
-===================
-*/
-hash64_t hash64(const QByteArray &str)
-{
-    QByteArray hash = QCryptographicHash::hash(str, QCryptographicHash::Md5);
-    QDataStream stream(hash);
-    quint64 a, b;
-    stream >> a >> b;
-    return a ^ b;
 }
 
 /*
@@ -240,7 +240,7 @@ QFileInfo getCurrentFileInfo(const QString &path)
 getFileAttributes
 ===================
 */
-Attributes getFileAttributes(const QString &path)
+attributes_t getFileAttributes(const QString &path)
 {
 #ifdef Q_OS_WIN
     return GetFileAttributesW(path.toStdWString().c_str()) & ATTRIBUTE_VALID_SET_FLAGS;
@@ -256,7 +256,7 @@ Attributes getFileAttributes(const QString &path)
 setFileAttribute
 ===================
 */
-bool setFileAttribute(const QString &path, Attributes attributes)
+bool setFileAttribute(const QString &path, attributes_t attributes)
 {
 #ifdef Q_OS_WIN
     return SetFileAttributesW(path.toStdWString().c_str(), attributes & ATTRIBUTE_VALID_SET_FLAGS);

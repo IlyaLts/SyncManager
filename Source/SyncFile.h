@@ -90,7 +90,7 @@ public:
     Type type = Unknown;
     qint8 flags = 0;
     LockedFlag lockedFlag = Unlocked;
-    Attributes attributes = 0;
+    attributes_t attributes = 0;
 };
 
 #endif // SYNCFILE_H

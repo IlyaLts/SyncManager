@@ -618,7 +618,7 @@ void SyncProfile::saveDatabasesLocally() const
 {
     for (const auto &folder : folders())
     {
-        if (!folder.isActive() || folder.toBeRemoved())
+        if (!folder.active() || folder.toBeRemoved())
             continue;
 
         QByteArray filename(QByteArray::number(hash64(folder.path())) + ".db");
@@ -635,7 +635,7 @@ void SyncProfile::saveDatabasesDecentralised() const
 {
     for (auto &folder : folders())
     {
-        if (!folder.isActive() || folder.toBeRemoved())
+        if (!folder.active() || folder.toBeRemoved())
             continue;
 
         QDir().mkdir(folder.path() + DATA_FOLDER_PATH);
@@ -661,7 +661,7 @@ void SyncProfile::loadDatabasesLocally()
 {
     for (auto &folder : folders())
     {
-        if (!folder.isActive() || folder.toBeRemoved())
+        if (!folder.active() || folder.toBeRemoved())
             continue;
 
         QByteArray filename(QByteArray::number(hash64(folder.path())) + ".db");
@@ -678,7 +678,7 @@ void SyncProfile::loadDatebasesDecentralised()
 {
     for (auto &folder : folders())
     {
-        if (!folder.isActive() || folder.toBeRemoved())
+        if (!folder.active() || folder.toBeRemoved())
             continue;
 
         folder.loadFromDatabase(folder.path() + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
@@ -743,7 +743,7 @@ void SyncProfile::removeUnneededFilePath(hash64_t hash)
 
 /*
 ===================
-SyncProfile::isActive
+SyncProfile::active
 ===================
 */
 bool SyncProfile::isActive() const
@@ -751,7 +751,7 @@ bool SyncProfile::isActive() const
     int activeFolders = 0;
 
     for (const auto &folder : folders())
-        if (folder.isActive())
+        if (folder.active())
             activeFolders++;
 
     return !m_paused && !m_toBeRemoved && activeFolders >= 2;

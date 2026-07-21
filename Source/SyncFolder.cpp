@@ -108,7 +108,7 @@ void SyncFolder::createParentFolders(const QByteArray &path)
 
     while (!list.isEmpty())
     {
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
 
         if (QDir().mkdir(list.top()))
         {
@@ -274,7 +274,7 @@ void SyncFolder::cleanup()
 
             for (auto otherFolderIt = profile().folders().begin(); otherFolderIt != profile().folders().end(); ++otherFolderIt)
             {
-                if (&(*otherFolderIt) == this || !otherFolderIt->m_exists || !otherFolderIt->isActive())
+                if (&(*otherFolderIt) == this || !otherFolderIt->m_exists || !otherFolderIt->active())
                     continue;
 
                 // Prevents files from being removed if there are no folders to mirror from
@@ -373,6 +373,8 @@ void SyncFolder::updateVersioningPath()
 /*
 ===================
 SyncFolder::checkCaseSensitive
+
+Updates whether the folder is case-sensitive or not
 ===================
 */
 void SyncFolder::checkCaseSensitive()
@@ -443,7 +445,7 @@ void SyncFolder::saveToDatabase(const QString &path) const
 
     for (auto fileIt = files.begin(); fileIt != files.end(); fileIt++)
     {
-        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(quint8) + sizeof(Attributes);
+        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(quint8) + sizeof(attributes_t);
 
         char buf[bufSize];
         char *p = buf;
@@ -457,7 +459,7 @@ void SyncFolder::saveToDatabase(const QString &path) const
         *reinterpret_cast<quint8 *>(p) = fileIt->type;
         *reinterpret_cast<quint8 *>(p) |= fileIt->lockedFlag << 4;
         p += sizeof(quint8);
-        *reinterpret_cast<Attributes *>(p) = fileIt->attributes;
+        *reinterpret_cast<attributes_t *>(p) = fileIt->attributes;
 
         if (stream.writeRawData(&buf[0], bufSize) != bufSize)
             return;
@@ -566,7 +568,7 @@ void SyncFolder::loadFromDatabase(const QString &path)
     // File data
     for (qsizetype i = 0; i < numOfFiles; i++)
     {
-        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(quint8) + sizeof(Attributes);
+        const size_t bufSize = sizeof(hash64_t) + sizeof(QDateTime) + sizeof(qint64) + sizeof(quint8) + sizeof(attributes_t);
 
         char buf[bufSize];
 
@@ -579,7 +581,7 @@ void SyncFolder::loadFromDatabase(const QString &path)
         qint64 size;
         SyncFile::Type type;
         SyncFile::LockedFlag lockedFlag;
-        Attributes attributes;
+        attributes_t attributes;
 
         hash = *reinterpret_cast<hash64_t *>(p);
         p += sizeof(hash64_t);
@@ -590,7 +592,7 @@ void SyncFolder::loadFromDatabase(const QString &path)
         type = static_cast<SyncFile::Type>((*reinterpret_cast<quint8 *>(p) & 0xf));
         lockedFlag = static_cast<SyncFile::LockedFlag>((*reinterpret_cast<quint8 *>(p) >> 4));
         p += sizeof(quint8);
-        attributes = *reinterpret_cast<Attributes *>(p);
+        attributes = *reinterpret_cast<attributes_t *>(p);
 
         const auto it = files.insert(hash, SyncFile(type, modifiedDate));
         it->size = size;
@@ -608,7 +610,7 @@ void SyncFolder::loadFromDatabase(const QString &path)
     {
         QByteArray toPath;
         QByteArray fromPath;
-        Attributes attributes;
+        attributes_t attributes;
 
         stream >> toPath;
         stream >> fromPath;
@@ -629,7 +631,7 @@ void SyncFolder::loadFromDatabase(const QString &path)
     {
         QByteArray toPath;
         QByteArray fromPath;
-        Attributes attributes;
+        attributes_t attributes;
 
         stream >> toPath;
         stream >> fromPath;
@@ -649,7 +651,7 @@ void SyncFolder::loadFromDatabase(const QString &path)
     for (qsizetype i = 0; i < numOfFiles; i++)
     {
         QByteArray path;
-        Attributes attributes;
+        attributes_t attributes;
 
         stream >> path;
         stream >> attributes;
@@ -746,10 +748,10 @@ void SyncFolder::removeNonExistentFiles()
 
 /*
 ===================
-SyncFolder::isActive
+SyncFolder::active
 ===================
 */
-bool SyncFolder::isActive() const
+bool SyncFolder::active() const
 {
     return !m_paused && !m_toBeRemoved && m_exists;
 }

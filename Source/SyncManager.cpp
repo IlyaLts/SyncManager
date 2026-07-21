@@ -44,7 +44,7 @@ SyncManager::SyncManager
 */
 SyncManager::SyncManager()
 {
-    connect(&m_diskUsageResetTimer, &QTimer::timeout, this, [this](){ for (auto &device : m_deviceRead) device = 0; });
+    connect(&m_diskUsageResetTimer, &QTimer::timeout, this, &SyncManager::resetUsedDevices);
     m_diskUsageResetTimer.start(DiskUsageResetTime);
     loadSettings();
 }
@@ -194,7 +194,7 @@ void SyncManager::updateStatus()
             else
                 m_warning = true;
 
-            if (m_busy && folder.isActive() && folder.hasUnsyncedFiles())
+            if (m_busy && folder.active() && folder.hasUnsyncedFiles())
             {
                 m_syncing = true;
                 profile.setSyncing(true);
@@ -213,7 +213,7 @@ void SyncManager::updateStatus()
     {
         for (const auto &folder : m_queue.head()->folders())
         {
-            if (folder.isActive())
+            if (folder.active())
             {
                 size += folder.foldersToRename.size();
                 size += folder.filesToMove.size();
@@ -334,6 +334,19 @@ quint64 SyncManager::maxInterval()
     max /= 1000000;
 
     return max;
+}
+
+/*
+===================
+SyncManager::resetUsedDevices
+===================
+*/
+void SyncManager::resetUsedDevices()
+{
+    QMutexLocker locker(&m_usedDevicesMutex);
+
+    for (auto &device : m_usedDevices)
+        device = 0;
 }
 
 /*
@@ -470,7 +483,7 @@ bool SyncManager::executeFolderScans(SyncProfile &profile, int &result)
 
             if (!m_usedDevices.contains(requiredDevice))
             {
-                m_usedDevices.insert(requiredDevice);
+                m_usedDevices.insert(requiredDevice, 0);
                 SyncFolder &folder = *scanListIt.key();
                 QObject::connect(scanListIt->data(), &QFutureWatcher<int>::finished, &scanLoop, &QEventLoop::quit);
 
@@ -549,7 +562,7 @@ void SyncManager::executeSyncProfile(SyncProfile &profile)
     profile.setLastSyncDate(QDateTime::currentDateTime());
 
     for (auto &folder : profile.folders())
-        if (folder.isActive())
+        if (folder.active())
             folder.setLastSyncDate(QDateTime::currentDateTime());
 
     updateStatus();
@@ -566,7 +579,7 @@ int SyncManager::scanFiles(SyncFolder &folder)
 {
     SyncProfile &profile = folder.profile();
     hash64_t deviceHash = hash64(QStorageInfo(folder.path()).device());
-    quint64 &deviceRead = m_deviceRead[deviceHash];
+    quint64 &deviceRead = m_usedDevices[deviceHash];
     int totalNumOfFiles = 0;
     QStringList nameFilters(profile.includeList());
     nameFilters.removeAll(""); // It's important for proper iteration because the include list may contain empty strings
@@ -582,10 +595,10 @@ int SyncManager::scanFiles(SyncFolder &folder)
 
     while (dir.hasNext())
     {
-        if (m_shouldQuit || !folder.isActive())
+        if (m_shouldQuit || !folder.active())
             return -1;
 
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
         dir.next();
 
         QFileInfo fileInfo(dir.fileInfo());
@@ -661,7 +674,7 @@ int SyncManager::scanFiles(SyncFolder &folder)
         {
             SyncFile &file = folder.files[fileHash];
             QDateTime modifiedDate(fileInfo.lastModified());
-            Attributes attributes = getFileAttributes(absoluteFilePath);
+            attributes_t attributes = getFileAttributes(absoluteFilePath);
 
             // Quits if a hash collision is detected
             if (file.scanned())
@@ -772,18 +785,18 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
             if (folderIt == otherFolderIt || !otherFolderIt->exists())
                 continue;
 
-            if (!folderIt->isActive())
+            if (!folderIt->active())
                 break;
 
             for (Files::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
             {
-                if (!otherFolderIt->isActive())
+                if (!otherFolderIt->active())
                     break;
 
                 if (!otherFileIt.value().exists())
                     continue;
 
-                syncApp->throttleCpu();
+                syncApp->throttleDown();
 
                 const SyncFile &file = folderIt->files.value(otherFileIt.key());
                 const SyncFile &otherFile = otherFileIt.value();
@@ -804,7 +817,7 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
                     QByteArray to(folderIt->path());
                     to.append(filePath);
 
-                    Attributes newAttributes = getFileAttributes(from);
+                    attributes_t newAttributes = getFileAttributes(from);
 
                     if (setFileAttribute(to, newAttributes))
                     {
@@ -836,12 +849,12 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
 
     for (auto folderIt = profile.folders().begin(); folderIt != profile.folders().end(); ++folderIt)
     {
-        if (!folderIt->isActive() || !folderIt->bidirectional())
+        if (!folderIt->active() || !folderIt->bidirectional())
             continue;
 
         for (Files::iterator renamedFolderIt = folderIt->files.begin(); renamedFolderIt != folderIt->files.end(); ++renamedFolderIt)
         {
-            syncApp->throttleCpu();
+            syncApp->throttleDown();
 
             // Only a newly added folder can indicate that the case of folder name was changed
             if (renamedFolderIt->type != SyncFile::Folder || !renamedFolderIt->newlyAdded() || !renamedFolderIt->exists())
@@ -860,7 +873,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
                 if (folderIt == otherFolderIt)
                     continue;
 
-                if (!otherFolderIt->isActive())
+                if (!otherFolderIt->active())
                     continue;
 
                 QByteArray otherFolderFullPath(otherFolderIt->path());
@@ -879,12 +892,12 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
             // Adds folders from other sync folders for renaming
             for (auto otherFolderIt = profile.folders().begin(); otherFolderIt != profile.folders().end(); ++otherFolderIt)
             {
-                syncApp->throttleCpu();
+                syncApp->throttleDown();
 
                 if (folderIt == otherFolderIt)
                     continue;
 
-                if (!otherFolderIt->isActive())
+                if (!otherFolderIt->active())
                     continue;
 
                 QByteArray otherFolderFullPath(otherFolderIt->path());
@@ -992,9 +1005,9 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
     for (auto folderIt = profile.folders().begin(); folderIt != profile.folders().end(); ++folderIt)
     {
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
 
-        if (!folderIt->isActive() || !folderIt->bidirectional())
+        if (!folderIt->active() || !folderIt->bidirectional())
             continue;
 
         FilePointerList missingFiles;
@@ -1028,7 +1041,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
             // Searches for a match between a missed file and a newly added file
             for (FilePointerList::iterator missingFileIt = missingFiles.begin(); missingFileIt != missingFiles.end(); ++missingFileIt)
             {
-                syncApp->throttleCpu();
+                syncApp->throttleDown();
 
                 if (!missingFileIt.value()->hasSameSizeAndDate(*newFileIt.value()))
                     continue;
@@ -1049,7 +1062,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 if (folderIt == otherFolderIt)
                     continue;
 
-                if (!otherFolderIt->isActive())
+                if (!otherFolderIt->active())
                     continue;
 
                 if (!otherFolderIt->files.contains(movedFileHash))
@@ -1103,7 +1116,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
                 if (folderIt == otherFolderIt)
                     continue;
 
-                if (!otherFolderIt->isActive())
+                if (!otherFolderIt->active())
                     continue;
 
                 QByteArray pathToMove(otherFolderIt->path());
@@ -1152,14 +1165,14 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
             if (folderIt == otherFolderIt || !otherFolderIt->exists() || !otherFolderIt->bidirectional())
                 continue;
 
-            if (!folderIt->isActive())
+            if (!folderIt->active())
                 break;
 
             for (Files::iterator otherFileIt = otherFolderIt->files.begin(); otherFileIt != otherFolderIt->files.end(); ++otherFileIt)
             {
-                syncApp->throttleCpu();
+                syncApp->throttleDown();
 
-                if (!otherFolderIt->isActive())
+                if (!otherFolderIt->active())
                     break;
 
                 if (!otherFileIt.value().exists())
@@ -1250,9 +1263,9 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
 
         for (Files::iterator fileIt = folderIt->files.begin() ; fileIt != folderIt->files.end();)
         {
-            syncApp->throttleCpu();
+            syncApp->throttleDown();
 
-            if (!folderIt->isActive())
+            if (!folderIt->active())
                 break;
 
             if (fileIt->exists() || fileIt->isLocked())
@@ -1312,7 +1325,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
             // Adds files from other folders for removal
             for (auto otherFolderIt = profile.folders().begin(); otherFolderIt != profile.folders().end(); ++otherFolderIt)
             {
-                if (folderIt == otherFolderIt || !otherFolderIt->isActive())
+                if (folderIt == otherFolderIt || !otherFolderIt->active())
                     continue;
 
                 if (otherFolderIt->contributing())
@@ -1451,11 +1464,12 @@ bool SyncManager::copyFileDelta(quint64 &deviceRead, QFile &from, const QString 
 
         m_usedDevicesMutex.lock();
         deviceRead += nFrom + nTo;
+        quint64 read = deviceRead;
         m_usedDevicesMutex.unlock();
 
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
 
-        while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
+        while (m_maxDiskTransferRate && read >= m_maxDiskTransferRate && !quitting())
         {
             int sleep = m_diskUsageResetTimer.remainingTime();
 
@@ -1525,11 +1539,12 @@ bool SyncManager::copyFileManual(quint64 &deviceRead, QFile &from, const QString
 
         m_usedDevicesMutex.lock();
         deviceRead += in;
+        quint64 read = deviceRead;
         m_usedDevicesMutex.unlock();
 
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
 
-        while (m_maxDiskTransferRate && deviceRead >= m_maxDiskTransferRate && !quitting())
+        while (m_maxDiskTransferRate && read >= m_maxDiskTransferRate && !quitting())
         {
             int sleep = m_diskUsageResetTimer.remainingTime();
 
@@ -1566,12 +1581,12 @@ SyncManager::renameFolders
 */
 void SyncManager::renameFolders(SyncFolder &folder)
 {
-    for (auto folderIt = folder.foldersToRename.begin(); folderIt != folder.foldersToRename.end() && (!m_paused && folder.isActive());)
+    for (auto folderIt = folder.foldersToRename.begin(); folderIt != folder.foldersToRename.end() && (!m_paused && folder.active());)
     {
         if (m_shouldQuit)
             break;
 
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
 
         QString fromFullPath(folder.path());
         fromFullPath.append(folderIt->fromPath);
@@ -1619,12 +1634,12 @@ SyncManager::moveFiles
 */
 void SyncManager::moveFiles(SyncFolder &folder)
 {
-    for (auto fileIt = folder.filesToMove.begin(); fileIt != folder.filesToMove.end() && (!m_paused && folder.isActive());)
+    for (auto fileIt = folder.filesToMove.begin(); fileIt != folder.filesToMove.end() && (!m_paused && folder.active());)
     {
         if (m_shouldQuit)
             break;
 
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
 
         QByteArray fromFullPath(folder.path());
         fromFullPath.append(fileIt->fromPath);
@@ -1719,12 +1734,12 @@ void SyncManager::removeFolders(SyncFolder &folder)
 
     std::sort(sortedFoldersToRemove.begin(), sortedFoldersToRemove.end(), [](const auto &a, const auto &b) -> bool { return a.second.size() < b.second.size(); });
 
-    for (auto folderIt = sortedFoldersToRemove.begin(); folderIt != sortedFoldersToRemove.end() && (!m_paused && folder.isActive());)
+    for (auto folderIt = sortedFoldersToRemove.begin(); folderIt != sortedFoldersToRemove.end() && (!m_paused && folder.active());)
     {
         if (m_shouldQuit)
             break;
 
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
 
         // Prevents the deletion of the main sync folder in case of a false detection during synchronization
         if (folderIt->second.isEmpty())
@@ -1763,12 +1778,12 @@ SyncManager::removeFiles
 */
 void SyncManager::removeFiles(SyncFolder &folder)
 {
-    for (auto fileIt = folder.filesToRemove.begin(); fileIt != folder.filesToRemove.end() && (!m_paused && folder.isActive());)
+    for (auto fileIt = folder.filesToRemove.begin(); fileIt != folder.filesToRemove.end() && (!m_paused && folder.active());)
     {
         if (m_shouldQuit)
             break;
 
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
 
         // Prevents the deletion of the main sync folder in case of a false detection during synchronization
         if (fileIt->isEmpty())
@@ -1805,12 +1820,12 @@ SyncManager::createFolders
 */
 void SyncManager::createFolders(SyncFolder &folder)
 {
-    for (auto folderIt = folder.foldersToCreate.begin(); folderIt != folder.foldersToCreate.end() && (!m_paused && folder.isActive());)
+    for (auto folderIt = folder.foldersToCreate.begin(); folderIt != folder.foldersToCreate.end() && (!m_paused && folder.active());)
     {
         if (m_shouldQuit)
             break;
 
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
 
         if (folderIt->path.isEmpty())
         {
@@ -1857,16 +1872,16 @@ SyncManager::copyFiles
 void SyncManager::copyFiles(SyncFolder &folder)
 {
     hash64_t deviceHash = hash64(QStorageInfo(folder.path()).device());
-    quint64 &deviceRead = m_deviceRead[deviceHash];
+    quint64 &deviceRead = m_usedDevices[deviceHash];
     QString rootPath = QStorageInfo(folder.path()).rootPath();
     bool shouldNotify = m_notificationList.contains(rootPath) ? !m_notificationList.value(rootPath)->isActive() : true;
 
-    for (auto fileIt = folder.filesToCopy.begin(); fileIt != folder.filesToCopy.end() && (!m_paused && folder.isActive());)
+    for (auto fileIt = folder.filesToCopy.begin(); fileIt != folder.filesToCopy.end() && (!m_paused && folder.active());)
     {
         if (m_shouldQuit)
             break;
 
-        syncApp->throttleCpu();
+        syncApp->throttleDown();
 
         // Removes from the "files to copy" list if the source file doesn't exist
         if (!QFileInfo::exists(fileIt->fromFullPath) || fileIt->toPath.isEmpty() || fileIt->fromFullPath.isEmpty())
@@ -1974,7 +1989,7 @@ void SyncManager::syncChanges(SyncProfile &profile)
 
     for (auto &folder : profile.folders())
     {
-        if (!folder.isActive())
+        if (!folder.active())
             continue;
 
         if (profile.deletionMode() == SyncProfile::Versioning)

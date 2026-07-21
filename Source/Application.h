@@ -65,7 +65,7 @@ public:
 
     void init();
     int exec();
-    void throttleCpu();
+    void throttleDown();
     void checkForUpdate();
     void loadSettings();
     void saveSettings() const;

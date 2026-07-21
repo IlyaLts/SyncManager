@@ -32,20 +32,20 @@ struct FolderToRenameInfo
 {
     QByteArray toPath;
     QByteArray fromPath;
-    Attributes attributes;
+    attributes_t attributes;
 };
 
 struct FileToMoveInfo
 {
     QByteArray toPath;
     QByteArray fromPath;
-    Attributes attributes;
+    attributes_t attributes;
 };
 
 struct FolderToCreateInfo
 {
     QByteArray path;
-    Attributes attributes;
+    attributes_t attributes;
 };
 
 struct FileToCopyInfo
@@ -101,7 +101,7 @@ public:
     void loadFromDatabase(const QString &path);
     void removeDatabase() const;
     void removeNonExistentFiles();
-    bool isActive() const;
+    bool active() const;
     bool hasUnsyncedFiles() const;
     void updateUnsyncedList();
     void remove();
