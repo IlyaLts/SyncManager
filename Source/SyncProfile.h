@@ -192,7 +192,7 @@ private:
     QChronoTimer m_syncTimer;
     QDateTime m_lastSyncDate;
 
-    SyncingMode m_syncingMode = AutomaticAdaptive;
+    SyncingMode m_syncingMode = Manual;
     quint64 m_syncIntervalFixed = defaultFixedInterval;
     DeletionMode m_deletionMode = MoveToTrash;
     VersioningLocation m_versioningLocation = LocallyNextToFolder;
