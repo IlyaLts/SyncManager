@@ -87,6 +87,7 @@ void SyncProfile::loadSettings()
     m_syncTime = settings.value(keyName + "SyncTime", 0).toULongLong();
 
     updateNextSyncingTime();
+    updateTimer();
 }
 
 /*
@@ -148,6 +149,8 @@ void SyncProfile::setSyncingMode(SyncingMode mode)
     if (mode < Manual || mode > AutomaticFixed)
         mode = AutomaticAdaptive;
 
+    m_syncingMode = mode;
+
     if (mode == SyncProfile::Manual)
     {
         m_syncTimer.stop();
@@ -159,7 +162,6 @@ void SyncProfile::setSyncingMode(SyncingMode mode)
         updateTimer();
     }
 
-    m_syncingMode = mode;
     emit syncingModeChanged();
     emit syncingTimeChanged();
 

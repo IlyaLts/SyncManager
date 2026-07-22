@@ -410,12 +410,10 @@ void ProfileMenu::increaseSyncTime()
 
     // If exceeds the maximum value of an qint64
     if (profile->syncEvery() >= max)
-    {
-        updateSyncTime();
         return;
-    }
 
     profile->setSyncTimeMultiplier(profile->syncTimeMultiplier() + 1);
+    updateSyncTime();
     decreaseSyncTimeAction->setEnabled(true);
 }
 

@@ -479,6 +479,10 @@ bool SyncManager::executeFolderScans(SyncProfile &profile, int &result)
         if (!folder.paused())
             scanList.insert(&folder, QSharedPointer<QFutureWatcher<int>>::create());
 
+    m_usedDevicesMutex.lock();
+    m_usedDevices.clear();
+    m_usedDevicesMutex.unlock();
+
     while (!scanList.isEmpty())
     {
         for (auto scanListIt = scanList.begin(); scanListIt != scanList.end();)
