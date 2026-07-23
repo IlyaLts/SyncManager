@@ -90,6 +90,7 @@ private Q_SLOTS:
     void toggleCheckForUpdates();
     void setMaximumTransferRateUsage();
     void setMaximumCpuUsage();
+    void triggerAboutDialog();
     void showProfileContextMenu(const QPoint &pos);
     void showFolderContextMenu(const QPoint &pos);
     void sync(SyncProfile *profile, bool hidden = false);
@@ -144,7 +145,7 @@ private:
     QAction *checkForUpdatesAction;
     QAction *userManualAction;
     QAction *reportBugAction;
-    QAction *versionAction;
+    QAction *aboutAction;
 
     UnhidableMenu *settingsMenu;
     UnhidableMenu *performanceMenu;

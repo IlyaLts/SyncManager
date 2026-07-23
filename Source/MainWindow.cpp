@@ -28,6 +28,7 @@
 #include "ProfileMenu.h"
 #include "FolderStyleDelegate.h"
 #include "ProfileStyleDelegate.h"
+#include "AboutDialog.h"
 #include <QStringListModel>
 #include <QSettings>
 #include <QCloseEvent>
@@ -179,7 +180,7 @@ void MainWindow::retranslate()
     checkForUpdatesAction->setText("&" + tr("Check for Updates"));
     userManualAction->setText("&" + tr("User Manual"));
     reportBugAction->setText("&" + tr("Report a Bug"));
-    versionAction->setText(tr("Version: %1").arg(SYNCMANAGER_VERSION));
+    aboutAction->setText("&" + tr("About"));
 
     performanceMenu->setTitle("&" + tr("Performance"));
     languageMenu->setTitle("&" + tr("Language"));
@@ -952,6 +953,17 @@ void MainWindow::setMaximumCpuUsage()
 
 /*
 ===================
+MainWindow::triggerAboutDialog
+===================
+*/
+void MainWindow::triggerAboutDialog()
+{
+    AboutDialog dlg(this);
+    dlg.exec();
+}
+
+/*
+===================
 MainWindow::showProfileContextMenu
 ===================
 */
@@ -1520,9 +1532,7 @@ void MainWindow::setupMenus()
     checkForUpdatesAction = new QAction("&" + tr("Check for Updates"), this);
     userManualAction = new QAction("&" + tr("User Manual"), this);
     reportBugAction = new QAction("&" + tr("Report a Bug"), this);
-    versionAction = new QAction(tr("Version: %1").arg(SYNCMANAGER_VERSION), this);
-
-    versionAction->setDisabled(true);
+    aboutAction = new QAction("&" + tr("About"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setCheckable(true);
@@ -1554,8 +1564,7 @@ void MainWindow::setupMenus()
     settingsMenu->addSeparator();
     settingsMenu->addAction(userManualAction);
     settingsMenu->addAction(reportBugAction);
-    settingsMenu->addSeparator();
-    settingsMenu->addAction(versionAction);
+    settingsMenu->addAction(aboutAction);
 
     syncApp->tray()->addMenu(settingsMenu);
     syncApp->tray()->addSeparator();
@@ -1608,6 +1617,7 @@ void MainWindow::setupMenus()
     connect(checkForUpdatesAction, &QAction::triggered, this, &MainWindow::toggleCheckForUpdates);
     connect(userManualAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_PATH)); });
     connect(reportBugAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_URL)); });
+    connect(aboutAction, &QAction::triggered, this, &MainWindow::triggerAboutDialog);
 
     for (auto &profile : syncApp->manager()->profiles())
         profileMenus.insert(&profile, new ProfileMenu(this, &profile));

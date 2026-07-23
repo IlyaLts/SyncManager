@@ -5,6 +5,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++20 lrelease embed_translations
 
 SOURCES += \
+    Source/AboutDialog.cpp \
     Source/Application.cpp \
     Source/Common.cpp \
     Source/CpuUsage.cpp \
@@ -26,6 +27,7 @@ SOURCES += \
     Source/SystemTray.cpp
 
 HEADERS += \
+    Source/AboutDialog.h \
     Source/Application.h \
     Source/Common.h \
     Source/CpuUsage.h \
@@ -54,7 +56,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
-    Source/Icon.ico \
     Source/Resources.rc \
     LICENSE.txt \
     README.md

@@ -22,7 +22,7 @@
 // Icon resources
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDI_ICON1 ICON DISCARDABLE ".\\Icon.ico"
+IDI_ICON1 ICON DISCARDABLE "..\\Images\\Icon.ico"
 
 //
 // Version
