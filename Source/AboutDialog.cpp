@@ -62,5 +62,6 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent)
     layout->addWidget(about);
     layout->addSpacing(20);
     layout->addWidget(description);
+    layout->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(layout);
 }

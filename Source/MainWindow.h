@@ -22,6 +22,7 @@
 
 #include "SyncManager.h"
 #include "SyncProfile.h"
+#include "MenuBar.h"
 #include <QMainWindow>
 #include <QTimer>
 #include <QMovie>
@@ -82,21 +83,11 @@ private Q_SLOTS:
     void pauseSyncing();
     void pauseSelected();
     void switchSyncingType(SyncFolder &folder, SyncFolder::Type type);
-    void switchLanguage(QLocale::Language language);
-    void updateLanguageMenu();
-    void toggleLaunchOnStartup();
-    void toggleShowInTray();
-    void toggleNotification();
-    void toggleCheckForUpdates();
-    void setMaximumTransferRateUsage();
-    void setMaximumCpuUsage();
-    void triggerAboutDialog();
     void showProfileContextMenu(const QPoint &pos);
     void showFolderContextMenu(const QPoint &pos);
     void sync(SyncProfile *profile, bool hidden = false);
     void syncDone();
     void profileSynced(SyncProfile *profile);
-    void updateAvailable();
 
 private:
 
@@ -107,12 +98,11 @@ private:
     void updatePauseState();
     void updateIcons();
     void updateWindowTitle();
-    void updateMenuMaxDiskTransferRate();
     void updateProfileTooltip(const SyncProfile &profile);
     void setupMenus();
-    void updateLaunchOnStartupState();
 
     QMap<SyncProfile *, ProfileMenu *> profileMenus;
+    MenuBar *menuBar;
 
     Ui::MainWindow *ui;
 
@@ -125,7 +115,6 @@ private:
     QIcon iconPause;
     QIcon iconRemove;
     QIcon iconResume;
-    QIcon iconSettings;
     QIcon iconSync;
     QIcon iconWarning;
     QIcon iconTwoWay;
@@ -133,26 +122,6 @@ private:
     QIcon iconOneWayUpdate;
 
     QMovie animSync;
-
-    QAction *syncNowAction;
-    QAction *pauseSyncingAction;
-    QAction *maximumDiskTransferRateAction;
-    QAction *maximumCpuUsageAction;
-    QList<QAction *> languageActions;
-    QAction *launchOnStartupAction;
-    QAction *showInTrayAction;
-    QAction *disableNotificationAction;
-    QAction *checkForUpdatesAction;
-    QAction *userManualAction;
-    QAction *reportBugAction;
-    QAction *aboutAction;
-
-    UnhidableMenu *settingsMenu;
-    UnhidableMenu *performanceMenu;
-    UnhidableMenu *languageMenu;
-
-    QPushButton *updateAvailableButton;
-
     QTimer updateTimer;
 };
 

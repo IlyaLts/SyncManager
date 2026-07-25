@@ -14,6 +14,7 @@ SOURCES += \
     Source/FolderStyleDelegate.cpp \
     Source/Main.cpp \
     Source/MainWindow.cpp \
+    Source/MenuBar.cpp \
     Source/MenuProxyStyle.cpp \
     Source/ProfileListView.cpp \
     Source/ProfileMenu.cpp \
@@ -35,6 +36,7 @@ HEADERS += \
     Source/FolderListView.h \
     Source/FolderStyleDelegate.h \
     Source/MainWindow.h \
+    Source/MenuBar.h \
     Source/MenuProxyStyle.h \
     Source/ProfileListView.h \
     Source/ProfileMenu.h \
