@@ -878,7 +878,7 @@ void MainWindow::showFolderContextMenu(const QPoint &pos)
 
         menu.addAction(iconRemove, "&" + tr("Remove folder"), this, &MainWindow::removeFolder);
 
-        if (folder->hasUnsyncedFiles() && !folder->unsyncedList().isEmpty())
+        if (folder->partiallySynchronized() && !folder->unsyncedList().isEmpty())
         {
             QString menuTitle(tr("Show unsynchronized files"));
             QString title(tr("Couldn't synchronize the following files"));
@@ -1096,7 +1096,7 @@ void MainWindow::updateFoldersStatus()
             folderModel->setData(index, QIcon(animSync.currentPixmap()), Qt::DecorationRole);
         else if (!folder->exists())
             folderModel->setData(index, iconRemove, Qt::DecorationRole);
-        else if (folder->hasUnsyncedFiles())
+        else if (folder->partiallySynchronized())
             folderModel->setData(index, iconDonePartial, Qt::DecorationRole);
         else
             folderModel->setData(index, iconDone, Qt::DecorationRole);
@@ -1269,7 +1269,7 @@ void MainWindow::updateProfileTooltip(const SyncProfile &profile)
                 QString time(syncApp->toLocalizedDateTime(folder.lastSyncDate(), dateFormat));
                 QString text = tr("Last synchronization: %1.").arg(time) + nextSyncText;
 
-                if (folder.hasUnsyncedFiles())
+                if (folder.partiallySynchronized())
                     text.insert(0, tr("Partially synchronized!") + "\n\n");
 
                 folderModel->setData(folderModel->indexByRow(i), text, Qt::ToolTipRole);

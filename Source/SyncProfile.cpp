@@ -859,7 +859,7 @@ SyncProfile::m_partiallySynchronized
 bool SyncProfile::partiallySynchronized() const
 {
     for (const auto &folder : folders())
-        if (folder.hasUnsyncedFiles())
+        if (folder.partiallySynchronized())
             return true;
 
     return false;

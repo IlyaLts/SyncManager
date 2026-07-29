@@ -768,8 +768,31 @@ bool SyncFolder::hasUnsyncedFiles() const
            !foldersToCreate.isEmpty() ||
            !filesToCopy.isEmpty() ||
            !foldersToRemove.isEmpty() ||
-           !filesToRemove.isEmpty() ||
-           !m_unsyncedList.isEmpty() ;
+           !filesToRemove.isEmpty();
+}
+
+/*
+===================
+SyncFolder::hasCorruptedFiles
+===================
+*/
+bool SyncFolder::hasCorruptedFiles() const
+{
+    for (const auto &file : files)
+        if (file.corrupted())
+            return true;
+
+    return false;
+}
+
+/*
+===================
+SyncFolder::partiallySynchronized
+===================
+*/
+bool SyncFolder::partiallySynchronized() const
+{
+    return !m_unsyncedList.isEmpty();
 }
 
 /*
@@ -783,6 +806,8 @@ void SyncFolder::updateUnsyncedList()
 
     if (hasUnsyncedFiles())
     {
+        m_unsyncedList.append("The following files are not synchronized:\n\n");
+
         for (auto &path : foldersToRename)
             m_unsyncedList.append(path.toPath + "\n");
 
@@ -800,6 +825,15 @@ void SyncFolder::updateUnsyncedList()
 
         for (auto &path : filesToRemove)
             m_unsyncedList.append(path + "\n");
+    }
+
+    if (hasCorruptedFiles())
+    {
+        m_unsyncedList.append("\nThe following files are corrupted:\n\n");
+
+        for (auto fileIt = files.begin(); fileIt != files.end(); fileIt++)
+            if (fileIt->corrupted())
+                m_unsyncedList.append(m_profile->filePath(fileIt.key()) + "\n");
     }
 }
 

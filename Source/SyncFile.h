@@ -49,7 +49,8 @@ public:
         NewlyAdded = 0x8,
         ReadOnly = 0x10,
         AttributesUpdated = 0x20,
-        Scanned = 0x40
+        Scanned = 0x40,
+        Corrupted = 0x80
     };
 
     enum LockedFlag : quint8
@@ -75,6 +76,7 @@ public:
     inline void setReadOnly(bool value) { setFlag(ReadOnly, value); }
     inline void setAttributesUpdated(bool value) { setFlag(AttributesUpdated, value); }
     inline void setScanned(bool value) { setFlag(Scanned, value); }
+    inline void setCorrupted(bool value) { setFlag(Corrupted, value); }
     void setFlag(Flag flag, bool value) { flags = value ? (flags | flag) : (flags & ~flag); }
 
     inline bool updated() const { return flag(Updated); }
@@ -83,6 +85,7 @@ public:
     inline bool readOnly() const { return flag(ReadOnly); }
     inline bool attributesUpdated() const { return flag(AttributesUpdated); }
     inline bool scanned() const { return flag(Scanned); }
+    inline bool corrupted() const { return flag(Corrupted); }
     inline bool flag(Flag flag) const { return flags & flag; }
 
     QDateTime modifiedDate;

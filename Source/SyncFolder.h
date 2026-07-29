@@ -103,6 +103,8 @@ public:
     void removeNonExistentFiles();
     bool active() const;
     bool hasUnsyncedFiles() const;
+    bool hasCorruptedFiles() const;
+    bool partiallySynchronized() const;
     void updateUnsyncedList();
     void remove();
 

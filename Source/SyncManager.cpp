@@ -194,7 +194,7 @@ void SyncManager::updateStatus()
             else
                 m_warning = true;
 
-            if (m_busy && folder.active() && folder.hasUnsyncedFiles())
+            if (m_busy && folder.active() && (folder.hasUnsyncedFiles() || folder.hasCorruptedFiles()))
             {
                 m_syncing = true;
                 profile.setSyncing(true);
@@ -557,6 +557,24 @@ void SyncManager::executeSyncProfile(SyncProfile &profile)
     for (auto &folder : profile.folders())
     {
         folder.updateUnsyncedList();
+
+        if (folder.hasCorruptedFiles())
+        {
+            QString deviceName(QStorageInfo(folder.path()).displayName());
+            bool shouldNotify = m_notificationList.contains(deviceName) ? !m_notificationList.value(deviceName)->isActive() : true;
+
+            if (shouldNotify)
+            {
+                if (!m_notificationList.contains(deviceName))
+                    m_notificationList.insert(deviceName, new QTimer(this)).value()->setSingleShot(true);
+
+                QString title(tr("Disk: %1 is corrupted. Please fix the errors.").arg(deviceName));
+                syncApp->tray()->notify(title, "", QSystemTrayIcon::Critical);
+
+                m_notificationList.value(deviceName)->start(NotificationCooldown);
+            }
+        }
+
         folder.clearData();
     }
 
@@ -745,6 +763,7 @@ int SyncManager::scanFiles(SyncFolder &folder)
             file.setExists(true);
             file.setScanned(true);
             file.setReadOnly(!fileInfo.isWritable());
+            file.setCorrupted(!QFileInfo::exists(absoluteFilePath));
 
             profile.removeUnneededFilePath(fileHash);
         }
@@ -757,6 +776,7 @@ int SyncManager::scanFiles(SyncFolder &folder)
             file->setNewlyAdded(true);
             file->setScanned(true);
             file->setReadOnly(!fileInfo.isWritable());
+            file->setCorrupted(!QFileInfo::exists(absoluteFilePath));
 
             m_databaseChanged = true;
         }
@@ -808,6 +828,9 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
                 if (!otherFileIt.value().exists())
                     continue;
 
+                if (otherFileIt.value().corrupted())
+                    continue;
+
                 syncApp->throttleDown();
 
                 const SyncFile &file = folderIt->files.value(otherFileIt.key());
@@ -817,6 +840,9 @@ void SyncManager::synchronizeFileAttributes(SyncProfile &profile)
                     continue;
 
                 if (!file.exists() || !otherFile.exists())
+                    continue;
+
+                if (file.corrupted() || otherFile.corrupted())
                     continue;
 
                 if (file.hasOlderAttributes(otherFile))
@@ -869,7 +895,7 @@ void SyncManager::checkForRenamedFolders(SyncProfile &profile)
             syncApp->throttleDown();
 
             // Only a newly added folder can indicate that the case of folder name was changed
-            if (renamedFolderIt->type != SyncFile::Folder || !renamedFolderIt->newlyAdded() || !renamedFolderIt->exists())
+            if (renamedFolderIt->type != SyncFile::Folder || !renamedFolderIt->newlyAdded() || !renamedFolderIt->exists() || renamedFolderIt->corrupted())
                 continue;
 
             // Skips if the folder is already scheduled to be moved, especially when there are three or more sync folders
@@ -1037,7 +1063,7 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
         // Finds files that are new in our sync folder
         for (Files::iterator newFileIt = folderIt->files.begin(); newFileIt != folderIt->files.end(); ++newFileIt)
-            if (newFileIt->isFile() && newFileIt->newlyAdded() && newFileIt->exists() && newFileIt->size >= profile.movedFileMinSize())
+            if (newFileIt->isFile() && newFileIt->newlyAdded() && newFileIt->exists() && !newFileIt->corrupted() && newFileIt->size >= profile.movedFileMinSize())
                 newFiles.insert(newFileIt.key(), &newFileIt.value());
 
         removeDuplicatesBySizeAndDate(newFiles);
@@ -1085,6 +1111,10 @@ void SyncManager::checkForMovedFiles(SyncProfile &profile)
 
                 // If the file that needs to move does not exist
                 if (!fileToMove.exists())
+                    break;
+
+                // If the file that needs to move is corrupted
+                if (fileToMove.corrupted())
                     break;
 
                 if (fileToMove.readOnly())
@@ -1193,6 +1223,9 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                 const SyncFile &file = folderIt->files.value(otherFileIt.key());
                 const SyncFile &otherFile = otherFileIt.value();
 
+                if (file.corrupted() || otherFile.corrupted())
+                    continue;
+
                 if (file.isLocked() || otherFile.isLocked())
                     continue;
 
@@ -1280,7 +1313,7 @@ void SyncManager::checkForRemovedFiles(SyncProfile &profile)
             if (!folderIt->active())
                 break;
 
-            if (fileIt->exists() || fileIt->isLocked())
+            if (fileIt->exists() || fileIt->corrupted() || fileIt->isLocked())
             {
                 ++fileIt;
                 continue;
@@ -1764,6 +1797,14 @@ void SyncManager::removeFolders(SyncFolder &folder)
         QString fullPath(folder.path());
         fullPath.append(folderIt->second);
 
+        // Folder is corrupted
+        if (!QFileInfo::exists(fullPath))
+        {
+            folder.foldersToRemove.remove(folderIt->first);
+            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QPair<Hash, QByteArray>>::const_iterator>(folderIt));
+            continue;
+        }
+
         if (folder.removeFile(folderIt->second, SyncFile::Folder) || !QDir().exists(fullPath))
         {
             hash64_t hash = hash64(folderIt->second);
@@ -1806,6 +1847,13 @@ void SyncManager::removeFiles(SyncFolder &folder)
 
         QString fullPath(folder.path());
         fullPath.append(*fileIt);
+
+        // File is corrupted
+        if (!QFileInfo::exists(fullPath))
+        {
+            fileIt = folder.filesToRemove.erase(static_cast<FileRemoveList::const_iterator>(fileIt));
+            continue;
+        }
 
         if (folder.removeFile(*fileIt, SyncFile::File) || !QFile().exists(fullPath))
         {
