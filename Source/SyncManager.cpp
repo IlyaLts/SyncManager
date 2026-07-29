@@ -598,6 +598,7 @@ int SyncManager::scanFiles(SyncFolder &folder)
 
     QDir::Filters filters = QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden;
     QDirIterator dir(folder.path(), nameFilters, filters, QDirIterator::Subdirectories);
+    QStringList systemDirList;
 
     for (auto &file : folder.files)
         file.flags = 0;
@@ -612,6 +613,7 @@ int SyncManager::scanFiles(SyncFolder &folder)
 
         QFileInfo fileInfo(dir.fileInfo());
         qint64 fileSize = fileInfo.size();
+        QByteArray absoluteFilePath = fileInfo.filePath().toUtf8();
 
         m_usedDevicesMutex.lock();
         deviceRead += fileSize;
@@ -620,6 +622,18 @@ int SyncManager::scanFiles(SyncFolder &folder)
         // If the file is a symlink, this function returns information about the target, not the symlink
         if (fileInfo.isSymLink())
             fileSize = 0;
+
+        // Skips system files
+        if (profile.ignoreSystemFiles() && isSystemFile(absoluteFilePath))
+        {
+            if (fileInfo.isDir())
+            {
+                systemDirList.append(absoluteFilePath);
+                systemDirList.last().append("/*");
+            }
+
+            continue;
+        }
 
         // Skips hidden files
         if (profile.ignoreHiddenFiles() && fileInfo.isHidden())
@@ -647,30 +661,19 @@ int SyncManager::scanFiles(SyncFolder &folder)
                 continue;
         }
 
-        QByteArray absoluteFilePath = fileInfo.filePath().toUtf8();
         QByteArray filePath(absoluteFilePath);
         filePath.remove(0, folder.path().size());
 
         if (fileInfo.isFile() && fileInfo.suffix().compare(TEMP_EXTENSION, Qt::CaseInsensitive) == 0)
             QFile::remove(absoluteFilePath);
 
-        bool shouldExclude = false;
+        // Excludes system files
+        if (profile.ignoreSystemFiles())
+            if (hasMatch(systemDirList, absoluteFilePath, folder.caseSensitive()))
+                continue;
 
-        // Excludes unwanted files and folder from scanning
-        for (const QString &exclude : profile.excludeList())
-        {
-            QRegularExpression::PatternOption option = folder.caseSensitive() ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
-            QRegularExpression re(QRegularExpression::wildcardToRegularExpression(exclude), option);
-            re.setPattern(QRegularExpression::anchoredPattern(re.pattern()));
-
-            if (re.match(filePath).hasMatch())
-            {
-                shouldExclude = true;
-                break;
-            }
-        }
-
-        if (shouldExclude)
+        // Excludes unwanted files
+        if (hasMatch(profile.excludeList(), filePath, folder.caseSensitive()))
             continue;
 
         SyncFile::Type type = fileInfo.isDir() ? SyncFile::Folder : SyncFile::File;

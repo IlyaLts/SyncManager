@@ -22,7 +22,6 @@
 #include "Application.h"
 #include <QDebug>
 #include <QCryptographicHash>
-#include <QDirIterator>
 #include <QTranslator>
 #include <QApplication>
 #include <QMessageBox>
@@ -317,4 +316,42 @@ bool setFileModificationDate(const QString &path, const QDateTime &dateTime)
 
     utimes(path.toStdString().c_str(), reinterpret_cast<struct timeval *>(&times));
 #endif
+}
+
+/*
+===================
+isSystemFile
+===================
+*/
+bool isSystemFile(const QString &path)
+{
+#ifdef Q_OS_WIN
+    DWORD attr = GetFileAttributesW(reinterpret_cast<LPCWSTR>(path.utf16()));
+
+    if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_SYSTEM))
+        return true;
+#else
+#endif
+
+    return false;
+}
+
+/*
+===================
+hasMatch
+===================
+*/
+bool hasMatch(const QStringList &list, const QString &path, bool caseSensitive)
+{
+    for (const QString &exclude : list)
+    {
+        QRegularExpression::PatternOption option = caseSensitive ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
+        QRegularExpression re(QRegularExpression::wildcardToRegularExpression(exclude), option);
+        re.setPattern(QRegularExpression::anchoredPattern(re.pattern()));
+
+        if (re.match(path).hasMatch())
+            return true;
+    }
+
+    return false;
 }

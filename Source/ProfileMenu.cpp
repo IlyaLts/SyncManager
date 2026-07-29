@@ -33,6 +33,7 @@ ProfileMenu::ProfileMenu(QWidget *parent, SyncProfile *profile) : QWidget(parent
 {
     setup(this);
 
+    ignoreSystemFilesAction->setChecked(profile->ignoreSystemFiles());
     ignoreHiddenFilesAction->setChecked(profile->ignoreHiddenFiles());
     detectMovedFilesAction->setChecked(profile->detectMovedFiles());
 
@@ -75,6 +76,7 @@ void ProfileMenu::setup(QWidget *parent)
     deltaCopyingMinSizeAction = new QAction(QString("&" + syncApp->translate("Minimum Size for Delta Copying: %1")).arg(formatSize((profile->deltaCopyingMinSize()))), parent);
     includeAction = new QAction(QString("&" + syncApp->translate("Include: %1")).arg(profile->includeList().join("; ")), parent);
     excludeAction = new QAction(QString("&" + syncApp->translate("Exclude: %1")).arg(profile->excludeList().join("; ")), parent);
+    ignoreSystemFilesAction = new QAction("&" + syncApp->translate("Ignore System Files"), parent);
     ignoreHiddenFilesAction = new QAction("&" + syncApp->translate("Ignore Hidden Files"), parent);
 
     syncingTimeAction->setDisabled(true);
@@ -99,6 +101,7 @@ void ProfileMenu::setup(QWidget *parent)
     customLocationAction->setCheckable(true);
     databaseLocallyAction->setCheckable(true);
     databaseDecentralizedAction->setCheckable(true);
+    ignoreSystemFilesAction->setCheckable(true);
     ignoreHiddenFilesAction->setCheckable(true);
 
     syncingModeMenu = new UnhidableMenu("&" + syncApp->translate("Syncing Mode"), parent);
@@ -148,6 +151,7 @@ void ProfileMenu::setup(QWidget *parent)
     filteringMenu->addAction(includeAction);
     filteringMenu->addAction(excludeAction);
     filteringMenu->addSeparator();
+    filteringMenu->addAction(ignoreSystemFilesAction);
     filteringMenu->addAction(ignoreHiddenFilesAction);
 
     updateStates();
@@ -180,6 +184,7 @@ void ProfileMenu::setup(QWidget *parent)
     connect(deltaCopyingMinSizeAction, &QAction::triggered, this, [this](){ setDeltaCopyingMinSize(); });
     connect(includeAction, &QAction::triggered, this, [this](){ setIncludeList(); });
     connect(excludeAction, &QAction::triggered, this, [this](){ setExcludeList(); });
+    connect(ignoreSystemFilesAction, &QAction::triggered, this, [this](){ toggleIgnoreSystemFiles(); });
     connect(ignoreHiddenFilesAction, &QAction::triggered, this, [this](){ toggleIgnoreHiddenFiles(); });
 
     // The simplest way to fix unclickable menu icons
@@ -224,6 +229,7 @@ void ProfileMenu::updateStates()
     deltaCopyingMinSizeAction->setText("&" + syncApp->translate("Minimum Size for Delta Copying: %1").arg(formatSize(profile->deltaCopyingMinSize())));
     includeAction->setText("&" + syncApp->translate("Include: %1").arg(profile->includeList().join("; ")));
     excludeAction->setText("&" + syncApp->translate("Exclude: %1").arg(profile->excludeList().join("; ")));
+    ignoreSystemFilesAction->setChecked(profile->ignoreSystemFiles());
     ignoreHiddenFilesAction->setChecked(profile->ignoreHiddenFiles());
 
     versioningFormatMenu->setVisible(profile->deletionMode() == SyncProfile::Versioning);
@@ -267,6 +273,7 @@ void ProfileMenu::retranslate()
     deltaCopyingMinSizeAction->setText(QString("&" + syncApp->translate("Minimum Size for Delta Copying: %1")).arg(formatSize(profile->deltaCopyingMinSize())));
     includeAction->setText(QString("&" + syncApp->translate("Include: %1")).arg(profile->includeList().join("; ")));
     excludeAction->setText(QString("&" + syncApp->translate("Exclude: %1")).arg(profile->excludeList().join("; ")));
+    ignoreSystemFilesAction->setText("&" + syncApp->translate("Ignore System Files"));
     ignoreHiddenFilesAction->setText("&" + syncApp->translate("Ignore Hidden Files"));
     syncingModeMenu->setTitle("&" + syncApp->translate("Syncing Mode"));
     deletionModeMenu->setTitle("&" + syncApp->translate("Deletion Mode"));
@@ -720,6 +727,16 @@ void ProfileMenu::setExcludeList()
     excludeString = excludeList.join("; ");
     profile->setExcludeList(excludeList);
     excludeAction->setText("&" + tr("Exclude: %1").arg(excludeString));
+}
+
+/*
+===================
+ProfileMenu::toggleIgnoreSystemFiles
+===================
+*/
+void ProfileMenu::toggleIgnoreSystemFiles()
+{
+    profile->setIgnoreSystemFiles(!profile->ignoreSystemFiles());
 }
 
 /*

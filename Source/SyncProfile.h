@@ -115,6 +115,7 @@ public:
     void setExcludeList(const QStringList &list);
     inline void setSyncing(bool syncing) { m_syncing = syncing; }
     void setPaused(bool paused);
+    void setIgnoreSystemFiles(bool enable);
     void setIgnoreHiddenFiles(bool enable);
     inline void setIndex(const QModelIndex &index) { m_index = index; }
 
@@ -149,6 +150,7 @@ public:
     inline bool paused() const { return m_paused; }
     void remove();
     inline bool toBeRemoved() const { return m_toBeRemoved; }
+    inline bool ignoreSystemFiles() const { return m_ignoreSystemFiles; }
     inline bool ignoreHiddenFiles() const { return m_ignoreHiddenFiles; }
     inline QModelIndex index() const { return m_index; }
 
@@ -215,6 +217,7 @@ private:
     bool m_toBeRemoved = false;
     bool m_detectMovedFiles = true;
     bool m_deltaCopying = false;
+    bool m_ignoreSystemFiles = false;
     bool m_ignoreHiddenFiles = false;
 
     QHash<Hash, QByteArray> m_filePaths;

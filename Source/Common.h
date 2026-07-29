@@ -86,5 +86,7 @@ attributes_t getFileAttributes(const QString &path);
 bool setFileAttribute(const QString &path, attributes_t attributes);
 void setHiddenFileAttribute(const QString &path, bool hidden);
 bool setFileModificationDate(const QString &path, const QDateTime &dateTime);
+bool isSystemFile(const QString &path);
+bool hasMatch(const QStringList &list, const QString &path, bool caseSensitive);
 
 #endif // COMMON_H

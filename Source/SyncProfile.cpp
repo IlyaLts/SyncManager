@@ -72,6 +72,7 @@ void SyncProfile::loadSettings()
     setDeltaCopying(settings.value(keyName + "DeltaCopying", false).toBool());
     setVersioningPath(settings.value(keyName + "VersioningPath", "").toString());
     setDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(keyName + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
+    setIgnoreSystemFiles(settings.value(keyName + "IgnoreSystemFiles", true).toBool());
     setIgnoreHiddenFiles(settings.value(keyName + "IgnoreHiddenFiles", false).toBool());
     setFileMinSize(settings.value(keyName + "FileMinSize", 0).toULongLong());
     setFileMaxSize(settings.value(keyName + "FileMaxSize", 0).toULongLong());
@@ -408,6 +409,19 @@ void SyncProfile::setPaused(bool paused)
         m_syncTimer.stop();
     else
         updateTimer();
+}
+
+/*
+===================
+SyncProfile::setIgnoreSystemFiles
+===================
+*/
+void SyncProfile::setIgnoreSystemFiles(bool enable)
+{
+    m_ignoreSystemFiles = enable;
+
+    if (syncApp->initiated())
+        saveSettings();
 }
 
 /*

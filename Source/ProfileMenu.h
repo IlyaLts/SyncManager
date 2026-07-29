@@ -65,6 +65,7 @@ public Q_SLOTS:
     void setDeltaCopyingMinSize();
     void setIncludeList();
     void setExcludeList();
+    void toggleIgnoreSystemFiles();
     void toggleIgnoreHiddenFiles();
 
 private:
@@ -100,6 +101,7 @@ private:
     QAction *deltaCopyingMinSizeAction;
     QAction *includeAction;
     QAction *excludeAction;
+    QAction *ignoreSystemFilesAction;
     QAction *ignoreHiddenFilesAction;
 
     UnhidableMenu *syncingModeMenu;
