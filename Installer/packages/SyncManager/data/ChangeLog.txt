@@ -1,4 +1,14 @@
 ==========================
+2.4 - Jul 30, 2026
+==========================
+- Added detection for corrupted, unreadable files that prevents data loss from other healthy folders.
+- Added an option to ignore system files, which is on by default.
+- Added a dialog asking for database removal after removing profile/folder.
+- Changed the default syncing type to manual syncing.
+- Fixed incorrect syncing status when at least one profile is not available.
+- Fixed the new version available button not lead to the MS store project page.
+
+==========================
 2.3.4 - Mar 17, 2026
 ==========================
 - Fixed partially synchronized files status not being displayed.
