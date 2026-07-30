@@ -110,7 +110,7 @@ MenuBar::MenuBar(QWidget *parent) : QMenuBar(parent)
 
     connect(maximumDiskTransferRateAction, &QAction::triggered, this, &MenuBar::setMaximumTransferRateUsage);
     connect(maximumCpuUsageAction, &QAction::triggered, this, &MenuBar::setMaximumCpuUsage);
-    connect(updateAvailableButton, &QPushButton::clicked, this, [](){ QDesktopServices::openUrl(QUrl(LATEST_RELEASE_URL)); });
+    connect(updateAvailableButton, &QPushButton::clicked, this, &MenuBar::openProjectPage);
     connect(syncApp, &Application::updateFound, this, &MenuBar::updateAvailable);
     connect(userManualAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_PATH)); });
     connect(reportBugAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_URL)); });
@@ -391,4 +391,19 @@ void MenuBar::updateAvailable()
 {
     updateAvailableButton->setVisible(true);
     syncApp->tray()->notify("Sync Manager", "New Update Available", QSystemTrayIcon::Information);
+}
+
+/*
+===================
+MenuBar::openProjectPage
+===================
+*/
+void MenuBar::openProjectPage()
+{
+#ifdef Q_OS_WIN
+    if (QCoreApplication::applicationFilePath().contains("WindowsApps", Qt::CaseInsensitive))
+        QDesktopServices::openUrl(QUrl(LATEST_RELEASE_MS_URL));
+    else
+#endif
+        QDesktopServices::openUrl(QUrl(LATEST_RELEASE_URL));
 }

@@ -58,6 +58,7 @@ private Q_SLOTS:
     void updateLaunchOnStartupState();
     void updateLanguageMenu();
     void updateAvailable();
+    void openProjectPage();
 
 private:
 

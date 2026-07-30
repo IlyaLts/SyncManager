@@ -37,6 +37,7 @@
 #define BUG_TRACKER_URL         "https://github.com/IlyaLts/SyncManager/issues"
 #define LATEST_RELEASE_API_URL  "https://api.github.com/repos/IlyaLts/SyncManager/releases/latest"
 #define LATEST_RELEASE_URL      "https://github.com/IlyaLts/SyncManager/releases/latest"
+#define LATEST_RELEASE_MS_URL   "ms-windows-store://pdp/?productid=9mtxr55r5s7h"
 
 #define DISABLE_DOUBLE_HASHING
 #define PRESERVE_MODIFICATION_DATE_ON_LINUX
