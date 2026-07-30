@@ -686,8 +686,6 @@ void MainWindow::removeFolder()
         if (removeDatabase)
             folder->removeDatabase();
 
-        folder->removeSettings();
-
         QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
         settings.remove(profile->name() + QLatin1String("_profile/") + folder->path() + QLatin1String("_Paused"));
 

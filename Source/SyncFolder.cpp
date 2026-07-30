@@ -852,7 +852,6 @@ void SyncFolder::remove()
     setPaused(true);
     m_toBeRemoved = true;
     removeSettings();
-    removeDatabase();
 }
 
 /*
