@@ -39,7 +39,7 @@ LicenseFile=packages\SyncManager\meta\LICENSE.txt
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=build
 OutputBaseFilename=SyncManagerInstaller
-SetupIconFile=..\Source\Icon.ico
+SetupIconFile=..\Images\Icon.ico
 SolidCompression=yes
 WizardStyle=modern
 
