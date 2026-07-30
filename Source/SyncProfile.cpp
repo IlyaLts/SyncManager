@@ -548,7 +548,7 @@ void SyncProfile::updatePausedState()
         if (!folder.paused())
             unpausedFolders++;
 
-    m_paused = unpausedFolders < 2;
+    m_paused = folders().size() >= 1 && !unpausedFolders;
 
     if (m_paused)
         m_syncTimer.stop();
