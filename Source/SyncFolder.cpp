@@ -806,7 +806,8 @@ void SyncFolder::updateUnsyncedList()
 
     if (hasUnsyncedFiles())
     {
-        m_unsyncedList.append("The following files are not synchronized:\n\n");
+        m_unsyncedList.append(syncApp->translate("The following files are not synchronized:"));
+        m_unsyncedList.append("\n\n");
 
         for (auto &path : foldersToRename)
             m_unsyncedList.append(path.toPath + "\n");
@@ -829,7 +830,11 @@ void SyncFolder::updateUnsyncedList()
 
     if (hasCorruptedFiles())
     {
-        m_unsyncedList.append("\nThe following files are corrupted:\n\n");
+        if (hasUnsyncedFiles())
+            m_unsyncedList.append("\n");
+
+        m_unsyncedList.append(syncApp->translate("The following files are corrupted:"));
+        m_unsyncedList.append("\n\n");
 
         for (auto fileIt = files.begin(); fileIt != files.end(); fileIt++)
             if (fileIt->corrupted())

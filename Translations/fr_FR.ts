@@ -100,10 +100,6 @@
             <translation>Quitter</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>Version : %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Dossier introuvable</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>Êtes-vous sûr ? Attention : les fichiers seront écrasés et il sera impossible de récupérer les versions précédentes.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>À propos</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Version</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>Gestionnaire de synchronisation léger</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>Si vous trouvez cet outil utile et avez des idées ou des suggestions de nouvelles fonctionnalités, n'hésitez pas à </translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>les partager</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>Ignorer les fichiers système</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>Le disque : %1 est endommagé. Veuillez corriger les erreurs.</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>Les fichiers suivants ne sont pas synchronisés :</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>Les fichiers suivants sont endommagés :</translation>
         </message>
     </context>
 </TS>

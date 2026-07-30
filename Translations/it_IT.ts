@@ -100,10 +100,6 @@
             <translation>Esci</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>Versione: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Impossibile trovare la cartella</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>Sei sicuro? Attenzione: i file verranno sovrascritti e non sarà possibile ripristinare le versioni precedenti.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>Informazioni</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Versione</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>Gestore di sincronizzazione leggero</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>Se trovi utile questo strumento e hai idee o suggerimenti per nuove funzionalità, non esitare a </translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>condividerli</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>Ignora i file di sistema</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>Disco: %1 è danneggiato. Si prega di correggere gli errori.</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>I seguenti file non sono sincronizzati:</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>I seguenti file sono danneggiati:</translation>
         </message>
     </context>
 </TS>

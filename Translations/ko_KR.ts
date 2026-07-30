@@ -100,10 +100,6 @@
             <translation>종료</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>버전: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>폴더를 찾을 수 없습니다</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>정말입니까? 주의: 파일이 덮어쓰여지며 이전 버전으로 되돌릴 수 있는 방법이 없습니다.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>정보</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>버전</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>경량 동기화 관리자</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>이 도구가 유용하다고 느끼시고 새로운 기능에 대한 의견이나 제안이 있으시다면 언제든지 </translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>공유해 주세요</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>시스템 파일 무시</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>디스크: %1이(가) 손상되었습니다. 오류를 수정해 주세요.</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>다음 파일이 동기화되지 않았습니다:</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>다음 파일이 손상되었습니다:</translation>
         </message>
     </context>
 </TS>

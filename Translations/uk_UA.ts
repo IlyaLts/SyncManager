@@ -100,10 +100,6 @@
             <translation>Вийти</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>Версія: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Не вдалося знайти папку</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>Ви впевнені? Увага: файли будуть перезаписані, і повернути попередні версії буде неможливо.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>Про програму</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Версія</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>Легкий менеджер синхронізації</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>Якщо цей інструмент є корисним для вас і ви маєте думки чи пропозиції щодо нових функцій, будь ласка, </translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>поділіться ними</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>Ігнорувати системні файли</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>Диск: %1 пошкоджений. Будь ласка, виправте помилки.</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>Наступні файли не синхронізовані:</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>Наступні файли пошкоджені:</translation>
         </message>
     </context>
 </TS>

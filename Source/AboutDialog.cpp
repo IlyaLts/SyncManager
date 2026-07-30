@@ -29,7 +29,7 @@ AboutDialog::AboutDialog
 AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent)
 {
     setWindowModality(Qt::ApplicationModal);
-    setWindowTitle(tr("About"));
+    setWindowTitle(syncApp->translate("About"));
 
     QVBoxLayout *layout = new QVBoxLayout(this);
 
@@ -40,22 +40,22 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent)
     logoLabel->setPixmap(logo);
 
     QLabel *version = new QLabel("<span style='font-size: 22pt;'>SyncManager</span><br>"
-                                 "<span style='font-size: 12pt;'>" + tr("Version") +
+                                 "<span style='font-size: 12pt;'>" + syncApp->translate("Version") +
                                  QString(": %1").arg(SYNCMANAGER_VERSION), this);
 
-    QLabel *about = new QLabel(tr("Lightweight Synchronization Manager"));
+    QLabel *about = new QLabel(syncApp->translate("Lightweight Synchronization Manager"));
 
-    QLabel *description = new QLabel(tr("If you find this tool valuable and "
+    QLabel *description = new QLabel(syncApp->translate("If you find this tool valuable and "
                                         "have some thoughts or suggestions for "
                                         "new features, please feel free to ") +
                                         "<a href='" BUG_TRACKER_URL "'>" +
-                                        tr("share them") + "</a>.");
+                                        syncApp->translate("share them") + "</a>.");
 
     logoLabel->setAlignment(Qt::AlignCenter);
     version->setAlignment(Qt::AlignCenter);
     about->setAlignment(Qt::AlignCenter);
-    version->setWordWrap(true);
     description->setOpenExternalLinks(true);
+    description->setWordWrap(true);
 
     layout->addWidget(logoLabel);
     layout->addWidget(version);

@@ -100,10 +100,6 @@
             <translation>Zamknij</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>Wersja: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Nie znaleziono folderu</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>Czy na pewno? Uwaga: pliki zostaną nadpisane i nie będzie możliwości przywrócenia ich poprzednich wersji.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>O programie</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Wersja</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>Lekki menedżer synchronizacji</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>Jeśli uważasz to narzędzie za przydatne i masz jakieś pomysły lub sugestie dotyczące nowych funkcji, śmiało </translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>podziel się nimi</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>Ignoruj pliki systemowe</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>Dysk: %1 jest uszkodzony. Proszę naprawić błędy.</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>Następujące pliki nie są zsynchronizowane:</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>Następujące pliki są uszkodzone:</translation>
         </message>
     </context>
 </TS>

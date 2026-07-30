@@ -100,10 +100,6 @@
             <translation>Quit</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>Version: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Couldn't find folder</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>About</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Version</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>Lightweight Synchronization Manager</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>share them</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>Ignore System Files</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>Disk: %1 is corrupted. Please fix the errors.</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>The following files are not synchronized:</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>The following files are corrupted:</translation>
         </message>
     </context>
 </TS>

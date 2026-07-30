@@ -100,10 +100,6 @@
             <translation>छोड़ें</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>संस्करण: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>फ़ोल्डर नहीं मिला</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>क्या आप सुनिश्चित हैं? सावधान रहें: फ़ाइलें ओवरराइट हो जाएंगी, और पिछले वर्शन को वापस लाने का कोई तरीका नहीं है।</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>के बारे में</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>संस्करण</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>लाइटवेट सिंक्रोनाइज़ेशन मैनेजर</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>यदि आप इस टूल को उपयोगी पाते हैं और नए फ़ीचर्स के लिए आपके पास कुछ विचार या सुझाव हैं, तो कृपया बेझिझक </translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>उन्हें साझा करें</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>सिस्टम फ़ाइलों को अनदेखा करें</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>डिस्क: %1 दूषित है। कृपया त्रुटियों को ठीक करें।</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>निम्नलिखित फ़ाइलें सिंक्रोनाइज़ नहीं हैं:</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>निम्नलिखित फ़ाइलें दूषित हैं:</translation>
         </message>
     </context>
 </TS>

@@ -100,10 +100,6 @@
             <translation>Выход</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>Версия: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Не удалось найти папку</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>Вы уверены? Внимание: файлы будут перезаписаны, и предыдущие версии невозможно будет восстановить.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>О программе</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Версия</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>Легковесный менеджер синхронизации</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>Если этот инструмент полезен для вас и у вас есть идеи или предложения по поводу новых функций, пожалуйста, </translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>поделитесь ими</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>Игнорировать системные файлы</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>Диск: %1 поврежден. Пожалуйста, исправьте ошибки.</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>Следующие файлы не синхронизированы:</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>Следующие файлы повреждены:</translation>
         </message>
     </context>
 </TS>

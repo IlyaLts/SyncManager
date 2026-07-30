@@ -111,6 +111,7 @@ void SyncProfile::saveSettings() const
     settings.setValue(profileKey + "VersioningLocation", versioningLocation());
     settings.setValue(profileKey + "VersioningPath", versioningPath());
     settings.setValue(profileKey + "DatabaseLocation", databaseLocation());
+    settings.setValue(profileKey + "IgnoreSystemFiles", ignoreSystemFiles());
     settings.setValue(profileKey + "IgnoreHiddenFiles", ignoreHiddenFiles());
     settings.setValue(profileKey + "FileMinSize", fileMinSize());
     settings.setValue(profileKey + "FileMaxSize", fileMaxSize());

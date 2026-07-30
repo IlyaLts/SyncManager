@@ -100,10 +100,6 @@
             <translation>終了</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>バージョン: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>フォルダーが見つかりませんでした</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>よろしいですか？ 注意：ファイルは上書きされ、以前のバージョンに戻すことはできません。</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>情報</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>バージョン</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>軽量同期マネージャー</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>このツールが役立つと感じられ、新機能についてのアイデアやご提案がありましたら、どうぞお気軽に</translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>ご共有ください</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>システムファイルを無視する</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>ディスク: %1 が破損しています。エラーを修正してください。</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>以下のファイルは同期されていません:</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>以下のファイルは破損しています:</translation>
         </message>
     </context>
 </TS>

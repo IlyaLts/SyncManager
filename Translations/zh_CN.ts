@@ -100,10 +100,6 @@
             <translation>退出</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>版本: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>找不到文件夹</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>您确定吗？请注意：文件将被覆盖，且无法找回之前的版本。</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>关于</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>版本</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>轻量级同步管理器</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>如果您觉得此工具有价值，并且对新功能有任何想法或建议，请随时</translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>与我们分享</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>忽略系统文件</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>磁盘：%1 已损坏。请修复错误。</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>以下文件未同步：</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>以下文件已损坏：</translation>
         </message>
     </context>
 </TS>

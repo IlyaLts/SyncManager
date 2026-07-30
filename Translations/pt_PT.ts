@@ -100,10 +100,6 @@
             <translation>Sair</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>Versão: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Não foi possível encontrar a pasta</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>Tem certeza? Cuidado: os arquivos serão substituídos e não haverá como recuperar as versões anteriores.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>Sobre</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Versão</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>Gerenciador de Sincronização Leve</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>Se você acha esta ferramenta útil e tem ideias ou sugestões para novos recursos, sinta-se à vontade para </translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>compartilhá-los</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>Ignorar Arquivos do Sistema</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>Disco: %1 está corrompido. Por favor, corrija os erros.</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>Os seguintes arquivos não estão sincronizados:</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>Os seguintes arquivos estão corrompidos:</translation>
         </message>
     </context>
 </TS>

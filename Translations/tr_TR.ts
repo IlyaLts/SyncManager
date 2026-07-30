@@ -100,10 +100,6 @@
             <translation>Çık</translation>
         </message>
         <message>
-            <source>Version: %1</source>
-            <translation>Sürüm: %1</translation>
-        </message>
-        <message>
             <source>Couldn't find folder</source>
             <translation>Klasör bulunamadı</translation>
         </message>
@@ -510,6 +506,42 @@
         <message>
             <source>Are you sure? Beware: files will be overwritten, and there's no way to bring the previous versions back.</source>
             <translation>Emin misiniz? Dikkat: Dosyaların üzerine yazılacaktır ve önceki sürümleri geri getirmenin bir yolu yoktur.</translation>
+        </message>
+        <message>
+            <source>About</source>
+            <translation>Hakkında</translation>
+        </message>
+        <message>
+            <source>Version</source>
+            <translation>Sürüm</translation>
+        </message>
+        <message>
+            <source>Lightweight Synchronization Manager</source>
+            <translation>Hafif Senkronizasyon Yöneticisi</translation>
+        </message>
+        <message>
+            <source>If you find this tool valuable and have some thoughts or suggestions for new features, please feel free to </source>
+            <translation>Bu aracı yararlı buluyorsanız ve yeni özellikler için fikir veya önerileriniz varsa, lütfen </translation>
+        </message>
+        <message>
+            <source>share them</source>
+            <translation>bunları paylaşın</translation>
+        </message>
+        <message>
+            <source>Ignore System Files</source>
+            <translation>Sistem Dosyalarını Yoksay</translation>
+        </message>
+        <message>
+            <source>Disk: %1 is corrupted. Please fix the errors.</source>
+            <translation>Disk: %1 bozuk. Lütfen hataları düzeltin.</translation>
+        </message>
+        <message>
+            <source>The following files are not synchronized:</source>
+            <translation>Aşağıdaki dosyalar senkronize edilmedi:</translation>
+        </message>
+        <message>
+            <source>The following files are corrupted:</source>
+            <translation>Aşağıdaki dosyalar bozuk:</translation>
         </message>
     </context>
 </TS>

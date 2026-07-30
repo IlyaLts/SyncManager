@@ -37,24 +37,24 @@ MenuBar::MenuBar(QWidget *parent) : QMenuBar(parent)
     iconResume.addFile(":/Images/IconResume.png");
     iconSettings.addFile(":/Images/IconSettings.png");
 
-    syncNowAction = new QAction(iconSync, "&" + tr("Sync Now"), this);
-    pauseSyncingAction = new QAction(iconPause, "&" + tr("Pause Syncing"), this);
-    maximumDiskTransferRateAction = new QAction("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()), this);
-    maximumCpuUsageAction = new QAction("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()), this);
+    syncNowAction = new QAction(iconSync, "&" + syncApp->translate("Sync Now"), this);
+    pauseSyncingAction = new QAction(iconPause, "&" + syncApp->translate("Pause Syncing"), this);
+    maximumDiskTransferRateAction = new QAction("&" + syncApp->translate("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()), this);
+    maximumCpuUsageAction = new QAction("&" + syncApp->translate("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
     {
-        languageActions.append(new QAction(tr(languages[i].name), this));
+        languageActions.append(new QAction(syncApp->translate(languages[i].name), this));
         languageActions[i]->setIcon(QIcon(languages[i].flagPath));
     }
 
-    launchOnStartupAction = new QAction("&" + tr("Launch on Startup"), this);
-    showInTrayAction = new QAction("&" + tr("Show in System Tray"), this);
-    disableNotificationAction = new QAction("&" + tr("Disable Notifications"), this);
-    checkForUpdatesAction = new QAction("&" + tr("Check for Updates"), this);
-    userManualAction = new QAction("&" + tr("User Manual"), this);
-    reportBugAction = new QAction("&" + tr("Report a Bug"), this);
-    aboutAction = new QAction("&" + tr("About"), this);
+    launchOnStartupAction = new QAction("&" + syncApp->translate("Launch on Startup"), this);
+    showInTrayAction = new QAction("&" + syncApp->translate("Show in System Tray"), this);
+    disableNotificationAction = new QAction("&" + syncApp->translate("Disable Notifications"), this);
+    checkForUpdatesAction = new QAction("&" + syncApp->translate("Check for Updates"), this);
+    userManualAction = new QAction("&" + syncApp->translate("User Manual"), this);
+    reportBugAction = new QAction("&" + syncApp->translate("Report a Bug"), this);
+    aboutAction = new QAction("&" + syncApp->translate("About"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageActions[i]->setCheckable(true);
@@ -64,16 +64,16 @@ MenuBar::MenuBar(QWidget *parent) : QMenuBar(parent)
     disableNotificationAction->setCheckable(true);
     checkForUpdatesAction->setCheckable(true);
 
-    languageMenu = new UnhidableMenu("&" + tr("Language"), this);
+    languageMenu = new UnhidableMenu("&" + syncApp->translate("Language"), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
         languageMenu->addAction(languageActions[i]);
 
-    performanceMenu = new UnhidableMenu("&" + tr("Performance"), this);
+    performanceMenu = new UnhidableMenu("&" + syncApp->translate("Performance"), this);
     performanceMenu->addAction(maximumDiskTransferRateAction);
     performanceMenu->addAction(maximumCpuUsageAction);
 
-    settingsMenu = new UnhidableMenu("&" + tr("Settings"), this);
+    settingsMenu = new UnhidableMenu("&" + syncApp->translate("Settings"), this);
     settingsMenu->setIcon(iconSettings);
     settingsMenu->addMenu(performanceMenu);
     settingsMenu->addMenu(languageMenu);
@@ -86,7 +86,7 @@ MenuBar::MenuBar(QWidget *parent) : QMenuBar(parent)
     settingsMenu->addAction(reportBugAction);
     settingsMenu->addAction(aboutAction);
 
-    updateAvailableButton = new QPushButton(tr("New Update Available"));
+    updateAvailableButton = new QPushButton(syncApp->translate("New Update Available"));
     updateAvailableButton->setStyleSheet("QPushButton { margin: 2px 5px 0px 0px; padding: 5px 8px }");
     updateAvailableButton->setVisible(false);
 
@@ -126,30 +126,30 @@ MenuBar::retranslate
 */
 void MenuBar::retranslate()
 {
-    syncNowAction->setText("&" + tr("Sync Now"));
-    pauseSyncingAction->setText("&" + tr("Pause Syncing"));
-    maximumDiskTransferRateAction->setText("&" + tr("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()));
-    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
+    syncNowAction->setText("&" + syncApp->translate("Sync Now"));
+    pauseSyncingAction->setText("&" + syncApp->translate("Pause Syncing"));
+    maximumDiskTransferRateAction->setText("&" + syncApp->translate("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()));
+    maximumCpuUsageAction->setText("&" + syncApp->translate("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
 
     for (int i = 0; i < Application::languageCount(); i++)
-        languageActions[i]->setText(tr(languages[i].name));
+        languageActions[i]->setText(syncApp->translate(languages[i].name));
 
-    launchOnStartupAction->setText("&" + tr("Launch on Startup"));
-    showInTrayAction->setText("&" + tr("Show in System Tray"));
-    disableNotificationAction->setText("&" + tr("Disable Notifications"));
-    checkForUpdatesAction->setText("&" + tr("Check for Updates"));
-    userManualAction->setText("&" + tr("User Manual"));
-    reportBugAction->setText("&" + tr("Report a Bug"));
-    aboutAction->setText("&" + tr("About"));
+    launchOnStartupAction->setText("&" + syncApp->translate("Launch on Startup"));
+    showInTrayAction->setText("&" + syncApp->translate("Show in System Tray"));
+    disableNotificationAction->setText("&" + syncApp->translate("Disable Notifications"));
+    checkForUpdatesAction->setText("&" + syncApp->translate("Check for Updates"));
+    userManualAction->setText("&" + syncApp->translate("User Manual"));
+    reportBugAction->setText("&" + syncApp->translate("Report a Bug"));
+    aboutAction->setText("&" + syncApp->translate("About"));
 
-    performanceMenu->setTitle("&" + tr("Performance"));
-    languageMenu->setTitle("&" + tr("Language"));
-    settingsMenu->setTitle("&" + tr("Settings"));
+    performanceMenu->setTitle("&" + syncApp->translate("Performance"));
+    languageMenu->setTitle("&" + syncApp->translate("Language"));
+    settingsMenu->setTitle("&" + syncApp->translate("Settings"));
 
-    syncNowAction->setToolTip("&" + tr("Sync Now"));
-    pauseSyncingAction->setToolTip("&" + tr("Pause Syncing"));
+    syncNowAction->setToolTip("&" + syncApp->translate("Sync Now"));
+    pauseSyncingAction->setToolTip("&" + syncApp->translate("Pause Syncing"));
 
-    updateAvailableButton->setText(tr("New Update Available"));
+    updateAvailableButton->setText(syncApp->translate("New Update Available"));
     updateAvailableButton->adjustSize();
 
     updateMenuMaxDiskTransferRate();
@@ -201,7 +201,7 @@ void MenuBar::togglePauseButton(bool toggle)
     if (pauseSyncingAction->icon().cacheKey() != icon->cacheKey())
         pauseSyncingAction->setIcon(*icon);
 
-    pauseSyncingAction->setText("&" + tr(toggle ? "Resume Syncing" : "Pause Syncing"));
+    pauseSyncingAction->setText("&" + syncApp->translate(toggle ? "Resume Syncing" : "Pause Syncing"));
 }
 
 /*
@@ -234,19 +234,19 @@ void MenuBar::updateMenuMaxDiskTransferRate()
         quint64 gigabytes = (syncApp->manager()->maxDiskTransferRate() / 1024 / 1024/ 1024);
 
         if (gigabytes)
-            text.append(tr("%1 GB/s").arg(QString::number(static_cast<float>(gigabytes) + static_cast<float>(megabytes) / 1024.0f, 'f', 1)));
+            text.append(syncApp->translate("%1 GB/s").arg(QString::number(static_cast<float>(gigabytes) + static_cast<float>(megabytes) / 1024.0f, 'f', 1)));
         else if (megabytes)
-            text.append(tr("%1 MB/s").arg(QString::number(static_cast<float>(megabytes) + static_cast<float>(kilobytes) / 1024.0f, 'f', 1)));
+            text.append(syncApp->translate("%1 MB/s").arg(QString::number(static_cast<float>(megabytes) + static_cast<float>(kilobytes) / 1024.0f, 'f', 1)));
         else if (kilobytes)
-            text.append(tr("%1 KB/s").arg(QString::number(static_cast<float>(kilobytes) + static_cast<float>(bytes) / 1024.0f, 'f', 1)));
+            text.append(syncApp->translate("%1 KB/s").arg(QString::number(static_cast<float>(kilobytes) + static_cast<float>(bytes) / 1024.0f, 'f', 1)));
         else if (bytes)
-            text.append(tr("%1 B/s").arg(bytes));
+            text.append(syncApp->translate("%1 B/s").arg(bytes));
     }
 
     if (text.isEmpty())
-        text.assign(tr("Disabled"));
+        text.assign(syncApp->translate("Disabled"));
 
-    maximumDiskTransferRateAction->setText("&" + tr("Maximum Disk Transfer Rate") + QString(": ") + text);
+    maximumDiskTransferRateAction->setText("&" + syncApp->translate("Maximum Disk Transfer Rate") + QString(": ") + text);
 }
 
 /*
@@ -256,8 +256,8 @@ MenuBar::setMaximumTransferRateUsage
 */
 void MenuBar::setMaximumTransferRateUsage()
 {
-    QString title(tr("Maximum Disk Transfer Rate"));
-    QString text(tr("Please enter the maximum disk transfer rate in bytes per second:"));
+    QString title(syncApp->translate("Maximum Disk Transfer Rate"));
+    QString text(syncApp->translate("Please enter the maximum disk transfer rate in bytes per second:"));
     int usage;
 
     if (!syncApp->intInputDialog(this, title, text, usage, syncApp->manager()->maxDiskTransferRate(), 0, std::numeric_limits<int>::max()))
@@ -275,15 +275,15 @@ MenuBar::setMaximumCpuUsage
 */
 void MenuBar::setMaximumCpuUsage()
 {
-    QString title(tr("Maximum CPU Usage"));
-    QString text(tr("Please enter the maximum CPU usage in percentage:"));
+    QString title(syncApp->translate("Maximum CPU Usage"));
+    QString text(syncApp->translate("Please enter the maximum CPU usage in percentage:"));
     double usage;
 
     if (!syncApp->doubleInputDialog(this, title, text, usage, syncApp->maxCpuUsage(), 0.01, 100.0))
         return;
 
     syncApp->setMaxCpuUsage(static_cast<float>(usage));
-    maximumCpuUsageAction->setText("&" + tr("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
+    maximumCpuUsageAction->setText("&" + syncApp->translate("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
     syncApp->saveSettings();
 }
 
