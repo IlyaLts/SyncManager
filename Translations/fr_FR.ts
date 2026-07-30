@@ -116,10 +116,6 @@
             <translation>Supprimer le profil</translation>
         </message>
         <message>
-            <source>Are you sure you want to remove profile?</source>
-            <translation>Êtes-vous sûr de vouloir supprimer le profil ?</translation>
-        </message>
-        <message>
             <source>Switch deletion mode to delete files permanently?</source>
             <translation>Changer le mode de suppression pour supprimer les fichiers définitivement ?</translation>
         </message>
@@ -542,6 +538,38 @@
         <message>
             <source>The following files are corrupted:</source>
             <translation>Les fichiers suivants sont endommagés :</translation>
+        </message>
+        <message>
+            <source>The profile is currently syncing. Are you sure you want to remove it?</source>
+            <translation>Le profil est actuellement en cours de synchronisation. Voulez-vous vraiment le supprimer ?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the profile?</source>
+            <translation>Voulez-vous vraiment supprimer le profil ?</translation>
+        </message>
+        <message>
+            <source>Remove database</source>
+            <translation>Supprimer la base de données</translation>
+        </message>
+        <message>
+            <source>Remove databases</source>
+            <translation>Supprimer les bases de données</translation>
+        </message>
+        <message>
+            <source>Do you want to remove database?</source>
+            <translation>Voulez-vous supprimer la base de données ?</translation>
+        </message>
+        <message>
+            <source>Do you want to remove databases?</source>
+            <translation>Voulez-vous supprimer les bases de données ?</translation>
+        </message>
+        <message>
+            <source>The folder is currently syncing. Are you sure you want to remove it?</source>
+            <translation>Le dossier est actuellement en cours de synchronisation. Voulez-vous vraiment le supprimer ?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the folder?</source>
+            <translation>Voulez-vous vraiment supprimer le dossier ?</translation>
         </message>
     </context>
 </TS>

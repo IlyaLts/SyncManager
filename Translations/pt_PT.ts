@@ -116,10 +116,6 @@
             <translation>Remover perfil</translation>
         </message>
         <message>
-            <source>Are you sure you want to remove profile?</source>
-            <translation>Tem certeza de que quer remover o perfil?</translation>
-        </message>
-        <message>
             <source>Switch deletion mode to delete files permanently?</source>
             <translation>Mudar o modo de exclusão para eliminar ficheiros permanentemente?</translation>
         </message>
@@ -542,6 +538,38 @@
         <message>
             <source>The following files are corrupted:</source>
             <translation>Os seguintes arquivos estão corrompidos:</translation>
+        </message>
+        <message>
+            <source>The profile is currently syncing. Are you sure you want to remove it?</source>
+            <translation>O perfil está sendo sincronizado no momento. Tem certeza de que deseja removê-lo?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the profile?</source>
+            <translation>Tem certeza de que deseja remover o perfil?</translation>
+        </message>
+        <message>
+            <source>Remove database</source>
+            <translation>Remover banco de dados</translation>
+        </message>
+        <message>
+            <source>Remove databases</source>
+            <translation>Remover bancos de dados</translation>
+        </message>
+        <message>
+            <source>Do you want to remove database?</source>
+            <translation>Você deseja remover o banco de dados?</translation>
+        </message>
+        <message>
+            <source>Do you want to remove databases?</source>
+            <translation>Você deseja remover os bancos de dados?</translation>
+        </message>
+        <message>
+            <source>The folder is currently syncing. Are you sure you want to remove it?</source>
+            <translation>A pasta está sendo sincronizada no momento. Tem certeza de que deseja removê-la?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the folder?</source>
+            <translation>Tem certeza de que deseja remover a pasta?</translation>
         </message>
     </context>
 </TS>

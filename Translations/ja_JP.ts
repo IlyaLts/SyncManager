@@ -116,10 +116,6 @@
             <translation>プロファイルを削除</translation>
         </message>
         <message>
-            <source>Are you sure you want to remove profile?</source>
-            <translation>本当にプロファイルを削除しますか？</translation>
-        </message>
-        <message>
             <source>Switch deletion mode to delete files permanently?</source>
             <translation>削除モードを切り替えてファイルを完全に削除しますか？</translation>
         </message>
@@ -542,6 +538,38 @@
         <message>
             <source>The following files are corrupted:</source>
             <translation>以下のファイルは破損しています:</translation>
+        </message>
+        <message>
+            <source>The profile is currently syncing. Are you sure you want to remove it?</source>
+            <translation>プロファイルは現在同期中です。本当に削除しますか？</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the profile?</source>
+            <translation>本当にプロファイルを削除しますか？</translation>
+        </message>
+        <message>
+            <source>Remove database</source>
+            <translation>データベースを削除</translation>
+        </message>
+        <message>
+            <source>Remove databases</source>
+            <translation>データベースを削除</translation>
+        </message>
+        <message>
+            <source>Do you want to remove database?</source>
+            <translation>データベースを削除しますか？</translation>
+        </message>
+        <message>
+            <source>Do you want to remove databases?</source>
+            <translation>データベースを削除しますか？</translation>
+        </message>
+        <message>
+            <source>The folder is currently syncing. Are you sure you want to remove it?</source>
+            <translation>フォルダは現在同期中です。本当に削除しますか？</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the folder?</source>
+            <translation>本当にフォルダを削除しますか？</translation>
         </message>
     </context>
 </TS>

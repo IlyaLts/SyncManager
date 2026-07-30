@@ -116,10 +116,6 @@
             <translation>Profili kaldır</translation>
         </message>
         <message>
-            <source>Are you sure you want to remove profile?</source>
-            <translation>Profili kaldırmak istediğinizden emin misiniz?</translation>
-        </message>
-        <message>
             <source>Switch deletion mode to delete files permanently?</source>
             <translation>Dosyaları kalıcı olarak silmek için silme modunu değiştirmek ister misiniz?</translation>
         </message>
@@ -542,6 +538,38 @@
         <message>
             <source>The following files are corrupted:</source>
             <translation>Aşağıdaki dosyalar bozuk:</translation>
+        </message>
+        <message>
+            <source>The profile is currently syncing. Are you sure you want to remove it?</source>
+            <translation>Profil şu anda senkronize ediliyor. Kaldırmak istediğinizden emin misiniz?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the profile?</source>
+            <translation>Profili kaldırmak istediğinizden emin misiniz?</translation>
+        </message>
+        <message>
+            <source>Remove database</source>
+            <translation>Veritabanını kaldır</translation>
+        </message>
+        <message>
+            <source>Remove databases</source>
+            <translation>Veritabanlarını kaldır</translation>
+        </message>
+        <message>
+            <source>Do you want to remove database?</source>
+            <translation>Veritabanını kaldırmak istiyor musunuz?</translation>
+        </message>
+        <message>
+            <source>Do you want to remove databases?</source>
+            <translation>Veritabanlarını kaldırmak istiyor musunuz?</translation>
+        </message>
+        <message>
+            <source>The folder is currently syncing. Are you sure you want to remove it?</source>
+            <translation>Klasör şu anda senkronize ediliyor. Kaldırmak istediğinizden emin misiniz?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the folder?</source>
+            <translation>Klasörü kaldırmak istediğinizden emin misiniz?</translation>
         </message>
     </context>
 </TS>

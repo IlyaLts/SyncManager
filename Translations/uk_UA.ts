@@ -116,10 +116,6 @@
             <translation>Видалити профіль</translation>
         </message>
         <message>
-            <source>Are you sure you want to remove profile?</source>
-            <translation>Ви впевнені, що хочете видалити профіль?</translation>
-        </message>
-        <message>
             <source>Switch deletion mode to delete files permanently?</source>
             <translation>Переключити режим видалення на безповоротне видалення файлів?</translation>
         </message>
@@ -542,6 +538,38 @@
         <message>
             <source>The following files are corrupted:</source>
             <translation>Наступні файли пошкоджені:</translation>
+        </message>
+        <message>
+            <source>The profile is currently syncing. Are you sure you want to remove it?</source>
+            <translation>Профіль наразі синхронізується. Ви впевнені, що хочете видалити його?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the profile?</source>
+            <translation>Ви впевнені, що хочете видалити профіль?</translation>
+        </message>
+        <message>
+            <source>Remove database</source>
+            <translation>Видалити базу даних</translation>
+        </message>
+        <message>
+            <source>Remove databases</source>
+            <translation>Видалити бази даних</translation>
+        </message>
+        <message>
+            <source>Do you want to remove database?</source>
+            <translation>Бажаєте видалити базу даних?</translation>
+        </message>
+        <message>
+            <source>Do you want to remove databases?</source>
+            <translation>Бажаєте видалити бази даних?</translation>
+        </message>
+        <message>
+            <source>The folder is currently syncing. Are you sure you want to remove it?</source>
+            <translation>Папка наразі синхронізується. Ви впевнені, що хочете видалити її?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the folder?</source>
+            <translation>Ви впевнені, що хочете видалити папку?</translation>
         </message>
     </context>
 </TS>

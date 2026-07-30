@@ -116,10 +116,6 @@
             <translation>Fjern profil</translation>
         </message>
         <message>
-            <source>Are you sure you want to remove profile?</source>
-            <translation>Er du sikker på, at du vil fjerne profilen?</translation>
-        </message>
-        <message>
             <source>Switch deletion mode to delete files permanently?</source>
             <translation>Skift slettetilstand til at slette filer permanent?</translation>
         </message>
@@ -542,6 +538,38 @@
         <message>
             <source>The following files are corrupted:</source>
             <translation>Følgende filer er beskadigede:</translation>
+        </message>
+        <message>
+            <source>The profile is currently syncing. Are you sure you want to remove it?</source>
+            <translation>Profilen synkroniseres i øjeblikket. Er du sikker på, at du vil fjerne den?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the profile?</source>
+            <translation>Er du sikker på, at du vil fjerne profilen?</translation>
+        </message>
+        <message>
+            <source>Remove database</source>
+            <translation>Fjern database</translation>
+        </message>
+        <message>
+            <source>Remove databases</source>
+            <translation>Fjern databaser</translation>
+        </message>
+        <message>
+            <source>Do you want to remove database?</source>
+            <translation>Vil du fjerne databasen?</translation>
+        </message>
+        <message>
+            <source>Do you want to remove databases?</source>
+            <translation>Vil du fjerne databaserne?</translation>
+        </message>
+        <message>
+            <source>The folder is currently syncing. Are you sure you want to remove it?</source>
+            <translation>Mappen synkroniseres i øjeblikket. Er du sikker på, at du vil fjerne den?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the folder?</source>
+            <translation>Er du sikker på, at du vil fjerne mappen?</translation>
         </message>
     </context>
 </TS>

@@ -116,10 +116,6 @@
             <translation>प्रोफ़ाइल हटाएँ</translation>
         </message>
         <message>
-            <source>Are you sure you want to remove profile?</source>
-            <translation>क्या आप वाकई प्रोफ़ाइल हटाना चाहते हैं?</translation>
-        </message>
-        <message>
             <source>Switch deletion mode to delete files permanently?</source>
             <translation>फ़ाइलों को स्थायी रूप से हटाने के लिए विलोपन मोड स्विच करें?</translation>
         </message>
@@ -542,6 +538,38 @@
         <message>
             <source>The following files are corrupted:</source>
             <translation>निम्नलिखित फ़ाइलें दूषित हैं:</translation>
+        </message>
+        <message>
+            <source>The profile is currently syncing. Are you sure you want to remove it?</source>
+            <translation>प्रोफ़ाइल वर्तमान में सिंक हो रही है। क्या आप निश्चित रूप से इसे हटाना चाहते हैं?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the profile?</source>
+            <translation>क्या आप निश्चित रूप से प्रोफ़ाइल को हटाना चाहते हैं?</translation>
+        </message>
+        <message>
+            <source>Remove database</source>
+            <translation>डेटाबेस हटाएं</translation>
+        </message>
+        <message>
+            <source>Remove databases</source>
+            <translation>डेटाबेस हटाएं</translation>
+        </message>
+        <message>
+            <source>Do you want to remove database?</source>
+            <translation>क्या आप डेटाबेस हटाना चाहते हैं?</translation>
+        </message>
+        <message>
+            <source>Do you want to remove databases?</source>
+            <translation>क्या आप डेटाबेस हटाना चाहते हैं?</translation>
+        </message>
+        <message>
+            <source>The folder is currently syncing. Are you sure you want to remove it?</source>
+            <translation>फ़ोल्डर वर्तमान में सिंक हो रहा है। क्या आप निश्चित रूप से इसे हटाना चाहते हैं?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the folder?</source>
+            <translation>क्या आप निश्चित रूप से फ़ोल्डर को हटाना चाहते हैं?</translation>
         </message>
     </context>
 </TS>

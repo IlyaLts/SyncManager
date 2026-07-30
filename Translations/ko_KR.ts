@@ -116,10 +116,6 @@
             <translation>프로필 제거</translation>
         </message>
         <message>
-            <source>Are you sure you want to remove profile?</source>
-            <translation>정말로 프로필을 제거하시겠습니까?</translation>
-        </message>
-        <message>
             <source>Switch deletion mode to delete files permanently?</source>
             <translation>삭제 모드를 영구 삭제로 전환하시겠습니까?</translation>
         </message>
@@ -542,6 +538,38 @@
         <message>
             <source>The following files are corrupted:</source>
             <translation>다음 파일이 손상되었습니다:</translation>
+        </message>
+        <message>
+            <source>The profile is currently syncing. Are you sure you want to remove it?</source>
+            <translation>현재 프로필을 동기화 중입니다. 정말로 삭제하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the profile?</source>
+            <translation>정말로 프로필을 삭제하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Remove database</source>
+            <translation>데이터베이스 삭제</translation>
+        </message>
+        <message>
+            <source>Remove databases</source>
+            <translation>데이터베이스 삭제</translation>
+        </message>
+        <message>
+            <source>Do you want to remove database?</source>
+            <translation>데이터베이스를 삭제하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Do you want to remove databases?</source>
+            <translation>데이터베이스를 삭제하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>The folder is currently syncing. Are you sure you want to remove it?</source>
+            <translation>현재 폴더를 동기화 중입니다. 정말로 삭제하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the folder?</source>
+            <translation>정말로 폴더를 삭제하시겠습니까?</translation>
         </message>
     </context>
 </TS>

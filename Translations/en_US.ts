@@ -116,10 +116,6 @@
             <translation>Remove profile</translation>
         </message>
         <message>
-            <source>Are you sure you want to remove profile?</source>
-            <translation>Are you sure you want to remove profile?</translation>
-        </message>
-        <message>
             <source>Switch deletion mode to delete files permanently?</source>
             <translation>Switch deletion mode to delete files permanently?</translation>
         </message>
@@ -542,6 +538,38 @@
         <message>
             <source>The following files are corrupted:</source>
             <translation>The following files are corrupted:</translation>
+        </message>
+        <message>
+            <source>The profile is currently syncing. Are you sure you want to remove it?</source>
+            <translation>The profile is currently syncing. Are you sure you want to remove it?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the profile?</source>
+            <translation>Are you sure you want to remove the profile?</translation>
+        </message>
+        <message>
+            <source>Remove database</source>
+            <translation>Remove database</translation>
+        </message>
+        <message>
+            <source>Remove databases</source>
+            <translation>Remove databases</translation>
+        </message>
+        <message>
+            <source>Do you want to remove database?</source>
+            <translation>Do you want to remove database?</translation>
+        </message>
+        <message>
+            <source>Do you want to remove databases?</source>
+            <translation>Do you want to remove databases?</translation>
+        </message>
+        <message>
+            <source>The folder is currently syncing. Are you sure you want to remove it?</source>
+            <translation>The folder is currently syncing. Are you sure you want to remove it?</translation>
+        </message>
+        <message>
+            <source>Are you sure you want to remove the folder?</source>
+            <translation>Are you sure you want to remove the folder?</translation>
         </message>
     </context>
 </TS>
