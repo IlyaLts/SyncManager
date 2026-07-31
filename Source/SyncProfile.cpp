@@ -749,7 +749,7 @@ void SyncProfile::removeUnneededFilePath(hash64_t hash)
         if (file.updated() || file.attributesUpdated())
             return;
 
-        if (file.newlyAdded())
+        if (file.newlyAdded() || file.corrupted())
             return;
     }
 
