@@ -715,6 +715,7 @@ void SyncFolder::loadDatabase(const QString &path)
     }
 
     optimizeMemoryUsage();
+    checkForCorruptedFiles();
 
     TIMESTAMP(startTime, "Loaded from database: %s", qUtf8Printable(path));
 }
@@ -776,20 +777,6 @@ bool SyncFolder::hasUnsyncedFiles() const
 
 /*
 ===================
-SyncFolder::hasCorruptedFiles
-===================
-*/
-bool SyncFolder::hasCorruptedFiles() const
-{
-    for (const auto &file : files)
-        if (file.corrupted())
-            return true;
-
-    return false;
-}
-
-/*
-===================
 SyncFolder::partiallySynchronized
 ===================
 */
@@ -842,6 +829,25 @@ void SyncFolder::updateUnsyncedList()
         for (auto fileIt = files.begin(); fileIt != files.end(); fileIt++)
             if (fileIt->corrupted())
                 m_unsyncedList.append(m_profile->filePath(fileIt.key()) + "\n");
+    }
+}
+
+/*
+===================
+SyncFolder::checkForCorruptedFiles
+===================
+*/
+void SyncFolder::checkForCorruptedFiles()
+{
+    m_hasCorruptedFiles = false;
+
+    for (const auto &file : files)
+    {
+        if (file.corrupted())
+        {
+            m_hasCorruptedFiles = true;
+            return;
+        }
     }
 }
 

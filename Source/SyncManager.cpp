@@ -784,6 +784,8 @@ int SyncManager::scanFiles(SyncFolder &folder)
         totalNumOfFiles++;
     }
 
+    folder.checkForCorruptedFiles();
+
     // Since we only synchronize mirroring folders in one direction,
     // we need to clear all file data because files that
     // no longer exist there don't get removed from the database.

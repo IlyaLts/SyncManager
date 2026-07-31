@@ -103,9 +103,9 @@ public:
     void removeNonexistentFiles();
     bool active() const;
     bool hasUnsyncedFiles() const;
-    bool hasCorruptedFiles() const;
     bool partiallySynchronized() const;
     void updateUnsyncedList();
+    void checkForCorruptedFiles();
     void remove();
 
     void setType(Type type);
@@ -126,6 +126,7 @@ public:
     inline bool paused() const { return m_paused; }
     inline bool toBeRemoved() const { return m_toBeRemoved; }
     inline bool caseSensitive() const { return m_caseSensitive; }
+    inline bool hasCorruptedFiles() const { return m_hasCorruptedFiles; };
 
     inline SyncProfile &profile() const { return *m_profile; }
 
@@ -150,6 +151,7 @@ private:
     bool m_paused = false;
     bool m_toBeRemoved = false;
     bool m_caseSensitive = false;
+    bool m_hasCorruptedFiles = false;
 
     SyncProfile *m_profile;
 };
