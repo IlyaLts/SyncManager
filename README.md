@@ -17,9 +17,9 @@ SyncManager offers three distinct synchronization types, which determine how fil
 - **Two-way** - *The default type. It keeps all files and folders identical in two-way folders. If you add, delete, or change a file in one folder, the same change will happen in the other.*
 - **One-way** - *A mirror image. It copies all files and folders from two-way folders. Any files in the one-way folder that don't exist in two-way folders will be deleted.*
 - **One-way update** - *This mode is for simple updates. Files are copied only once from two-way folders to the one-way update folder. Unlike the one-way type, files that are deleted from two-way folders will not be deleted from the one-way update folder. This is sometimes useful, for example, for synchronizing only new photos from a camera's SD card to a designated folder.*
-### Syncing Modes
+### Synchronization Modes
 You can control when SyncManager performs its synchronization using one of three modes:
-- **Manual** - *This mode gives you complete control. SyncManager will only sync your files when you tell it to.*
+- **Manual** - *This mode gives you complete control. SyncManager will only synchronize your files when you tell it to.*
 - **Automatic (Adaptive)** - *This is a smart, automatic mode. SyncManager learns the average time it takes to synchronize your files and uses that to determine the next synchronization interval. This interval is multiplied by a user-defined frequency multiplier. The minimum interval is 1 second.*
 - **Automatic (Fixed)** - *This is a simple, scheduled mode. SyncManager will synchronize your files at a specific, regular time interval that you set.*
 ### Change Detection Order
@@ -33,7 +33,7 @@ SyncManager uses sophisticated algorithms to detect changes since the last synch
 #### *(Only for case-insensitive systems)*
 Since SyncManager doesn't store the original paths of files in a database, it relies on a filepath comparison-based approach between synchronization folders to detect case changes in folder names. It compares the current filename of a newly renamed folder in one location with the corresponding folder's filenames in other locations (if they exist), checking for differences in case naming. If a difference is found, SyncManager considers the case of the folder was changed and renames folders accordingly, matching the folder's filename in the source location.
 ### Detection of Moved and Renamed Files
-SyncManager searches for matches between removed and new files based on their modified date and size. If a match is found, the file is considered to be the same, and SyncManager renames or moves the corresponding file to other locations to match the new location in the source. In cases where there are multiple matches with the same modified date and size, SyncManager falls back to the standard synchronization method, copying files from one location to another.
+SyncManager uses a clever method to determine if a file was moved or renamed. This allows SyncManager to move files directly instead of deleting and re-copying them. It looks for matches between removed and new files based on their modified date and size. If a match is found, the file is considered to be the same, and SyncManager renames or moves the corresponding files in other locations to match the new location in the source. In cases where there are multiple matches with the same modified date and size, SyncManager falls back to the standard synchronization method, copying files from one location to another.
 ### File Delta Copying
 While standard file synchronization replaces a destination file with an entirely new copy of the source file, delta synchronization utilizes a more efficient block-level approach. It only synchronizes the specific blocks of data that were actually changed. Once the synchronization is complete, the destination file is overwritten, and older versions of that file cannot be recovered. This could be ideal for synchronizing large files, as it significantly reduces wear and tear on your storage drives.
 ### Synchronization Order
@@ -49,7 +49,7 @@ Based on the changes detected, SyncManager performs the synchronization operatio
 When SyncManager needs to synchronize a file from one location to another but finds an older version of the file in the destination, it must delete the existing file first. You can choose how it handles these deletions:
 - **Move files to Trash** - *(The file is sent to your computer's Recycle Bin or Trash, allowing you to recover it later. Note that this doesn't immediately free up storage space)*
 - **Versioning** - *(The old file is saved in a special versioning folder. This is a great way to keep a history of your files)*
-- **Delete Files Permanently** - *(The file is deleted immediately and cannot be recovered. This option frees up storage space right away)*  
+- **Delete Files Permanently** - *(The file is deleted immediately and cannot be recovered. This option frees up storage space right away. However, please be aware that this could be dangerous and may lead to data loss)*  
 ### Versioning Formats and Locations
 If you choose to use the versioning deletion mode, you can customize how and where your old files are stored.
 #### Versioning Formats
@@ -58,25 +58,27 @@ If you choose to use the versioning deletion mode, you can customize how and whe
 - **Folder timestamp** - *(Old files are moved into a new folder named with a timestamp, while keeping their original filename. For example, document.txt would be moved to a folder named 2025_08_08_08_15_412/document.txt)*
 - **Last version** - *(This option only keeps the most recently deleted version of a file. Any older versions are overwritten)*
 #### Versioning Location
-1. **Locally** - Old files are stored in a new folder, next to your synchronization folder. This new folder will have the same name as the sync synchronization folder, plus a special designated postfix.
+1. **Locally** - Old files are stored in a new folder, next to your synchronization folder. This new folder will have the same name as the synchronization folder, plus a special designated postfix.
 2. **Custom Location** - You can specify a separate location for all your versioned files. SyncManager will then organize them into folders like [Custom location]/[Profile name].
 ### Filtering
-Files can be filtered from synchronization using the following options:
-- **Minimum file size**
-- **Maximum file size**
-- **Minimum size for a moved file** - *(The size at which files are allowed to be detected as moved or renamed)*
-- **Minimum size for delta copying** - *(The size at which files start being delta copied. Files lower than that size will be deleted and fully recopied)*
-- **Include** - *(Whitelist)*
-- **Exclude** - *(Blacklist)*
+You can prevent certain files from being synchronized using SyncManager's filtering options.
+- **Minimum file size** - *(Set a minimum file size. Files outside this range will be ignored)*
+- **Maximum file size** - *(Set a maximum file size. Files outside this range will be ignored)*
+- **Minimum size for a moved file** - *(The size at which files start being detected as moved or renamed. Files lower than that size will be copied instead of being renamed or moved)*
+- **Minimum size for delta copying** - *(The size at which files start being delta copied. Files lower than that size will be deleted and fully copied)*
+- **Include** - *(Only files that match your criteria will be synchronized)*
+- **Exclude** - *(Files that match your criteria will be ignored and not synchronized)*
+- **Ignore System Files** - *(Prevents hidden OS-level files from being synchronized)*
+- **Ignore Hidden Files** - *(Prevents files and folders hidden by the operating system or prefixed with a dot (on Linux) from being synchronized)*
 ### Database Location
 SyncManager stores a database file to keep track of your files for future synchronizations. You can choose where this database is saved:
 - **Locally** - *The database is saved on your computer in a dedicated application data folder. It keeps your synchronization data separate from your actual synchronized files.*
 - **Decentralized** - *The database is stored inside each of your synchronization folders, within a special hidden folder named .SyncManager. This is useful if you need to move your entire synchronization setup to another computer, as the database files will travel with your folders.*
 ### Conflict Resolution
 Sometimes, changes are made to the same file in two different locations before a synchronization. SyncManager has clear rules to resolve these conflicts:
-- **Latest modification date wins:** If a file has been modified in both locations, SyncManager will synchronize the file with the latest modification date.
-- **Modified files take precedence:** If a file is modified in one folder but deleted in the other, SyncManager will prioritize the modified file. The deletion will be ignored, and the modified file will be copied.
-- **Folder content changes take precedence:** If a folder has had files added or removed in one location but was completely deleted in another, the folder with the updated content will be copied.
+- **Latest modification date wins:** - *If a file is modified in both locations, the version with the most recent modification date will overwrite the other*
+- **Modified files overcome deletion:** - *If a file is modified in one folder but deleted in the other, SyncManager will prioritize the modified file. The deletion will be ignored, and the modified file will be copied*
+- **Folder content changes overcome deletion:** - *If a folder has had files added or removed in one location but was completely deleted in another, the folder with the updated content will be copied*
 # Building
 Requires Qt 6.9 or newer. Buildable with Qt Creator.
 
