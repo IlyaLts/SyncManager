@@ -561,17 +561,17 @@ void SyncManager::executeSyncProfile(SyncProfile &profile)
         if (folder.hasCorruptedFiles())
         {
             QString deviceName(QStorageInfo(folder.path()).displayName());
-            bool shouldNotify = m_notificationList.contains(deviceName) ? !m_notificationList.value(deviceName)->isActive() : true;
+            bool shouldNotify = m_cooldownNotifications.contains(deviceName) ? !m_cooldownNotifications.value(deviceName)->isActive() : true;
 
             if (shouldNotify)
             {
-                if (!m_notificationList.contains(deviceName))
-                    m_notificationList.insert(deviceName, new QTimer(this)).value()->setSingleShot(true);
+                if (!m_cooldownNotifications.contains(deviceName))
+                    m_cooldownNotifications.insert(deviceName, new QTimer(this)).value()->setSingleShot(true);
 
                 QString title(tr("Disk: %1 is corrupted. Please fix the errors.").arg(deviceName));
                 syncApp->tray()->notify(title, "", QSystemTrayIcon::Critical);
 
-                m_notificationList.value(deviceName)->start(NotificationCooldown);
+                m_cooldownNotifications.value(deviceName)->start(NotificationCooldown);
             }
         }
 
@@ -789,7 +789,7 @@ int SyncManager::scanFiles(SyncFolder &folder)
     // no longer exist there don't get removed from the database.
     // This is just the easiest way to make mirroring work properly.
     if (folder.mirroring())
-        folder.removeNonExistentFiles();
+        folder.removeNonexistentFiles();
 
     folder.optimizeMemoryUsage();
     m_usedDevicesMutex.lock();
@@ -1934,7 +1934,7 @@ void SyncManager::copyFiles(SyncFolder &folder)
     hash64_t deviceHash = hash64(QStorageInfo(folder.path()).device());
     quint64 &deviceRead = m_usedDevices[deviceHash];
     QString rootPath = QStorageInfo(folder.path()).rootPath();
-    bool shouldNotify = m_notificationList.contains(rootPath) ? !m_notificationList.value(rootPath)->isActive() : true;
+    bool shouldNotify = m_cooldownNotifications.contains(rootPath) ? !m_cooldownNotifications.value(rootPath)->isActive() : true;
 
     for (auto fileIt = folder.filesToCopy.begin(); fileIt != folder.filesToCopy.end() && (!m_paused && folder.active());)
     {
@@ -2018,8 +2018,8 @@ void SyncManager::copyFiles(SyncFolder &folder)
             // Not enough disk space notification
             if (m_notifications && shouldNotify && QStorageInfo(folder.path()).bytesAvailable() < QFile(fileIt->fromFullPath).size())
             {
-                if (!m_notificationList.contains(rootPath))
-                    m_notificationList.insert(rootPath, new QTimer(this)).value()->setSingleShot(true);
+                if (!m_cooldownNotifications.contains(rootPath))
+                    m_cooldownNotifications.insert(rootPath, new QTimer(this)).value()->setSingleShot(true);
 
                 QByteArray parentPath = toFileInfo.path().toUtf8();
 
@@ -2027,7 +2027,7 @@ void SyncManager::copyFiles(SyncFolder &folder)
                     folder.foldersToUpdate.insert(parentPath);
 
                 shouldNotify = false;
-                m_notificationList.value(rootPath)->start(NotificationCooldown);
+                m_cooldownNotifications.value(rootPath)->start(NotificationCooldown);
 
                 QString title(tr("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path()).displayName(), rootPath));
                 syncApp->tray()->notify(title, "", QSystemTrayIcon::Critical);

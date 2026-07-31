@@ -143,12 +143,12 @@ SyncFolder::removeFile
 */
 bool SyncFolder::removeFile(const QString &path, SyncFile::Type type)
 {
-    QString fullPath(this->m_path);
-    fullPath.append(path);
-
     // Prevents the deletion of a sync folder itself in case something bad happens
     if (path.isEmpty())
         return true;
+
+    QString fullPath(this->m_path);
+    fullPath.append(path);
 
     if (profile().deletionMode() == SyncProfile::MoveToTrash)
     {
@@ -190,11 +190,10 @@ bool SyncFolder::removeFile(const QString &path, SyncFile::Type type)
                 if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
                     newLocation.append(path.mid(dotIndex));
             }
-
             // As we want to have only the latest version of files,
             // we need to delete the existing files in the versioning folder first,
             // but only if the deleted file still exists, in case the parent folder was removed earlier.
-            if (profile().versioningFormat() == SyncProfile::LastVersion)
+            else if (profile().versioningFormat() == SyncProfile::LastVersion)
             {
                 if (!QFile(fullPath).exists())
                     return true;
@@ -335,11 +334,13 @@ SyncFolder::optimizeMemoryUsage
 void SyncFolder::optimizeMemoryUsage()
 {
     files.squeeze();
+    foldersToRename.squeeze();
     filesToMove.squeeze();
     foldersToCreate.squeeze();
     filesToCopy.squeeze();
     foldersToRemove.squeeze();
     filesToRemove.squeeze();
+    foldersToUpdate.squeeze();
 }
 
 /*
@@ -421,10 +422,10 @@ void SyncFolder::checkCaseSensitive()
 
 /*
 ===================
-SyncFolder::saveToDatabase
+SyncFolder::saveDatabase
 ===================
 */
-void SyncFolder::saveToDatabase(const QString &path) const
+void SyncFolder::saveDatabase(const QString &path) const
 {
     SET_TIME(startTime);
 
@@ -539,10 +540,10 @@ void SyncFolder::saveToDatabase(const QString &path) const
 
 /*
 ===================
-SyncFolder::loadFromDatabase
+SyncFolder::loadDatabase
 ===================
 */
-void SyncFolder::loadFromDatabase(const QString &path)
+void SyncFolder::loadDatabase(const QString &path)
 {
     SET_TIME(startTime);
 
@@ -732,10 +733,12 @@ void SyncFolder::removeDatabase() const
 
 /*
 ===================
-SyncFolder::removeNonExistentFiles
+SyncFolder::removeNonexistentFiles
+
+Used to make mirroring work properly
 ===================
 */
-void SyncFolder::removeNonExistentFiles()
+void SyncFolder::removeNonexistentFiles()
 {
     for (Files::iterator fileIt = files.begin(); fileIt != files.end();)
     {

@@ -97,10 +97,10 @@ public:
     void optimizeMemoryUsage();
     void updateVersioningPath();
     void checkCaseSensitive();
-    void saveToDatabase(const QString &path) const;
-    void loadFromDatabase(const QString &path);
+    void saveDatabase(const QString &path) const;
+    void loadDatabase(const QString &path);
     void removeDatabase() const;
-    void removeNonExistentFiles();
+    void removeNonexistentFiles();
     bool active() const;
     bool hasUnsyncedFiles() const;
     bool hasCorruptedFiles() const;

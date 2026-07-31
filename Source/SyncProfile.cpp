@@ -559,6 +559,10 @@ void SyncProfile::updatePausedState()
 /*
 ===================
 SyncProfile::resetLocks
+
+Used for resetting file locks at the end of synchronization
+for files that were moved or renamed. There might be a better way
+to do that, but I couldn't figure it out for now.
 ===================
 */
 bool SyncProfile::resetLocks()
@@ -639,7 +643,7 @@ void SyncProfile::saveDatabasesLocally() const
             continue;
 
         QByteArray filename(QByteArray::number(hash64(folder.path())) + ".db");
-        folder.saveToDatabase(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename);
+        folder.saveDatabase(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename);
     }
 }
 
@@ -660,7 +664,7 @@ void SyncProfile::saveDatabasesDecentralised() const
         if (!QDir(folder.path() + DATA_FOLDER_PATH).exists())
             continue;
 
-        folder.saveToDatabase(folder.path() + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
+        folder.saveDatabase(folder.path() + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
 
 #ifdef Q_OS_WIN
         setHiddenFileAttribute(QString(folder.path() + DATA_FOLDER_PATH), true);
@@ -682,7 +686,7 @@ void SyncProfile::loadDatabasesLocally()
             continue;
 
         QByteArray filename(QByteArray::number(hash64(folder.path())) + ".db");
-        folder.loadFromDatabase(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename);
+        folder.loadDatabase(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + filename);
     }
 }
 
@@ -698,7 +702,7 @@ void SyncProfile::loadDatebasesDecentralised()
         if (!folder.active() || folder.toBeRemoved())
             continue;
 
-        folder.loadFromDatabase(folder.path() + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
+        folder.loadDatabase(folder.path() + DATA_FOLDER_PATH + "/" + DATABASE_FILENAME);
     }
 }
 
@@ -709,20 +713,25 @@ SyncProfile::addFilePath
 */
 void SyncProfile::addFilePath(hash64_t hash, const QByteArray &path)
 {
-    m_mutex.lock();
+    QMutexLocker locker(&m_mutex);
 
     if (!m_filePaths.contains(Hash(hash)))
     {
         auto it = m_filePaths.insert(Hash(hash), path);
         it->squeeze();
     }
-
-    m_mutex.unlock();
 }
 
 /*
 ===================
 SyncProfile::removeUnneededFilePath
+
+Used for memory optimization during synchronization.
+
+When scanning folders for files, we load all file data into memory,
+which can consume a large amount of memory. Therefore, if we know that
+certain files have not changed their modified data or attributes, we can unload
+their data from memory earlier. This can reduce memory consumption by as much as 50%.
 ===================
 */
 void SyncProfile::removeUnneededFilePath(hash64_t hash)

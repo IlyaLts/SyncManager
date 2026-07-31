@@ -141,7 +141,7 @@ private:
 
     quint64 m_maxDiskTransferRate = 0;
     QTimer m_diskUsageResetTimer;
-    QMap<QString, QTimer *> m_notificationList;
+    QMap<QString, QTimer *> m_cooldownNotifications;
     QMap<hash64_t, quint64> m_usedDevices;
     QMutex m_usedDevicesMutex;
 };
