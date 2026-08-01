@@ -403,6 +403,20 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     if (!executeFolderScans(profile, result))
         return false;
 
+    for (auto &folder : profile.folders())
+    {
+        folder.checkForCorruptedFiles();
+
+        // Since we only synchronize mirroring folders in one direction,
+        // we need to clear all file data because files that
+        // no longer exist there don't get removed from the database.
+        // This is just the easiest way to make mirroring work properly.
+        if (folder.mirroring())
+            folder.removeNonexistentFiles();
+
+        folder.optimizeMemoryUsage();
+    }
+
     TIMESTAMP(startTime, "Found %d files in %s.", result, qUtf8Printable(profile.name()));
 
     checkForChanges(profile);
@@ -784,16 +798,6 @@ int SyncManager::scanFiles(SyncFolder &folder)
         totalNumOfFiles++;
     }
 
-    folder.checkForCorruptedFiles();
-
-    // Since we only synchronize mirroring folders in one direction,
-    // we need to clear all file data because files that
-    // no longer exist there don't get removed from the database.
-    // This is just the easiest way to make mirroring work properly.
-    if (folder.mirroring())
-        folder.removeNonexistentFiles();
-
-    folder.optimizeMemoryUsage();
     m_usedDevicesMutex.lock();
     m_usedDevices.remove(deviceHash);
     m_usedDevicesMutex.unlock();

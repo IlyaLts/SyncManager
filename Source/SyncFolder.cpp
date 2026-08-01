@@ -839,6 +839,42 @@ SyncFolder::checkForCorruptedFiles
 */
 void SyncFolder::checkForCorruptedFiles()
 {
+    // Files within a corrupted, unreadable folder are completely invisible.
+    // So, we have to check the parent folders for a corruption flag and
+    // manually mark their files as corrupted as well.
+    for (auto fileIt = files.begin(); fileIt != files.end(); fileIt++)
+    {
+        if (fileIt->exists() || fileIt->corrupted())
+            continue;
+
+        bool corrupted = false;
+        QByteArray path = m_profile->filePath(fileIt.key());
+
+        if (path.isEmpty())
+            continue;
+
+        path.insert(0, m_path);
+
+        // Goes through all parent folders
+        while ((path = QFileInfo(path).path().toUtf8()).length() > m_path.length())
+        {
+            QByteArray relativePath(path);
+            relativePath.remove(0, m_path.length());
+
+            const SyncFile &file = files.value(hash64(relativePath));
+
+            if (file.exists())
+            {
+                if (file.corrupted())
+                    corrupted = true;
+
+                break;
+            }
+        }
+
+        fileIt->setCorrupted(corrupted);
+    }
+
     m_hasCorruptedFiles = false;
 
     for (const auto &file : files)
