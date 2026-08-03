@@ -34,6 +34,7 @@
 #define SYNCMANAGER_VERSION     "2.4-beta"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define USER_MANUAL_PATH        "SyncManagerUserManual.pdf"
+#define CHANGELOG_FILENAME      "ChangeLog.txt"
 #define BUG_TRACKER_URL         "https://github.com/IlyaLts/SyncManager/issues"
 #define LATEST_RELEASE_API_URL  "https://api.github.com/repos/IlyaLts/SyncManager/releases/latest"
 #define LATEST_RELEASE_URL      "https://github.com/IlyaLts/SyncManager/releases/latest"

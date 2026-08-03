@@ -39,9 +39,13 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent)
     QLabel *logoLabel = new QLabel(this);
     logoLabel->setPixmap(logo);
 
+    QString logPath = QDir(QCoreApplication::applicationDirPath()).filePath(CHANGELOG_FILENAME);
+    QUrl logUrl = QUrl::fromLocalFile(logPath);
+
     QLabel *version = new QLabel("<span style='font-size: 22pt;'>SyncManager</span><br>"
                                  "<span style='font-size: 12pt;'>" + syncApp->translate("Version") +
-                                 QString(": %1").arg(SYNCMANAGER_VERSION), this);
+                                 QString(": %1 ").arg(SYNCMANAGER_VERSION) +
+                                 QString("<a href='%1'>(Log)</a>").arg(logUrl.toString()), this);
 
     QLabel *about = new QLabel(syncApp->translate("Lightweight Synchronization Manager"));
 
@@ -54,6 +58,7 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent)
     logoLabel->setAlignment(Qt::AlignCenter);
     version->setAlignment(Qt::AlignCenter);
     about->setAlignment(Qt::AlignCenter);
+    version->setOpenExternalLinks(true);
     description->setOpenExternalLinks(true);
     description->setWordWrap(true);
 
