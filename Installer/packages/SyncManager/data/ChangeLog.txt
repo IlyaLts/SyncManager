@@ -1,5 +1,5 @@
 ==========================
-2.4 - Jul 30, 2026
+2.4 - Aug 3, 2026
 ==========================
 - Added detection for corrupted, unreadable files that prevents data loss from other healthy folders.
 - Added an option to ignore system files, which is on by default.
