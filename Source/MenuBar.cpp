@@ -112,7 +112,7 @@ MenuBar::MenuBar(QWidget *parent) : QMenuBar(parent)
     connect(maximumCpuUsageAction, &QAction::triggered, this, &MenuBar::setMaximumCpuUsage);
     connect(updateAvailableButton, &QPushButton::clicked, this, &MenuBar::openProjectPage);
     connect(syncApp, &Application::updateFound, this, &MenuBar::updateAvailable);
-    connect(userManualAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl::fromLocalFile(USER_MANUAL_PATH)); });
+    connect(userManualAction, &QAction::triggered, this, &MenuBar::openManual);
     connect(reportBugAction, &QAction::triggered, this, [](){ QDesktopServices::openUrl(QUrl(BUG_TRACKER_URL)); });
     connect(aboutAction, &QAction::triggered, this, &MenuBar::triggerAboutDialog);
 
@@ -391,6 +391,17 @@ void MenuBar::updateAvailable()
 {
     updateAvailableButton->setVisible(true);
     syncApp->tray()->notify("Sync Manager", "New Update Available", QSystemTrayIcon::Information);
+}
+
+/*
+===================
+MenuBar::openManual
+===================
+*/
+void MenuBar::openManual() const
+{
+    QString path = QDir(QCoreApplication::applicationDirPath()).filePath(USER_MANUAL_PATH);
+    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
 /*
