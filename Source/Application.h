@@ -23,6 +23,7 @@
 #include "Common.h"
 #include "MainWindow.h"
 #include "SystemTray.h"
+#include "SyncManager.h"
 #include "CpuUsage.h"
 #include <QApplication>
 #include <QTranslator>

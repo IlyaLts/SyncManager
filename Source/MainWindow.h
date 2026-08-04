@@ -20,7 +20,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "SyncManager.h"
 #include "SyncProfile.h"
 #include "MenuBar.h"
 #include <QMainWindow>

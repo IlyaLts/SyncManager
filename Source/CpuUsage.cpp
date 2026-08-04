@@ -24,6 +24,7 @@
 #else
 #include <QFile>
 #include <QCoreApplication>
+#include <unistd.h>
 #endif
 
 /*
