@@ -1,4 +1,5 @@
 /build/*
 /Images/*
 /Installer/*
+/Source/xxHash
 /*.user

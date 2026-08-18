@@ -21,12 +21,12 @@
 #include "SyncFile.h"
 #include "Application.h"
 #include <QDebug>
-#include <QCryptographicHash>
 #include <QTranslator>
 #include <QApplication>
 #include <QMessageBox>
 #include <stdio.h>
 #include <cstdarg>
+#include "xxHash/xxh3.h"
 
 #ifdef Q_OS_WIN
 #include <fileapi.h>
@@ -79,11 +79,7 @@ hash64
 */
 hash64_t hash64(const QByteArray &str)
 {
-    QByteArray hash = QCryptographicHash::hash(str, QCryptographicHash::Md5);
-    QDataStream stream(hash);
-    quint64 a, b;
-    stream >> a >> b;
-    return a ^ b;
+    return static_cast<quint64>(XXH3_64bits(str.constData(), str.size()));
 }
 
 /*

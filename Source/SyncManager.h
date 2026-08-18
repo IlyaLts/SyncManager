@@ -34,7 +34,7 @@
 #define DATA_FOLDER_PATH        ".SyncManager"
 #define DATABASE_FILENAME       "db"
 #define TEMP_EXTENSION          "sm_temp"
-#define DATABASE_VERSION        4
+#define DATABASE_VERSION        5
 
 static constexpr quint64 SyncMinDelay = 1000;
 static constexpr quint64 NotificationCooldown = 300000;
