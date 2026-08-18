@@ -19,12 +19,11 @@
 
 #include "Application.h"
 #include "MainWindow.h"
+#include "SyncManager.h"
 #include "ui_MainWindow.h"
 #include "DecoratedStringListModel.h"
-#include "UnhidableMenu.h"
 #include "FolderListView.h"
 #include "MenuProxyStyle.h"
-#include "Common.h"
 #include "ProfileMenu.h"
 #include "FolderStyleDelegate.h"
 #include "ProfileStyleDelegate.h"
@@ -888,13 +887,13 @@ void MainWindow::showFolderContextMenu(const QPoint &pos)
         menu.addSeparator();
 
         if (folder->type() != SyncFolder::TWO_WAY)
-            menu.addAction(iconTwoWay, "&" + tr("Switch to two-way synchronization"), this, [profile, folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
+            menu.addAction(iconTwoWay, "&" + tr("Switch to two-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
 
         if (folder->type() != SyncFolder::ONE_WAY)
-            menu.addAction(iconOneWay, "&" + tr("Switch to one-way synchronization"), this, [profile, folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
+            menu.addAction(iconOneWay, "&" + tr("Switch to one-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
 
         if (folder->type() != SyncFolder::ONE_WAY_UPDATE)
-            menu.addAction(iconOneWayUpdate, "&" + tr("Switch to one-way update synchronization"), this, [profile, folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY_UPDATE); });
+            menu.addAction(iconOneWayUpdate, "&" + tr("Switch to one-way update synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY_UPDATE); });
     }
 
     menu.popup(ui->folderListView->mapToGlobal(pos));
@@ -1318,7 +1317,7 @@ void MainWindow::setupMenus()
     // Fixes a disappearing icon when you click on its menu on Linux while using the Fusion style
     styleSheet.append("QMenuBar::item:selected { background: #e3e3e3; } QMenuBar::item:pressed { background: #e3e3e3; }");
 
-    m_menuBar->setStyleSheet(styleSheet);
+    menuBar->setStyleSheet(styleSheet);
 
     // Makes profiles/folders items slightly bigger
     ui->syncProfilesView->setStyleSheet("QListView::item { padding: 3px;}");

@@ -18,6 +18,7 @@
 */
 
 #include "Application.h"
+#include "SyncManager.h"
 #include "ProfileMenu.h"
 #include "UnhidableMenu.h"
 #include <QAction>
