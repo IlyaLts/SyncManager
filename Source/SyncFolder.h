@@ -55,13 +55,13 @@ struct FileToCopyInfo
     QDateTime modifiedDate;
 };
 
-using Files = QHash<Hash, SyncFile>;
-using FolderRenameList = QHash<Hash, FolderToRenameInfo>;
-using FileMoveList = QHash<Hash, FileToMoveInfo>;
-using FolderCreateList = QHash<Hash, FolderToCreateInfo>;
-using FileCopyList = QHash<Hash, FileToCopyInfo>;
-using FolderRemoveList = QHash<Hash, QByteArray>;
-using FileRemoveList = QHash<Hash, QByteArray>;
+using Files = QHash<SyncHash, SyncFile>;
+using FolderRenameList = QHash<SyncHash, FolderToRenameInfo>;
+using FileMoveList = QHash<SyncHash, FileToMoveInfo>;
+using FolderCreateList = QHash<SyncHash, FolderToCreateInfo>;
+using FileCopyList = QHash<SyncHash, FileToCopyInfo>;
+using FolderRemoveList = QHash<SyncHash, QByteArray>;
+using FileRemoveList = QHash<SyncHash, QByteArray>;
 using FolderUpdateList = QSet<QByteArray>;
 
 /*

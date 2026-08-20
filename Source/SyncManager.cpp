@@ -1777,7 +1777,7 @@ void SyncManager::removeFolders(SyncFolder &folder)
 {
     // Sorts the folders for removal from the top to the bottom.
     // This ensures that the trash folder maintains the same folder structure as in the original destination.
-    QVector<QPair<Hash, QByteArray>> sortedFoldersToRemove;
+    QVector<QPair<SyncHash, QByteArray>> sortedFoldersToRemove;
     sortedFoldersToRemove.reserve(folder.foldersToRemove.size());
 
     for (auto it = folder.foldersToRemove.begin(); it != folder.foldersToRemove.end(); ++it)
@@ -1796,7 +1796,7 @@ void SyncManager::removeFolders(SyncFolder &folder)
         if (folderIt->second.isEmpty())
         {
             folder.foldersToRemove.remove(folderIt->first);
-            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QPair<Hash, QByteArray>>::const_iterator>(folderIt));
+            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QPair<SyncHash, QByteArray>>::const_iterator>(folderIt));
             continue;
         }
 
@@ -1807,7 +1807,7 @@ void SyncManager::removeFolders(SyncFolder &folder)
         if (!QFileInfo::exists(fullPath))
         {
             folder.foldersToRemove.remove(folderIt->first);
-            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QPair<Hash, QByteArray>>::const_iterator>(folderIt));
+            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QPair<SyncHash, QByteArray>>::const_iterator>(folderIt));
             continue;
         }
 
@@ -1816,7 +1816,7 @@ void SyncManager::removeFolders(SyncFolder &folder)
             hash64_t hash = hash64(folderIt->second);
             folder.files.remove(hash);
             folder.foldersToRemove.remove(hash);
-            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QPair<Hash, QByteArray>>::const_iterator>(folderIt));
+            folderIt = sortedFoldersToRemove.erase(static_cast<QVector<QPair<SyncHash, QByteArray>>::const_iterator>(folderIt));
 
             QString parentPath = QFileInfo(fullPath).path();
 

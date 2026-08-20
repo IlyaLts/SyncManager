@@ -41,7 +41,6 @@
 #define LATEST_RELEASE_URL      "https://github.com/IlyaLts/SyncManager/releases/latest"
 #define LATEST_RELEASE_MS_URL   "ms-windows-store://pdp/?productid=9mtxr55r5s7h"
 
-#define DISABLE_DOUBLE_HASHING
 #define PRESERVE_MODIFICATION_DATE_ON_LINUX
 
 static constexpr quint64 CheckForUpdateTime = 1000 * 60 * 60 * 24;

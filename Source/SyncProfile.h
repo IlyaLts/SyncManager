@@ -167,8 +167,8 @@ public:
     void removeUnneededFilePath(hash64_t hash);
     inline void clearFilePaths() { m_filePaths.clear(); }
 
-    inline QByteArray filePath(Hash hash) const { return m_filePaths.value(hash); }
-    inline bool hasFilePath(Hash hash) const { return m_filePaths.contains(hash); }
+    inline QByteArray filePath(SyncHash hash) const { return m_filePaths.value(hash); }
+    inline bool hasFilePath(SyncHash hash) const { return m_filePaths.contains(hash); }
     bool isActive() const;
     bool isAutomatic() const;
     bool isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) const;
@@ -220,7 +220,7 @@ private:
     bool m_ignoreSystemFiles = false;
     bool m_ignoreHiddenFiles = false;
 
-    QHash<Hash, QByteArray> m_filePaths;
+    QHash<SyncHash, QByteArray> m_filePaths;
     QModelIndex m_index;
     QMutex m_mutex;
 };

@@ -715,9 +715,9 @@ void SyncProfile::addFilePath(hash64_t hash, const QByteArray &path)
 {
     QMutexLocker locker(&m_mutex);
 
-    if (!m_filePaths.contains(Hash(hash)))
+    if (!m_filePaths.contains(SyncHash(hash)))
     {
-        auto it = m_filePaths.insert(Hash(hash), path);
+        auto it = m_filePaths.insert(SyncHash(hash), path);
         it->squeeze();
     }
 }

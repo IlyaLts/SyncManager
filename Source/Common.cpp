@@ -79,7 +79,7 @@ hash64
 */
 hash64_t hash64(const QByteArray &str)
 {
-    return static_cast<quint64>(XXH3_64bits(str.constData(), str.size()));
+    return static_cast<hash64_t>(XXH3_64bits(str.constData(), str.size()));
 }
 
 /*

@@ -36,28 +36,24 @@ struct Language
     const char *name;
 };
 
-struct Hash
+struct SyncHash
 {
-    Hash(){}
-    Hash(hash64_t hash) { data = hash; }
-    Hash(const Hash &other) { data = other.data; }
+    SyncHash(){}
+    SyncHash(hash64_t hash) { data = hash; }
+    SyncHash(const SyncHash &other) { data = other.data; }
 
-    bool operator ==(const Hash &other) const { return data == other.data; }
+    bool operator ==(const SyncHash &other) const { return data == other.data; }
 
     hash64_t data;
 };
 
 class SyncFile;
-using FilePointerList = QHash<Hash, SyncFile *>;
+using FilePointerList = QHash<SyncHash, SyncFile *>;
 
-Q_DECL_CONST_FUNCTION inline size_t qHash(const Hash &key, size_t seed = 0) noexcept
+Q_DECL_CONST_FUNCTION inline size_t qHash(const SyncHash &key, size_t seed = 0) noexcept
 {
-#ifdef DISABLE_DOUBLE_HASHING
     Q_UNUSED(seed);
     return key.data;
-#else
-    return qHash(key.data, seed);
-#endif
 }
 
 #ifdef DEBUG
