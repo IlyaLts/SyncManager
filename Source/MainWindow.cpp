@@ -223,6 +223,7 @@ void MainWindow::loadSettings()
         menu->switchVersioningFormat(static_cast<SyncProfile::VersioningFormat>(settings.value(profileKeyname + "VersioningFormat", SyncProfile::FolderTimestamp).toInt()));
         menu->switchVersioningLocation(static_cast<SyncProfile::VersioningLocation>(settings.value(profileKeyname + "VersioningLocation", SyncProfile::LocallyNextToFolder).toInt()));
         menu->switchDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(profileKeyname + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
+        menu->switchConflictResolution(static_cast<SyncProfile::ConflictResolution>(settings.value(profileKeyname + "ConflictResolution", SyncProfile::Automatically).toInt()));
 
         // Loads saved pause states and checks if synchronization folders exist
         profile->setPaused(settings.value(profileKeyPath + QLatin1String("Paused"), false).toBool());

@@ -59,6 +59,7 @@ public Q_SLOTS:
     void switchVersioningLocation(SyncProfile::VersioningLocation location);
     void setVersioningLocationPath();
     void switchDatabaseLocation(SyncProfile::DatabaseLocation location);
+    void switchConflictResolution(SyncProfile::ConflictResolution mode);
     void setFileMinSize();
     void setFileMaxSize();
     void setMovedFileMinSize();
@@ -95,6 +96,9 @@ private:
     QAction *customLocationPathAction;
     QAction *databaseLocallyAction;
     QAction *databaseDecentralizedAction;
+    QAction *automaticResolutionAction;
+    QAction *doNothingResolutionAction;
+    QAction *renameBothResolutionAction;
     QAction *fileMinSizeAction;
     QAction *fileMaxSizeAction;
     QAction *movedFileMinSizeAction;
@@ -109,6 +113,7 @@ private:
     UnhidableMenu *versioningFormatMenu;
     UnhidableMenu *versioningLocationMenu;
     UnhidableMenu *databaseLocationMenu;
+    UnhidableMenu *conflictResolutionMenu;
     UnhidableMenu *filteringMenu;
 };
 

@@ -317,6 +317,7 @@ SyncFolder::clearData
 void SyncFolder::clearData()
 {
     files.clear();
+    filesToRename.clear();
     foldersToRename.clear();
     filesToMove.clear();
     foldersToCreate.clear();
@@ -334,6 +335,7 @@ SyncFolder::optimizeMemoryUsage
 void SyncFolder::optimizeMemoryUsage()
 {
     files.squeeze();
+    filesToRename.squeeze();
     foldersToRename.squeeze();
     filesToMove.squeeze();
     foldersToCreate.squeeze();
@@ -465,6 +467,15 @@ void SyncFolder::saveDatabase(const QString &path) const
         if (stream.writeRawData(&buf[0], bufSize) != bufSize)
             return;
     }
+
+    // Files to rename
+    size = filesToRename.size();
+
+    if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
+        return;
+
+    for (auto it = filesToRename.begin(); it != filesToRename.end(); it++)
+        stream << it.value().path;
 
     // Folders to rename
     size = foldersToRename.size();
@@ -601,6 +612,21 @@ void SyncFolder::loadDatabase(const QString &path)
         it->attributes = attributes;
     }
 
+    // Files to rename
+    if (stream.readRawData(reinterpret_cast<char *>(&numOfFiles), sizeof(numOfFiles)) != sizeof(numOfFiles))
+        return;
+
+    filesToRename.reserve(numOfFiles);
+
+    for (qsizetype i = 0; i < numOfFiles; i++)
+    {
+        QByteArray path;
+        stream >> path;
+
+        const auto it = filesToRename.insert(hash64(path), {path});
+        it->path.squeeze();
+    }
+
     // Folders to rename
     if (stream.readRawData(reinterpret_cast<char *>(&numOfFiles), sizeof(numOfFiles)) != sizeof(numOfFiles))
         return;
@@ -716,6 +742,7 @@ void SyncFolder::loadDatabase(const QString &path)
 
     optimizeMemoryUsage();
     checkForCorruptedFiles();
+    checkForConflictedFiles();
 
     TIMESTAMP(startTime, "Loaded from database: %s", qUtf8Printable(path));
 }
@@ -767,7 +794,8 @@ SyncFolder::hasUnsyncedFiles
 */
 bool SyncFolder::hasUnsyncedFiles() const
 {
-    return !foldersToRename.isEmpty() ||
+    return !filesToRename.isEmpty() ||
+           !foldersToRename.isEmpty() ||
            !filesToMove.isEmpty() ||
            !foldersToCreate.isEmpty() ||
            !filesToCopy.isEmpty() ||
@@ -799,6 +827,9 @@ void SyncFolder::updateUnsyncedList()
         m_unsyncedList.append(syncApp->translate("The following files are not synchronized:"));
         m_unsyncedList.append("\n\n");
 
+        for (auto &path : filesToRename)
+            m_unsyncedList.append(path.path + "\n");
+
         for (auto &path : foldersToRename)
             m_unsyncedList.append(path.toPath + "\n");
 
@@ -816,19 +847,32 @@ void SyncFolder::updateUnsyncedList()
 
         for (auto &path : filesToRemove)
             m_unsyncedList.append(path + "\n");
+
+        m_unsyncedList.append("\n");
     }
 
     if (hasCorruptedFiles())
     {
-        if (hasUnsyncedFiles())
-            m_unsyncedList.append("\n");
-
         m_unsyncedList.append(syncApp->translate("The following files are corrupted:"));
         m_unsyncedList.append("\n\n");
 
         for (auto fileIt = files.begin(); fileIt != files.end(); fileIt++)
             if (fileIt->corrupted())
                 m_unsyncedList.append(m_profile->filePath(fileIt.key()) + "\n");
+
+        m_unsyncedList.append("\n");
+    }
+
+    if (hasConflictedFiles())
+    {
+        m_unsyncedList.append(syncApp->translate("The following files are conflicted:"));
+        m_unsyncedList.append("\n\n");
+
+        for (auto fileIt = files.begin(); fileIt != files.end(); fileIt++)
+            if (fileIt->conflictDetected())
+                m_unsyncedList.append(m_profile->filePath(fileIt.key()) + "\n");
+
+        m_unsyncedList.append("\n");
     }
 }
 
@@ -882,6 +926,25 @@ void SyncFolder::checkForCorruptedFiles()
         if (file.corrupted())
         {
             m_hasCorruptedFiles = true;
+            return;
+        }
+    }
+}
+
+/*
+===================
+SyncFolder::checkForConflictedFiles
+===================
+*/
+void SyncFolder::checkForConflictedFiles()
+{
+    m_hasConflictedFiles = false;
+
+    for (const auto &file : files)
+    {
+        if (file.conflictDetected())
+        {
+            m_hasConflictedFiles = true;
             return;
         }
     }

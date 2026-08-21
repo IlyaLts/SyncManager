@@ -66,12 +66,17 @@ void SyncProfile::loadSettings()
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     QString keyName(m_name + QLatin1String("_profile/"));
 
+    setSyncingMode(static_cast<SyncingMode>(settings.value(keyName + "SyncingMode", AutomaticAdaptive).toInt()));
     setSyncTimeMultiplier(settings.value(keyName + "SyncTimeMultiplier", 1).toUInt());
     setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", defaultFixedInterval).toULongLong());
     setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
     setDeltaCopying(settings.value(keyName + "DeltaCopying", false).toBool());
+    setDeletionMode(static_cast<DeletionMode>(settings.value(keyName + "DeletionMode", MoveToTrash).toInt()));
+    setVersioningFormat(static_cast<VersioningFormat>(settings.value(keyName + "VersioningFormat", FolderTimestamp).toInt()));
+    setVersioningLocation(static_cast<VersioningLocation>(settings.value(keyName + "VersioningLocation", LocallyNextToFolder).toInt()));
     setVersioningPath(settings.value(keyName + "VersioningPath", "").toString());
-    setDatabaseLocation(static_cast<SyncProfile::DatabaseLocation>(settings.value(keyName + "DatabaseLocation", SyncProfile::Decentralized).toInt()));
+    setDatabaseLocation(static_cast<DatabaseLocation>(settings.value(keyName + "DatabaseLocation", Decentralized).toInt()));
+    setConflictResolution(static_cast<ConflictResolution>(settings.value(keyName + "ConflictResolution", Automatically).toInt()));
     setIgnoreSystemFiles(settings.value(keyName + "IgnoreSystemFiles", true).toBool());
     setIgnoreHiddenFiles(settings.value(keyName + "IgnoreHiddenFiles", false).toBool());
     setFileMinSize(settings.value(keyName + "FileMinSize", 0).toULongLong());
@@ -111,6 +116,7 @@ void SyncProfile::saveSettings() const
     settings.setValue(profileKey + "VersioningLocation", versioningLocation());
     settings.setValue(profileKey + "VersioningPath", versioningPath());
     settings.setValue(profileKey + "DatabaseLocation", databaseLocation());
+    settings.setValue(profileKey + "ConflictResolution", conflictResolution());
     settings.setValue(profileKey + "IgnoreSystemFiles", ignoreSystemFiles());
     settings.setValue(profileKey + "IgnoreHiddenFiles", ignoreHiddenFiles());
     settings.setValue(profileKey + "FileMinSize", fileMinSize());
@@ -272,6 +278,22 @@ void SyncProfile::setVersioningLocation(VersioningLocation location)
         location = LocallyNextToFolder;
 
     m_versioningLocation = location;
+
+    if (syncApp->initiated())
+        saveSettings();
+}
+
+/*
+===================
+SyncProfile::setConflictResolution
+===================
+*/
+void SyncProfile::setConflictResolution(ConflictResolution mode)
+{
+    if (mode < Automatically || mode > RenameBoth)
+        mode = Automatically;
+
+    m_conflictResolution = mode;
 
     if (syncApp->initiated())
         saveSettings();
@@ -736,6 +758,8 @@ their data from memory earlier. This can reduce memory consumption by as much as
 */
 void SyncProfile::removeUnneededFilePath(hash64_t hash)
 {
+    std::optional<QDateTime> dateTime;
+
     for (auto &folder : folders())
     {
         const SyncFile &file = folder.files.value(hash);
@@ -749,8 +773,16 @@ void SyncProfile::removeUnneededFilePath(hash64_t hash)
         if (file.updated() || file.attributesUpdated())
             return;
 
+        if (file.conflictDetected())
+            return;
+
         if (file.newlyAdded() || file.corrupted())
             return;
+
+        if (dateTime && dateTime != file.modifiedDate)
+            return;
+        else
+            dateTime = file.modifiedDate;
     }
 
     m_mutex.lock();

@@ -117,6 +117,7 @@ private:
     bool copyFileNative(QFile &from, const QString &fileName, const QString &newName);
     bool copyFileDelta(quint64 &deviceRead, QFile &from, const QString &newName);
     bool copyFileManual(quint64 &deviceRead, QFile &from, const QString &newName);
+    void renameFiles(SyncFolder &folder);
     void renameFolders(SyncFolder &folder);
     void moveFiles(SyncFolder &folder);
     void removeFolders(SyncFolder &folder);
@@ -141,6 +142,7 @@ private:
 
     quint64 m_maxDiskTransferRate = 0;
     QTimer m_diskUsageResetTimer;
+public:
     QMap<QString, QTimer *> m_cooldownNotifications;
     QMap<hash64_t, quint64> m_usedDevices;
     QMutex m_usedDevicesMutex;

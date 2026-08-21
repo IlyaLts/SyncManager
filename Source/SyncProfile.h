@@ -81,6 +81,13 @@ public:
         CustomLocation
     };
 
+    enum ConflictResolution
+    {
+        Automatically,
+        DoNothing,
+        RenameBoth
+    };
+
     explicit SyncProfile(const QString &name, const QModelIndex &index);
     ~SyncProfile();
 
@@ -104,6 +111,7 @@ public:
     void setDatabaseLocation(DatabaseLocation location);
     void setVersioningFormat(VersioningFormat format);
     void setVersioningLocation(VersioningLocation location);
+    void setConflictResolution(ConflictResolution mode);
     void setVersioningPath(const QString &path);
     void setVersioningFolder(const QString &name);
     void setVersioningPattern(const QString &pattern);
@@ -137,6 +145,7 @@ public:
     inline DatabaseLocation databaseLocation() const { return m_databaseLocation; }
     inline VersioningFormat versioningFormat() const { return m_versioningFormat; }
     inline VersioningLocation versioningLocation() const { return m_versioningLocation; }
+    inline ConflictResolution conflictResolution() const { return m_conflictResolution; }
     inline const QString &versioningPath() const { return m_versioningPath; }
     inline const QString &versioningFolder() const { return m_versioningFolder; }
     inline const QString &versioningPattern() const { return m_versioningPattern; }
@@ -200,6 +209,7 @@ private:
     DeletionMode m_deletionMode = MoveToTrash;
     VersioningLocation m_versioningLocation = LocallyNextToFolder;
     VersioningFormat m_versioningFormat = FileTimestampAfter;
+    ConflictResolution m_conflictResolution = Automatically;
     QString m_versioningFolder;
     QString m_versioningPattern;
     QString m_versioningPath;

@@ -46,6 +46,7 @@ public:
     {
         Updated = 0x1,
         Exists = 0x2,
+        ConflictDetected = 0x4,
         NewlyAdded = 0x8,
         ReadOnly = 0x10,
         AttributesUpdated = 0x20,
@@ -72,6 +73,7 @@ public:
 
     inline void setUpdated(bool value) { setFlag(Updated, value); }
     inline void setExists(bool value) { setFlag(Exists, value); }
+    inline void setConflictDetected(bool value) { setFlag(ConflictDetected, value); }
     inline void setNewlyAdded(bool value) { setFlag(NewlyAdded, value); }
     inline void setReadOnly(bool value) { setFlag(ReadOnly, value); }
     inline void setAttributesUpdated(bool value) { setFlag(AttributesUpdated, value); }
@@ -81,6 +83,7 @@ public:
 
     inline bool updated() const { return flag(Updated); }
     inline bool exists() const { return flag(Exists); }
+    inline bool conflictDetected() const { return flag(ConflictDetected); }
     inline bool newlyAdded() const { return flag(NewlyAdded); }
     inline bool readOnly() const { return flag(ReadOnly); }
     inline bool attributesUpdated() const { return flag(AttributesUpdated); }

@@ -71,6 +71,9 @@ void ProfileMenu::setup(QWidget *parent)
     customLocationPathAction = new QAction(syncApp->translate("Custom Location: ") + profile->versioningPath(), parent);
     databaseLocallyAction = new QAction("&" + syncApp->translate("Locally (On the local machine)"), parent);
     databaseDecentralizedAction = new QAction("&" + syncApp->translate("Decentralized (Inside synchronization folders)"), parent);
+    automaticResolutionAction = new QAction("&" + syncApp->translate("Automatically"), parent);
+    doNothingResolutionAction = new QAction("&" + syncApp->translate("Do Nothing"), parent);
+    renameBothResolutionAction = new QAction("&" + syncApp->translate("Rename Both"), parent);
     fileMinSizeAction = new QAction(QString("&" + syncApp->translate("Minimum File Size: %1")).arg(formatSize((profile->fileMinSize()))), parent);
     fileMaxSizeAction = new QAction(QString("&" + syncApp->translate("Maximum File Size: %1")).arg(formatSize((profile->fileMaxSize()))), parent);
     movedFileMinSizeAction = new QAction(QString("&" + syncApp->translate("Minimum Size for a Moved File: %1")).arg(formatSize((profile->movedFileMinSize()))), parent);
@@ -102,6 +105,9 @@ void ProfileMenu::setup(QWidget *parent)
     customLocationAction->setCheckable(true);
     databaseLocallyAction->setCheckable(true);
     databaseDecentralizedAction->setCheckable(true);
+    automaticResolutionAction->setCheckable(true);
+    doNothingResolutionAction->setCheckable(true);
+    renameBothResolutionAction->setCheckable(true);
     ignoreSystemFilesAction->setCheckable(true);
     ignoreHiddenFilesAction->setCheckable(true);
 
@@ -144,6 +150,11 @@ void ProfileMenu::setup(QWidget *parent)
     databaseLocationMenu->addAction(databaseLocallyAction);
     databaseLocationMenu->addAction(databaseDecentralizedAction);
 
+    conflictResolutionMenu = new UnhidableMenu("&" + syncApp->translate("Conflict Resolution"), parent);
+    conflictResolutionMenu->addAction(automaticResolutionAction);
+    conflictResolutionMenu->addAction(doNothingResolutionAction);
+    conflictResolutionMenu->addAction(renameBothResolutionAction);
+
     filteringMenu = new UnhidableMenu("&" + syncApp->translate("Filtering"), parent);
     filteringMenu->addAction(fileMinSizeAction);
     filteringMenu->addAction(fileMaxSizeAction);
@@ -179,6 +190,9 @@ void ProfileMenu::setup(QWidget *parent)
     connect(customLocationPathAction, &QAction::triggered, this, [this](){ setVersioningLocationPath(); });
     connect(databaseLocallyAction, &QAction::triggered, this, [this](){ switchDatabaseLocation(SyncProfile::Locally); });
     connect(databaseDecentralizedAction, &QAction::triggered, this, [this](){ switchDatabaseLocation(SyncProfile::Decentralized); });
+    connect(automaticResolutionAction, &QAction::triggered, this, [this](){ switchConflictResolution(SyncProfile::Automatically); });
+    connect(doNothingResolutionAction, &QAction::triggered, this, [this](){ switchConflictResolution(SyncProfile::DoNothing); });
+    connect(renameBothResolutionAction, &QAction::triggered, this, [this](){ switchConflictResolution(SyncProfile::RenameBoth); });
     connect(fileMinSizeAction, &QAction::triggered, this, [this](){ setFileMinSize(); });
     connect(fileMaxSizeAction, &QAction::triggered, this, [this](){ setFileMaxSize(); });
     connect(movedFileMinSizeAction, &QAction::triggered, this, [this](){ setMovedFileMinSize(); });
@@ -223,6 +237,9 @@ void ProfileMenu::updateStates()
     customLocationPathAction->setText(syncApp->translate("Custom Location: ") + profile->versioningPath());
     databaseLocallyAction->setChecked(profile->databaseLocation() == SyncProfile::Locally);
     databaseDecentralizedAction->setChecked(profile->databaseLocation() == SyncProfile::Decentralized);
+    automaticResolutionAction->setChecked(profile->conflictResolution() == SyncProfile::Automatically);
+    doNothingResolutionAction->setChecked(profile->conflictResolution() == SyncProfile::DoNothing);
+    renameBothResolutionAction->setChecked(profile->conflictResolution() == SyncProfile::RenameBoth);
     fileMinSizeAction->setText("&" + syncApp->translate("Minimum File Size: %1").arg(formatSize(profile->fileMinSize())));
     fileMaxSizeAction->setText("&" + syncApp->translate("Maximum File Size: %1").arg(formatSize(profile->fileMaxSize())));
     movedFileMinSizeAction->setText("&" + syncApp->translate("Minimum Size for a Moved File: %1").arg(formatSize(profile->movedFileMinSize())));
@@ -268,6 +285,9 @@ void ProfileMenu::retranslate()
     customLocationPathAction->setText(syncApp->translate("Custom Location: ") + profile->versioningPath());
     databaseLocallyAction->setText("&" + syncApp->translate("Locally (On the local machine)"));
     databaseDecentralizedAction->setText("&" + syncApp->translate("Decentralized (Inside synchronization folders)"));
+    automaticResolutionAction->setText("&" + syncApp->translate("Automatically"));
+    doNothingResolutionAction->setText("&" + syncApp->translate("Do Nothing"));
+    renameBothResolutionAction->setText("&" + syncApp->translate("Rename Both"));
     fileMinSizeAction->setText(QString("&" + syncApp->translate("Minimum File Size: %1")).arg(formatSize(profile->fileMinSize())));
     fileMaxSizeAction->setText(QString("&" + syncApp->translate("Maximum File Size: %1")).arg(formatSize(profile->fileMaxSize())));
     movedFileMinSizeAction->setText(QString("&" + syncApp->translate("Minimum Size for a Moved File: %1")).arg(formatSize(profile->movedFileMinSize())));
@@ -281,6 +301,7 @@ void ProfileMenu::retranslate()
     versioningFormatMenu->setTitle("&" + syncApp->translate("Versioning Format"));
     versioningLocationMenu->setTitle("&" + syncApp->translate("Versioning Location"));
     databaseLocationMenu->setTitle("&" + syncApp->translate("Database Location"));
+    conflictResolutionMenu->setTitle("&" + syncApp->translate("Conflict Resolution"));
     filteringMenu->setTitle("&" + syncApp->translate("Filtering"));
 }
 
@@ -296,6 +317,7 @@ void ProfileMenu::exportMenu(QMenu *menu)
     menu->addMenu(versioningFormatMenu);
     menu->addMenu(versioningLocationMenu);
     menu->addMenu(databaseLocationMenu);
+    menu->addMenu(conflictResolutionMenu);
     menu->addMenu(filteringMenu);
 }
 
@@ -319,6 +341,9 @@ void ProfileMenu::enable(bool enable)
         action->setEnabled(enable);
 
     for (auto &action : databaseLocationMenu->actions())
+        action->setEnabled(enable);
+
+    for (auto &action : conflictResolutionMenu->actions())
         action->setEnabled(enable);
 
     for (auto &action : filteringMenu->actions())
@@ -602,6 +627,22 @@ void ProfileMenu::switchDatabaseLocation(SyncProfile::DatabaseLocation location)
     databaseLocallyAction->setChecked(location == SyncProfile::Locally);
     databaseDecentralizedAction->setChecked(location == SyncProfile::Decentralized);
     profile->setDatabaseLocation(location);
+}
+
+/*
+===================
+ProfileMenu::switchConflictResolution
+===================
+*/
+void ProfileMenu::switchConflictResolution(SyncProfile::ConflictResolution mode)
+{
+    if (mode < SyncProfile::Automatically || mode > SyncProfile::RenameBoth)
+        mode = SyncProfile::Automatically;
+
+    automaticResolutionAction->setChecked(mode == SyncProfile::Automatically);
+    doNothingResolutionAction->setChecked(mode == SyncProfile::DoNothing);
+    renameBothResolutionAction->setChecked(mode == SyncProfile::RenameBoth);
+    profile->setConflictResolution(mode);
 }
 
 /*

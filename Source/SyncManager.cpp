@@ -220,6 +220,7 @@ void SyncManager::updateStatus()
         {
             if (folder.active())
             {
+                size += folder.filesToRename.size();
                 size += folder.foldersToRename.size();
                 size += folder.filesToMove.size();
                 size += folder.foldersToCreate.size();
@@ -427,42 +428,46 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     if (countAverage)
         profile.setSyncTime(profile.syncTime() / 2);
 
-    int numOfFoldersToRename = 0;
-    int numOfFilesToMove = 0;
-    int numOfFoldersToCreate = 0;
-    int numOffilesToCopy = 0;
-    int numOfFoldersToRemove = 0;
-    int numOfFilesToRemove = 0;
+    int filesToRename = 0;
+    int foldersToRename = 0;
+    int filesToMove = 0;
+    int foldersToCreate = 0;
+    int filesToCopy = 0;
+    int foldersToRemove = 0;
+    int filesToRemove = 0;
 
     for (const auto &folder : profile.folders())
     {
-        numOfFoldersToRename += folder.foldersToRename.size();
-        numOfFilesToMove += folder.filesToMove.size();
-        numOfFoldersToCreate += folder.foldersToCreate.size();
-        numOffilesToCopy += folder.filesToCopy.size();
-        numOfFoldersToRemove += folder.foldersToRemove.size();
-        numOfFilesToRemove += folder.filesToRemove.size();
+        filesToRename += folder.foldersToRename.size();
+        foldersToRename += folder.foldersToRename.size();
+        filesToMove += folder.filesToMove.size();
+        foldersToCreate += folder.foldersToCreate.size();
+        filesToCopy += folder.filesToCopy.size();
+        foldersToRemove += folder.foldersToRemove.size();
+        filesToRemove += folder.filesToRemove.size();
     }
 
-    if (numOfFoldersToRename || numOfFilesToMove || numOfFoldersToCreate ||
-        numOffilesToCopy || numOfFoldersToRemove || numOfFilesToRemove)
+    if (filesToRename || foldersToRename || filesToMove || foldersToCreate ||
+        filesToCopy || foldersToRemove || filesToRemove)
     {
         m_databaseChanged = true;
 
 #ifdef DEBUG
         qDebug() << "---------------------------------------";
-        if (numOfFoldersToRename)
-            qDebug() << "Folders to rename:" << numOfFoldersToRename;
-        if (numOfFilesToMove)
-            qDebug() << "Files to move:" << numOfFilesToMove;
-        if (numOfFoldersToCreate)
-            qDebug() << "Folders to create:" << numOfFoldersToCreate;
-        if (numOffilesToCopy)
-            qDebug() << "Files to copy:" << numOffilesToCopy;
-        if (numOfFoldersToRemove)
-            qDebug() << "Folders to remove:" << numOfFoldersToRemove;
-        if (numOfFilesToRemove)
-            qDebug() << "Files to remove:" << numOfFilesToRemove;
+        if (filesToRename)
+            qDebug() << "Conflicted files to rename:" << filesToRename;
+        if (foldersToRename)
+            qDebug() << "Folders to rename:" << foldersToRename;
+        if (filesToMove)
+            qDebug() << "Files to move:" << filesToMove;
+        if (foldersToCreate)
+            qDebug() << "Folders to create:" << foldersToCreate;
+        if (filesToCopy)
+            qDebug() << "Files to copy:" << filesToCopy;
+        if (foldersToRemove)
+            qDebug() << "Folders to remove:" << foldersToRemove;
+        if (filesToRemove)
+            qDebug() << "Files to remove:" << filesToRemove;
         qDebug() << "---------------------------------------";
 #endif
     }
@@ -1260,6 +1265,45 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                 if (alreadyAdded && !hasNewer)
                     continue;
 
+                if (profile.conflictResolution() != SyncProfile::Automatically)
+                {
+                    if (folderIt->files.contains(otherFileIt.key()) && file.isOlder(otherFile))
+                    {
+                        QByteArray path(profile.filePath(otherFileIt.key()));
+
+                        if (profile.conflictResolution() == SyncProfile::RenameBoth)
+                        {
+                            folderIt->filesToRename.insert(otherFileIt.key(), {path})->path.squeeze();
+                            folderIt->filesToRemove.remove(otherFileIt.key());
+
+                            otherFolderIt->filesToRename.insert(otherFileIt.key(), {path})->path.squeeze();
+                            otherFolderIt->filesToRemove.remove(otherFileIt.key());
+                        }
+                        {
+
+                            QString notif("profile_" + profile.name());
+                            bool shouldNotify = m_cooldownNotifications.contains(notif) ? !m_cooldownNotifications.value(notif)->isActive() : true;
+
+                            // A conflict has detected notification
+                            if (m_notifications && shouldNotify)
+                            {
+                                if (!m_cooldownNotifications.contains(notif))
+                                    m_cooldownNotifications.insert(notif, new QTimer(this)).value()->setSingleShot(true);
+
+                                shouldNotify = false;
+                                m_cooldownNotifications.value(notif)->start(NotificationCooldown);
+
+                                QString title(tr("A conflict has detected in %1 profile (%2)").arg(profile.name(), path));
+                                syncApp->tray()->notify(title, "", QSystemTrayIcon::Warning);
+                            }
+                        }
+
+                        folderIt->files[otherFileIt.key()].setConflictDetected(true);
+                        otherFolderIt->files[otherFileIt.key()].setConflictDetected(true);
+                        continue;
+                    }
+                }
+
                 if ((!folderIt->files.contains(otherFileIt.key()) || file.isOlder(otherFile) ||
                     // Or if other folders has a new version of a file and our file was removed
                      (!file.exists() && (otherFile.updated() || profile.isTopFolderUpdated(*otherFolderIt, otherFileIt.key().data)))))
@@ -1426,6 +1470,9 @@ void SyncManager::checkForChanges(SyncProfile &profile)
 
     checkForAddedFiles(profile);
     checkForRemovedFiles(profile);
+
+    for (auto &folder : profile.folders())
+        folder.checkForConflictedFiles();
 }
 
 /*
@@ -1623,6 +1670,71 @@ bool SyncManager::copyFileManual(quint64 &deviceRead, QFile &from, const QString
 
     tempFile.setAutoRemove(false);
     return true;
+}
+
+/*
+===================
+SyncManager::renameFiles
+
+Used in conflict resolution when we rename all conflicted files
+===================
+*/
+void SyncManager::renameFiles(SyncFolder &folder)
+{
+    for (auto fileIt = folder.filesToRename.begin(); fileIt != folder.filesToRename.end() && (!m_paused && folder.active());)
+    {
+        if (m_shouldQuit)
+            break;
+
+        syncApp->throttleDown();
+
+        QString fromFullPath(folder.path());
+        fromFullPath.append(fileIt->path);
+
+        // Removes from the list list if the source file doesn't exist
+        if (!QFileInfo::exists(fromFullPath))
+        {
+            fileIt = folder.filesToRename.erase(static_cast<FileRenameList::const_iterator>(fileIt));
+            continue;
+        }
+
+        QString newPath(fileIt->path);
+
+        int nameEndIndex = newPath.lastIndexOf('.');
+        int slashIndex = newPath.lastIndexOf('/');
+        int backlashIndex = newPath.lastIndexOf('\\');
+
+        if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
+            nameEndIndex = newPath.length();
+
+        newPath.insert(nameEndIndex, "_Conflict_" + QDateTime::currentDateTime().toString("yyyy_M_d_h_m_s_z").toUtf8());
+
+        QString toFullPath(folder.path());
+        toFullPath.append(newPath);
+
+        hash64_t fromHash = hash64(fileIt->path);
+        hash64_t newHash = hash64(newPath.toUtf8());
+
+        if (QFile::rename(fromFullPath, toFullPath))
+        {
+            QFileInfo toFileInfo(toFullPath);
+            folder.files.remove(fromHash);
+            auto it = folder.files.insert(newHash, SyncFile(SyncFile::File, toFileInfo.lastModified()));
+            it->size = toFileInfo.size();
+            it->attributes = getFileAttributes(toFullPath);
+            folder.profile().addFilePath(newHash, newPath.toUtf8());
+            fileIt = folder.filesToRename.erase(static_cast<FileRenameList::const_iterator>(fileIt));
+
+            QByteArray parentPath = toFileInfo.path().toUtf8();
+
+            if (QFileInfo::exists(parentPath))
+                folder.foldersToUpdate.insert(parentPath);
+        }
+        else
+        {
+            ++fileIt;
+        }
+    }
 }
 
 /*
@@ -2061,6 +2173,7 @@ void SyncManager::syncChanges(SyncProfile &profile)
         if (profile.deletionMode() == SyncProfile::Versioning)
             folder.updateVersioningPath();
 
+        renameFiles(folder);
         renameFolders(folder);
         moveFiles(folder);
 

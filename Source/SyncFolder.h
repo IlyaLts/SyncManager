@@ -28,6 +28,11 @@
 
 class SyncProfile;
 
+struct FileToRenameInfo
+{
+    QByteArray path;
+};
+
 struct FolderToRenameInfo
 {
     QByteArray toPath;
@@ -56,6 +61,7 @@ struct FileToCopyInfo
 };
 
 using Files = QHash<SyncHash, SyncFile>;
+using FileRenameList = QHash<SyncHash, FileToRenameInfo>;
 using FolderRenameList = QHash<SyncHash, FolderToRenameInfo>;
 using FileMoveList = QHash<SyncHash, FileToMoveInfo>;
 using FolderCreateList = QHash<SyncHash, FolderToCreateInfo>;
@@ -106,6 +112,7 @@ public:
     bool partiallySynchronized() const;
     void updateUnsyncedList();
     void checkForCorruptedFiles();
+    void checkForConflictedFiles();
     void remove();
 
     void setType(Type type);
@@ -127,10 +134,12 @@ public:
     inline bool toBeRemoved() const { return m_toBeRemoved; }
     inline bool caseSensitive() const { return m_caseSensitive; }
     inline bool hasCorruptedFiles() const { return m_hasCorruptedFiles; };
+    inline bool hasConflictedFiles() const { return m_hasConflictedFiles; };
 
     inline SyncProfile &profile() const { return *m_profile; }
 
     Files files;
+    FileRenameList filesToRename;
     FolderRenameList foldersToRename;
     FileMoveList filesToMove;
     FolderCreateList foldersToCreate;
@@ -152,6 +161,7 @@ private:
     bool m_toBeRemoved = false;
     bool m_caseSensitive = false;
     bool m_hasCorruptedFiles = false;
+    bool m_hasConflictedFiles = false;
 
     SyncProfile *m_profile;
 };
