@@ -580,18 +580,15 @@ void SyncManager::executeSyncProfile(SyncProfile &profile)
         if (folder.hasCorruptedFiles())
         {
             QString deviceName(QStorageInfo(folder.path()).displayName());
-            bool shouldNotify = m_cooldownNotifications.contains(deviceName) ? !m_cooldownNotifications.value(deviceName)->isActive() : true;
+            QString title(tr("Disk: %1 is corrupted. Please fix the errors.").arg(deviceName));
 
-            if (shouldNotify)
-            {
-                if (!m_cooldownNotifications.contains(deviceName))
-                    m_cooldownNotifications.insert(deviceName, new QTimer(this)).value()->setSingleShot(true);
-
-                QString title(tr("Disk: %1 is corrupted. Please fix the errors.").arg(deviceName));
-                syncApp->tray()->notify(title, "", QSystemTrayIcon::Critical);
-
-                m_cooldownNotifications.value(deviceName)->start(NotificationCooldown);
-            }
+            QMetaObject::invokeMethod(syncApp->tray(),
+                                      &SystemTray::notifyWithCooldown,
+                                      Qt::QueuedConnection,
+                                      deviceName,
+                                      title,
+                                      QString(),
+                                      QSystemTrayIcon::Critical);
         }
 
         folder.clearData();
@@ -1279,23 +1276,19 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
                             otherFolderIt->filesToRename.insert(otherFileIt.key(), {path})->path.squeeze();
                             otherFolderIt->filesToRemove.remove(otherFileIt.key());
                         }
+                        // A conflict has detected notification
+                        else if (m_notifications)
                         {
+                            QString type("profile_" + profile.name());
+                            QString title(tr("A conflict has detected in %1 profile (%2)").arg(profile.name(), path));
 
-                            QString notif("profile_" + profile.name());
-                            bool shouldNotify = m_cooldownNotifications.contains(notif) ? !m_cooldownNotifications.value(notif)->isActive() : true;
-
-                            // A conflict has detected notification
-                            if (m_notifications && shouldNotify)
-                            {
-                                if (!m_cooldownNotifications.contains(notif))
-                                    m_cooldownNotifications.insert(notif, new QTimer(this)).value()->setSingleShot(true);
-
-                                shouldNotify = false;
-                                m_cooldownNotifications.value(notif)->start(NotificationCooldown);
-
-                                QString title(tr("A conflict has detected in %1 profile (%2)").arg(profile.name(), path));
-                                syncApp->tray()->notify(title, "", QSystemTrayIcon::Warning);
-                            }
+                            QMetaObject::invokeMethod(syncApp->tray(),
+                                                      &SystemTray::notifyWithCooldown,
+                                                      Qt::QueuedConnection,
+                                                      type,
+                                                      title,
+                                                      QString(),
+                                                      QSystemTrayIcon::Warning);
                         }
 
                         folderIt->files[otherFileIt.key()].setConflictDetected(true);
@@ -2052,7 +2045,6 @@ void SyncManager::copyFiles(SyncFolder &folder)
     hash64_t deviceHash = hash64(QStorageInfo(folder.path()).device());
     quint64 &deviceRead = m_usedDevices[deviceHash];
     QString rootPath = QStorageInfo(folder.path()).rootPath();
-    bool shouldNotify = m_cooldownNotifications.contains(rootPath) ? !m_cooldownNotifications.value(rootPath)->isActive() : true;
 
     for (auto fileIt = folder.filesToCopy.begin(); fileIt != folder.filesToCopy.end() && (!m_paused && folder.active());)
     {
@@ -2134,21 +2126,22 @@ void SyncManager::copyFiles(SyncFolder &folder)
         else
         {
             // Not enough disk space notification
-            if (m_notifications && shouldNotify && QStorageInfo(folder.path()).bytesAvailable() < QFile(fileIt->fromFullPath).size())
+            if (m_notifications && QStorageInfo(folder.path()).bytesAvailable() < QFile(fileIt->fromFullPath).size())
             {
-                if (!m_cooldownNotifications.contains(rootPath))
-                    m_cooldownNotifications.insert(rootPath, new QTimer(this)).value()->setSingleShot(true);
-
                 QByteArray parentPath = toFileInfo.path().toUtf8();
 
                 if (QFileInfo::exists(parentPath))
                     folder.foldersToUpdate.insert(parentPath);
 
-                shouldNotify = false;
-                m_cooldownNotifications.value(rootPath)->start(NotificationCooldown);
-
                 QString title(tr("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path()).displayName(), rootPath));
-                syncApp->tray()->notify(title, "", QSystemTrayIcon::Critical);
+
+                QMetaObject::invokeMethod(syncApp->tray(),
+                                          &SystemTray::notifyWithCooldown,
+                                          Qt::QueuedConnection,
+                                          rootPath,
+                                          title,
+                                          QString(),
+                                          QSystemTrayIcon::Critical);
             }
 
             ++fileIt;

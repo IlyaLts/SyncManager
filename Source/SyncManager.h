@@ -37,7 +37,6 @@
 #define DATABASE_VERSION        5
 
 static constexpr quint64 SyncMinDelay = 1000;
-static constexpr quint64 NotificationCooldown = 300000;
 static constexpr quint64 CpuUpdateTime = 50;
 static constexpr quint64 DiskUsageResetTime = 1000;
 static constexpr quint64 CopyBufferSize = 4096;
@@ -142,8 +141,6 @@ private:
 
     quint64 m_maxDiskTransferRate = 0;
     QTimer m_diskUsageResetTimer;
-public:
-    QMap<QString, QTimer *> m_cooldownNotifications;
     QMap<hash64_t, quint64> m_usedDevices;
     QMutex m_usedDevicesMutex;
 };

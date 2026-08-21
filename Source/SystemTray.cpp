@@ -22,6 +22,7 @@
 #include "MainWindow.h"
 #include <QMenu>
 #include <QAction>
+#include <QThread>
 
 /*
 ===================
@@ -181,4 +182,29 @@ void SystemTray::notify(const QString &title, const QString &message, QSystemTra
 
     if (!visible)
         hide();
+}
+
+/*
+===================
+SystemTray::notifyWithCooldown
+===================
+*/
+void SystemTray::notifyWithCooldown(const QString &type, const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon)
+{
+#ifdef DEBUG
+    if (QThread::currentThread() != qApp->thread())
+    {
+        qDebug("notifyWithCooldown() must be called from the main thread!");
+        return;
+    }
+#endif
+
+    if (m_cooldownNotifications.contains(type) && m_cooldownNotifications.value(type)->isActive())
+        return;
+
+    if (!m_cooldownNotifications.contains(type))
+        m_cooldownNotifications.insert(type, new QTimer(this)).value()->setSingleShot(true);
+
+    notify(title, message, icon);
+    m_cooldownNotifications.value(type)->start(NotificationCooldown);
 }

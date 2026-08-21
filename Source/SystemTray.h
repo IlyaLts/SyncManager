@@ -21,6 +21,9 @@
 #define SYSTEMTRAY_H
 
 #include <QSystemTrayIcon>
+#include <QMap>
+
+static constexpr quint64 NotificationCooldown = 300000;
 
 class QAction;
 
@@ -57,6 +60,7 @@ public Q_SLOTS:
 
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
+    void notifyWithCooldown(const QString &type, const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
 
 private:
 
@@ -71,6 +75,8 @@ private:
 
     QAction *m_showAction = nullptr;
     QAction *m_quitAction = nullptr;
+
+    QMap<QString, QTimer *> m_cooldownNotifications;
 };
 
 #endif // SYSTEMTRAY_H
