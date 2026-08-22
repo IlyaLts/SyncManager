@@ -1681,6 +1681,30 @@ void SyncManager::renameConflictedFiles(SyncFolder &folder)
         QString newPath(fileIt->path);
         addTimestampBeforeExt(newPath, "yyyy_M_d_h_m_s_z", "_Conflict_");
 
+        // Adds a postfix number in case a file with that name already exists
+        for (int i = 2;; i++)
+        {
+            bool exists = false;
+
+            for (auto &otherFolder : folder.profile().folders())
+            {
+                if (otherFolder == folder)
+                    continue;
+
+                if (QFileInfo::exists(otherFolder.path() + newPath))
+                {
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists)
+                break;
+
+            newPath = fileIt->path;
+            addTimestampBeforeExt(newPath, "yyyy_M_d_h_m_s_z_" + QString::number(i), "_Conflict_");
+        }
+
         QString toFullPath(folder.path());
         toFullPath.append(newPath);
 
