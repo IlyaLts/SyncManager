@@ -557,6 +557,11 @@ void SyncManager::executeSyncProfile(SyncProfile &profile)
     syncChanges(profile);
     profile.removeNonexistentFileData();
 
+    // We need to check for conflicting files again after synchronization
+    // to avoid incorrect partial synchronized status for folders.
+    for (auto &folder : profile.folders())
+        folder.checkForConflictedFiles();
+
     if (profile.resetLocks())
         m_databaseChanged = true;
 
