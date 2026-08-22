@@ -436,7 +436,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
     for (const auto &folder : profile.folders())
     {
-        filesToRename += folder.foldersToRename.size();
+        filesToRename += folder.conflictedFilesToRename.size();
         foldersToRename += folder.foldersToRename.size();
         filesToMove += folder.filesToMove.size();
         foldersToCreate += folder.foldersToCreate.size();
@@ -1696,6 +1696,17 @@ void SyncManager::renameConflictedFiles(SyncFolder &folder)
 
             if (QFileInfo::exists(parentPath))
                 folder.foldersToUpdate.insert(parentPath);
+
+            // Adds renamed files for copying to other sync folders
+            for (auto &otherFolder : folder.profile().folders())
+            {
+                if (otherFolder == folder)
+                    continue;
+
+                auto it = otherFolder.filesToCopy.insert(newHash, {newPath.toUtf8(), toFullPath.toUtf8(), toFileInfo.lastModified()});
+                it->toPath.squeeze();
+                it->fromFullPath.squeeze();
+            }
         }
         else
         {
@@ -2130,10 +2141,17 @@ void SyncManager::syncChanges(SyncProfile &profile)
         if (!folder.active())
             continue;
 
+        renameConflictedFiles(folder);
+    }
+
+    for (auto &folder : profile.folders())
+    {
+        if (!folder.active())
+            continue;
+
         if (profile.deletionMode() == SyncProfile::Versioning)
             folder.updateVersioningPath();
 
-        renameConflictedFiles(folder);
         renameFolders(folder);
         moveFiles(folder);
 
