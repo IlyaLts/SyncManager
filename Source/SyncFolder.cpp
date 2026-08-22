@@ -168,27 +168,12 @@ bool SyncFolder::removeFile(const QString &path, SyncFile::Type type)
             // Adds a timestamp to the end of the filename of a deleted file
             if (profile().versioningFormat() == SyncProfile::FileTimestampBefore)
             {
-                int nameEndIndex = newLocation.lastIndexOf('.');
-                int slashIndex = newLocation.lastIndexOf('/');
-                int backlashIndex = newLocation.lastIndexOf('\\');
-
-                if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
-                    nameEndIndex = newLocation.length();
-
-                newLocation.insert(nameEndIndex, "_" + QDateTime::currentDateTime().toString(profile().versioningPattern()));
+                addTimestampBeforeExt(newLocation, profile().versioningPattern(), "_");
             }
             // Adds a timestamp to a deleted file before the extension
             else if (profile().versioningFormat() == SyncProfile::FileTimestampAfter)
             {
-                newLocation.append("_" + QDateTime::currentDateTime().toString(profile().versioningPattern()));
-
-                // Adds a file extension after the timestamp
-                int dotIndex = path.lastIndexOf('.');
-                int slashIndex = path.lastIndexOf('/');
-                int backlashIndex = path.lastIndexOf('\\');
-
-                if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
-                    newLocation.append(path.mid(dotIndex));
+                addTimestampAfterExt(newLocation, profile().versioningPattern(), "_");
             }
             // As we want to have only the latest version of files,
             // we need to delete the existing files in the versioning folder first,
@@ -317,7 +302,7 @@ SyncFolder::clearData
 void SyncFolder::clearData()
 {
     files.clear();
-    filesToRename.clear();
+    conflictedFilesToRename.clear();
     foldersToRename.clear();
     filesToMove.clear();
     foldersToCreate.clear();
@@ -335,7 +320,7 @@ SyncFolder::optimizeMemoryUsage
 void SyncFolder::optimizeMemoryUsage()
 {
     files.squeeze();
-    filesToRename.squeeze();
+    conflictedFilesToRename.squeeze();
     foldersToRename.squeeze();
     filesToMove.squeeze();
     foldersToCreate.squeeze();
@@ -468,13 +453,13 @@ void SyncFolder::saveDatabase(const QString &path) const
             return;
     }
 
-    // Files to rename
-    size = filesToRename.size();
+    // Conflicted files to rename
+    size = conflictedFilesToRename.size();
 
     if (stream.writeRawData(reinterpret_cast<char *>(&size), sizeof(size)) != sizeof(size))
         return;
 
-    for (auto it = filesToRename.begin(); it != filesToRename.end(); it++)
+    for (auto it = conflictedFilesToRename.begin(); it != conflictedFilesToRename.end(); it++)
         stream << it.value().path;
 
     // Folders to rename
@@ -612,18 +597,18 @@ void SyncFolder::loadDatabase(const QString &path)
         it->attributes = attributes;
     }
 
-    // Files to rename
+    // Conflicted files to rename
     if (stream.readRawData(reinterpret_cast<char *>(&numOfFiles), sizeof(numOfFiles)) != sizeof(numOfFiles))
         return;
 
-    filesToRename.reserve(numOfFiles);
+    conflictedFilesToRename.reserve(numOfFiles);
 
     for (qsizetype i = 0; i < numOfFiles; i++)
     {
         QByteArray path;
         stream >> path;
 
-        const auto it = filesToRename.insert(hash64(path), {path});
+        const auto it = conflictedFilesToRename.insert(hash64(path), {path});
         it->path.squeeze();
     }
 
@@ -794,7 +779,7 @@ SyncFolder::hasUnsyncedFiles
 */
 bool SyncFolder::hasUnsyncedFiles() const
 {
-    return !filesToRename.isEmpty() ||
+    return !conflictedFilesToRename.isEmpty() ||
            !foldersToRename.isEmpty() ||
            !filesToMove.isEmpty() ||
            !foldersToCreate.isEmpty() ||
@@ -827,7 +812,7 @@ void SyncFolder::updateUnsyncedList()
         m_unsyncedList.append(syncApp->translate("The following files are not synchronized:"));
         m_unsyncedList.append("\n\n");
 
-        for (auto &path : filesToRename)
+        for (auto &path : conflictedFilesToRename)
             m_unsyncedList.append(path.path + "\n");
 
         for (auto &path : foldersToRename)

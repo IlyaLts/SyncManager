@@ -164,7 +164,7 @@ MenuBar::updateStates
 void MenuBar::updateStates()
 {
     showInTrayAction->setChecked(syncApp->trayVisible());
-    disableNotificationAction->setChecked(!syncApp->manager()->notificationsEnabled());
+    disableNotificationAction->setChecked(!syncApp->tray()->notificationsEnabled());
     checkForUpdatesAction->setChecked(syncApp->checkForUpdatesEnabled());
 
     updateSyncState();
@@ -294,7 +294,7 @@ MenuBar::disableNotification
 */
 void MenuBar::toggleNotification()
 {
-    syncApp->manager()->enableNotifications(!syncApp->manager()->notificationsEnabled());
+    syncApp->tray()->enableNotifications(!syncApp->tray()->notificationsEnabled());
 
     if (syncApp->initiated())
         syncApp->saveSettings();

@@ -28,7 +28,7 @@
 
 class SyncProfile;
 
-struct FileToRenameInfo
+struct ConflictedFileToRenameInfo
 {
     QByteArray path;
 };
@@ -61,7 +61,7 @@ struct FileToCopyInfo
 };
 
 using Files = QHash<SyncHash, SyncFile>;
-using FileRenameList = QHash<SyncHash, FileToRenameInfo>;
+using ConflictedFileRenameList = QHash<SyncHash, ConflictedFileToRenameInfo>;
 using FolderRenameList = QHash<SyncHash, FolderToRenameInfo>;
 using FileMoveList = QHash<SyncHash, FileToMoveInfo>;
 using FolderCreateList = QHash<SyncHash, FolderToCreateInfo>;
@@ -139,7 +139,7 @@ public:
     inline SyncProfile &profile() const { return *m_profile; }
 
     Files files;
-    FileRenameList filesToRename;
+    ConflictedFileRenameList conflictedFilesToRename;
     FolderRenameList foldersToRename;
     FileMoveList filesToMove;
     FolderCreateList foldersToCreate;

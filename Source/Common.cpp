@@ -351,3 +351,40 @@ bool hasMatch(const QStringList &list, const QString &path, bool caseSensitive)
 
     return false;
 }
+
+/*
+===================
+addTimestampBeforeExt
+===================
+*/
+void addTimestampBeforeExt(QString &string, const QString &pattern, const QString &separator)
+{
+    int nameEndIndex = string.lastIndexOf('.');
+    int slashIndex = string.lastIndexOf('/');
+    int backlashIndex = string.lastIndexOf('\\');
+
+    if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
+        nameEndIndex = string.length();
+
+    string.insert(nameEndIndex, separator + QDateTime::currentDateTime().toString(pattern));
+}
+
+/*
+===================
+addTimestampAfterExt
+===================
+*/
+void addTimestampAfterExt(QString &string, const QString &pattern, const QString &separator)
+{
+    QString temp(string);
+
+    // Adds a file extension after the timestamp
+    int dotIndex = temp.lastIndexOf('.');
+    int slashIndex = temp.lastIndexOf('/');
+    int backlashIndex = temp.lastIndexOf('\\');
+
+    string.append(separator + QDateTime::currentDateTime().toString(pattern));
+
+    if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
+        string.append(temp.mid(dotIndex));
+}

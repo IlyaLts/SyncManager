@@ -23,6 +23,8 @@
 #include <QMenu>
 #include <QAction>
 #include <QThread>
+#include <QSettings>
+#include <QStandardPaths>
 
 /*
 ===================
@@ -56,6 +58,9 @@ SystemTray::SystemTray()
     connect(this, &QSystemTrayIcon::activated, this, &SystemTray::iconActivated);
     connect(m_showAction, &QAction::triggered, this, [this](){ iconActivated(QSystemTrayIcon::DoubleClick); });
     connect(m_quitAction, &QAction::triggered, syncApp, &Application::quit);
+
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
 }
 
 /*
@@ -65,6 +70,9 @@ SystemTray::~SystemTray
 */
 SystemTray::~SystemTray()
 {
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+    settings.setValue("Notifications", syncApp->tray()->notificationsEnabled());
+
     delete m_trayIconMenu;
 }
 
@@ -170,7 +178,10 @@ A quick workaround is to temporarily show the tray, display the message, and the
 */
 void SystemTray::notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon)
 {
-    if (!isSystemTrayAvailable() || !syncApp->manager()->notificationsEnabled())
+    if (!m_notifications)
+        return;
+
+    if (!isSystemTrayAvailable() || !notificationsEnabled())
         return;
 
     bool visible = isVisible();
@@ -191,6 +202,28 @@ SystemTray::notifyWithCooldown
 */
 void SystemTray::notifyWithCooldown(const QString &type, const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon)
 {
+    if (!m_notifications)
+        return;
+
+    QMetaObject::invokeMethod(this,
+                              &SystemTray::notifyWithCooldownHandler,
+                              Qt::QueuedConnection,
+                              type,
+                              title,
+                              message,
+                              icon);
+}
+
+/*
+===================
+SystemTray::notifyWithCooldownHandler
+===================
+*/
+void SystemTray::notifyWithCooldownHandler(const QString &type, const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon)
+{
+    if (!m_notifications)
+        return;
+
 #ifdef DEBUG
     if (QThread::currentThread() != qApp->thread())
     {

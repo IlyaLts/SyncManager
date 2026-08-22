@@ -74,7 +74,6 @@ public:
     inline void shouldQuit() { m_shouldQuit = true; }
     inline void setMaxDiskTransferRate(quint64 rate) { m_maxDiskTransferRate = rate; }
     inline void setPaused(bool paused) { m_paused = paused; }
-    inline void enableNotifications(bool enable) { m_notifications = enable; }
 
     inline quint64 maxDiskTransferRate() const { return m_maxDiskTransferRate; }
     inline int filesToSync() const { return m_filesToSync; }
@@ -87,7 +86,6 @@ public:
     inline bool syncing() const { return m_syncing; }
     bool hasManualSyncProfile() const;
     bool inPausedState() const;
-    inline bool notificationsEnabled() const { return m_notifications; }
 
     static quint64 maxInterval();
 
@@ -116,7 +114,7 @@ private:
     bool copyFileNative(QFile &from, const QString &fileName, const QString &newName);
     bool copyFileDelta(quint64 &deviceRead, QFile &from, const QString &newName);
     bool copyFileManual(quint64 &deviceRead, QFile &from, const QString &newName);
-    void renameFiles(SyncFolder &folder);
+    void renameConflictedFiles(SyncFolder &folder);
     void renameFolders(SyncFolder &folder);
     void moveFiles(SyncFolder &folder);
     void removeFolders(SyncFolder &folder);
@@ -137,7 +135,6 @@ private:
     bool m_busy = false;
     bool m_paused = false;
     bool m_syncing = false;
-    bool m_notifications = true;
 
     quint64 m_maxDiskTransferRate = 0;
     QTimer m_diskUsageResetTimer;

@@ -84,5 +84,7 @@ void setHiddenFileAttribute(const QString &path, bool hidden);
 bool setFileModificationDate(const QString &path, const QDateTime &dateTime);
 bool isSystemFile(const QString &path);
 bool hasMatch(const QStringList &list, const QString &path, bool caseSensitive);
+void addTimestampBeforeExt(QString &string, const QString &pattern, const QString &separator);
+void addTimestampAfterExt(QString &string, const QString &pattern, const QString &separator);
 
 #endif // COMMON_H

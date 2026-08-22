@@ -70,7 +70,6 @@ void SyncManager::loadSettings()
 
     setMaxDiskTransferRate(settings.value("MaximumDiskUsage", 0).toULongLong());
     setPaused(settings.value("Paused", false).toBool());
-    enableNotifications(QSystemTrayIcon::supportsMessages() && settings.value("Notifications", true).toBool());
 }
 
 /*
@@ -84,7 +83,6 @@ void SyncManager::saveSettings() const
 
     settings.setValue("MaximumDiskUsage", maxDiskTransferRate());
     settings.setValue("Paused", paused());
-    settings.setValue("Notifications", notificationsEnabled());
 
     settings.beginGroup("Profiles");
 
@@ -220,7 +218,7 @@ void SyncManager::updateStatus()
         {
             if (folder.active())
             {
-                size += folder.filesToRename.size();
+                size += folder.conflictedFilesToRename.size();
                 size += folder.foldersToRename.size();
                 size += folder.filesToMove.size();
                 size += folder.foldersToCreate.size();
@@ -581,14 +579,7 @@ void SyncManager::executeSyncProfile(SyncProfile &profile)
         {
             QString deviceName(QStorageInfo(folder.path()).displayName());
             QString title(tr("Disk: %1 is corrupted. Please fix the errors.").arg(deviceName));
-
-            QMetaObject::invokeMethod(syncApp->tray(),
-                                      &SystemTray::notifyWithCooldown,
-                                      Qt::QueuedConnection,
-                                      deviceName,
-                                      title,
-                                      QString(),
-                                      QSystemTrayIcon::Critical);
+            syncApp->tray()->notifyWithCooldown(deviceName, title, "", QSystemTrayIcon::Critical);
         }
 
         folder.clearData();
@@ -1270,25 +1261,18 @@ void SyncManager::checkForAddedFiles(SyncProfile &profile)
 
                         if (profile.conflictResolution() == SyncProfile::RenameBoth)
                         {
-                            folderIt->filesToRename.insert(otherFileIt.key(), {path})->path.squeeze();
+                            folderIt->conflictedFilesToRename.insert(otherFileIt.key(), {path})->path.squeeze();
                             folderIt->filesToRemove.remove(otherFileIt.key());
 
-                            otherFolderIt->filesToRename.insert(otherFileIt.key(), {path})->path.squeeze();
+                            otherFolderIt->conflictedFilesToRename.insert(otherFileIt.key(), {path})->path.squeeze();
                             otherFolderIt->filesToRemove.remove(otherFileIt.key());
                         }
                         // A conflict has detected notification
-                        else if (m_notifications)
+                        else
                         {
                             QString type("profile_" + profile.name());
                             QString title(tr("A conflict has detected in %1 profile (%2)").arg(profile.name(), path));
-
-                            QMetaObject::invokeMethod(syncApp->tray(),
-                                                      &SystemTray::notifyWithCooldown,
-                                                      Qt::QueuedConnection,
-                                                      type,
-                                                      title,
-                                                      QString(),
-                                                      QSystemTrayIcon::Warning);
+                            syncApp->tray()->notifyWithCooldown(type, title, "", QSystemTrayIcon::Warning);
                         }
 
                         folderIt->files[otherFileIt.key()].setConflictDetected(true);
@@ -1667,14 +1651,12 @@ bool SyncManager::copyFileManual(quint64 &deviceRead, QFile &from, const QString
 
 /*
 ===================
-SyncManager::renameFiles
-
-Used in conflict resolution when we rename all conflicted files
+SyncManager::renameConflictedFiles
 ===================
 */
-void SyncManager::renameFiles(SyncFolder &folder)
+void SyncManager::renameConflictedFiles(SyncFolder &folder)
 {
-    for (auto fileIt = folder.filesToRename.begin(); fileIt != folder.filesToRename.end() && (!m_paused && folder.active());)
+    for (auto fileIt = folder.conflictedFilesToRename.begin(); fileIt != folder.conflictedFilesToRename.end() && (!m_paused && folder.active());)
     {
         if (m_shouldQuit)
             break;
@@ -1687,20 +1669,12 @@ void SyncManager::renameFiles(SyncFolder &folder)
         // Removes from the list list if the source file doesn't exist
         if (!QFileInfo::exists(fromFullPath))
         {
-            fileIt = folder.filesToRename.erase(static_cast<FileRenameList::const_iterator>(fileIt));
+            fileIt = folder.conflictedFilesToRename.erase(static_cast<ConflictedFileRenameList::const_iterator>(fileIt));
             continue;
         }
 
         QString newPath(fileIt->path);
-
-        int nameEndIndex = newPath.lastIndexOf('.');
-        int slashIndex = newPath.lastIndexOf('/');
-        int backlashIndex = newPath.lastIndexOf('\\');
-
-        if (nameEndIndex == -1 || slashIndex >= nameEndIndex || backlashIndex >= nameEndIndex)
-            nameEndIndex = newPath.length();
-
-        newPath.insert(nameEndIndex, "_Conflict_" + QDateTime::currentDateTime().toString("yyyy_M_d_h_m_s_z").toUtf8());
+        addTimestampBeforeExt(newPath, "yyyy_M_d_h_m_s_z", "_Conflict_");
 
         QString toFullPath(folder.path());
         toFullPath.append(newPath);
@@ -1716,7 +1690,7 @@ void SyncManager::renameFiles(SyncFolder &folder)
             it->size = toFileInfo.size();
             it->attributes = getFileAttributes(toFullPath);
             folder.profile().addFilePath(newHash, newPath.toUtf8());
-            fileIt = folder.filesToRename.erase(static_cast<FileRenameList::const_iterator>(fileIt));
+            fileIt = folder.conflictedFilesToRename.erase(static_cast<ConflictedFileRenameList::const_iterator>(fileIt));
 
             QByteArray parentPath = toFileInfo.path().toUtf8();
 
@@ -2126,7 +2100,7 @@ void SyncManager::copyFiles(SyncFolder &folder)
         else
         {
             // Not enough disk space notification
-            if (m_notifications && QStorageInfo(folder.path()).bytesAvailable() < QFile(fileIt->fromFullPath).size())
+            if (QStorageInfo(folder.path()).bytesAvailable() < QFile(fileIt->fromFullPath).size())
             {
                 QByteArray parentPath = toFileInfo.path().toUtf8();
 
@@ -2134,14 +2108,7 @@ void SyncManager::copyFiles(SyncFolder &folder)
                     folder.foldersToUpdate.insert(parentPath);
 
                 QString title(tr("Not enough disk space on %1 (%2)").arg(QStorageInfo(folder.path()).displayName(), rootPath));
-
-                QMetaObject::invokeMethod(syncApp->tray(),
-                                          &SystemTray::notifyWithCooldown,
-                                          Qt::QueuedConnection,
-                                          rootPath,
-                                          title,
-                                          QString(),
-                                          QSystemTrayIcon::Critical);
+                syncApp->tray()->notifyWithCooldown(rootPath, title, "", QSystemTrayIcon::Critical);
             }
 
             ++fileIt;
@@ -2166,7 +2133,7 @@ void SyncManager::syncChanges(SyncProfile &profile)
         if (profile.deletionMode() == SyncProfile::Versioning)
             folder.updateVersioningPath();
 
-        renameFiles(folder);
+        renameConflictedFiles(folder);
         renameFolders(folder);
         moveFiles(folder);
 

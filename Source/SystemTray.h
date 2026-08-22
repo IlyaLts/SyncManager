@@ -49,6 +49,9 @@ public:
     void addMenu(QMenu *menu);
     void addSeparator();
 
+    inline void enableNotifications(bool enable) { m_notifications = enable; }
+    inline bool notificationsEnabled() const { return m_notifications; }
+
     QIcon iconDone() const { return m_iconDone; };
     QIcon iconDonePartial() const { return m_iconDonePartial; };
     QIcon iconIssue() const { return m_iconIssue; };
@@ -61,6 +64,10 @@ public Q_SLOTS:
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
     void notify(const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
     void notifyWithCooldown(const QString &type, const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
+
+private Q_SLOTS:
+
+    void notifyWithCooldownHandler(const QString &type, const QString &title, const QString &message, QSystemTrayIcon::MessageIcon icon);
 
 private:
 
@@ -76,6 +83,7 @@ private:
     QAction *m_showAction = nullptr;
     QAction *m_quitAction = nullptr;
 
+    bool m_notifications = true;
     QMap<QString, QTimer *> m_cooldownNotifications;
 };
 
