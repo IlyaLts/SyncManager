@@ -59,17 +59,17 @@ Q_DECL_CONST_FUNCTION inline size_t qHash(const SyncHash &key, size_t seed = 0) 
 #ifdef DEBUG
 #include <chrono>
 
-extern std::chrono::high_resolution_clock::time_point startTime;
-
 void debugSetTime(std::chrono::high_resolution_clock::time_point &startTime);
 void debugTimestamp(const std::chrono::high_resolution_clock::time_point &startTime, const char *message, ...);
 
-#define SET_TIME(t) debugSetTime(t);
-#define TIMESTAMP(t, ...) debugTimestamp(t, __VA_ARGS__);
+#define DEBUG_SET_TIMER() std::chrono::high_resolution_clock::time_point startTime; \
+                          debugSetTime(startTime);
+
+#define DEBUG_TIMESTAMP(...) debugTimestamp(startTime, __VA_ARGS__);
 #else
 
-#define SET_TIME(t)
-#define TIMESTAMP(t, m, ...)
+#define DEBUG_SET_TIMER()
+#define DEBUG_TIMESTAMP(...)
 
 #endif // DEBUG
 
@@ -77,12 +77,6 @@ hash64_t hash64(const QByteArray &str);
 QString formatSize(quint64 size);
 QString formatTime(quint64 time);
 void removeDuplicatesBySizeAndDate (FilePointerList &files);
-QFileInfo getCurrentFileInfo(const QString &path);
-attributes_t getFileAttributes(const QString &path);
-bool setFileAttribute(const QString &path, attributes_t attributes);
-void setHiddenFileAttribute(const QString &path, bool hidden);
-bool setFileModificationDate(const QString &path, const QDateTime &dateTime);
-bool isSystemFile(const QString &path);
 bool hasMatch(const QStringList &list, const QString &path, bool caseSensitive);
 void addTimestampBeforeExt(QString &string, const QString &pattern, const QString &separator);
 void addTimestampAfterExt(QString &string, const QString &pattern, const QString &separator);

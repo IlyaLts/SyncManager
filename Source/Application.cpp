@@ -18,8 +18,6 @@
 */
 
 #include "Application.h"
-#include "Common.h"
-#include <QString>
 #include <QStandardPaths>
 #include <QFile>
 #include <QSettings>
@@ -29,7 +27,6 @@
 #include <QJsonObject>
 #include <QInputDialog>
 #include <QPushButton>
-#include <QBoxLayout>
 #include <QTextBrowser>
 #include <QThread>
 
@@ -103,12 +100,13 @@ void Application::init()
     m_syncThread = new QThread(this);
     m_cpuUsage = new CpuUsage(this);
     m_tray.reset(new SystemTray);
-    m_manager.reset(new SyncManager);
+    m_syncManager.reset(new SyncManager);
+    m_fileManager.reset(new FileManager);
     m_window.reset(new MainWindow);
 
-    m_manager->moveToThread(m_syncThread);
-    connect(m_syncThread, &QThread::started, m_manager.data(), [this](){ m_manager->sync(); });
-    connect(m_manager.data(), &SyncManager::finished, this, [this](){ m_syncThread->quit(); });
+    m_syncManager->moveToThread(m_syncThread);
+    connect(m_syncThread, &QThread::started, m_syncManager.data(), [this](){ m_syncManager->sync(); });
+    connect(m_syncManager.data(), &SyncManager::finished, this, [this](){ m_syncThread->quit(); });
 
     connect(m_cpuUsage, &CpuUsage::cpuUsageUpdated, this, &Application::updateCpuUsage);
     m_cpuUsage->startMonitoring(CpuUpdateTime);
@@ -374,10 +372,10 @@ void Application::quit()
     QString text(syncApp->translate("Are you sure you want to quit?"));
     QString syncText(syncApp->translate("Currently syncing. Are you sure you want to quit?"));
 
-    if ((!m_manager->busy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No, m_window.data())) ||
-        (m_manager->busy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, m_window.data())))
+    if ((!m_syncManager->busy() && questionBox(QMessageBox::Question, title, text, QMessageBox::No, m_window.data())) ||
+        (m_syncManager->busy() && questionBox(QMessageBox::Warning, title, syncText, QMessageBox::No, m_window.data())))
     {
-        m_manager->shouldQuit();
+        m_syncManager->quit();
         QApplication::quit();
     }
 }

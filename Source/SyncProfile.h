@@ -21,8 +21,6 @@
 #define SYNCPROFILE_H
 
 #include "SyncFolder.h"
-#include "Common.h"
-#include <QList>
 #include <QChronoTimer>
 #include <QMutex>
 #include <QModelIndex>
@@ -166,17 +164,17 @@ public:
     void updateTimer();
     void updateNextSyncingTime();
     void updatePausedState();
-    bool resetLocks();
+    void resetLocks();
     void removeNonexistentFileData();
-    void saveDatabasesLocally() const;
-    void saveDatabasesDecentralised() const;
-    void loadDatabasesLocally();
-    void loadDatebasesDecentralised();
     void addFilePath(hash64_t hash, const QByteArray &path);
     void removeUnneededFilePath(hash64_t hash);
     inline void clearFilePaths() { m_filePaths.clear(); }
 
-    inline QByteArray filePath(SyncHash hash) const { return m_filePaths.value(hash); }
+    void checkForChanges();
+    void syncChanges();
+    bool copyFile(const QString &fileName, const QString &newName);
+
+    inline QByteArray getFilePath(SyncHash hash) const { return m_filePaths.value(hash); }
     inline bool hasFilePath(SyncHash hash) const { return m_filePaths.contains(hash); }
     bool isActive() const;
     bool isAutomatic() const;
@@ -195,6 +193,12 @@ Q_SIGNALS:
     void syncingTimeChanged();
 
 private:
+
+    void checkForRenamedFolders();
+    void checkForMovedFiles();
+    void checkForAddedFiles();
+    void checkForRemovedFiles();
+    void synchronizeFileAttributes();
 
     std::list<SyncFolder> m_folders;
 
@@ -231,8 +235,8 @@ private:
     bool m_ignoreHiddenFiles = false;
 
     QHash<SyncHash, QByteArray> m_filePaths;
+    QMutex m_filePathsMutex;
     QModelIndex m_index;
-    QMutex m_mutex;
 };
 
 #endif // SYNCPROFILE_H

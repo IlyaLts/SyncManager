@@ -35,7 +35,7 @@ ProfileListView::profileByIndex
 */
 SyncProfile *ProfileListView::profileByIndex(const QModelIndex &index)
 {
-    for (auto &profile : syncApp->manager()->profiles())
+    for (auto &profile : syncApp->syncManager()->profiles())
         if (profile.index() == index)
             return &profile;
 

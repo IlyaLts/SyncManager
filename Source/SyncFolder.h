@@ -21,7 +21,6 @@
 #define SYNCFOLDER_H
 
 #include "SyncFile.h"
-#include "Common.h"
 #include <QByteArray>
 #include <QHash>
 #include <QSet>
@@ -103,8 +102,10 @@ public:
     void optimizeMemoryUsage();
     void updateVersioningPath();
     void checkCaseSensitive();
-    void saveDatabase(const QString &path) const;
-    void loadDatabase(const QString &path);
+    void loadDatabasesLocally();
+    void loadDatebasesDecentralised();
+    void saveDatabasesLocally();
+    void saveDatabasesDecentralised();
     void removeDatabase() const;
     void removeNonexistentFiles();
     bool active() const;
@@ -115,11 +116,23 @@ public:
     void checkForConflictedFiles();
     void remove();
 
+    int scanFiles();
+
+    void renameConflictedFiles();
+    void renameFolders();
+    void moveFiles();
+    void removeFolders();
+    void removeFiles();
+    void createFolders();
+    void copyFiles();
+    void updateFolderModifiedDates();
+
     void setType(Type type);
     inline void setLastSyncDate(const QDateTime &date) { m_lastSyncDate = date; }
     inline void setSyncing(bool syncing) { m_syncing = syncing; }
     void setPaused(bool paused);
     inline void checkExistence(){ m_exists = QFileInfo::exists(m_path); }
+    inline void setDatabaseDirty() { m_databaseChanged = true; }
 
     inline bool bidirectional() const { return m_type == TWO_WAY; }
     inline bool mirroring() const { return m_type == ONE_WAY; }
@@ -135,20 +148,42 @@ public:
     inline bool caseSensitive() const { return m_caseSensitive; }
     inline bool hasCorruptedFiles() const { return m_hasCorruptedFiles; };
     inline bool hasConflictedFiles() const { return m_hasConflictedFiles; };
+    inline bool databaseChanged() const { return m_databaseChanged; }
+
+    inline Files &files() { return m_files; };
+    inline const Files &files() const { return m_files; };
+    inline ConflictedFileRenameList &conflictedFilesToRename() { return m_conflictedFilesToRename; };
+    inline FolderRenameList &foldersToRename() { return m_foldersToRename; };
+    inline FileMoveList &filesToMove() { return m_filesToMove; };
+    inline FolderCreateList &foldersToCreate() { return m_foldersToCreate; };
+    inline FileCopyList &filesToCopy() { return m_filesToCopy; };
+    inline FolderRemoveList &foldersToRemove() { return m_foldersToRemove; };
+    inline FileRemoveList &filesToRemove() { return m_filesToRemove; };
+
+    inline qsizetype conflictedFilesToRenameSize() const { return m_conflictedFilesToRename.size(); };
+    inline qsizetype foldersToRenameSize() const { return m_foldersToRename.size(); };
+    inline qsizetype filesToMoveSize() const { return m_filesToMove.size(); };
+    inline qsizetype foldersToCreateSize() const { return m_foldersToCreate.size(); };
+    inline qsizetype filesToCopySize() const { return m_filesToCopy.size(); };
+    inline qsizetype foldersToRemoveSize() const { return m_foldersToRemove.size(); };
+    inline qsizetype filesToRemoveSize() const { return m_filesToRemove.size(); };
 
     inline SyncProfile &profile() const { return *m_profile; }
 
-    Files files;
-    ConflictedFileRenameList conflictedFilesToRename;
-    FolderRenameList foldersToRename;
-    FileMoveList filesToMove;
-    FolderCreateList foldersToCreate;
-    FileCopyList filesToCopy;
-    FolderRemoveList foldersToRemove;
-    FileRemoveList filesToRemove;
-    FolderUpdateList foldersToUpdate;
-
 private:
+
+    void loadDatabase(const QString &path);
+    void saveDatabase(const QString &path) const;
+
+    Files m_files;
+    ConflictedFileRenameList m_conflictedFilesToRename;
+    FolderRenameList m_foldersToRename;
+    FileMoveList m_filesToMove;
+    FolderCreateList m_foldersToCreate;
+    FileCopyList m_filesToCopy;
+    FolderRemoveList m_foldersToRemove;
+    FileRemoveList m_filesToRemove;
+    FolderUpdateList m_foldersToUpdate;
 
     Type m_type = TWO_WAY;
     QByteArray m_path;
@@ -162,7 +197,9 @@ private:
     bool m_caseSensitive = false;
     bool m_hasCorruptedFiles = false;
     bool m_hasConflictedFiles = false;
+    bool m_databaseChanged = false;
 
+    hash64_t m_deviceHash;
     SyncProfile *m_profile;
 };
 

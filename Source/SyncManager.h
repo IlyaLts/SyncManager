@@ -20,26 +20,14 @@
 #ifndef SYNCMANAGER_H
 #define SYNCMANAGER_H
 
-#include "SyncFile.h"
-#include "SyncFolder.h"
 #include "SyncProfile.h"
-#include "Common.h"
-#include <QList>
-#include <QSet>
-#include <QMap>
 #include <QQueue>
-#include <QTimer>
-#include <QDateTime>
 
-#define DATA_FOLDER_PATH        ".SyncManager"
-#define DATABASE_FILENAME       "db"
-#define TEMP_EXTENSION          "sm_temp"
-#define DATABASE_VERSION        5
+#define DATA_FOLDER_PATH ".SyncManager"
+#define DATABASE_FILENAME "db"
+#define DATABASE_VERSION 5
 
 static constexpr quint64 SyncMinDelay = 1000;
-static constexpr quint64 CpuUpdateTime = 50;
-static constexpr quint64 DiskUsageResetTime = 1000;
-static constexpr quint64 CopyBufferSize = 4096;
 
 /*
 ===========================================================
@@ -61,24 +49,24 @@ public:
     void saveSettings() const;
 
     void addToQueue(SyncProfile *profile);
+    inline bool hasInQueue(const SyncProfile *profile) const { return m_queue.contains(profile); };
+    inline qsizetype numberInQueue(const SyncProfile *profile) const { return m_queue.indexOf(profile); };
+    inline qsizetype queueSize() const { return m_queue.size(); };
+
     void sync();
 
     void updateStatus();
-    void removeAllDatabases();
     void purgeRemovedProfiles();
 
-    inline const QQueue<SyncProfile *> &queue() const { return m_queue; }
-    inline const std::list<SyncProfile> &profiles() const { return m_profiles; }
     inline std::list<SyncProfile> &profiles() { return m_profiles; }
+    inline const std::list<SyncProfile> &profiles() const { return m_profiles; }
 
-    inline void shouldQuit() { m_shouldQuit = true; }
-    inline void setMaxDiskTransferRate(quint64 rate) { m_maxDiskTransferRate = rate; }
+    inline void quit() { m_quit = true; }
     inline void setPaused(bool paused) { m_paused = paused; }
 
-    inline quint64 maxDiskTransferRate() const { return m_maxDiskTransferRate; }
     inline int filesToSync() const { return m_filesToSync; }
     inline int existingProfiles() const { return m_existingProfiles; }
-    inline bool quitting() const { return m_shouldQuit; }
+    inline bool quitting() const { return m_quit; }
     inline bool issue() const { return m_issue; }
     inline bool warning() const { return m_warning; }
     inline bool busy() const { return m_busy; }
@@ -91,55 +79,30 @@ public:
 
 Q_SIGNALS:
 
+    void profileStatusChanged(SyncProfile *profile, bool syncing);
     void profileSynced(SyncProfile *profile);
+    void profileRemoved(SyncProfile *profile);
     void finished();
-
-private Q_SLOTS:
-
-    void resetUsedDevices();
 
 private:
 
     bool syncProfile(SyncProfile &profile);
-    bool executeFolderScans(SyncProfile &profile, int &result);
-    void executeSyncProfile(SyncProfile &profile);
-    int scanFiles(SyncFolder &folder);
-    void synchronizeFileAttributes(SyncProfile &profile);
-    void checkForRenamedFolders(SyncProfile &profile);
-    void checkForMovedFiles(SyncProfile &profile);
-    void checkForAddedFiles(SyncProfile &profile);
-    void checkForRemovedFiles(SyncProfile &profile);
-    void checkForChanges(SyncProfile &profile);
-    bool copyFile(SyncProfile &profile, quint64 &deviceRead, const QString &fileName, const QString &newName);
-    bool copyFileNative(QFile &from, const QString &fileName, const QString &newName);
-    bool copyFileDelta(quint64 &deviceRead, QFile &from, const QString &newName);
-    bool copyFileManual(quint64 &deviceRead, QFile &from, const QString &newName);
-    void renameConflictedFiles(SyncFolder &folder);
-    void renameFolders(SyncFolder &folder);
-    void moveFiles(SyncFolder &folder);
-    void removeFolders(SyncFolder &folder);
-    void removeFiles(SyncFolder &folder);
-    void createFolders(SyncFolder &folder);
-    void copyFiles(SyncFolder &folder);
-    void syncChanges(SyncProfile &profile);
+    bool scanFolders(SyncProfile &profile);
+    void printDebugInfo(const SyncProfile &profile);
 
     QQueue<SyncProfile *> m_queue;
     std::list<SyncProfile> m_profiles;
 
-    int m_filesToSync = 0;
+    qsizetype m_filesToSync = 0;
     int m_existingProfiles = 0;
-    bool m_databaseChanged = false;
-    bool m_shouldQuit = false;
+    bool m_quit = false;
     bool m_issue = true;
     bool m_warning = false;
     bool m_busy = false;
     bool m_paused = false;
     bool m_syncing = false;
 
-    quint64 m_maxDiskTransferRate = 0;
-    QTimer m_diskUsageResetTimer;
-    QMap<hash64_t, quint64> m_usedDevices;
-    QMutex m_usedDevicesMutex;
+    QSet<hash64_t> m_usedDevices;
 };
 
 #endif // SYNCMANAGER_H

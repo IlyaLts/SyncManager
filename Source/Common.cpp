@@ -24,23 +24,9 @@
 #include <QTranslator>
 #include <QApplication>
 #include <QMessageBox>
-#include <stdio.h>
-#include <cstdarg>
 #include "xxHash/xxh3.h"
 
-#ifdef Q_OS_WIN
-#include <fileapi.h>
-#include <windows.h>
-
-#define ATTRIBUTE_VALID_SET_FLAGS 0x000031a7
-#else
-#include <sys/stat.h>
-#include <utime.h>
-#include <sys/time.h>
-#endif
-
 #ifdef DEBUG
-std::chrono::high_resolution_clock::time_point startTime;
 
 /*
 ===================
@@ -117,13 +103,24 @@ QString formatTime(quint64 time)
     quint64 days = (time / 1000 / 60 / 60 / 24);
 
     if (days)
-       return QString(syncApp->translate("%1 days").arg(QString::number(static_cast<float>(days) + static_cast<float>(hours) / 24.0f, 'f', 1)));
+    {
+        float time = static_cast<float>(days) + static_cast<float>(hours) / 24.0f;
+        return QString(syncApp->translate("%1 days").arg(QString::number(time, 'f', 1)));
+    }
     else if (hours)
-        return QString(syncApp->translate("%1 hours").arg(QString::number(static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f, 'f', 1)));
+    {
+        float time = static_cast<float>(hours) + static_cast<float>(minutes) / 60.0f;
+        return QString(syncApp->translate("%1 hours").arg(QString::number(time, 'f', 1)));
+    }
     else if (minutes)
-        return QString(syncApp->translate("%1 minutes").arg(QString::number(static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f, 'f', 1)));
+    {
+        float time = static_cast<float>(minutes) + static_cast<float>(seconds) / 60.0f;
+        return QString(syncApp->translate("%1 minutes").arg(QString::number(time, 'f', 1)));
+    }
     else if (seconds)
+    {
         return QString(syncApp->translate("%1 seconds").arg(seconds));
+    }
 
     return QString("0 seconds");
 }
@@ -158,178 +155,6 @@ void removeDuplicatesBySizeAndDate(FilePointerList &files)
         else
             ++fileIt;
     }
-}
-
-/*
-===================
-getCurrentFileInfo
-
-Gets the fileinfo with the current filepath on the disk
-
-If we just use QFileInfo with our provided path, QFileInfo will return the filepath
-with the same filepath case as the provided path, even though it actually differs on the disk.
-So, this is a workaround for this, where we get the correct file path with proper case first,
-and only then use it with QFileInfo.
-
-The question is should we get the current filename instead of the whole file path.
-If so, then we can get it using FILE_NAME_OPENED instead of FILE_NAME_NORMALIZED argument
-
-Or use the following way:
-
-WIN32_FIND_DATAW findData;
-
-HANDLE hFind = FindFirstFileW(path.toStdWString().c_str(), &findData);
-if (hFind == INVALID_HANDLE_VALUE)
-    return QFileInfo(path);
-
-FindClose(hFind);
-
-QString filename(findData.cFileName);
-
-===================
-*/
-QFileInfo getCurrentFileInfo(const QString &path)
-{
-#ifdef Q_OS_WIN
-    QVector<wchar_t> buffer(MAX_PATH);
-    DWORD length;
-
-    HANDLE handle = CreateFileW(path.toStdWString().c_str(),
-                                0,
-                                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                                NULL,
-                                OPEN_EXISTING,
-                                FILE_FLAG_BACKUP_SEMANTICS,
-                                NULL);
-
-    if (handle == INVALID_HANDLE_VALUE)
-        return QFileInfo(path);
-
-    length = GetFinalPathNameByHandleW(handle, buffer.data(), MAX_PATH, FILE_NAME_NORMALIZED);
-
-    // If the buffer is too small to contain the path, the return value is the size
-    // of the buffer that is required to hold the path and the terminating null character
-    if (length > MAX_PATH)
-    {
-        buffer.resize(length);
-        length = GetFinalPathNameByHandleW(handle, buffer.data(), MAX_PATH, FILE_NAME_NORMALIZED);
-    }
-
-    if (handle != INVALID_HANDLE_VALUE)
-        CloseHandle(handle);
-
-    QString curPath = QString::fromWCharArray(buffer.data(), length);
-
-    // Removes long path prefix
-    if (curPath.startsWith("\\\\?\\"))
-        curPath.remove(0, 4);
-
-    return QFileInfo(curPath);
-#else
-    return QFileInfo(path);
-#endif
-}
-
-/*
-===================
-getFileAttributes
-===================
-*/
-attributes_t getFileAttributes(const QString &path)
-{
-#ifdef Q_OS_WIN
-    return GetFileAttributesW(path.toStdWString().c_str()) & ATTRIBUTE_VALID_SET_FLAGS;
-#else
-    struct stat buf;
-    stat(path.toLatin1(), &buf);
-    return buf.st_mode;
-#endif
-}
-
-/*
-===================
-setFileAttribute
-===================
-*/
-bool setFileAttribute(const QString &path, attributes_t attributes)
-{
-#ifdef Q_OS_WIN
-    return SetFileAttributesW(path.toStdWString().c_str(), attributes & ATTRIBUTE_VALID_SET_FLAGS);
-#else
-    return chmod(path.toLatin1(), attributes) == 0;
-#endif
-}
-
-/*
-===================
-setHiddenFileAttribute
-===================
-*/
-void setHiddenFileAttribute(const QString &path, bool hidden)
-{
-#ifdef Q_OS_WIN
-    long attr = GetFileAttributesW(path.toStdWString().c_str());
-    SetFileAttributesW(path.toStdWString().c_str(), hidden ? attr | FILE_ATTRIBUTE_HIDDEN : attr & ~FILE_ATTRIBUTE_HIDDEN);
-#else
-    Q_UNUSED(path)
-    Q_UNUSED(hidden)
-#endif
-}
-
-/*
-===================
-setFileModificationDate
-
-Sets the modification date with a precision of 1 millisecond, which is the maximum precision of QDateTime
-===================
-*/
-bool setFileModificationDate(const QString &path, const QDateTime &dateTime)
-{
-#if 1
-    QFile file(path);
-    if (!file.open(QFile::Append))
-        return false;
-
-    if (!file.setFileTime(dateTime, QFileDevice::FileModificationTime))
-        return false;
-
-    file.close();
-    return true;
-#else
-    struct stat statbuf;
-    timeval times[2];
-
-    if (stat(path.toStdString().c_str(), &statbuf) == -1)
-        return;
-
-    // New access time:
-    times[0].tv_sec = statbuf.st_atime;
-    times[0].tv_usec = 0;
-
-    // New modification time:
-    times[1].tv_sec = dateTime.toSecsSinceEpoch();
-    times[1].tv_usec = dateTime.toMSecsSinceEpoch() % dateTime.toSecsSinceEpoch() * 1000;
-
-    utimes(path.toStdString().c_str(), reinterpret_cast<struct timeval *>(&times));
-#endif
-}
-
-/*
-===================
-isSystemFile
-===================
-*/
-bool isSystemFile(const QString &path)
-{
-#ifdef Q_OS_WIN
-    DWORD attr = GetFileAttributesW(reinterpret_cast<LPCWSTR>(path.utf16()));
-
-    if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_SYSTEM))
-        return true;
-#else
-#endif
-
-    return false;
 }
 
 /*

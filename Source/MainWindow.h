@@ -21,6 +21,7 @@
 #define MAINWINDOW_H
 
 #include "SyncProfile.h"
+#include "ProfileMenu.h"
 #include "MenuBar.h"
 #include <QMainWindow>
 #include <QTimer>
@@ -37,7 +38,6 @@ class QItemSelection;
 class QMimeData;
 class UnhidableMenu;
 class QPushButton;
-class ProfileMenu;
 
 /*
 ===========================================================
@@ -58,9 +58,6 @@ public:
     void retranslate();
     void loadSettings();
     void saveSettings() const;
-
-    ProfileMenu *profileMenu(SyncProfile *profile) { return profileMenus.value(profile); }
-    void removeProfileMenu(SyncProfile *profile);
 
 public Q_SLOTS:
 
@@ -86,7 +83,9 @@ private Q_SLOTS:
     void showFolderContextMenu(const QPoint &pos);
     void sync(SyncProfile *profile, bool hidden = false);
     void syncDone();
+    void enableProfileMenus(SyncProfile *profile, bool enable);
     void profileSynced(SyncProfile *profile);
+    void removeProfileMenu(SyncProfile *profile);
 
 private:
 
@@ -100,10 +99,10 @@ private:
     void updateProfileTooltip(const SyncProfile &profile);
     void setupMenus();
 
+    Ui::MainWindow *ui;
+
     QMap<SyncProfile *, ProfileMenu *> profileMenus;
     MenuBar *menuBar;
-
-    Ui::MainWindow *ui;
 
     DecoratedStringListModel *profileModel;
     DecoratedStringListModel *folderModel;

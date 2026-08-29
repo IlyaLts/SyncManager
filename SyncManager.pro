@@ -10,6 +10,7 @@ SOURCES += \
     Source/Common.cpp \
     Source/CpuUsage.cpp \
     Source/DecoratedStringListModel.cpp \
+    Source/FileManager.cpp \
     Source/FolderListView.cpp \
     Source/FolderStyleDelegate.cpp \
     Source/Main.cpp \
@@ -33,6 +34,7 @@ HEADERS += \
     Source/Common.h \
     Source/CpuUsage.h \
     Source/DecoratedStringListModel.h \
+    Source/FileManager.h \
     Source/FolderListView.h \
     Source/FolderStyleDelegate.h \
     Source/MainWindow.h \

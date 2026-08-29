@@ -39,7 +39,7 @@ MenuBar::MenuBar(QWidget *parent) : QMenuBar(parent)
 
     syncNowAction = new QAction(iconSync, "&" + syncApp->translate("Sync Now"), this);
     pauseSyncingAction = new QAction(iconPause, "&" + syncApp->translate("Pause Syncing"), this);
-    maximumDiskTransferRateAction = new QAction("&" + syncApp->translate("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()), this);
+    maximumDiskTransferRateAction = new QAction("&" + syncApp->translate("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->fileManager()->maxDiskTransferRate()), this);
     maximumCpuUsageAction = new QAction("&" + syncApp->translate("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()), this);
 
     for (int i = 0; i < Application::languageCount(); i++)
@@ -128,7 +128,7 @@ void MenuBar::retranslate()
 {
     syncNowAction->setText("&" + syncApp->translate("Sync Now"));
     pauseSyncingAction->setText("&" + syncApp->translate("Pause Syncing"));
-    maximumDiskTransferRateAction->setText("&" + syncApp->translate("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->manager()->maxDiskTransferRate()));
+    maximumDiskTransferRateAction->setText("&" + syncApp->translate("Maximum Disk Transfer Rate") + QString(": %1").arg(syncApp->fileManager()->maxDiskTransferRate()));
     maximumCpuUsageAction->setText("&" + syncApp->translate("Maximum CPU Usage") + QString(": %1%").arg(syncApp->maxCpuUsage()));
 
     for (int i = 0; i < Application::languageCount(); i++)
@@ -180,7 +180,7 @@ MenuBar::updateSyncState
 */
 void MenuBar::updateSyncState()
 {
-    syncNowAction->setEnabled(syncApp->manager()->queue().size() != syncApp->manager()->existingProfiles());
+    syncNowAction->setEnabled(syncApp->syncManager()->queueSize() != syncApp->syncManager()->existingProfiles());
 }
 
 /*
@@ -226,12 +226,12 @@ void MenuBar::updateMenuMaxDiskTransferRate()
 {
     QString text;
 
-    if (syncApp->manager()->maxDiskTransferRate())
+    if (syncApp->fileManager()->maxDiskTransferRate())
     {
-        quint64 bytes = syncApp->manager()->maxDiskTransferRate() % 1024;
-        quint64 kilobytes = (syncApp->manager()->maxDiskTransferRate() / 1024) % 1024;
-        quint64 megabytes = (syncApp->manager()->maxDiskTransferRate() / 1024 / 1024) % 1024;
-        quint64 gigabytes = (syncApp->manager()->maxDiskTransferRate() / 1024 / 1024/ 1024);
+        quint64 bytes = syncApp->fileManager()->maxDiskTransferRate() % 1024;
+        quint64 kilobytes = (syncApp->fileManager()->maxDiskTransferRate() / 1024) % 1024;
+        quint64 megabytes = (syncApp->fileManager()->maxDiskTransferRate() / 1024 / 1024) % 1024;
+        quint64 gigabytes = (syncApp->fileManager()->maxDiskTransferRate() / 1024 / 1024/ 1024);
 
         if (gigabytes)
             text.append(syncApp->translate("%1 GB/s").arg(QString::number(static_cast<float>(gigabytes) + static_cast<float>(megabytes) / 1024.0f, 'f', 1)));
@@ -260,10 +260,10 @@ void MenuBar::setMaximumTransferRateUsage()
     QString text(syncApp->translate("Please enter the maximum disk transfer rate in bytes per second:"));
     int usage;
 
-    if (!syncApp->intInputDialog(this, title, text, usage, syncApp->manager()->maxDiskTransferRate(), 0, std::numeric_limits<int>::max()))
+    if (!syncApp->intInputDialog(this, title, text, usage, syncApp->fileManager()->maxDiskTransferRate(), 0, std::numeric_limits<int>::max()))
         return;
 
-    syncApp->manager()->setMaxDiskTransferRate(usage);
+    syncApp->fileManager()->setMaxDiskTransferRate(usage);
     updateMenuMaxDiskTransferRate();
     syncApp->saveSettings();
 }

@@ -20,10 +20,10 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include "Common.h"
 #include "MainWindow.h"
 #include "SystemTray.h"
 #include "SyncManager.h"
+#include "fileManager.h"
 #include "CpuUsage.h"
 #include <QApplication>
 #include <QTranslator>
@@ -43,6 +43,7 @@
 
 #define PRESERVE_MODIFICATION_DATE_ON_LINUX
 
+static constexpr quint64 CpuUpdateTime = 50;
 static constexpr quint64 CheckForUpdateTime = 1000 * 60 * 60 * 24;
 static constexpr quint64 UpdateTime = 40;
 
@@ -89,7 +90,8 @@ public:
     inline QThread *syncThread() const { return m_syncThread; }
     inline SystemTray *tray() const { return m_tray.data(); }
     inline MainWindow *window() const { return m_window.data(); }
-    inline SyncManager *manager() const { return m_manager.data(); }
+    inline SyncManager *syncManager() const { return m_syncManager.data(); }
+    inline FileManager *fileManager() const { return m_fileManager.data(); }
 
     static int languageCount();
     static void textDialog(const QString &title, const QString &text);
@@ -129,7 +131,8 @@ private:
     CpuUsage *m_cpuUsage = nullptr;
     QScopedPointer<SystemTray> m_tray;
     QScopedPointer<MainWindow> m_window;
-    QScopedPointer<SyncManager> m_manager;
+    QScopedPointer<SyncManager> m_syncManager;
+    QScopedPointer<FileManager> m_fileManager;
     QTranslator m_translator;
     QLocale m_locale;
 
