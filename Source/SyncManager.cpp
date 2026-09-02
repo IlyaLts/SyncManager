@@ -381,10 +381,11 @@ bool SyncManager::syncProfile(SyncProfile &profile)
     }
 
     profile.syncChanges();
-    profile.removeNonexistentFileData();
 
     for (auto &folder : profile.folders())
     {
+        folder.removeNonexistentFileData();
+
         // We need to check for conflicting files again after synchronization
         // to avoid incorrect partial synchronized status for folders.
         folder.checkForConflictedFiles();
@@ -549,5 +550,7 @@ void SyncManager::printDebugInfo(const SyncProfile &profile)
             qDebug() << "Files to remove:" << filesToRemove;
         qDebug() << "---------------------------------------";
     }
+#else
+    Q_UNUSED(profile);
 #endif
 }

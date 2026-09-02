@@ -165,17 +165,17 @@ public:
     void updateNextSyncingTime();
     void updatePausedState();
     void resetLocks();
-    void removeNonexistentFileData();
-    void addFilePath(hash64_t hash, const QByteArray &path);
-    void removeUnneededFilePath(hash64_t hash);
-    inline void clearFilePaths() { m_filePaths.clear(); }
 
     void checkForChanges();
     void syncChanges();
     bool copyFile(const QString &fileName, const QString &newName);
 
-    inline QByteArray getFilePath(SyncHash hash) const { return m_filePaths.value(hash); }
-    inline bool hasFilePath(SyncHash hash) const { return m_filePaths.contains(hash); }
+    void addFilePath(hash64_t hash, const QByteArray &path);
+    QByteArray getFilePath(SyncHash hash) const;
+    bool hasFilePath(SyncHash hash) const;
+    void clearFilePaths();
+    void removeUnneededFilePath(hash64_t hash);
+
     bool isActive() const;
     bool isAutomatic() const;
     bool isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) const;
@@ -235,7 +235,7 @@ private:
     bool m_ignoreHiddenFiles = false;
 
     QHash<SyncHash, QByteArray> m_filePaths;
-    QMutex m_filePathsMutex;
+    mutable QMutex m_filePathsMutex;
     QModelIndex m_index;
 };
 

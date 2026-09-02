@@ -46,9 +46,11 @@ public:
     void loadSettings();
     void saveSettings() const;
 
-    bool copyFileNative(const QString &fileName, const QString &newName);
-    bool copyFileDelta(const QString &fileName, const QString &newName);
-    bool copyFileManual(const QString &fileName, const QString &newName);
+    bool copyNative(const QString &path, const QString &newPath);
+    bool copyDelta(const QString &path, const QString &newPath);
+    bool copyManual(const QString &path, const QString &newPath);
+    bool moveToTrash(const QString &path);
+    bool remove(const QString &path);
 
     QAtomicInteger<quint64> *deviceRead(hash64_t deviceHash);
     inline int diskUsageResetRemainingTime() const { return m_diskUsageResetTimer.remainingTime(); }
@@ -57,11 +59,11 @@ public:
     inline quint64 maxDiskTransferRate() const { return m_maxDiskTransferRate; }
 
     static QFileInfo getCurrentFileInfo(const QString &path);
-    static attributes_t getFileAttributes(const QString &path);
-    static bool setFileAttribute(const QString &path, attributes_t attributes);
-    static void setHiddenFileAttribute(const QString &path, bool hidden);
-    static bool setFileModificationDate(const QString &path, const QDateTime &dateTime);
-    static bool isSystemFile(const QString &path);
+    static attributes_t getAttributes(const QString &path);
+    static bool setAttribute(const QString &path, attributes_t attributes);
+    static void setHiddenAttribute(const QString &path, bool hidden);
+    static bool setModificationDate(const QString &path, const QDateTime &dateTime);
+    static bool isSystem(const QString &path);
 
 private Q_SLOTS:
 

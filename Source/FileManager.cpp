@@ -84,42 +84,42 @@ void FileManager::saveSettings() const
 
 /*
 ===================
-FileManager::copyFileNative
+FileManager::copyNative
 ===================
 */
-bool FileManager::copyFileNative(const QString &fileName, const QString &newName)
+bool FileManager::copyNative(const QString &path, const QString &newPath)
 {
-    QFile from(fileName);
+    QFile from(path);
 
     if(!from.open(QFile::ReadOnly))
         return false;
 
-    if (QFile(newName).exists())
+    if (QFile(newPath).exists())
         return false;
 
-    QString tempName = newName + "." + TEMP_EXTENSION;
+    QString tempName = newPath + "." + TEMP_EXTENSION;
 
-    if (!QFile::copy(fileName, tempName))
+    if (!QFile::copy(path, tempName))
         return false;
 
-    setFileModificationDate(tempName, from.fileTime(QFileDevice::FileModificationTime));
-    return QFile::rename(tempName, newName);
+    setModificationDate(tempName, from.fileTime(QFileDevice::FileModificationTime));
+    return QFile::rename(tempName, newPath);
 }
 
 /*
 ===================
-FileManager::copyFileDelta
+FileManager::copyDelta
 ===================
 */
-bool FileManager::copyFileDelta(const QString &fileName, const QString &newName)
+bool FileManager::copyDelta(const QString &path, const QString &newPath)
 {
-    auto deviceRead = *FileManager::deviceRead(hash64(QStorageInfo(newName).device()));
-    QFile from(fileName);
+    auto deviceRead = *FileManager::deviceRead(hash64(QStorageInfo(newPath).device()));
+    QFile from(path);
 
     if(!from.open(QFile::ReadOnly))
         return false;
 
-    QFile to(newName);
+    QFile to(newPath);
 
     if (!to.open(QFile::ReadWrite))
         return false;
@@ -180,22 +180,22 @@ bool FileManager::copyFileDelta(const QString &fileName, const QString &newName)
 
 /*
 ===================
-FileManager::copyFileManual
+FileManager::copyManual
 ===================
 */
-bool FileManager::copyFileManual(const QString &fileName, const QString &newName)
+bool FileManager::copyManual(const QString &path, const QString &newPath)
 {
-    auto deviceRead = *FileManager::deviceRead(hash64(QStorageInfo(newName).device()));
-    QFile from(fileName);
+    auto deviceRead = *FileManager::deviceRead(hash64(QStorageInfo(newPath).device()));
+    QFile from(path);
 
     if(!from.open(QFile::ReadOnly))
         return false;
 
-    if (QFile(newName).exists())
+    if (QFile(newPath).exists())
         return false;
 
     QString fileTemplate = QString("%1/.XXXXXX.") + TEMP_EXTENSION;
-    QTemporaryFile tempFile(fileTemplate.arg(QFileInfo(newName).path()));
+    QTemporaryFile tempFile(fileTemplate.arg(QFileInfo(newPath).path()));
 
     if (!tempFile.open())
     {
@@ -243,7 +243,7 @@ bool FileManager::copyFileManual(const QString &fileName, const QString &newName
     // It must be done before renaming, otherwise it won't work.
     tempFile.setFileTime(from.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
 
-    if (!tempFile.rename(newName))
+    if (!tempFile.rename(newPath))
         return false;
 
     if (!tempFile.setPermissions(from.permissions()))
@@ -251,6 +251,38 @@ bool FileManager::copyFileManual(const QString &fileName, const QString &newName
 
     tempFile.setAutoRemove(false);
     return true;
+}
+
+/*
+===================
+FileManager::moveToTrash
+===================
+*/
+bool FileManager::moveToTrash(const QString &path)
+{
+    // Used to make sure that moveToTrash function really moved a file/folder
+    // to the trash as it can return true even though it failed to do so
+    QString pathInTrash;
+
+    return QFile::moveToTrash(path, &pathInTrash) && !pathInTrash.isEmpty();
+}
+
+/*
+===================
+FileManager::remove
+===================
+*/
+bool FileManager::remove(const QString &path)
+{
+    QFileInfo fileInfo(path);
+
+    if (!fileInfo.exists())
+        return true;
+
+    if (fileInfo.isDir())
+        return QDir(path).removeRecursively();
+    else
+        return QFile::remove(path);
 }
 
 /*
@@ -338,10 +370,10 @@ QFileInfo FileManager::getCurrentFileInfo(const QString &path)
 
 /*
 ===================
-FileManager::getFileAttributes
+FileManager::getAttributes
 ===================
 */
-attributes_t FileManager::getFileAttributes(const QString &path)
+attributes_t FileManager::getAttributes(const QString &path)
 {
 #ifdef Q_OS_WIN
     return GetFileAttributesW(path.toStdWString().c_str()) & ATTRIBUTE_VALID_SET_FLAGS;
@@ -354,10 +386,10 @@ attributes_t FileManager::getFileAttributes(const QString &path)
 
 /*
 ===================
-FileManager::setFileAttribute
+FileManager::setAttribute
 ===================
 */
-bool FileManager::setFileAttribute(const QString &path, attributes_t attributes)
+bool FileManager::setAttribute(const QString &path, attributes_t attributes)
 {
 #ifdef Q_OS_WIN
     return SetFileAttributesW(path.toStdWString().c_str(), attributes & ATTRIBUTE_VALID_SET_FLAGS);
@@ -368,10 +400,10 @@ bool FileManager::setFileAttribute(const QString &path, attributes_t attributes)
 
 /*
 ===================
-FileManager::setHiddenFileAttribute
+FileManager::setHiddenAttribute
 ===================
 */
-void FileManager::setHiddenFileAttribute(const QString &path, bool hidden)
+void FileManager::setHiddenAttribute(const QString &path, bool hidden)
 {
 #ifdef Q_OS_WIN
     long attr = GetFileAttributesW(path.toStdWString().c_str());
@@ -384,12 +416,12 @@ void FileManager::setHiddenFileAttribute(const QString &path, bool hidden)
 
 /*
 ===================
-FileManager::setFileModificationDate
+FileManager::setModificationDate
 
 Sets the modification date with a precision of 1 millisecond, which is the maximum precision of QDateTime
 ===================
 */
-bool FileManager::setFileModificationDate(const QString &path, const QDateTime &dateTime)
+bool FileManager::setModificationDate(const QString &path, const QDateTime &dateTime)
 {
 #if 1
     QFile file(path);
@@ -422,10 +454,10 @@ bool FileManager::setFileModificationDate(const QString &path, const QDateTime &
 
 /*
 ===================
-FileManager::isSystemFile
+FileManager::isSystem
 ===================
 */
-bool FileManager::isSystemFile(const QString &path)
+bool FileManager::isSystem(const QString &path)
 {
 #ifdef Q_OS_WIN
     DWORD attr = GetFileAttributesW(reinterpret_cast<LPCWSTR>(path.utf16()));

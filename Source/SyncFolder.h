@@ -114,6 +114,7 @@ public:
     void updateUnsyncedList();
     void checkForCorruptedFiles();
     void checkForConflictedFiles();
+    void removeNonexistentFileData();
     void remove();
 
     int scanFiles();
@@ -150,15 +151,26 @@ public:
     inline bool hasConflictedFiles() const { return m_hasConflictedFiles; };
     inline bool databaseChanged() const { return m_databaseChanged; }
 
-    inline Files &files() { return m_files; };
-    inline const Files &files() const { return m_files; };
-    inline ConflictedFileRenameList &conflictedFilesToRename() { return m_conflictedFilesToRename; };
-    inline FolderRenameList &foldersToRename() { return m_foldersToRename; };
-    inline FileMoveList &filesToMove() { return m_filesToMove; };
-    inline FolderCreateList &foldersToCreate() { return m_foldersToCreate; };
-    inline FileCopyList &filesToCopy() { return m_filesToCopy; };
-    inline FolderRemoveList &foldersToRemove() { return m_foldersToRemove; };
-    inline FileRemoveList &filesToRemove() { return m_filesToRemove; };
+    void addConflictedFileToRename(SyncHash hash, const QByteArray &path);
+    void addFolderToRename(SyncHash hash, const QByteArray &toPath, const QByteArray &fromPath, attributes_t attributes);
+    void addFileToMove(SyncHash hash, const QByteArray &toPath, const QByteArray &fromPath, attributes_t attributes);
+    void addFolderToCreate(SyncHash hash, const QByteArray &path, attributes_t attributes);
+    void addFileToCopy(SyncHash hash, const QByteArray &toPath, const QByteArray &fromFullPath, const QDateTime &modifiedDate);
+    void addFolderToRemove(SyncHash hash, const QByteArray &path);
+    void addFileToRemove(SyncHash hash, const QByteArray &path);
+
+    QDateTime filesToCopyModifiedDate(SyncHash hash) const { return m_filesToCopy.value(hash).modifiedDate; }
+
+    inline bool hasFolderToRename(SyncHash hash) { return m_foldersToRename.contains(hash); }
+    inline bool hasFileToMove(SyncHash hash) { return m_filesToMove.contains(hash); }
+    inline bool hasFolderToCreate(SyncHash hash) { return m_foldersToCreate.contains(hash); }
+    inline bool hasFileToCopy(SyncHash hash) { return m_filesToCopy.contains(hash); }
+    inline bool hasFolderToRemove(SyncHash hash) { return m_foldersToRemove.contains(hash); }
+    inline bool hasFileToRemove(SyncHash hash) { return m_filesToRemove.contains(hash); }
+
+    inline void removeFileToMove(SyncHash hash) { m_filesToMove.remove(hash); }
+    inline void removeFolderToRemove(SyncHash hash) { m_foldersToRemove.remove(hash); }
+    inline void removeFileToRemove(SyncHash hash) { m_filesToRemove.remove(hash); }
 
     inline qsizetype conflictedFilesToRenameSize() const { return m_conflictedFilesToRename.size(); };
     inline qsizetype foldersToRenameSize() const { return m_foldersToRename.size(); };
@@ -167,6 +179,11 @@ public:
     inline qsizetype filesToCopySize() const { return m_filesToCopy.size(); };
     inline qsizetype foldersToRemoveSize() const { return m_foldersToRemove.size(); };
     inline qsizetype filesToRemoveSize() const { return m_filesToRemove.size(); };
+
+    inline Files &files() { return m_files; };
+    inline const Files &files() const { return m_files; };
+    inline const FolderRenameList &foldersToRename() const { return m_foldersToRename; };
+    inline const FileMoveList &filesToMove() const { return m_filesToMove; };
 
     inline SyncProfile &profile() const { return *m_profile; }
 
