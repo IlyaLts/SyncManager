@@ -375,7 +375,7 @@ void ProfileMenu::updateSyncTime()
         return;
     }
 
-    action->setText(QString(tr("Synchronize Every") + ": ").append(formatTime(time)));
+    action->setText(QString(syncApp->translate("Synchronize Every") + ": ").append(formatTime(time)));
 
     // If exceeds the maximum value of an quint64
     if (time >= SyncManager::maxInterval())
@@ -468,8 +468,8 @@ ProfileMenu::setFixedInterval
 */
 void ProfileMenu::setFixedInterval()
 {
-    QString title(tr("Synchronize Every"));
-    QString text(tr("Please enter the synchronization interval in seconds:"));
+    QString title(syncApp->translate("Synchronize Every"));
+    QString text(syncApp->translate("Please enter the synchronization interval in seconds:"));
     int size;
 
     if (!syncApp->intInputDialog(this, title, text, size, profile->syncIntervalFixed() / 1000, 0))
@@ -501,8 +501,8 @@ void ProfileMenu::switchDeletionMode(SyncProfile::DeletionMode mode)
 
     if (syncApp->initiated() && mode == SyncProfile::DeletePermanently && mode != profile->deletionMode())
     {
-        QString title(tr("Switch deletion mode to delete files permanently?"));
-        QString text(tr("Are you sure? Beware: this could lead to data loss!"));
+        QString title(syncApp->translate("Switch deletion mode to delete files permanently?"));
+        QString text(syncApp->translate("Are you sure? Beware: this could lead to data loss!"));
 
         if (!syncApp->questionBox(QMessageBox::Warning, title, text, QMessageBox::No, this))
             mode = profile->deletionMode();
@@ -541,14 +541,14 @@ ProfileMenu::setVersioningPostfix
 void ProfileMenu::setVersioningPostfix()
 {
     QString postfix = profile->versioningFolder();
-    QString title(tr("Versioning Folder Postfix"));
-    QString text(tr("Please enter the versioning folder postfix:"));
+    QString title(syncApp->translate("Versioning Folder Postfix"));
+    QString text(syncApp->translate("Please enter the versioning folder postfix:"));
 
     if (!syncApp->textInputDialog(this, title, text, postfix, postfix))
         return;
 
     profile->setVersioningFolder(postfix);
-    versioningPostfixAction->setText(QString("&" + tr("Folder Postfix: %1")).arg(profile->versioningFolder()));
+    versioningPostfixAction->setText(QString("&" + syncApp->translate("Folder Postfix: %1")).arg(profile->versioningFolder()));
 }
 
 /*
@@ -559,10 +559,10 @@ ProfileMenu::setVersioningPattern
 void ProfileMenu::setVersioningPattern()
 {
     QString pattern = profile->versioningPattern();
-    QString title(tr("Versioning Pattern"));
-    QString text(tr("Please enter the versioning pattern:"));
+    QString title(syncApp->translate("Versioning Pattern"));
+    QString text(syncApp->translate("Please enter the versioning pattern:"));
     text.append("\n\n");
-    text.append(tr("Examples:"));
+    text.append(syncApp->translate("Examples:"));
     text.append("\nyyyy_M_d_h_m_s_z - 2001_5_21_14_13_09_120");
     text.append("\nyyyy_MM_dd - 2001_05_21");
     text.append("\nyy_MMMM_d - 01_May_21");
@@ -573,7 +573,7 @@ void ProfileMenu::setVersioningPattern()
         return;
 
     profile->setVersioningPattern(pattern);
-    versioningPatternAction->setText(QString("&" + tr("Pattern: %1")).arg(profile->versioningPattern()));
+    versioningPatternAction->setText(QString("&" + syncApp->translate("Pattern: %1")).arg(profile->versioningPattern()));
 }
 
 /*
@@ -603,7 +603,7 @@ void ProfileMenu::setVersioningLocationPath()
     if (profile->versioningLocation() != SyncProfile::CustomLocation || !syncApp->initiated())
         return;
 
-    QString title(tr("Browse for Versioning Folder"));
+    QString title(syncApp->translate("Browse for Versioning Folder"));
     QString dir(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
     QString path = QFileDialog::getExistingDirectory(this, title, dir, QFileDialog::ShowDirsOnly);
 
@@ -611,7 +611,7 @@ void ProfileMenu::setVersioningLocationPath()
         return;
 
     profile->setVersioningPath(path);
-    customLocationPathAction->setText(tr("Custom Location: ") + path);
+    customLocationPathAction->setText(syncApp->translate("Custom Location: ") + path);
 }
 
 /*
@@ -652,8 +652,8 @@ ProfileMenu::setFileMinSize
 */
 void ProfileMenu::setFileMinSize()
 {
-    QString title(tr("Minimum File Size"));
-    QString text(tr("Please enter the minimum size in bytes:"));
+    QString title(syncApp->translate("Minimum File Size"));
+    QString text(syncApp->translate("Please enter the minimum size in bytes:"));
     int size;
 
     if (!syncApp->intInputDialog(this, title, text, size, profile->fileMinSize(), 0))
@@ -663,7 +663,7 @@ void ProfileMenu::setFileMinSize()
         size = profile->fileMaxSize();
 
     profile->setFileMinSize(size);
-    fileMinSizeAction->setText("&" + tr("Minimum File Size: %1").arg(formatSize(profile->fileMinSize())));
+    fileMinSizeAction->setText("&" + syncApp->translate("Minimum File Size: %1").arg(formatSize(profile->fileMinSize())));
 }
 
 /*
@@ -673,8 +673,8 @@ ProfileMenu::setFileMaxSize
 */
 void ProfileMenu::setFileMaxSize()
 {
-    QString title(tr("Maximum File Size"));
-    QString text(tr("Please enter the maximum size in bytes:"));
+    QString title(syncApp->translate("Maximum File Size"));
+    QString text(syncApp->translate("Please enter the maximum size in bytes:"));
     int size;
 
     if (!syncApp->intInputDialog(this, title, text, size, profile->fileMaxSize(), 0))
@@ -684,7 +684,7 @@ void ProfileMenu::setFileMaxSize()
         size = profile->fileMinSize();
 
     profile->setFileMaxSize(size);
-    fileMaxSizeAction->setText("&" + tr("Maximum File Size: %1").arg(formatSize(profile->fileMaxSize())));
+    fileMaxSizeAction->setText("&" + syncApp->translate("Maximum File Size: %1").arg(formatSize(profile->fileMaxSize())));
 }
 
 /*
@@ -694,15 +694,15 @@ ProfileMenu::setMovedFileMinSize
 */
 void ProfileMenu::setMovedFileMinSize()
 {
-    QString title(tr("Minimum Size for Moved File"));
-    QString text(tr("Please enter the minimum size for a moved file in bytes:"));
+    QString title(syncApp->translate("Minimum Size for Moved File"));
+    QString text(syncApp->translate("Please enter the minimum size for a moved file in bytes:"));
     int size;
 
     if (!syncApp->intInputDialog(this, title, text, size, profile->movedFileMinSize(), 0))
         return;
 
     profile->setMovedFileMinSize(size);
-    movedFileMinSizeAction->setText("&" + tr("Minimum Size for a Moved File: %1").arg(formatSize(profile->movedFileMinSize())));
+    movedFileMinSizeAction->setText("&" + syncApp->translate("Minimum Size for a Moved File: %1").arg(formatSize(profile->movedFileMinSize())));
 }
 
 /*
@@ -712,15 +712,15 @@ ProfileMenu::setDeltaCopyingMinSize
 */
 void ProfileMenu::setDeltaCopyingMinSize()
 {
-    QString title(tr("Minimum Size for Delta Copying"));
-    QString text(tr("Please enter the minimum size for delta copying in bytes:"));
+    QString title(syncApp->translate("Minimum Size for Delta Copying"));
+    QString text(syncApp->translate("Please enter the minimum size for delta copying in bytes:"));
     int size;
 
     if (!syncApp->intInputDialog(this, title, text, size, profile->deltaCopyingMinSize(), 0))
         return;
 
     profile->setDeltaCopyingMinSize(size);
-    deltaCopyingMinSizeAction->setText("&" + tr("Minimum Size for delta copying: %1").arg(formatSize(profile->deltaCopyingMinSize())));
+    deltaCopyingMinSizeAction->setText("&" + syncApp->translate("Minimum Size for delta copying: %1").arg(formatSize(profile->deltaCopyingMinSize())));
 }
 
 /*
@@ -731,8 +731,8 @@ ProfileMenu::setIncludeList
 void ProfileMenu::setIncludeList()
 {
     QString includeString = profile->includeList().join("; ");
-    QString title(tr("Include List"));
-    QString text(tr("Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
+    QString title(syncApp->translate("Include List"));
+    QString text(syncApp->translate("Please enter include list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
 
     if (!syncApp->textInputDialog(this, title, text, includeString, includeString))
         return;
@@ -744,7 +744,7 @@ void ProfileMenu::setIncludeList()
 
     includeString = includeList.join("; ");
     profile->setIncludeList(includeList);
-    includeAction->setText("&" + tr("Include: %1").arg(includeString));
+    includeAction->setText("&" + syncApp->translate("Include: %1").arg(includeString));
 }
 
 /*
@@ -755,8 +755,8 @@ ProfileMenu::setExcludeList
 void ProfileMenu::setExcludeList()
 {
     QString excludeString = profile->excludeList().join("; ");
-    QString title(tr("Exclude List"));
-    QString text(tr("Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
+    QString title(syncApp->translate("Exclude List"));
+    QString text(syncApp->translate("Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported."));
 
     if (!syncApp->textInputDialog(this, title, text, excludeString, excludeString))
         return;
@@ -768,7 +768,7 @@ void ProfileMenu::setExcludeList()
 
     excludeString = excludeList.join("; ");
     profile->setExcludeList(excludeList);
-    excludeAction->setText("&" + tr("Exclude: %1").arg(excludeString));
+    excludeAction->setText("&" + syncApp->translate("Exclude: %1").arg(excludeString));
 }
 
 /*

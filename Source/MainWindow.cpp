@@ -73,37 +73,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     settings.beginGroup("Profiles");
     QStringList profileNames = settings.childKeys();
-
-    // Deprecated profile data location
-    QSettings profilesData(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/Profiles.ini", QSettings::IniFormat);
-    bool oldProfileLocation = false;
-
-    if (profileNames.isEmpty())
-    {
-        oldProfileLocation = true;
-        profileNames = profilesData.allKeys();
-    }
-    else
-    {
-        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/Profiles.ini");
-    }
-
     profileNames.sort();
     profileModel->setStringList(profileNames);
 
     for (auto &name : profileNames)
     {
-        syncApp->syncManager()->profiles().emplace_back(name, ui->syncProfilesView->profileIndexByName(name));
-        SyncProfile &profile = syncApp->syncManager()->profiles().back();
+        SyncProfile &profile = syncApp->syncManager()->profiles().emplace_back(name, ui->syncProfilesView->profileIndexByName(name));
         profile.setPaused(syncApp->syncManager()->paused());
 
-        QStringList paths;
-
-        if (oldProfileLocation)
-            paths = profilesData.value(name).toStringList();
-        else
-            paths = settings.value(name).toStringList();
-
+        QStringList paths = settings.value(name).toStringList();
         paths.sort();
 
         for (auto &path : paths)
@@ -801,7 +779,7 @@ void MainWindow::showProfileContextMenu(const QPoint &pos)
     static QMenu menu;
     menu.clear();
 
-    menu.addAction(iconAdd, "&" + tr("Add a new profile"), this, &MainWindow::addProfile);
+    menu.addAction(iconAdd, "&" + tr("Add a New Profile"), this, &MainWindow::addProfile);
 
     if (!ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
     {
@@ -813,17 +791,17 @@ void MainWindow::showProfileContextMenu(const QPoint &pos)
 
         if (profile->paused())
         {
-            menu.addAction(iconResume, "&" + tr("Resume syncing profile"), this, &MainWindow::pauseSelected);
+            menu.addAction(iconResume, "&" + tr("Resume Syncing Profile"), this, &MainWindow::pauseSelected);
         }
         else
         {
-            menu.addAction(iconPause, "&" + tr("Pause syncing profile"), this, &MainWindow::pauseSelected);
+            menu.addAction(iconPause, "&" + tr("Pause Syncing Profile"), this, &MainWindow::pauseSelected);
 
-            QAction *action = menu.addAction(iconSync, "&" + tr("Synchronize profile"), this, [=, this](){ sync(profile, false); });
+            QAction *action = menu.addAction(iconSync, "&" + tr("Synchronize Profile"), this, [=, this](){ sync(profile, false); });
             action->setDisabled(syncApp->syncManager()->hasInQueue(profile));
         }
 
-        menu.addAction(iconRemove, "&" + tr("Remove profile"), this, &MainWindow::removeProfile);
+        menu.addAction(iconRemove, "&" + tr("Remove Profile"), this, &MainWindow::removeProfile);
 
         menu.addSeparator();
         profileMenus.value(profile)->exportMenu(&menu);
@@ -846,7 +824,7 @@ void MainWindow::showFolderContextMenu(const QPoint &pos)
     if (ui->syncProfilesView->selectionModel()->selectedIndexes().isEmpty())
         return;
 
-    menu.addAction(iconAdd, "&" + tr("Add a new folder"), this, [this]() { addFolder(); });
+    menu.addAction(iconAdd, "&" + tr("Add a New Folder"), this, [this]() { addFolder(); });
 
     if (!ui->folderListView->selectionModel()->selectedIndexes().isEmpty())
     {
@@ -859,16 +837,16 @@ void MainWindow::showFolderContextMenu(const QPoint &pos)
             return;
 
         if (folder->paused())
-            menu.addAction(iconResume, "&" + tr("Resume syncing folder"), this, &MainWindow::pauseSelected);
+            menu.addAction(iconResume, "&" + tr("Resume Syncing Folder"), this, &MainWindow::pauseSelected);
         else
-            menu.addAction(iconPause, "&" + tr("Pause syncing folder"), this, &MainWindow::pauseSelected);
+            menu.addAction(iconPause, "&" + tr("Pause Syncing Folder"), this, &MainWindow::pauseSelected);
 
-        menu.addAction(iconRemove, "&" + tr("Remove folder"), this, &MainWindow::removeFolder);
+        menu.addAction(iconRemove, "&" + tr("Remove Folder"), this, &MainWindow::removeFolder);
 
         if (folder->partiallySynchronized() && !folder->unsyncedList().isEmpty())
         {
-            QString menuTitle(tr("Show unsynchronized files"));
-            QString title(tr("Couldn't synchronize the following files"));
+            QString menuTitle(tr("Show Unsynchronized Files"));
+            QString title(tr("Couldn't Synchronize the Following Files"));
 
             menu.addSeparator();
             menu.addAction(iconWarning, "&" + menuTitle, this, [title, folder](){ syncApp->textDialog(title, folder->unsyncedList()); });
@@ -877,13 +855,13 @@ void MainWindow::showFolderContextMenu(const QPoint &pos)
         menu.addSeparator();
 
         if (folder->type() != SyncFolder::TWO_WAY)
-            menu.addAction(iconTwoWay, "&" + tr("Switch to two-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
+            menu.addAction(iconTwoWay, "&" + tr("Switch to Two-Way Synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::TWO_WAY); });
 
         if (folder->type() != SyncFolder::ONE_WAY)
-            menu.addAction(iconOneWay, "&" + tr("Switch to one-way synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
+            menu.addAction(iconOneWay, "&" + tr("Switch to One-Way Synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY); });
 
         if (folder->type() != SyncFolder::ONE_WAY_UPDATE)
-            menu.addAction(iconOneWayUpdate, "&" + tr("Switch to one-way update synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY_UPDATE); });
+            menu.addAction(iconOneWayUpdate, "&" + tr("Switch to One-Way Update Synchronization"), this, [folder, this](){ switchSyncingType(*folder, SyncFolder::ONE_WAY_UPDATE); });
     }
 
     menu.popup(ui->folderListView->mapToGlobal(pos));

@@ -28,8 +28,8 @@ Unfortunately, there was no open-source software application that  could meet al
 - Cannot detect renamed or moved files to avoid recopying
 - Doesn't run in the background and synchronize files automatically
 - Cannot detect corrupted files and notify the user to fix the disk
-- No GUI, or the GUI is complicated and hard to understand.
-- Uses more memory than needed, and synchronization takes a long time.
+- No GUI, or the GUI is complicated and hard to understand
+- Uses more memory than needed, and synchronization takes a long time
 
 # Documentation
 For detailed information on how it works or how to use it, please see the documentation [here](Docs/README.md).

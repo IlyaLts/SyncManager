@@ -112,8 +112,8 @@
             <translation>Currently syncing. Are you sure you want to quit?</translation>
         </message>
         <message>
-            <source>Remove profile</source>
-            <translation>Remove profile</translation>
+            <source>Remove Profile</source>
+            <translation>Remove Profile</translation>
         </message>
         <message>
             <source>Switch deletion mode to delete files permanently?</source>
@@ -176,36 +176,36 @@
             <translation>Sync Manager - %1 files to synchronize</translation>
         </message>
         <message>
-            <source>Add a new profile</source>
-            <translation>Add a new profile</translation>
+            <source>Add a New Profile</source>
+            <translation>Add a New Profile</translation>
         </message>
         <message>
-            <source>Resume syncing profile</source>
-            <translation>Resume syncing profile</translation>
+            <source>Resume Syncing Profile</source>
+            <translation>Resume Syncing Profile</translation>
         </message>
         <message>
-            <source>Pause syncing profile</source>
-            <translation>Pause syncing profile</translation>
+            <source>Pause Syncing Profile</source>
+            <translation>Pause Syncing Profile</translation>
         </message>
         <message>
-            <source>Synchronize profile</source>
-            <translation>Synchronize profile</translation>
+            <source>Synchronize Profile</source>
+            <translation>Synchronize Profile</translation>
         </message>
         <message>
-            <source>Add a new folder</source>
-            <translation>Add a new folder</translation>
+            <source>Add a New Folder</source>
+            <translation>Add a New Folder</translation>
         </message>
         <message>
-            <source>Resume syncing folder</source>
-            <translation>Resume syncing folder</translation>
+            <source>Resume Syncing Folder</source>
+            <translation>Resume Syncing Folder</translation>
         </message>
         <message>
-            <source>Pause syncing folder</source>
-            <translation>Pause syncing folder</translation>
+            <source>Pause Syncing Folder</source>
+            <translation>Pause Syncing Folder</translation>
         </message>
         <message>
-            <source>Remove folder</source>
-            <translation>Remove folder</translation>
+            <source>Remove Folder</source>
+            <translation>Remove Folder</translation>
         </message>
         <message>
             <source>Browse For Folder</source>
@@ -384,16 +384,16 @@
             <translation>Please enter exclude list, separated by semicolons. Wildcards (e.g., *.txt) are supported.</translation>
         </message>
         <message>
-            <source>Switch to two-way synchronization</source>
-            <translation>Switch to two-way synchronization</translation>
+            <source>Switch to Two-Way Synchronization</source>
+            <translation>Switch to Two-Way Synchronization</translation>
         </message>
         <message>
-            <source>Switch to one-way synchronization</source>
-            <translation>Switch to one-way synchronization</translation>
+            <source>Switch to One-Way Synchronization</source>
+            <translation>Switch to One-Way Synchronization</translation>
         </message>
         <message>
-            <source>Switch to one-way update synchronization</source>
-            <translation>Switch to one-way update synchronization</translation>
+            <source>Switch to One-Way Update Synchronization</source>
+            <translation>Switch to One-Way Update Synchronization</translation>
         </message>
         <message>
             <source>OK</source>
@@ -570,6 +570,22 @@
         <message>
             <source>Are you sure you want to remove the folder?</source>
             <translation>Are you sure you want to remove the folder?</translation>
+        </message>
+        <message>
+            <source>Conflict Resolution</source>
+            <translation>Conflict Resolution</translation>
+        </message>
+        <message>
+            <source>Automatically</source>
+            <translation>Automatically</translation>
+        </message>
+        <message>
+            <source>Do Nothing</source>
+            <translation>Do Nothing</translation>
+        </message>
+        <message>
+            <source>Rename Both</source>
+            <translation>Rename Both</translation>
         </message>
     </context>
 </TS>
