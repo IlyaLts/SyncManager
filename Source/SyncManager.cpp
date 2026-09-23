@@ -337,7 +337,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             folder.checkCaseSensitive();
 
         if (profile.databaseLocation() == SyncProfile::Decentralized)
-            folder.loadDatebasesDecentralised();
+            folder.loadDatabasesDecentralised();
         else
             folder.loadDatabasesLocally();
     }

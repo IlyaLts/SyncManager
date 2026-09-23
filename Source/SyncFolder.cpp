@@ -26,6 +26,7 @@
 #include <QRandomGenerator>
 #include <QStorageInfo>
 #include <QDirIterator>
+#include <QSaveFile>
 
 /*
 ===================
@@ -417,10 +418,10 @@ void SyncFolder::loadDatabasesLocally()
 
 /*
 ===================
-SyncFolder::loadDatebasesDecentralised
+SyncFolder::loadDatabasesDecentralised
 ===================
 */
-void SyncFolder::loadDatebasesDecentralised()
+void SyncFolder::loadDatabasesDecentralised()
 {
     if (!active() || toBeRemoved())
         return;
@@ -1714,7 +1715,7 @@ void SyncFolder::saveDatabase(const QString &path) const
 {
     DEBUG_SET_TIMER();
 
-    QFile data(path);
+    QSaveFile data(path);
     if (!data.open(QIODevice::WriteOnly))
         return;
 
@@ -1828,6 +1829,8 @@ void SyncFolder::saveDatabase(const QString &path) const
 
     for (const auto &path : m_filesToRemove)
         stream << path;
+
+    data.commit();
 
     DEBUG_TIMESTAMP("Saved database to: %s", qUtf8Printable(path));
 }

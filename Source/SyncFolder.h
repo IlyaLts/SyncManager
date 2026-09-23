@@ -103,7 +103,7 @@ public:
     void updateVersioningPath();
     void checkCaseSensitive();
     void loadDatabasesLocally();
-    void loadDatebasesDecentralised();
+    void loadDatabasesDecentralised();
     void saveDatabasesLocally();
     void saveDatabasesDecentralised();
     void removeDatabase() const;
