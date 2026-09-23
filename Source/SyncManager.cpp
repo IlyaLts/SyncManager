@@ -392,8 +392,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
         if (folder.databaseChanged())
         {
-            folder.removeDatabase();
-
             if (profile.databaseLocation() == SyncProfile::Decentralized)
                 folder.saveDatabasesDecentralised();
             else
