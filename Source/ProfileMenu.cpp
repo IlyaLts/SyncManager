@@ -219,8 +219,10 @@ void ProfileMenu::updateStates()
     automaticFixedAction->setChecked(profile->syncingMode() == SyncProfile::AutomaticFixed);
     detectMovedFilesAction->setChecked(profile->detectMovedFiles());
     deltaCopyingAction->setChecked(profile->deltaCopying());
+    increaseSyncTimeAction->setVisible(profile->syncingMode() == SyncProfile::AutomaticAdaptive);
     syncingTimeAction->setVisible(profile->syncingMode() == SyncProfile::AutomaticAdaptive);
     syncingTimeAction->setText(syncApp->translate("Synchronize Every") + QString(": %1").arg(formatTime(profile->syncEvery())));
+    decreaseSyncTimeAction->setVisible(profile->syncingMode() == SyncProfile::AutomaticAdaptive);
     fixedSyncingTimeAction->setVisible(profile->syncingMode() == SyncProfile::AutomaticFixed);
     fixedSyncingTimeAction->setText("&" + syncApp->translate("Synchronize Every") + QString(": %1").arg(formatTime(profile->syncIntervalFixed())));
     moveToTrashAction->setChecked(profile->deletionMode() == SyncProfile::MoveToTrash);

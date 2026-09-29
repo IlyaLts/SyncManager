@@ -70,7 +70,7 @@ void SyncProfile::loadSettings()
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     QString keyName(m_name + QLatin1String("_profile/"));
 
-    setSyncingMode(static_cast<SyncingMode>(settings.value(keyName + "SyncingMode", AutomaticAdaptive).toInt()));
+    setSyncingMode(static_cast<SyncingMode>(settings.value(keyName + "SyncingMode", Manual).toInt()));
     setSyncTimeMultiplier(settings.value(keyName + "SyncTimeMultiplier", 1).toUInt());
     setSyncIntervalFixed(settings.value(keyName + "FixedSyncTime", defaultFixedInterval).toULongLong());
     setDetectMovedFiles(settings.value(keyName + "DetectMovedFiles", true).toBool());
