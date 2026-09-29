@@ -843,7 +843,7 @@ void SyncProfile::removeUnneededFilePath(hash64_t hash)
             dateTime = file.modifiedDate;
     }
 
-    m_filePathsMutex.lock();
+    QMutexLocker locker(&m_filePathsMutex);
     m_filePaths.remove(hash);
 
     // I don't know exactly what squeeze() does internally,
@@ -853,8 +853,6 @@ void SyncProfile::removeUnneededFilePath(hash64_t hash)
     // Also, the minimum capacity for QHash is 64 bytes.
     if (m_filePaths.size() < m_filePaths.capacity() / 2 && m_filePaths.size() > 64)
         m_filePaths.squeeze();
-
-    m_filePathsMutex.unlock();
 }
 
 /*
@@ -891,7 +889,9 @@ SyncProfile::isTopFolderUpdated
 bool SyncProfile::isTopFolderUpdated(const SyncFolder &folder, hash64_t hash) const
 {
     QByteArray path = getFilePath(hash);
-    return folder.files().value(hash64(QByteArray(path).remove(path.indexOf('/'), path.size()))).updated();
+    const SyncFile &file = folder.files().value(hash64(QByteArray(path).remove(path.indexOf('/'), path.size())));
+
+    return file.updated() && file.precedence();
 }
 
 /*

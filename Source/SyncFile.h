@@ -42,7 +42,7 @@ public:
         Folder
     };
 
-    enum Flag : quint8
+    enum Flag : quint16
     {
         Updated = 0x1,
         Exists = 0x2,
@@ -51,7 +51,8 @@ public:
         ReadOnly = 0x10,
         AttributesUpdated = 0x20,
         Scanned = 0x40,
-        Corrupted = 0x80
+        Corrupted = 0x80,
+        Precedence = 0x100
     };
 
     enum LockedFlag : quint8
@@ -79,6 +80,7 @@ public:
     inline void setAttributesUpdated(bool value) { setFlag(AttributesUpdated, value); }
     inline void setScanned(bool value) { setFlag(Scanned, value); }
     inline void setCorrupted(bool value) { setFlag(Corrupted, value); }
+    inline void setPrecedence(bool value) { setFlag(Precedence, value); }
     void setFlag(Flag flag, bool value) { flags = value ? (flags | flag) : (flags & ~flag); }
 
     inline bool updated() const { return flag(Updated); }
@@ -89,12 +91,13 @@ public:
     inline bool attributesUpdated() const { return flag(AttributesUpdated); }
     inline bool scanned() const { return flag(Scanned); }
     inline bool corrupted() const { return flag(Corrupted); }
+    inline bool precedence() const { return flag(Precedence); }
     inline bool flag(Flag flag) const { return flags & flag; }
 
     QDateTime modifiedDate;
     quint64 size = 0;
     Type type = Unknown;
-    qint8 flags = 0;
+    quint16 flags = 0;
     LockedFlag lockedFlag = Unlocked;
     attributes_t attributes = 0;
 };

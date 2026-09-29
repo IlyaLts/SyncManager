@@ -351,6 +351,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
     for (auto &folder : profile.folders())
     {
+        folder.checkForFolderContentPrecedence();
         folder.checkForCorruptedFiles();
 
         // Since we only synchronize mirroring folders in one direction,

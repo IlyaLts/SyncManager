@@ -112,6 +112,7 @@ public:
     bool hasUnsyncedFiles() const;
     bool partiallySynchronized() const;
     void updateUnsyncedList();
+    void checkForFolderContentPrecedence();
     void checkForCorruptedFiles();
     void checkForConflictedFiles();
     void removeNonexistentFileData();

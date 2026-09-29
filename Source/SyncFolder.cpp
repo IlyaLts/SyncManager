@@ -600,6 +600,25 @@ void SyncFolder::updateUnsyncedList()
 
 /*
 ===================
+SyncFolder::checkForFolderContentPrecedence
+===================
+*/
+void SyncFolder::checkForFolderContentPrecedence()
+{
+    for (auto fileIt = files().begin(); fileIt != files().end(); ++fileIt)
+    {
+        if (fileIt->exists() && !fileIt->newlyAdded())
+            continue;
+
+        QByteArray path = m_profile->getFilePath(fileIt.key());
+        path.remove(path.indexOf('/'), path.size());
+
+        files()[hash64(path)].setPrecedence(true);
+    }
+}
+
+/*
+===================
 SyncFolder::checkForCorruptedFiles
 ===================
 */
