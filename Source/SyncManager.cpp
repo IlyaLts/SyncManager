@@ -448,26 +448,22 @@ bool SyncManager::scanFolders(SyncProfile &profile)
 
     while (!scanList.isEmpty())
     {
-        for (auto scanListIt = scanList.begin(); scanListIt != scanList.end();)
+        for (auto scanListIt = scanList.begin(); scanListIt != scanList.end(); ++scanListIt)
         {
+            if (scanListIt->data()->future().isValid())
+                continue;
+
             hash64_t requiredDevice = hash64(QStorageInfo(scanListIt.key()->path()).device());
 
-            if (!m_usedDevices.contains(requiredDevice))
-            {
-                m_usedDevices.insert(requiredDevice);
-                SyncFolder &folder = *scanListIt.key();
-                QObject::connect(scanListIt->data(), &QFutureWatcher<int>::finished, &scanLoop, &QEventLoop::quit);
+            if (m_usedDevices.contains(requiredDevice))
+                continue;
 
-                // To avoid a race condition, it is important to call this function after doing the connections
-                scanListIt->data()->setFuture(QFuture(QtConcurrent::run([&]()
-                {
-                    int result = folder.scanFiles();
-                    m_usedDevices.remove(hash64(QStorageInfo(folder.path()).device()));
-                    return result;
-                })));
-            }
+            m_usedDevices.insert(requiredDevice);
+            SyncFolder &folder = *scanListIt.key();
+            QObject::connect(scanListIt->data(), &QFutureWatcher<int>::finished, &scanLoop, &QEventLoop::quit);
 
-            scanListIt++;
+            // To avoid a race condition, it is important to call this function after doing the connections
+            scanListIt->data()->setFuture(QFuture(QtConcurrent::run([&]() { return folder.scanFiles(); })));
         }
 
         scanLoop.exec();
