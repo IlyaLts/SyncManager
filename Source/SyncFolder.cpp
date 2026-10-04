@@ -666,16 +666,20 @@ void SyncFolder::checkForCorruptedFiles()
             }
         }
 
-        m_databaseChanged = fileIt->corrupted() != corrupted ? true : m_databaseChanged;
-        fileIt->setCorrupted(corrupted);
-
         // Since we cannot see the file and the parent folder is no longer corrupted,
         // we need to remove the file data from the database to make the app sync
         // those lost files again after fixing the disk.
-        if (!corrupted)
+        if (!corrupted && fileIt->corrupted())
+        {
             fileIt = m_files.erase(fileIt);
+            m_databaseChanged = true;
+        }
         else
+        {
+            m_databaseChanged = fileIt->corrupted() != corrupted ? true : m_databaseChanged;
+            fileIt->setCorrupted(corrupted);
             fileIt++;
+        }
     }
 
     m_hasCorruptedFiles = false;
