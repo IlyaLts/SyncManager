@@ -32,7 +32,7 @@
 
 #define syncApp (static_cast<Application *>(QCoreApplication::instance()))
 
-#define SYNCMANAGER_VERSION     "2.4"
+#define SYNCMANAGER_VERSION     "2.5-dev"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define USER_MANUAL_PATH        "SyncManagerUserManual.pdf"
 #define CHANGELOG_FILENAME      "ChangeLog.txt"
@@ -70,6 +70,7 @@ public:
     int exec();
     void throttleDown();
     void checkForUpdate();
+    void SendTelemetry();
     void loadSettings();
     void saveSettings() const;
 

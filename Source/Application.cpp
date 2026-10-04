@@ -29,6 +29,10 @@
 #include <QPushButton>
 #include <QTextBrowser>
 #include <QThread>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QSysInfo>
 
 Language defaultLanguage = { QLocale::English, QLocale::UnitedStates, ":/i18n/en_US.qm", ":/Images/flags/us.svg", "&English" };
 
@@ -157,6 +161,62 @@ void Application::checkForUpdate()
 
 /*
 ===================
+Application::SendTelemetry
+
+Temporary.
+Does anyone actually use the app?
+Should I continue to update this utility?
+I'm not sure if this is the right way to do it, but anyway.
+===================
+*/
+void Application::SendTelemetry()
+{
+    QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
+
+    QString clientId = settings.value("UserID", QUuid::createUuid().toString(QUuid::WithoutBraces)).toString();
+    settings.setValue("UserID", clientId);
+
+    QString urlStr(QString("https://www.google-analytics.com/mp/collect?measurement_id=%1&api_secret=%2").arg("", ""));
+
+    QNetworkRequest request((QUrl(urlStr)));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    int maxFolders = 0;
+
+    for (auto &profile : m_syncManager->profiles())
+        maxFolders = qMax(static_cast<int>(profile.folders().size()), maxFolders);
+
+    // user_location
+    QJsonObject userLocationObject;
+    userLocationObject["system_locale"] = QLocale::system().name();
+    userLocationObject["app_version"] = SYNCMANAGER_VERSION;
+    userLocationObject["profiles"] = static_cast<int>(m_syncManager->profiles().size());
+    userLocationObject["max_folders"] = maxFolders;
+    userLocationObject["system"] = QSysInfo::prettyProductName();
+
+    // event
+    QJsonObject eventObject;
+    eventObject["name"] = "app_launch";
+    eventObject["params"] = userLocationObject;
+
+    QJsonObject countryObject;
+    countryObject["country_id"] = QLocale::system().name().split('_').last().toUpper();
+
+    // event
+    QJsonArray eventsArray;
+    eventsArray.append(eventObject);
+
+    QJsonObject jsonObject;
+    jsonObject["client_id"] = clientId;
+    jsonObject["user_location"] = countryObject;
+    jsonObject["events"] = eventsArray;
+
+    qDebug(QJsonDocument(jsonObject).toJson(QJsonDocument::Indented));
+    m_netManager->post(request, QJsonDocument(jsonObject).toJson(QJsonDocument::Compact));
+}
+
+/*
+===================
 Application::loadSettings
 ===================
 */
@@ -169,8 +229,10 @@ void Application::loadSettings()
     setTrayVisible(settings.value("ShowInTray", QSystemTrayIcon::isSystemTrayAvailable()).toBool());
     setCheckForUpdates(settings.value("CheckForUpdates", true).toBool());
 
-    if (syncApp->checkForUpdatesEnabled())
-        syncApp->checkForUpdate();
+    if (checkForUpdatesEnabled())
+        checkForUpdate();
+
+    SendTelemetry();
 }
 
 /*
