@@ -1,4 +1,14 @@
 ==========================
+2.5 - Oct 4, 2026
+==========================
+- Added controllable conflict resolution modes.
+- Fixed the app to copy lost files due to corruption from other healthy sync folders.
+- Fixed old issue where files are sometimes recopied instead of deleted.
+- Fixed tray notifications not firing after first one.
+- Fixed manual fails to open on Linux.
+- Micro-optimizations and other minor bug fixes.
+
+==========================
 2.4 - Aug 3, 2026
 ==========================
 - Added detection for corrupted, unreadable files that prevents data loss from other healthy folders.

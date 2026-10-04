@@ -32,7 +32,7 @@
 
 #define syncApp (static_cast<Application *>(QCoreApplication::instance()))
 
-#define SYNCMANAGER_VERSION     "2.5-dev"
+#define SYNCMANAGER_VERSION     "2.5"
 #define SETTINGS_FILENAME       "Settings.ini"
 #define USER_MANUAL_PATH        "SyncManagerUserManual.pdf"
 #define CHANGELOG_FILENAME      "ChangeLog.txt"
