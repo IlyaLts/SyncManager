@@ -620,23 +620,32 @@ void SyncFolder::checkForFolderContentPrecedence()
 /*
 ===================
 SyncFolder::checkForCorruptedFiles
+
+This checks only for corrupted files within a corrupted, unreadable folder,
+which are completely invisible on the disk. So, we have to check the parent folders
+for a corruption flag and manually mark their files as corrupted as well, and vice versa.
 ===================
 */
 void SyncFolder::checkForCorruptedFiles()
 {
-    // Files within a corrupted, unreadable folder are completely invisible.
-    // So, we have to check the parent folders for a corruption flag and
-    // manually mark their files as corrupted as well.
-    for (auto fileIt = m_files.begin(); fileIt != m_files.end(); fileIt++)
+    for (auto fileIt = m_files.begin(); fileIt != m_files.end();)
     {
-        if (fileIt->exists() || fileIt->corrupted())
+        // We only need files that we cannot see
+        if (fileIt->exists())
+        {
+            fileIt++;
             continue;
+        }
 
         bool corrupted = false;
         QByteArray path = m_profile->getFilePath(fileIt.key());
 
+        // Such a file doesn't exist in all sync folders
         if (path.isEmpty())
+        {
+            fileIt = m_files.erase(fileIt);
             continue;
+        }
 
         path.insert(0, m_path);
 
@@ -657,7 +666,16 @@ void SyncFolder::checkForCorruptedFiles()
             }
         }
 
+        m_databaseChanged = fileIt->corrupted() != corrupted ? true : m_databaseChanged;
         fileIt->setCorrupted(corrupted);
+
+        // Since we cannot see the file and the parent folder is no longer corrupted,
+        // we need to remove the file data from the database to make the app sync
+        // those lost files again after fixing the disk.
+        if (!corrupted)
+            fileIt = m_files.erase(fileIt);
+        else
+            fileIt++;
     }
 
     m_hasCorruptedFiles = false;
@@ -694,16 +712,25 @@ void SyncFolder::checkForConflictedFiles()
 /*
 ===================
 SyncFolder::removeNonexistentFileData
+
+If a file saved in the database isn't found on disk,
+it no longer exists in the folders, so we don't want
+to keep it in the database unless it's corrupted
 ===================
 */
 void SyncFolder::removeNonexistentFileData()
 {
     for (Files::iterator fileIt = m_files.begin(); fileIt != m_files.end();)
     {
-        if (!fileIt->exists() || fileIt->type == SyncFile::Unknown)
+        if ((!fileIt->exists() || fileIt->type == SyncFile::Unknown) && !fileIt->corrupted())
+        {
+            m_databaseChanged = true;
             fileIt = m_files.erase(static_cast<Files::const_iterator>(fileIt));
+        }
         else
+        {
             ++fileIt;
+        }
     }
 }
 
@@ -738,8 +765,9 @@ int SyncFolder::scanFiles()
     QDirIterator dir(path(), nameFilters, filters, QDirIterator::Subdirectories);
     QStringList systemDirList;
 
+    // Reset flags except the corrupted flag
     for (auto &file : m_files)
-        file.flags = 0;
+        file.flags &= SyncFile::Corrupted;
 
     while (dir.hasNext())
     {
@@ -888,7 +916,10 @@ int SyncFolder::scanFiles()
             file.setExists(true);
             file.setScanned(true);
             file.setReadOnly(!fileInfo.isWritable());
-            file.setCorrupted(!QFileInfo::exists(absoluteFilePath));
+
+            bool corrupted = !QFileInfo::exists(absoluteFilePath);
+            m_databaseChanged = file.corrupted() != corrupted ? true : m_databaseChanged;
+            file.setCorrupted(corrupted);
 
             m_profile->removeUnneededFilePath(fileHash);
         }
@@ -1580,6 +1611,7 @@ void SyncFolder::loadDatabase(const QString &path)
         qint64 msecs;
         qint64 size;
         SyncFile::Type type;
+        bool corrupted;
         SyncFile::LockedFlag lockedFlag;
         attributes_t attributes;
 
@@ -1589,13 +1621,15 @@ void SyncFolder::loadDatabase(const QString &path)
         p += sizeof(qint64);
         size = *reinterpret_cast<qint64 *>(p);
         p += sizeof(qint64);
-        type = static_cast<SyncFile::Type>((*reinterpret_cast<quint8 *>(p) & 0xf));
+        type = static_cast<SyncFile::Type>((*reinterpret_cast<quint8 *>(p) & 0x3));
+        corrupted = static_cast<bool>(((*reinterpret_cast<quint8 *>(p) & 0xC) >> 2));
         lockedFlag = static_cast<SyncFile::LockedFlag>((*reinterpret_cast<quint8 *>(p) >> 4));
         p += sizeof(quint8);
         attributes = *reinterpret_cast<attributes_t *>(p);
 
         const auto it = m_files.emplace(hash, SyncFile(type, QDateTime::fromMSecsSinceEpoch(msecs)));
         it->size = size;
+        it->setCorrupted(corrupted);
         it->lockedFlag = lockedFlag;
         it->attributes = attributes;
     }
@@ -1763,6 +1797,7 @@ void SyncFolder::saveDatabase(const QString &path) const
         *reinterpret_cast<qint64 *>(p) = fileIt->size;
         p += sizeof(qint64);
         *reinterpret_cast<quint8 *>(p) = fileIt->type;
+        *reinterpret_cast<quint8 *>(p) |= fileIt->corrupted() << 2;
         *reinterpret_cast<quint8 *>(p) |= fileIt->lockedFlag << 4;
         p += sizeof(quint8);
         *reinterpret_cast<attributes_t *>(p) = fileIt->attributes;

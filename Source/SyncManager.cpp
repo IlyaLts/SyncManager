@@ -385,11 +385,12 @@ bool SyncManager::syncProfile(SyncProfile &profile)
 
     for (auto &folder : profile.folders())
     {
-        folder.removeNonexistentFileData();
-
         // We need to check for conflicting files again after synchronization
         // to avoid incorrect partial synchronized status for folders.
         folder.checkForConflictedFiles();
+
+        folder.updateUnsyncedList();
+        folder.removeNonexistentFileData();
 
         if (folder.databaseChanged())
         {
@@ -398,8 +399,6 @@ bool SyncManager::syncProfile(SyncProfile &profile)
             else
                 folder.saveDatabasesLocally();
         }
-
-        folder.updateUnsyncedList();
 
         if (folder.hasCorruptedFiles())
         {
