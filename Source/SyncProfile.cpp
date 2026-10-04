@@ -1304,8 +1304,8 @@ void SyncProfile::checkForMovedFiles()
                 otherFolderIt->addFileToMove(newFileHash, newPathToFile, fromPath, FileManager::getAttributes(fullNewPathToFile));
 
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
-                const SyncFile &fileToMove = otherFolderIt->files.value(movedFileHash);
-                setFileModificationDate(pathToMove, QFileInfo(fullNewPathToFile).lastModified());
+                const SyncFile &fileToMove = otherFolderIt->files().value(movedFileHash);
+                syncApp->fileManager()->setModificationDate(pathToMove, QFileInfo(fullNewPathToFile).lastModified());
 #endif
             }
         }
