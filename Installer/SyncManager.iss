@@ -15,6 +15,7 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppMutex=SyncManagerMutex
 ;AppVerName={#MyAppName} {#MyAppVersion}
+AppPublisher="Ilya Lyakhovets"
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
@@ -80,28 +81,62 @@ Filename: "{app}\{#MyAppExeName}"; Parameters: "launchOnStartup"; Description: "
 Type: filesandordirs; Name: "{app}"
 
 [code]
-function KillApplicationIfRunning(): Boolean;
+
+//==============================
+function AlreadyInstalled(): Boolean;
+var
+  UninstallKey: string;
+begin
+  UninstallKey := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\' +
+                  ExpandConstant('{#SetupSetting("AppId")}') + '_is1';
+
+  Result := RegKeyExists(HKEY_CURRENT_USER, UninstallKey) or
+            RegKeyExists(HKEY_LOCAL_MACHINE, UninstallKey);
+end;
+
+//==============================
+function WarnToSynchronize(): Boolean;
+var
+  WarningText: string;
+   
+begin
+  Result := True;
+
+  if not AlreadyInstalled then
+    exit;
+
+  WarningText :=
+    'To preserve proper synchronization, we recommend synchronizing all profiles before installing a new version. ' +
+    'Do you want to proceed with the installation?';
+      
+  Result := MsgBox(WarningText, mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
+end;
+
+//==============================
+function KillIfRunning(): Boolean;
 var
   ErrorCode: Integer;
+  
 begin
-  if CheckForMutexes('SyncManagerMutex') and
-     (MsgBox('Application is running, do you want to close it?',
-             mbConfirmation, MB_OKCANCEL) = IDOK) then
-  begin
-    Exec('taskkill.exe', '/f /im SyncManager.exe', '', SW_HIDE, 
-         ewWaitUntilTerminated, ErrorCode);
-  end;
-
   Result := True;
+    
+  if not CheckForMutexes('SyncManagerMutex') then
+    exit;
+
+  if (MsgBox('Application is running, do you want to close it?', mbConfirmation, MB_OKCANCEL) = IDOK) then
+    Exec('taskkill.exe', '/f /im SyncManager.exe', '', SW_HIDE, ewWaitUntilTerminated, ErrorCode)
+  else
+    Result := False;
 end;
 
+//==============================
 function InitializeSetup(): Boolean;
 begin
-  Result := KillApplicationIfRunning();
+  Result := WarnToSynchronize() and KillIfRunning();
 end;
 
+//==============================
 function InitializeUninstall(): Boolean;
 begin
-  Result := KillApplicationIfRunning();
+  Result := KillIfRunning();
 end;
-
