@@ -1408,7 +1408,7 @@ void SyncFolder::copyFiles()
         if (profile().copyFile(fileIt->fromFullPath, toFullPath))
         {
 #if !defined(Q_OS_WIN) && defined(PRESERVE_MODIFICATION_DATE_ON_LINUX)
-            setFileModificationDate(toFullPath, fileIt->modifiedDate);
+            syncApp->fileManager()->setModificationDate(toFullPath, fileIt->modifiedDate);
 #endif
 
             // Do not reorder QQFileInfo fileInfo(fullPath) with setFileModificationDate(), as we want to get the latest modified date
