@@ -13,7 +13,6 @@
 | Can delete files permanently | Can version all deletions |
 | Can detect renamed and moved files | Filtering by name or file size |
 | Works in the system tray | Launches on startup |
-| Easy to set up | Fast synchronization |
 | Fast synchronization | Lightweight and portable |
 | Keeps memory usage as low as possible | Can detect corrupted files |
 

@@ -1,6 +1,10 @@
 # Introduction
 
-**SyncManager** is a custom-made lightweight synchronization manager that helps you synchronize files and folders across different locations. SyncManager lets you synchronize your data using three synchronization modes: manually, automatic (adaptive), or automatic (fixed). Manual syncing mode lets you decide what and when to synchronize data, while automatic (adaptive) mode synchronizes data based on its average synchronization time, and automatic (fixed) mode synchronizes data at predetermined intervals. It also offers three distinct synchronization types: two-way, one-way, and one-way update, allowing you to synchronize data between folders in different ways. Furthermore, it has filtering and customizable versioning settings. You can also decide how to handle old versions of files and folders: move them to the trash, delete them permanently, or version them in a special folder. The utility is primarily designed to run in the system tray, but it can also function without system tray interaction, operating as a fully automated solution that seamlessly launches at system startup.
+**SyncManager** is a lightweight synchronization manager that helps synchronize files and folders across different locations. The utility is primarily designed to run in the background in the system tray, silently launched at system startup, to automatically synchronize files at maximum speed and use as little memory as possible.
+
+SyncManager lets you synchronize your data using three synchronization modes: manual, automatic (adaptive), or automatic (fixed). Manual syncing mode lets you decide what and when to synchronize data, while automatic (adaptive) mode synchronizes data based on its average synchronization time, and automatic (fixed) mode synchronizes data at predetermined intervals.
+
+It also offers three distinct synchronization types: two-way, one-way, and one-way update, allowing you to synchronize data between folders in different ways. Furthermore, it has filtering and customizable versioning settings. You can also decide how to handle old versions of files and folders: move them to the trash, delete them permanently, or version them in a special folder.
 
 <img width="49%" height="auto" alt="SyncManager" src="https://github.com/user-attachments/assets/38b46008-c0dc-4a8c-93d1-467935cf6d3c" />
 <img width="49%" height="auto" alt="SyncManager_2 3" src="https://github.com/user-attachments/assets/83d4dd12-540a-4eaa-bddd-f4005a4e670c" />
@@ -89,7 +93,12 @@ SyncManager stores a database file to keep track of your files for future synchr
 - **Decentralized** - *The database is stored inside each of your synchronization folders, within a special hidden folder named .SyncManager. This is useful if you need to move your entire synchronization setup to another computer, as the database files will travel with your folders.*
 
 ### Conflict Resolution
-Sometimes, changes are made to the same file in two different locations before a synchronization. SyncManager has clear rules to resolve these conflicts:
+Sometimes, changes are made to the same file in two different locations before a synchronization. SyncManager has several options for what to do in that case:
+- Automatic - *Automatically resolve conflicts using predetermined rules.*
+- Do Nothing - *Skips synchronization for conflicting files and raise a warning so you can resolve them manually.*
+- Rename Both - *Preserves both versions by appending a conflict tag to the filename (e.g., photo (Conflict 2026-08-07).jpg).*
+
+If the automatic option is used, then SyncManager has clear rules to resolve these conflicts:
 - **Latest modification date wins:** - *If a file is modified in both locations, the version with the most recent modification date will overwrite the other*
 - **Modified files overcome deletion:** - *If a file is modified in one folder but deleted in the other, SyncManager will prioritize the modified file. The deletion will be ignored, and the modified file will be copied*
 - **Folder content changes overcome deletion:** - *If a folder has had files added or removed in one location but was completely deleted in another, the folder with the updated content will be copied*
