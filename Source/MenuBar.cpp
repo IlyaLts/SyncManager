@@ -295,9 +295,7 @@ MenuBar::disableNotification
 void MenuBar::toggleNotification()
 {
     syncApp->tray()->enableNotifications(!syncApp->tray()->notificationsEnabled());
-
-    if (syncApp->initiated())
-        syncApp->saveSettings();
+    syncApp->saveSettings();
 }
 
 /*
@@ -312,8 +310,7 @@ void MenuBar::toggleShowInTray()
     if (!QSystemTrayIcon::isSystemTrayAvailable())
         showInTrayAction->setChecked(false);
 
-    if (syncApp->initiated())
-        syncApp->saveSettings();
+    syncApp->saveSettings();
 }
 
 /*
@@ -325,9 +322,7 @@ void MenuBar::toggleLaunchOnStartup()
 {
     syncApp->setLaunchOnStartup(launchOnStartupAction->isChecked());
     updateLaunchOnStartupState();
-
-    if (syncApp->initiated())
-        syncApp->saveSettings();
+    syncApp->saveSettings();
 }
 
 /*

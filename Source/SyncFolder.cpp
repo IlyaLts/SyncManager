@@ -755,6 +755,75 @@ void SyncFolder::remove()
 SyncFolder::scanFiles
 ===================
 */
+bool SyncFolder::shouldFilter(const QFileInfo &fileInfo, const QByteArray &absoluteFilePath, QStringList &systemDirList, qint64 fileSize)
+{
+    // Skips system files
+    if (m_profile->ignoreSystemFiles() && FileManager::isSystem(absoluteFilePath))
+    {
+        if (fileInfo.isDir())
+        {
+            systemDirList.append(absoluteFilePath);
+            systemDirList.last().append("/*");
+        }
+
+        return true;
+    }
+
+    if (fileInfo.isHidden())
+    {
+        // Skips hidden files
+        if (m_profile->ignoreHiddenFiles())
+            return true;
+
+        // Skips database files
+        if (m_profile->databaseLocation() == SyncProfile::Decentralized)
+        {
+            if (fileInfo.fileName().compare(DATA_FOLDER_PATH, Qt::CaseInsensitive) == 0)
+                return true;
+
+            if (fileInfo.fileName().compare(DATABASE_FILENAME, Qt::CaseInsensitive) == 0)
+                return true;
+        }
+    }
+
+    if (fileInfo.isFile())
+    {
+        // Skips files below the minimum size
+        if (m_profile->fileMinSize() > static_cast<quint64>(fileSize))
+            return true;
+
+        // Skips files above the maximum size
+        if (m_profile->fileMaxSize() > 0 && static_cast<quint64>(fileSize) > m_profile->fileMaxSize())
+            return true;
+
+        // Skips and deletes temporary files that were left after copy file operations were interrupted
+        if (fileInfo.suffix().compare(TEMP_EXTENSION, Qt::CaseInsensitive) == 0)
+        {
+            syncApp->fileManager()->remove(absoluteFilePath);
+            return true;
+        }
+    }
+
+    QByteArray filePath(absoluteFilePath);
+    filePath.remove(0, path().size());
+
+    // Excludes system files
+    if (m_profile->ignoreSystemFiles())
+        if (hasMatch(systemDirList, absoluteFilePath, caseSensitive()))
+            return true;
+
+    // Excludes unwanted files
+    if (hasMatch(m_profile->excludeList(), filePath, caseSensitive()))
+        return true;
+
+    return false;
+}
+
+/*
+===================
+SyncFolder::scanFiles
+===================
+*/
 int SyncFolder::scanFiles()
 {
     auto deviceRead = syncApp->fileManager()->deviceRead(m_deviceHash);
@@ -782,66 +851,13 @@ int SyncFolder::scanFiles()
         dir.next();
 
         QFileInfo fileInfo(dir.fileInfo());
-        qint64 fileSize = fileInfo.size();
         QByteArray absoluteFilePath = fileInfo.filePath().toUtf8();
 
+        // If the file is a symlink, this function returns information about the target, not the symlink
+        qint64 fileSize = fileInfo.isSymLink() ? 0 : fileInfo.size();
         deviceRead += fileSize;
 
-        // If the file is a symlink, this function returns information about the target, not the symlink
-        if (fileInfo.isSymLink())
-            fileSize = 0;
-
-        // Skips system files
-        if (m_profile->ignoreSystemFiles() && FileManager::isSystem(absoluteFilePath))
-        {
-            if (fileInfo.isDir())
-            {
-                systemDirList.append(absoluteFilePath);
-                systemDirList.last().append("/*");
-            }
-
-            continue;
-        }
-
-        if (fileInfo.isHidden())
-        {
-            // Skips hidden files
-            if (m_profile->ignoreHiddenFiles())
-                continue;
-
-            // Skips database files
-            if (m_profile->databaseLocation() == SyncProfile::Decentralized)
-            {
-                if (fileInfo.fileName().compare(DATA_FOLDER_PATH, Qt::CaseInsensitive) == 0)
-                    continue;
-
-                if (fileInfo.fileName().compare(DATABASE_FILENAME, Qt::CaseInsensitive) == 0)
-                    continue;
-            }
-        }
-
-        if (fileInfo.isFile())
-        {
-            if (m_profile->fileMinSize() > static_cast<quint64>(fileSize))
-                continue;
-
-            if (m_profile->fileMaxSize() > 0 && static_cast<quint64>(fileSize) > m_profile->fileMaxSize())
-                continue;
-        }
-
-        QByteArray filePath(absoluteFilePath);
-        filePath.remove(0, path().size());
-
-        if (fileInfo.isFile() && fileInfo.suffix().compare(TEMP_EXTENSION, Qt::CaseInsensitive) == 0)
-            syncApp->fileManager()->remove(absoluteFilePath);
-
-        // Excludes system files
-        if (m_profile->ignoreSystemFiles())
-            if (hasMatch(systemDirList, absoluteFilePath, caseSensitive()))
-                continue;
-
-        // Excludes unwanted files
-        if (hasMatch(m_profile->excludeList(), filePath, caseSensitive()))
+        if (shouldFilter(fileInfo, absoluteFilePath, systemDirList, fileSize))
             continue;
 
         // Skips empty folders
@@ -857,62 +873,14 @@ int SyncFolder::scanFiles()
                 dir.next();
 
                 QFileInfo fileInfo(dir.fileInfo());
-                qint64 fileSize = fileInfo.size();
-                QByteArray absoluteFilePath = fileInfo.filePath().toUtf8();
 
-                deviceRead += fileSize;
+                // If the file is a symlink, this function returns information about the target, not the symlink
+                deviceRead += fileInfo.isSymLink() ? 0 : fileInfo.size();
 
                 if (fileInfo.isDir())
                     continue;
 
-                // Skips system files
-                if (m_profile->ignoreSystemFiles() && FileManager::isSystem(absoluteFilePath))
-                {
-                    if (fileInfo.isDir())
-                    {
-                        systemDirList.append(absoluteFilePath);
-                        systemDirList.last().append("/*");
-                    }
-
-                    continue;
-                }
-
-                if (fileInfo.isHidden())
-                {
-                    // Skips hidden files
-                    if (m_profile->ignoreHiddenFiles())
-                        continue;
-
-                    // Skips database files
-                    if (m_profile->databaseLocation() == SyncProfile::Decentralized)
-                    {
-                        if (fileInfo.fileName().compare(DATA_FOLDER_PATH, Qt::CaseInsensitive) == 0)
-                            continue;
-
-                        if (fileInfo.fileName().compare(DATABASE_FILENAME, Qt::CaseInsensitive) == 0)
-                            continue;
-                    }
-                }
-
-                if (fileInfo.isFile())
-                {
-                    if (m_profile->fileMinSize() > static_cast<quint64>(fileSize))
-                        continue;
-
-                    if (m_profile->fileMaxSize() > 0 && static_cast<quint64>(fileSize) > m_profile->fileMaxSize())
-                        continue;
-                }
-
-                QByteArray filePath(absoluteFilePath);
-                filePath.remove(0, path().size());
-
-                // Excludes system files
-                if (m_profile->ignoreSystemFiles())
-                    if (hasMatch(systemDirList, absoluteFilePath, caseSensitive()))
-                        continue;
-
-                // Excludes unwanted files
-                if (hasMatch(m_profile->excludeList(), filePath, caseSensitive()))
+                if (shouldFilter(fileInfo, fileInfo.filePath().toUtf8(), systemDirList, fileSize))
                     continue;
 
                 empty = false;
@@ -923,12 +891,14 @@ int SyncFolder::scanFiles()
                 continue;
         }
 
+        QByteArray filePath(absoluteFilePath);
+        filePath.remove(0, path().size());
+
         SyncFile::Type type = fileInfo.isDir() ? SyncFile::Folder : SyncFile::File;
         hash64_t fileHash = hash64(filePath);
+        auto fileIt = m_files.find(fileHash);
 
         m_profile->addFilePath(fileHash, filePath);
-
-        auto fileIt = m_files.find(fileHash);
 
         // If a file is already in our database
         if (fileIt != m_files.end())

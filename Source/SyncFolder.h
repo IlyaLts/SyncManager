@@ -118,6 +118,7 @@ public:
     void removeNonexistentFileData();
     void remove();
 
+    bool shouldFilter(const QFileInfo &fileInfo, const QByteArray &absoluteFilePath, QStringList &systemDirList, qint64 fileSize);
     int scanFiles();
 
     void renameConflictedFiles();

@@ -110,6 +110,9 @@ SyncProfile::saveSettings
 */
 void SyncProfile::saveSettings() const
 {
+    if (!syncApp->initiated() || !m_autosave)
+        return;
+
     QSettings settings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + SETTINGS_FILENAME, QSettings::IniFormat);
     QString profileKey(m_name + QLatin1String("_profile/"));
 
@@ -180,9 +183,7 @@ void SyncProfile::setSyncingMode(SyncingMode mode)
 
     emit syncingModeChanged();
     emit syncingTimeChanged();
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -196,9 +197,7 @@ void SyncProfile::setSyncTimeMultiplier(quint32 multiplier)
     updateNextSyncingTime();
     updateTimer();
     emit syncingTimeChanged();
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -209,9 +208,7 @@ SyncProfile::setSyncIntervalFixed
 void SyncProfile::setSyncIntervalFixed(quint64 interval)
 {
     m_syncIntervalFixed = interval;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -222,9 +219,7 @@ SyncProfile::setDetectMovedFiles
 void SyncProfile::setDetectMovedFiles(bool enable)
 {
     m_detectMovedFiles = enable;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -238,9 +233,7 @@ void SyncProfile::setDeletionMode(DeletionMode mode)
         mode = MoveToTrash;
 
     m_deletionMode = mode;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -254,9 +247,7 @@ void SyncProfile::setDatabaseLocation(SyncProfile::DatabaseLocation location)
         location = Decentralized;
 
     m_databaseLocation = location;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -270,9 +261,7 @@ void SyncProfile::setVersioningFormat(VersioningFormat format)
         format = FileTimestampAfter;
 
     m_versioningFormat = format;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -286,9 +275,7 @@ void SyncProfile::setVersioningLocation(VersioningLocation location)
         location = LocallyNextToFolder;
 
     m_versioningLocation = location;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -302,9 +289,7 @@ void SyncProfile::setConflictResolution(ConflictResolution mode)
         mode = Automatically;
 
     m_conflictResolution = mode;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -315,9 +300,7 @@ SyncProfile::setVersioningPath
 void SyncProfile::setVersioningPath(const QString &path)
 {
     m_versioningPath = path;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -328,9 +311,7 @@ SyncProfile::setVersioningFolder
 void SyncProfile::setVersioningFolder(const QString &name)
 {
     m_versioningFolder = name;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -341,9 +322,7 @@ SyncProfile::setVersioningPattern
 void SyncProfile::setVersioningPattern(const QString &pattern)
 {
     m_versioningPattern = pattern;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -354,9 +333,7 @@ SyncProfile::setFileMinSize
 void SyncProfile::setFileMinSize(quint64 size)
 {
     m_fileMinSize = size;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -367,9 +344,7 @@ SyncProfile::setFileMaxSize
 void SyncProfile::setFileMaxSize(quint64 size)
 {
     m_fileMaxSize = size;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -380,9 +355,7 @@ SyncProfile::setMovedFileMinSize
 void SyncProfile::setMovedFileMinSize(quint64 size)
 {
     m_movedFileMinSize = size;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -393,9 +366,7 @@ SyncProfile::setDeltaCopyingMinSize
 void SyncProfile::setDeltaCopyingMinSize(quint64 size)
 {
     m_deltaCopyingMinSize = size;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -406,9 +377,7 @@ SyncProfile::setIncludeList
 void SyncProfile::setIncludeList(const QStringList &list)
 {
     m_includeList = list;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -419,9 +388,7 @@ SyncProfile::setExcludeList
 void SyncProfile::setExcludeList(const QStringList &list)
 {
     m_excludeList = list;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -450,9 +417,7 @@ SyncProfile::setIgnoreSystemFiles
 void SyncProfile::setIgnoreSystemFiles(bool enable)
 {
     m_ignoreSystemFiles = enable;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -463,9 +428,7 @@ SyncProfile::setIgnoreHiddenFiles
 void SyncProfile::setIgnoreHiddenFiles(bool enable)
 {
     m_ignoreHiddenFiles = enable;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*
@@ -476,9 +439,7 @@ SyncProfile::setIgnoreEmptyFolders
 void SyncProfile::setIgnoreEmptyFolders(bool enable)
 {
     m_ignoreEmptyFolders = enable;
-
-    if (syncApp->initiated() && m_autosave)
-        saveSettings();
+    saveSettings();
 }
 
 /*

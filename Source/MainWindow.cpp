@@ -688,15 +688,11 @@ void MainWindow::pauseSyncing()
     for (auto &profile : syncApp->syncManager()->profiles())
     {
         profile.setPaused(syncApp->syncManager()->paused());
-
-        if (syncApp->initiated())
-            profile.saveSettings();
+        profile.saveSettings();
     }
 
     updateStatus();
-
-    if (syncApp->initiated())
-        syncApp->saveSettings();
+    syncApp->saveSettings();
 }
 
 /*
@@ -729,8 +725,7 @@ void MainWindow::pauseSelected()
                 folder->setPaused(!folder->paused());
             }
 
-            if (syncApp->initiated())
-                profile->saveSettings();
+            profile->saveSettings();
         }
         // Profiles are selected
         else if (ui->syncProfilesView->hasFocus())
@@ -745,9 +740,7 @@ void MainWindow::pauseSelected()
                     return;
 
                 profile->setPaused(!profile->paused());
-
-                if (syncApp->initiated())
-                    profile->saveSettings();
+                profile->saveSettings();
             }
         }
 
@@ -764,9 +757,7 @@ void MainWindow::switchSyncingType(SyncFolder &folder, SyncFolder::Type type)
 {
     folder.setType(type);
     updateStatus();
-
-    if (syncApp->initiated())
-        folder.profile().saveSettings();
+    folder.profile().saveSettings();
 }
 
 /*
