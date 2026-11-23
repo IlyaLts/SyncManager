@@ -237,6 +237,7 @@ private:
     QHash<SyncHash, QByteArray> m_filePaths;
     mutable QMutex m_filePathsMutex;
     QModelIndex m_index;
+    bool m_autosave = true;
 };
 
 #endif // SYNCPROFILE_H
