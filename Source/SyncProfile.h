@@ -123,6 +123,7 @@ public:
     void setPaused(bool paused);
     void setIgnoreSystemFiles(bool enable);
     void setIgnoreHiddenFiles(bool enable);
+    void setIgnoreEmptyFolders(bool enable);
     inline void setIndex(const QModelIndex &index) { m_index = index; }
 
     inline std::list<SyncFolder> &folders() { return m_folders; }
@@ -159,6 +160,7 @@ public:
     inline bool toBeRemoved() const { return m_toBeRemoved; }
     inline bool ignoreSystemFiles() const { return m_ignoreSystemFiles; }
     inline bool ignoreHiddenFiles() const { return m_ignoreHiddenFiles; }
+    inline bool ignoreEmptyFolders() const { return m_ignoreEmptyFolders; }
     inline QModelIndex index() const { return m_index; }
 
     void updateTimer();
@@ -233,6 +235,7 @@ private:
     bool m_deltaCopying = false;
     bool m_ignoreSystemFiles = false;
     bool m_ignoreHiddenFiles = false;
+    bool m_ignoreEmptyFolders = false;
 
     QHash<SyncHash, QByteArray> m_filePaths;
     mutable QMutex m_filePathsMutex;

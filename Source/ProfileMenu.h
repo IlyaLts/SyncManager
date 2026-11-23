@@ -68,6 +68,7 @@ public Q_SLOTS:
     void setExcludeList();
     void toggleIgnoreSystemFiles();
     void toggleIgnoreHiddenFiles();
+    void toggleIgnoreEmptyFolders();
 
 private:
 
@@ -107,6 +108,7 @@ private:
     QAction *excludeAction;
     QAction *ignoreSystemFilesAction;
     QAction *ignoreHiddenFilesAction;
+    QAction *ignoreEmptyFoldersAction;
 
     UnhidableMenu *syncingModeMenu;
     UnhidableMenu *deletionModeMenu;

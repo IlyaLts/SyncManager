@@ -36,6 +36,7 @@ ProfileMenu::ProfileMenu(QWidget *parent, SyncProfile *profile) : QWidget(parent
 
     ignoreSystemFilesAction->setChecked(profile->ignoreSystemFiles());
     ignoreHiddenFilesAction->setChecked(profile->ignoreHiddenFiles());
+    ignoreEmptyFoldersAction->setChecked(profile->ignoreEmptyFolders());
     detectMovedFilesAction->setChecked(profile->detectMovedFiles());
 
     updateSyncTime();
@@ -82,6 +83,7 @@ void ProfileMenu::setup(QWidget *parent)
     excludeAction = new QAction(QString("&" + syncApp->translate("Exclude: %1")).arg(profile->excludeList().join("; ")), parent);
     ignoreSystemFilesAction = new QAction("&" + syncApp->translate("Ignore System Files"), parent);
     ignoreHiddenFilesAction = new QAction("&" + syncApp->translate("Ignore Hidden Files"), parent);
+    ignoreEmptyFoldersAction = new QAction("&" + syncApp->translate("Ignore Empty Folders"), parent);
 
     syncingTimeAction->setDisabled(true);
     decreaseSyncTimeAction->setDisabled(profile->syncTimeMultiplier() <= 1);
@@ -110,6 +112,7 @@ void ProfileMenu::setup(QWidget *parent)
     renameBothResolutionAction->setCheckable(true);
     ignoreSystemFilesAction->setCheckable(true);
     ignoreHiddenFilesAction->setCheckable(true);
+    ignoreEmptyFoldersAction->setCheckable(true);
 
     syncingModeMenu = new UnhidableMenu("&" + syncApp->translate("Syncing Mode"), parent);
     syncingModeMenu->addAction(manualAction);
@@ -165,6 +168,7 @@ void ProfileMenu::setup(QWidget *parent)
     filteringMenu->addSeparator();
     filteringMenu->addAction(ignoreSystemFilesAction);
     filteringMenu->addAction(ignoreHiddenFilesAction);
+    filteringMenu->addAction(ignoreEmptyFoldersAction);
 
     updateStates();
 
@@ -201,6 +205,7 @@ void ProfileMenu::setup(QWidget *parent)
     connect(excludeAction, &QAction::triggered, this, [this](){ setExcludeList(); });
     connect(ignoreSystemFilesAction, &QAction::triggered, this, [this](){ toggleIgnoreSystemFiles(); });
     connect(ignoreHiddenFilesAction, &QAction::triggered, this, [this](){ toggleIgnoreHiddenFiles(); });
+    connect(ignoreEmptyFoldersAction, &QAction::triggered, this, [this](){ toggleIgnoreEmptyFolders(); });
 
     // The simplest way to fix unclickable menu icons
     lower();
@@ -251,6 +256,7 @@ void ProfileMenu::updateStates()
     excludeAction->setText("&" + syncApp->translate("Exclude: %1").arg(profile->excludeList().join("; ")));
     ignoreSystemFilesAction->setChecked(profile->ignoreSystemFiles());
     ignoreHiddenFilesAction->setChecked(profile->ignoreHiddenFiles());
+    ignoreEmptyFoldersAction->setChecked(profile->ignoreEmptyFolders());
 
     versioningFormatMenu->setVisible(profile->deletionMode() == SyncProfile::Versioning);
     versioningLocationMenu->setVisible(profile->deletionMode() == SyncProfile::Versioning);
@@ -298,6 +304,7 @@ void ProfileMenu::retranslate()
     excludeAction->setText(QString("&" + syncApp->translate("Exclude: %1")).arg(profile->excludeList().join("; ")));
     ignoreSystemFilesAction->setText("&" + syncApp->translate("Ignore System Files"));
     ignoreHiddenFilesAction->setText("&" + syncApp->translate("Ignore Hidden Files"));
+    ignoreEmptyFoldersAction->setText("&" + syncApp->translate("Ignore Empty Folders"));
     syncingModeMenu->setTitle("&" + syncApp->translate("Syncing Mode"));
     deletionModeMenu->setTitle("&" + syncApp->translate("Deletion Mode"));
     versioningFormatMenu->setTitle("&" + syncApp->translate("Versioning Format"));
@@ -791,4 +798,14 @@ ProfileMenu::toggleIgnoreHiddenFiles
 void ProfileMenu::toggleIgnoreHiddenFiles()
 {
     profile->setIgnoreHiddenFiles(!profile->ignoreHiddenFiles());
+}
+
+/*
+===================
+ProfileMenu::toggleIgnoreEmptyFolders
+===================
+*/
+void ProfileMenu::toggleIgnoreEmptyFolders()
+{
+    profile->setIgnoreEmptyFolders(!profile->ignoreEmptyFolders());
 }

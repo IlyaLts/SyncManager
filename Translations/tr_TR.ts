@@ -587,5 +587,9 @@
             <source>Rename Both</source>
             <translation>İkisini de Yeniden Adlandır</translation>
         </message>
+        <message>
+            <source>Ignore Empty Folders</source>
+            <translation>Boş Klasörleri Yoksay</translation>
+        </message>
     </context>
 </TS>

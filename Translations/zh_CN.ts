@@ -587,5 +587,9 @@
             <source>Rename Both</source>
             <translation>两者均重命名</translation>
         </message>
+        <message>
+            <source>Ignore Empty Folders</source>
+            <translation>忽略空文件夹</translation>
+        </message>
     </context>
 </TS>

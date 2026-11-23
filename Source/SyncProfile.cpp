@@ -470,6 +470,19 @@ void SyncProfile::setIgnoreHiddenFiles(bool enable)
 
 /*
 ===================
+SyncProfile::setIgnoreEmptyFolders
+===================
+*/
+void SyncProfile::setIgnoreEmptyFolders(bool enable)
+{
+    m_ignoreEmptyFolders = enable;
+
+    if (syncApp->initiated() && m_autosave)
+        saveSettings();
+}
+
+/*
+===================
 SyncProfile::remove
 ===================
 */

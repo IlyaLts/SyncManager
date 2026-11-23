@@ -587,5 +587,9 @@
             <source>Rename Both</source>
             <translation>둘 다 이름 변경</translation>
         </message>
+        <message>
+            <source>Ignore Empty Folders</source>
+            <translation>빈 폴더 무시</translation>
+        </message>
     </context>
 </TS>

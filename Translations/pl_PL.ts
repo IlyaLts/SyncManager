@@ -587,5 +587,9 @@
             <source>Rename Both</source>
             <translation>Zmień nazwę obu</translation>
         </message>
+        <message>
+            <source>Ignore Empty Folders</source>
+            <translation>Ignoruj puste foldery</translation>
+        </message>
     </context>
 </TS>

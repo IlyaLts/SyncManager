@@ -587,5 +587,9 @@
             <source>Rename Both</source>
             <translation>Переименовать оба</translation>
         </message>
+        <message>
+            <source>Ignore Empty Folders</source>
+            <translation>Игнорировать пустые папки</translation>
+        </message>
     </context>
 </TS>

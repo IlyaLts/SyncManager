@@ -587,5 +587,9 @@
             <source>Rename Both</source>
             <translation>Omdøb begge</translation>
         </message>
+        <message>
+            <source>Ignore Empty Folders</source>
+            <translation>Ignorer tomme mapper</translation>
+        </message>
     </context>
 </TS>

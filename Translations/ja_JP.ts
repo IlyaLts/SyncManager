@@ -587,5 +587,9 @@
             <source>Rename Both</source>
             <translation>両方の名前を変更</translation>
         </message>
+        <message>
+            <source>Ignore Empty Folders</source>
+            <translation>空のフォルダーを無視する</translation>
+        </message>
     </context>
 </TS>
