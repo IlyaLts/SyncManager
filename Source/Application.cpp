@@ -34,6 +34,9 @@
 #include <QJsonDocument>
 #include <QSysInfo>
 
+constexpr quint64 cpuUpdateTime = 50;
+constexpr quint64 checkForUpdateTime = 1000 * 60 * 60 * 24;
+
 Language defaultLanguage = { QLocale::English, QLocale::UnitedStates, ":/i18n/en_US.qm", ":/Images/flags/us.svg", "&English" };
 
 Language languages[] =
@@ -113,7 +116,7 @@ void Application::init()
     connect(m_syncManager.data(), &SyncManager::finished, this, [this](){ m_syncThread->quit(); });
 
     connect(m_cpuUsage, &CpuUsage::cpuUsageUpdated, this, &Application::updateCpuUsage);
-    m_cpuUsage->startMonitoring(CpuUpdateTime);
+    m_cpuUsage->startMonitoring(cpuUpdateTime);
 
     loadSettings();
     m_initiated = true;
@@ -143,7 +146,7 @@ Application::throttleDown
 void Application::throttleDown()
 {
     while (m_processUsage > maxCpuUsage())
-        QThread::msleep(CpuUpdateTime);
+        QThread::msleep(cpuUpdateTime);
 }
 
 /*
@@ -211,7 +214,7 @@ void Application::SendTelemetry()
     jsonObject["user_location"] = countryObject;
     jsonObject["events"] = eventsArray;
 
-    qDebug(QJsonDocument(jsonObject).toJson(QJsonDocument::Indented));
+    qDebug().noquote() << QJsonDocument(jsonObject).toJson(QJsonDocument::Indented);
     m_netManager->post(request, QJsonDocument(jsonObject).toJson(QJsonDocument::Compact));
 }
 
@@ -407,7 +410,7 @@ void Application::setCheckForUpdates(bool enable)
     saveSettings();
 
     if (enable)
-        m_updateTimer.start(CheckForUpdateTime);
+        m_updateTimer.start(checkForUpdateTime);
     else
         m_updateTimer.stop();
 }

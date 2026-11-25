@@ -23,7 +23,6 @@
 #include <QStandardPaths>
 #include <QSettings>
 #include <QStack>
-#include <QRandomGenerator>
 #include <QStorageInfo>
 #include <QDirIterator>
 #include <QSaveFile>
@@ -355,51 +354,18 @@ void SyncFolder::updateVersioningPath()
 
 /*
 ===================
-SyncFolder::checkCaseSensitive
-
-Updates whether the folder is case-sensitive or not
+SyncFolder::updateCaseSensitive
 ===================
 */
-void SyncFolder::checkCaseSensitive()
+void SyncFolder::updateCaseSensitive()
 {
     if (!m_exists)
         return;
 
-    QDir dir(m_path);
+    auto result = syncApp->fileManager()->caseSensitive(m_path);
 
-    if (!dir.exists())
-        return;
-
-    QString uniqueFilename;
-    QString letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    int numberOfLetters = letters.length();
-
-    for (int i = 0; i < 10; ++i)
-        uniqueFilename.append(letters.at(QRandomGenerator::global()->bounded(numberOfLetters)));
-
-    uniqueFilename.append(".tmp");
-
-    QString lowerCaseFilename = uniqueFilename.toLower();
-    QString upperCaseFilename = uniqueFilename.toUpper();
-    QString fullPath = dir.absoluteFilePath(uniqueFilename);
-    bool caseSensitive = true;
-
-    QFile file(fullPath);
-    if (!file.open(QIODevice::WriteOnly))
-        return;
-
-    file.close();
-
-    if (uniqueFilename != lowerCaseFilename)
-        if (QFile::exists(dir.absoluteFilePath(lowerCaseFilename)))
-            caseSensitive = false;
-
-    if (caseSensitive && uniqueFilename != upperCaseFilename)
-        if (QFile::exists(dir.absoluteFilePath(upperCaseFilename)))
-            caseSensitive = false;
-
-    syncApp->fileManager()->remove(fullPath);
-    this->m_caseSensitive = caseSensitive;
+    if (result.has_value())
+        m_caseSensitive = *result;
 }
 
 /*
@@ -684,7 +650,7 @@ void SyncFolder::checkForCorruptedFiles()
 
     m_hasCorruptedFiles = false;
 
-    for (const auto &file : m_files)
+    for (const auto &file : std::as_const(m_files))
     {
         if (file.corrupted())
         {
@@ -703,7 +669,7 @@ void SyncFolder::checkForConflictedFiles()
 {
     m_hasConflictedFiles = false;
 
-    for (const auto &file : m_files)
+    for (const auto &file : std::as_const(m_files))
     {
         if (file.conflictDetected())
         {
@@ -752,7 +718,7 @@ void SyncFolder::remove()
 
 /*
 ===================
-SyncFolder::scanFiles
+SyncFolder::shouldFilter
 ===================
 */
 bool SyncFolder::shouldFilter(const QFileInfo &fileInfo, const QByteArray &absoluteFilePath, QStringList &systemDirList, qint64 fileSize)

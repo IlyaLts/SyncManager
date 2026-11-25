@@ -25,9 +25,9 @@
 #include <QMutex>
 #include <QModelIndex>
 
-static constexpr quint64 defaultFixedInterval = 1000;
-static constexpr quint64 MovedFilesMinSize = 0;
-static constexpr quint64 DeltaCopyingMinSize = 1073741824;
+constexpr quint64 defaultFixedInterval = 1000;
+constexpr quint64 defaultMovedFilesMinSize = 0;
+constexpr quint64 defaultDeltaCopyingMinSize = 1024 * 1024 * 1024;
 
 class SyncFolder;
 class UnhidableMenu;
@@ -222,8 +222,8 @@ private:
     DatabaseLocation m_databaseLocation = Decentralized;
     quint64 m_fileMinSize = 0;
     quint64 m_fileMaxSize = 0;
-    quint64 m_movedFileMinSize = MovedFilesMinSize;
-    quint64 m_deltaCopyingMinSize = DeltaCopyingMinSize;
+    quint64 m_movedFileMinSize = defaultMovedFilesMinSize;
+    quint64 m_deltaCopyingMinSize = defaultDeltaCopyingMinSize;
     QStringList m_includeList;
     QStringList m_excludeList;
     quint32 m_syncTimeMultiplier = 1;

@@ -26,6 +26,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 
+constexpr quint64 notificationCooldown = 300000;
+
 /*
 ===================
 SystemTray::SystemTray
@@ -227,7 +229,7 @@ void SystemTray::notifyWithCooldownHandler(const QString &type, const QString &t
 #ifdef DEBUG
     if (QThread::currentThread() != qApp->thread())
     {
-        qDebug("notifyWithCooldown() must be called from the main thread!");
+        qDebug() << "notifyWithCooldown() must be called from the main thread!";
         return;
     }
 #endif
@@ -239,5 +241,5 @@ void SystemTray::notifyWithCooldownHandler(const QString &type, const QString &t
         m_cooldownNotifications.insert(type, new QTimer(this)).value()->setSingleShot(true);
 
     notify(title, message, icon);
-    m_cooldownNotifications.value(type)->start(NotificationCooldown);
+    m_cooldownNotifications.value(type)->start(notificationCooldown);
 }

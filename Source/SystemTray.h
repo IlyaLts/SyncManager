@@ -23,8 +23,6 @@
 #include <QSystemTrayIcon>
 #include <QMap>
 
-static constexpr quint64 NotificationCooldown = 300000;
-
 class QAction;
 
 /*

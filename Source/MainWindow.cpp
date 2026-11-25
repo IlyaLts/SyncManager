@@ -887,7 +887,7 @@ void MainWindow::sync(SyncProfile *profile, bool hidden)
         if (!syncApp->syncThread()->isRunning())
         {
             syncApp->syncThread()->start();
-            updateTimer.start(UpdateTime);
+            updateTimer.start(updateTime);
         }
     }
 }

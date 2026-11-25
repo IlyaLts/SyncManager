@@ -25,8 +25,6 @@
 
 #define TEMP_EXTENSION "sm_temp"
 
-static constexpr quint64 CopyBufferSize = 4096;
-
 /*
 ===========================================================
 
@@ -64,6 +62,7 @@ public:
     static void setHiddenAttribute(const QString &path, bool hidden);
     static bool setModificationDate(const QString &path, const QDateTime &dateTime);
     static bool isSystem(const QString &path);
+    static std::optional<bool> caseSensitive(const QString &path);
 
 private Q_SLOTS:
 

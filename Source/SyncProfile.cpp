@@ -31,6 +31,8 @@
 #include <QTemporaryFile>
 #include <QDirIterator>
 
+constexpr quint64 syncMinDelay = 1000;
+
 /*
 ===================
 SyncProfile::SyncProfile
@@ -88,8 +90,8 @@ void SyncProfile::loadSettings()
     setIgnoreEmptyFolders(settings.value(keyName + "IgnoreEmptyFolders", false).toBool());
     setFileMinSize(settings.value(keyName + "FileMinSize", 0).toULongLong());
     setFileMaxSize(settings.value(keyName + "FileMaxSize", 0).toULongLong());
-    setMovedFileMinSize(settings.value(keyName + "MovedFileMinSize", MovedFilesMinSize).toULongLong());
-    setDeltaCopyingMinSize(settings.value(keyName + "DeltaCopyingMinSize", DeltaCopyingMinSize).toULongLong());
+    setMovedFileMinSize(settings.value(keyName + "MovedFileMinSize", defaultMovedFilesMinSize).toULongLong());
+    setDeltaCopyingMinSize(settings.value(keyName + "DeltaCopyingMinSize", defaultDeltaCopyingMinSize).toULongLong());
     setIncludeList(settings.value(keyName + "IncludeList").toStringList());
     setExcludeList(settings.value(keyName + "ExcludeList").toStringList());
     setVersioningFolder(settings.value(keyName + "VersionFolder", "[Deletions]").toString());
@@ -484,7 +486,7 @@ void SyncProfile::updateTimer()
         syncTime = QDateTime::currentDateTime().msecsTo(dateToSync);
 
     if (!isActive())
-        syncTime = qMax(syncTime, SyncMinDelay);
+        syncTime = qMax(syncTime, syncMinDelay);
 
     bool profileActive = m_syncTimer.isActive();
     bool startTimer = false;
@@ -536,7 +538,7 @@ void SyncProfile::updateNextSyncingTime()
         time = syncIntervalFixed();
     }
 
-    m_syncEvery = qMax(time, SyncMinDelay);
+    m_syncEvery = qMax(time, syncMinDelay);
 }
 
 /*

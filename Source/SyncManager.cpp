@@ -25,8 +25,11 @@
 #include <QSystemTrayIcon>
 #include <QDirIterator>
 #include <QTimer>
-#include <QtConcurrent>
 #include <QFutureWatcher>
+#include <QStandardPaths>
+#include <QStorageInfo>
+#include <QElapsedTimer>
+#include <QtConcurrentRun>
 
 /*
 ===================
@@ -334,7 +337,7 @@ bool SyncManager::syncProfile(SyncProfile &profile)
         folder.checkExistence();
 
         if (!existed)
-            folder.checkCaseSensitive();
+            folder.updateCaseSensitive();
 
         if (profile.databaseLocation() == SyncProfile::Decentralized)
             folder.loadDatabasesDecentralised();

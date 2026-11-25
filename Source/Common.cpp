@@ -211,5 +211,5 @@ void addTimestampAfterExt(QString &string, const QString &pattern, const QString
     string.append(separator + QDateTime::currentDateTime().toString(pattern));
 
     if (dotIndex != -1 && slashIndex < dotIndex && backlashIndex < dotIndex)
-        string.append(temp.mid(dotIndex));
+        string.append(QStringView(temp).sliced(dotIndex));
 }

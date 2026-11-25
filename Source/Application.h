@@ -43,9 +43,7 @@
 
 #define PRESERVE_MODIFICATION_DATE_ON_LINUX
 
-static constexpr quint64 CpuUpdateTime = 50;
-static constexpr quint64 CheckForUpdateTime = 1000 * 60 * 60 * 24;
-static constexpr quint64 UpdateTime = 40;
+constexpr quint64 updateTime = 40;
 
 extern Language defaultLanguage;
 extern Language languages[];

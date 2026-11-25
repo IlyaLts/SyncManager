@@ -25,6 +25,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QStorageInfo>
+#include <QRandomGenerator>
 
 #ifdef Q_OS_WIN
 #include <fileapi.h>
@@ -36,6 +37,8 @@
 #include <utime.h>
 #include <sys/time.h>
 #endif
+
+constexpr quint64 copyBufferSize = 4096;
 
 /*
 ===================
@@ -128,8 +131,8 @@ bool FileManager::copyDelta(const QString &path, const QString &newPath)
     qint64 nTo;
     qint64 fromPos = 0;
     qint64 toPos = 0;
-    char fromChunk[CopyBufferSize];
-    char toChunk[CopyBufferSize];
+    char fromChunk[copyBufferSize];
+    char toChunk[copyBufferSize];
 
     while (!from.atEnd())
     {
@@ -156,7 +159,7 @@ bool FileManager::copyDelta(const QString &path, const QString &newPath)
             QThread::msleep(sleep);
         }
 
-        if (nFrom != nTo || memcmp(fromChunk, toChunk, CopyBufferSize) != 0)
+        if (nFrom != nTo || memcmp(fromChunk, toChunk, copyBufferSize) != 0)
         {
             to.seek(fromPos);
             to.write(fromChunk, nFrom);
@@ -205,7 +208,7 @@ bool FileManager::copyManual(const QString &path, const QString &newPath)
             return false;
     }
 
-    char chunkSize[CopyBufferSize];
+    char chunkSize[copyBufferSize];
     qint64 totalRead = 0;
 
     while (!from.atEnd())
@@ -468,6 +471,51 @@ bool FileManager::isSystem(const QString &path)
 #endif
 
     return false;
+}
+
+/*
+===================
+FileManager::caseSensitive
+
+Updates whether the path is case-sensitive or not
+===================
+*/
+std::optional<bool> FileManager::caseSensitive(const QString &path)
+{
+    QDir dir(path);
+
+    if (!dir.exists())
+        return std::nullopt;
+
+    QString uniqueFilename;
+    QString letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    int numberOfLetters = letters.length();
+
+    for (int i = 0; i < 10; ++i)
+        uniqueFilename.append(letters.at(QRandomGenerator::global()->bounded(numberOfLetters)));
+
+    uniqueFilename.append(".tmp");
+
+    QString lowerCaseFilename = uniqueFilename.toLower();
+    QString upperCaseFilename = uniqueFilename.toUpper();
+    QString fullPath = dir.absoluteFilePath(uniqueFilename);
+
+    QFile file(fullPath);
+    if (!file.open(QIODevice::WriteOnly))
+        return std::nullopt;
+
+    file.close();
+
+    if (uniqueFilename != lowerCaseFilename)
+        if (QFile::exists(dir.absoluteFilePath(lowerCaseFilename)))
+            return false;
+
+    if (uniqueFilename != upperCaseFilename)
+        if (QFile::exists(dir.absoluteFilePath(upperCaseFilename)))
+            return false;
+
+    syncApp->fileManager()->remove(fullPath);
+    return true;
 }
 
 /*

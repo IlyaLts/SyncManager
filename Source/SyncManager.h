@@ -27,8 +27,6 @@
 #define DATABASE_FILENAME "db"
 #define DATABASE_VERSION 5
 
-static constexpr quint64 SyncMinDelay = 1000;
-
 /*
 ===========================================================
 

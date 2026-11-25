@@ -101,7 +101,7 @@ public:
     void clearData();
     void optimizeMemoryUsage();
     void updateVersioningPath();
-    void checkCaseSensitive();
+    void updateCaseSensitive();
     void loadDatabasesLocally();
     void loadDatabasesDecentralised();
     void saveDatabasesLocally();
