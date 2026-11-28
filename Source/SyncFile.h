@@ -35,70 +35,76 @@ class SyncFile
 {
 public:
 
-    enum Type : quint8
-    {
-        Unknown,
-        File,
-        Folder
-    };
-
     enum Flag : quint16
     {
-        Updated = 0x1,
+        // The file is actually a folder
+        FolderType = 0x1,
+        // Exists on the disk
         Exists = 0x2,
-        ConflictDetected = 0x4,
-        NewlyAdded = 0x8,
-        ReadOnly = 0x10,
-        AttributesUpdated = 0x20,
-        Scanned = 0x40,
-        Corrupted = 0x80,
-        Precedence = 0x100
-    };
-
-    enum LockedFlag : quint8
-    {
-        Unlocked,           // Files can be copied or deleted.
-        Locked,             // Files are scheduled for renaming or moving, and must not be copied or deleted.
-        LockedInternal      // The same as Locked, but for internal subfolders in a case-insensitive renamed folder.
+        // Modified date or file size were changed
+        Updated = 0x4,
+        // Attributes were changed
+        AttributesUpdated = 0x8,
+        // A new file that never existed before
+        NewlyAdded = 0x10,
+        // Conflict with files in other folders because the files are different
+        ConflictDetected = 0x20,
+        // Cannot be deleted due to the read-only attribute
+        ReadOnly = 0x40,
+        // Scanned during synchronization to help detect hash collisions between files and to optimize memory usage
+        Scanned = 0x80,
+        // Not accessible or cannot be found on the disk due to corruption
+        Corrupted = 0x100,
+        // The folder content was changed, which prevents this folder from being deleted
+        Precedence = 0x200,
+        // Scheduled for renaming or moving, and must not be copied or deleted
+        Locked = 0x400,
+        // The same as Locked, but for internal subfolders in a case-insensitive renamed folder
+        LockedInternally = 0x800
     };
 
     SyncFile(){}
-    SyncFile(Type type, QDateTime modifiedDate) : modifiedDate(modifiedDate), type(type), flags(Exists){}
+    SyncFile(bool folder, QDateTime modifiedDate) : modifiedDate(modifiedDate), flags(Exists){ setFolder(folder); }
 
-    bool isOlder(const SyncFile &otherFile) const;
-    bool hasOlderAttributes(const SyncFile &otherFile) const;
-    bool hasSameSizeAndDate(const SyncFile &otherFile) const;
-    inline bool isFile() const { return type == File; }
-    inline bool isFolder() const { return type == Folder; }
-    inline bool isLocked() const { return lockedFlag != Unlocked; }
+    bool olderThan(const SyncFile &other) const;
+    bool hasOlderAttributesThan(const SyncFile &other) const;
+    bool hasSameSizeAndDate(const SyncFile &other) const;
 
-    inline void setUpdated(bool value) { setFlag(Updated, value); }
+    inline void setFolder(bool value) { setFlag(FolderType, value); }
     inline void setExists(bool value) { setFlag(Exists, value); }
-    inline void setConflictDetected(bool value) { setFlag(ConflictDetected, value); }
-    inline void setNewlyAdded(bool value) { setFlag(NewlyAdded, value); }
-    inline void setReadOnly(bool value) { setFlag(ReadOnly, value); }
+    inline void setUpdated(bool value) { setFlag(Updated, value); }
     inline void setAttributesUpdated(bool value) { setFlag(AttributesUpdated, value); }
+    inline void setNewlyAdded(bool value) { setFlag(NewlyAdded, value); }
+    inline void setConflictDetected(bool value) { setFlag(ConflictDetected, value); }
+    inline void setReadOnly(bool value) { setFlag(ReadOnly, value); }
     inline void setScanned(bool value) { setFlag(Scanned, value); }
     inline void setCorrupted(bool value) { setFlag(Corrupted, value); }
     inline void setPrecedence(bool value) { setFlag(Precedence, value); }
     void setFlag(Flag flag, bool value) { flags = value ? (flags | flag) : (flags & ~flag); }
 
-    inline bool updated() const { return flag(Updated); }
+    inline void lock() { unlock(); flags |= Locked; }
+    inline void lockInternally() { unlock(); flags |= LockedInternally; }
+    inline void unlock() { flags &= ~(Locked | LockedInternally); }
+
+    inline bool folder() const { return flag(FolderType); }
+    inline bool file() const { return !folder(); }
     inline bool exists() const { return flag(Exists); }
-    inline bool conflictDetected() const { return flag(ConflictDetected); }
-    inline bool newlyAdded() const { return flag(NewlyAdded); }
-    inline bool readOnly() const { return flag(ReadOnly); }
+    inline bool updated() const { return flag(Updated); }
     inline bool attributesUpdated() const { return flag(AttributesUpdated); }
+    inline bool newlyAdded() const { return flag(NewlyAdded); }
+    inline bool conflictDetected() const { return flag(ConflictDetected); }
+    inline bool readOnly() const { return flag(ReadOnly); }
     inline bool scanned() const { return flag(Scanned); }
     inline bool corrupted() const { return flag(Corrupted); }
     inline bool precedence() const { return flag(Precedence); }
+    inline bool locked() const { return !flag(Locked); }
+    inline bool lockedInternally() const { return !flag(LockedInternally); }
+    inline bool lockedFully() const { return locked() || lockedInternally(); }
     inline bool flag(Flag flag) const { return flags & flag; }
 
     QDateTime modifiedDate;
     quint64 size = 0;
-    Type type = Unknown;
     quint16 flags = 0;
-    LockedFlag lockedFlag = Unlocked;
     attributes_t attributes = 0;
 };
 

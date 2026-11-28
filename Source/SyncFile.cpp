@@ -23,13 +23,13 @@
 
 /*
 ===================
-SyncFile::isOlder
+SyncFile::olderThan
 ===================
 */
-bool SyncFile::isOlder(const SyncFile &other) const
+bool SyncFile::olderThan(const SyncFile &other) const
 {
     // Must have the file type, or both file types must be different
-    if (type != SyncFile::File && type == other.type)
+    if (folder() && folder() == other.folder())
         return false;
 
     if (!exists() || !other.exists())
@@ -53,12 +53,12 @@ bool SyncFile::isOlder(const SyncFile &other) const
 
 /*
 ===================
-SyncFile::hasOlderAttributes
+SyncFile::hasOlderAttributesThan
 ===================
 */
-bool SyncFile::hasOlderAttributes(const SyncFile &other) const
+bool SyncFile::hasOlderAttributesThan(const SyncFile &other) const
 {
-    if (type != other.type)
+    if (folder() != other.folder())
         return false;
 
     if (!attributesUpdated() && other.attributesUpdated())

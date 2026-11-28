@@ -597,16 +597,16 @@ void SyncProfile::resetLocks()
 
         for (Files::iterator fileIt = folder.files().begin(); fileIt != folder.files().end(); ++fileIt)
         {
-            if (fileIt->lockedFlag == SyncFile::Unlocked)
+            if (!fileIt->lockedFully())
                 continue;
 
-            if (fileIt->type == SyncFile::File && fileHashes.contains(fileIt.key().data))
+            if (fileIt->file() && fileHashes.contains(fileIt.key().data))
                 continue;
 
-            if (fileIt->type == SyncFile::Folder && folderHashes.contains(fileIt.key().data))
+            if (fileIt->folder() && folderHashes.contains(fileIt.key().data))
                 continue;
 
-            fileIt->lockedFlag = SyncFile::Unlocked;
+            fileIt->unlock();
             databaseChanged = true;
         }
 
@@ -800,27 +800,27 @@ void SyncProfile::removeUnneededFilePath(hash64_t hash)
 
     for (auto &folder : folders())
     {
-        const SyncFile &file = folder.files().value(hash);
+        const auto fileIt = folder.files().constFind(hash);
 
-        if (file.type == SyncFile::Unknown)
+        if (fileIt == folder.files().cend())
             return;
 
-        if (!file.scanned() || !file.exists())
+        if (!fileIt->scanned() || !fileIt->exists())
             return;
 
-        if (file.updated() || file.attributesUpdated())
+        if (fileIt->updated() || fileIt->attributesUpdated())
             return;
 
-        if (file.conflictDetected())
+        if (fileIt->conflictDetected())
             return;
 
-        if (file.newlyAdded() || file.corrupted())
+        if (fileIt->newlyAdded() || fileIt->corrupted())
             return;
 
-        if (dateTime && dateTime != file.modifiedDate)
+        if (dateTime && dateTime != fileIt->modifiedDate)
             return;
         else
-            dateTime = file.modifiedDate;
+            dateTime = fileIt->modifiedDate;
     }
 
     QMutexLocker locker(&m_filePathsMutex);
@@ -1000,11 +1000,11 @@ void SyncProfile::checkForRenamedFolders()
             syncApp->throttleDown();
 
             // Only a newly added folder can indicate that the case of folder name was changed
-            if (renamedFolderIt->type != SyncFile::Folder || !renamedFolderIt->newlyAdded() || !renamedFolderIt->exists() || renamedFolderIt->corrupted())
+            if (renamedFolderIt->file() || !renamedFolderIt->newlyAdded() || !renamedFolderIt->exists() || renamedFolderIt->corrupted())
                 continue;
 
             // Skips if the folder is already scheduled to be moved, especially when there are three or more sync folders
-            if (renamedFolderIt->lockedFlag == SyncFile::Locked)
+            if (renamedFolderIt->locked())
                 continue;
 
             QByteArray renamedFolderPath(getFilePath(renamedFolderIt.key()));
@@ -1078,10 +1078,10 @@ void SyncProfile::checkForRenamedFolders()
 
                 // Do not reorder these, as it could lead to a crash because sometimes
                 // renamedFolderIt and otherFolderHash both lead to the same sync file
-                renamedFolderIt->lockedFlag = SyncFile::Locked;
+                renamedFolderIt->lock();
                 folderIt->files().remove(otherFolderHash);
 
-                otherFolderIt->files()[otherFolderHash].lockedFlag = SyncFile::Locked;
+                otherFolderIt->files()[otherFolderHash].lock();
 
                 // Marks all subdirectories of the renamed folder in our sync folder as locked
                 QDirIterator dirIterator(folderFullPath, QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden, QDirIterator::Subdirectories);
@@ -1095,7 +1095,7 @@ void SyncProfile::checkForRenamedFolders()
                     hash64_t hash = hash64(path);
 
                     if (folderIt->files().contains(hash))
-                        folderIt->files()[hash].lockedFlag = SyncFile::LockedInternal;
+                        folderIt->files()[hash].lockInternally();
                 }
 
                 // Marks all subdirectories of the folder that doesn't exist anymore in our sync folder as to be removed using the path() from other sync folder
@@ -1126,7 +1126,7 @@ void SyncProfile::checkForRenamedFolders()
                     hash64_t hash = hash64(path);
 
                     if (otherFolderIt->files().contains(hash))
-                        otherFolderIt->files()[hash].lockedFlag = SyncFile::LockedInternal;
+                        otherFolderIt->files()[hash].lockInternally();
                 }
             }
         }
@@ -1158,7 +1158,7 @@ void SyncProfile::checkForMovedFiles()
 
         // Finds files that no longer exist in our sync folder
         for (Files::iterator missingFileIt = folderIt->files().begin(); missingFileIt != folderIt->files().end(); ++missingFileIt)
-            if (missingFileIt->isFile() && !missingFileIt->exists() && missingFileIt->size >= movedFileMinSize())
+            if (missingFileIt->file() && !missingFileIt->exists() && missingFileIt->size >= movedFileMinSize())
                 missingFiles.emplace(missingFileIt.key(), &missingFileIt.value());
 
         removeDuplicatesBySizeAndDate(missingFiles);
@@ -1168,7 +1168,7 @@ void SyncProfile::checkForMovedFiles()
 
         // Finds files that are new in our sync folder
         for (Files::iterator newFileIt = folderIt->files().begin(); newFileIt != folderIt->files().end(); ++newFileIt)
-            if (newFileIt->isFile() && newFileIt->newlyAdded() && newFileIt->exists() && !newFileIt->corrupted() && newFileIt->size >= movedFileMinSize())
+            if (newFileIt->file() && newFileIt->newlyAdded() && newFileIt->exists() && !newFileIt->corrupted() && newFileIt->size >= movedFileMinSize())
                 newFiles.emplace(newFileIt.key(), &newFileIt.value());
 
         removeDuplicatesBySizeAndDate(newFiles);
@@ -1250,7 +1250,7 @@ void SyncProfile::checkForMovedFiles()
             if (abort)
                 continue;
 
-            newFileIt.value()->lockedFlag = SyncFile::Locked;
+            newFileIt.value()->lock();
             folderIt->files().remove(movedFileHash);
 
             QByteArray newPathToFile = getFilePath(newFileIt.key());
@@ -1269,7 +1269,7 @@ void SyncProfile::checkForMovedFiles()
                 QByteArray pathToMove(otherFolderIt->path());
                 pathToMove.append(movedFilePath);
 
-                otherFolderIt->files()[movedFileHash].lockedFlag = SyncFile::Locked;
+                otherFolderIt->files()[movedFileHash].lock();
 
                 QByteArray fromPath = movedFilePath;
 
@@ -1331,14 +1331,14 @@ void SyncProfile::checkForAddedFiles()
                 if (file.corrupted() || otherFile.corrupted())
                     continue;
 
-                if (file.isLocked() || otherFile.isLocked())
+                if (file.lockedFully() || otherFile.lockedFully())
                     continue;
 
                 bool alreadyAdded = folderIt->hasFileToCopy(otherFileIt.key());
                 bool hasNewer = alreadyAdded && folderIt->filesToCopyModifiedDate(otherFileIt.key()) < otherFile.modifiedDate;
 
                 // Removes a file path from the "to remove" list if the file was updated
-                if (otherFile.isFile())
+                if (otherFile.file())
                 {
                     if (otherFile.updated())
                         otherFolderIt->removeFileToRemove(otherFileIt.key());
@@ -1346,7 +1346,7 @@ void SyncProfile::checkForAddedFiles()
                     if (file.updated() || (otherFile.exists() && folderIt->hasFileToRemove(otherFileIt.key()) && !otherFolderIt->hasFileToRemove(otherFileIt.key())))
                         folderIt->removeFileToRemove(otherFileIt.key());
                 }
-                else if (otherFile.isFolder())
+                else if (otherFile.folder())
                 {
                     if (otherFile.updated())
                         otherFolderIt->removeFolderToRemove(otherFileIt.key());
@@ -1361,7 +1361,7 @@ void SyncProfile::checkForAddedFiles()
 
                 if (conflictResolution() != SyncProfile::Automatically)
                 {
-                    if (folderIt->files().contains(otherFileIt.key()) && file.isOlder(otherFile))
+                    if (folderIt->files().contains(otherFileIt.key()) && file.olderThan(otherFile))
                     {
                         QByteArray path(getFilePath(otherFileIt.key()));
 
@@ -1387,11 +1387,11 @@ void SyncProfile::checkForAddedFiles()
                     }
                 }
 
-                if ((!folderIt->files().contains(otherFileIt.key()) || file.isOlder(otherFile) ||
+                if ((!folderIt->files().contains(otherFileIt.key()) || file.olderThan(otherFile) ||
                      // Or if other folders has a new version of a file and our file was removed
                      (!file.exists() && (otherFile.updated() || isTopFolderUpdated(*otherFolderIt, otherFileIt.key().data)))))
                 {
-                    if (otherFile.isFile())
+                    if (otherFile.file())
                     {
                         if (otherFolderIt->hasFileToRemove(otherFileIt.key()))
                             continue;
@@ -1403,7 +1403,7 @@ void SyncProfile::checkForAddedFiles()
                         folderIt->addFileToCopy(otherFileIt.key(), to, from, otherFile.modifiedDate);
                         folderIt->removeFileToRemove(otherFileIt.key());
                     }
-                    else if (otherFile.isFolder())
+                    else if (otherFile.folder())
                     {
                         if (otherFolderIt->hasFolderToRemove(otherFileIt.key()))
                             continue;
@@ -1442,13 +1442,13 @@ void SyncProfile::checkForRemovedFiles()
             if (!folderIt->active())
                 break;
 
-            if (fileIt->exists() || fileIt->corrupted() || fileIt->isLocked())
+            if (fileIt->exists() || fileIt->corrupted() || fileIt->lockedFully())
             {
                 ++fileIt;
                 continue;
             }
 
-            if (fileIt->isFile())
+            if (fileIt->file())
             {
                 if (folderIt->hasFileToMove(fileIt.key()) ||
                     folderIt->hasFileToCopy(fileIt.key()) ||
@@ -1458,7 +1458,7 @@ void SyncProfile::checkForRemovedFiles()
                     continue;
                 }
             }
-            else if (fileIt->isFolder())
+            else if (fileIt->folder())
             {
                 if (folderIt->hasFolderToRename(fileIt.key()) ||
                     folderIt->hasFolderToCreate(fileIt.key()) ||
@@ -1514,7 +1514,7 @@ void SyncProfile::checkForRemovedFiles()
 
                     QByteArray path = getFilePath(fileIt.key());
 
-                    if (fileIt.value().isFolder())
+                    if (fileIt.value().folder())
                         otherFolderIt->addFolderToRemove(fileIt.key(), path);
                     else
                         otherFolderIt->addFileToRemove(fileIt.key(), path);
@@ -1570,7 +1570,7 @@ void SyncProfile::synchronizeFileAttributes()
                 const SyncFile &file = folderIt->files().value(otherFileIt.key());
                 const SyncFile &otherFile = otherFileIt.value();
 
-                if (file.isLocked() || otherFile.isLocked())
+                if (file.lockedFully() || otherFile.lockedFully())
                     continue;
 
                 if (!file.exists() || !otherFile.exists())
@@ -1579,7 +1579,7 @@ void SyncProfile::synchronizeFileAttributes()
                 if (file.corrupted() || otherFile.corrupted())
                     continue;
 
-                if (file.hasOlderAttributes(otherFile))
+                if (file.hasOlderAttributesThan(otherFile))
                 {
                     QByteArray filePath(getFilePath(otherFileIt.key()));
 

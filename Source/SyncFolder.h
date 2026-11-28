@@ -96,7 +96,7 @@ public:
     void removeSettings() const;
 
     void createParentFolders(const QByteArray &path);
-    bool removeFile(const QString &path, SyncFile::Type type);
+    bool removeFile(const QString &path, bool folder);
     void cleanup();
     void clearData();
     void optimizeMemoryUsage();

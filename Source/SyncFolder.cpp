@@ -126,7 +126,7 @@ void SyncFolder::createParentFolders(const QByteArray &path)
 
                 hash64_t hash = hash64(relativePath);
 
-                m_files.emplace(hash, SyncFile(SyncFile::Folder, QFileInfo(list.top()).lastModified()));
+                m_files.emplace(hash, SyncFile(true, QFileInfo(list.top()).lastModified()));
                 m_foldersToCreate.remove(hash);
                 m_foldersToUpdate.insert(list.top().toUtf8());
             }
@@ -141,7 +141,7 @@ void SyncFolder::createParentFolders(const QByteArray &path)
 SyncFolder::removeFile
 ===================
 */
-bool SyncFolder::removeFile(const QString &path, SyncFile::Type type)
+bool SyncFolder::removeFile(const QString &path, bool folder)
 {
     // Prevents the deletion of a sync folder itself in case something bad happens
     if (path.isEmpty())
@@ -159,7 +159,7 @@ bool SyncFolder::removeFile(const QString &path, SyncFile::Type type)
         QString newLocation(m_versioningPath);
         newLocation.append(path);
 
-        if (type == SyncFile::File)
+        if (!folder)
         {
             // Adds a timestamp to the end of the filename of a deleted file
             if (profile().versioningFormat() == SyncProfile::FileTimestampBefore)
@@ -191,7 +191,7 @@ bool SyncFolder::removeFile(const QString &path, SyncFile::Type type)
         // a folder might fail to move to the versioning folder if the folder
         // with the exact same filename already exists. In that case, we need
         // to check if the existing folder is empty, and if so, delete it permanently.
-        if (!renamed && type == SyncFile::Folder)
+        if (!renamed && folder)
             if (profile().versioningFormat() != SyncProfile::FolderTimestamp)
                 if (QDir(fullPath).isEmpty())
                     return syncApp->fileManager()->remove(fullPath);
@@ -218,7 +218,7 @@ void SyncFolder::cleanup()
         return;
 
     const int typeSize = 2;
-    SyncFile::Type types[typeSize];
+    bool types[typeSize];
 
     // In case we add a timestamp to files or keep the last version in the versioning folder,
     // we need to remove the files first. This is mostly because we can't move or delete a folder first
@@ -228,13 +228,13 @@ void SyncFolder::cleanup()
     // in the versioning folder, as it would impact performance.
     if (profile().deletionMode() == SyncProfile::Versioning && profile().versioningFormat() != SyncProfile::FolderTimestamp)
     {
-        types[0] = SyncFile::File;
-        types[1] = SyncFile::Folder;
+        types[0] = false;
+        types[1] = true;
     }
     else
     {
-        types[0] = SyncFile::Folder;
-        types[1] = SyncFile::File;
+        types[0] = true;
+        types[1] = false;
     }
 
     for (int i = 0; i < typeSize; i++)
@@ -244,7 +244,7 @@ void SyncFolder::cleanup()
             bool exists = false;
             bool hasTwoWay = false;
 
-            if (fileIt->exists() && fileIt->type != types[i])
+            if (fileIt->exists() && fileIt->folder() != types[i])
             {
                 ++fileIt;
                 continue;
@@ -277,7 +277,7 @@ void SyncFolder::cleanup()
 
             if (!exists && hasTwoWay)
             {
-                removeFile(profile().getFilePath(fileIt.key()), fileIt->type);
+                removeFile(profile().getFilePath(fileIt.key()), fileIt->folder());
                 fileIt = m_files.erase(static_cast<Files::const_iterator>(fileIt));
             }
             else
@@ -692,7 +692,7 @@ void SyncFolder::removeNonexistentFileData()
 {
     for (Files::iterator fileIt = m_files.begin(); fileIt != m_files.end();)
     {
-        if ((!fileIt->exists() || fileIt->type == SyncFile::Unknown) && !fileIt->corrupted())
+        if (!fileIt->exists() && !fileIt->corrupted())
         {
             m_databaseChanged = true;
             fileIt = m_files.erase(static_cast<Files::const_iterator>(fileIt));
@@ -806,7 +806,7 @@ int SyncFolder::scanFiles()
 
     // Reset flags except the corrupted flag
     for (auto &file : m_files)
-        file.flags &= SyncFile::Corrupted;
+        file.flags &= SyncFile::FolderType | SyncFile::Corrupted | SyncFile::Locked | SyncFile::LockedInternally;
 
     while (dir.hasNext())
     {
@@ -860,7 +860,7 @@ int SyncFolder::scanFiles()
         QByteArray filePath(absoluteFilePath);
         filePath.remove(0, path().size());
 
-        SyncFile::Type type = fileInfo.isDir() ? SyncFile::Folder : SyncFile::File;
+        bool folderType = fileInfo.isDir();
         hash64_t fileHash = hash64(filePath);
         auto fileIt = m_files.find(fileHash);
 
@@ -898,7 +898,7 @@ int SyncFolder::scanFiles()
             if (file.size != static_cast<quint64>(fileSize))
                 m_databaseChanged = true;
 
-            if (file.type != type)
+            if (file.folder() != folderType)
                 m_databaseChanged = true;
 
             if (file.attributes != attributes)
@@ -930,11 +930,11 @@ int SyncFolder::scanFiles()
 
             file.modifiedDate = modifiedDate;
             file.size = fileSize;
-            file.type = type;
             file.attributes = attributes;
             file.setExists(true);
             file.setScanned(true);
             file.setReadOnly(!fileInfo.isWritable());
+            file.setFolder(folderType);
 
             bool corrupted = !QFileInfo::exists(absoluteFilePath);
             m_databaseChanged = file.corrupted() != corrupted ? true : m_databaseChanged;
@@ -945,7 +945,7 @@ int SyncFolder::scanFiles()
         // If a file is new
         else
         {
-            SyncFile *file = m_files.emplace(fileHash, SyncFile(type, fileInfo.lastModified())).operator->();
+            SyncFile *file = m_files.emplace(fileHash, SyncFile(folderType, fileInfo.lastModified())).operator->();
             file->size = fileSize;
             file->attributes = FileManager::getAttributes(absoluteFilePath);
             file->setNewlyAdded(true);
@@ -1023,7 +1023,7 @@ void SyncFolder::renameConflictedFiles()
         {
             QFileInfo toFileInfo(toFullPath);
             m_files.remove(fromHash);
-            auto it = m_files.emplace(newHash, SyncFile(SyncFile::File, toFileInfo.lastModified()));
+            auto it = m_files.emplace(newHash, SyncFile(false, toFileInfo.lastModified()));
             it->size = toFileInfo.size();
             it->attributes = FileManager::getAttributes(toFullPath);
             profile().addFilePath(newHash, newPath.toUtf8());
@@ -1092,8 +1092,8 @@ void SyncFolder::renameFolders()
 
             hash64_t hash = hash64(folderIt->toPath);
             m_files.remove(folderIt.key());
-            auto it = m_files.emplace(hash, SyncFile(SyncFile::Folder, QFileInfo(toFullPath).lastModified()));
-            it->lockedFlag = SyncFile::Locked;
+            auto it = m_files.emplace(hash, SyncFile(true, QFileInfo(toFullPath).lastModified()));
+            it->lock();
             folderIt = m_foldersToRename.erase(static_cast<FolderRenameList::const_iterator>(folderIt));
         }
         else
@@ -1155,9 +1155,9 @@ void SyncFolder::moveFiles()
                 {
                     m_files.remove(hash64(fileIt->fromPath));
                     hash64_t hash = hash64(fileIt->toPath);
-                    auto it = m_files.emplace(hash, SyncFile(SyncFile::File, QFileInfo(toFullPath).lastModified()));
+                    auto it = m_files.emplace(hash, SyncFile(false, QFileInfo(toFullPath).lastModified()));
                     it->size = QFileInfo(toFullPath).size();
-                    it->lockedFlag = SyncFile::Locked;
+                    it->lock();
                     fileIt = m_filesToMove.erase(static_cast<FileMoveList::const_iterator>(fileIt));
                     continue;
                 }
@@ -1181,9 +1181,9 @@ void SyncFolder::moveFiles()
 
             m_files.remove(hash64(fileIt->fromPath));
             hash64_t hash = hash64(fileIt->toPath);
-            auto it = m_files.emplace(hash, SyncFile(SyncFile::File, QFileInfo(toFullPath).lastModified()));
+            auto it = m_files.emplace(hash, SyncFile(false, QFileInfo(toFullPath).lastModified()));
             it->size = QFileInfo(toFullPath).size();
-            it->lockedFlag = SyncFile::Locked;
+            it->lock();
             fileIt = m_filesToMove.erase(static_cast<FileMoveList::const_iterator>(fileIt));
         }
         else
@@ -1236,7 +1236,7 @@ void SyncFolder::removeFolders()
             continue;
         }
 
-        if (removeFile(folderIt->second, SyncFile::Folder) || !QDir().exists(fullPath))
+        if (removeFile(folderIt->second, true) || !QDir().exists(fullPath))
         {
             hash64_t hash = hash64(folderIt->second);
             m_files.remove(hash);
@@ -1286,7 +1286,7 @@ void SyncFolder::removeFiles()
             continue;
         }
 
-        if (removeFile(*fileIt, SyncFile::File) || !QFile().exists(fullPath))
+        if (removeFile(*fileIt, false) || !QFile().exists(fullPath))
         {
             hash64_t hash = hash64(*fileIt);
             m_files.remove(hash);
@@ -1332,12 +1332,12 @@ void SyncFolder::createFolders()
 
         // Removes a file with the same filename first, if it exists
         if (fileInfo.exists() && fileInfo.isFile())
-            removeFile(folderIt->path, SyncFile::File);
+            removeFile(folderIt->path, false);
 
         if (QDir().mkdir(fullPath) || fileInfo.exists())
         {
             hash64_t hash = hash64(folderIt->path);
-            auto newFolderIt = m_files.emplace(hash, SyncFile(SyncFile::Folder, fileInfo.lastModified()));
+            auto newFolderIt = m_files.emplace(hash, SyncFile(true, fileInfo.lastModified()));
             newFolderIt->attributes = folderIt->attributes;
             profile().addFilePath(hash, folderIt->path);
             folderIt = m_foldersToCreate.erase(static_cast<FolderCreateList::const_iterator>(folderIt));
@@ -1418,7 +1418,7 @@ void SyncFolder::copyFiles()
 
         // Removes a file with the same filename first if exists
         if ((!profile().deltaCopying() || static_cast<quint64>(toFileInfo.size()) < profile().deltaCopyingMinSize()) && toFileInfo.exists())
-            removeFile(fileIt->toPath, toFile.type);
+            removeFile(fileIt->toPath, toFile.folder());
 
         if (profile().copyFile(fileIt->fromFullPath, toFullPath))
         {
@@ -1428,7 +1428,7 @@ void SyncFolder::copyFiles()
 
             // Do not reorder QQFileInfo fileInfo(fullPath) with setFileModificationDate(), as we want to get the latest modified date
             QFileInfo fileInfo(toFullPath);
-            auto it = m_files.emplace(toHash, SyncFile(SyncFile::File, fileInfo.lastModified()));
+            auto it = m_files.emplace(toHash, SyncFile(false, fileInfo.lastModified()));
             it->size = fileInfo.size();
             it->attributes = FileManager::getAttributes(toFullPath);
             profile().addFilePath(toHash, fileIt->toPath);
@@ -1629,9 +1629,10 @@ void SyncFolder::loadDatabase(const QString &path)
         hash64_t hash;
         qint64 msecs;
         qint64 size;
-        SyncFile::Type type;
+        bool folderType;
         bool corrupted;
-        SyncFile::LockedFlag lockedFlag;
+        bool lockedFlag;
+        bool lockedInternalFlag;
         attributes_t attributes;
 
         hash = *reinterpret_cast<hash64_t *>(p);
@@ -1640,17 +1641,23 @@ void SyncFolder::loadDatabase(const QString &path)
         p += sizeof(qint64);
         size = *reinterpret_cast<qint64 *>(p);
         p += sizeof(qint64);
-        type = static_cast<SyncFile::Type>((*reinterpret_cast<quint8 *>(p) & 0x3));
-        corrupted = static_cast<bool>(((*reinterpret_cast<quint8 *>(p) & 0xC) >> 2));
-        lockedFlag = static_cast<SyncFile::LockedFlag>((*reinterpret_cast<quint8 *>(p) >> 4));
+        folderType = static_cast<bool>((*reinterpret_cast<quint8 *>(p) & 0x1));
+        corrupted = static_cast<bool>(((*reinterpret_cast<quint8 *>(p) >> 2) & 0x1));
+        lockedFlag = static_cast<bool>((*reinterpret_cast<quint8 *>(p) >> 3) & 0x1);
+        lockedInternalFlag = static_cast<bool>((*reinterpret_cast<quint8 *>(p) >> 4) & 0x1);
         p += sizeof(quint8);
         attributes = *reinterpret_cast<attributes_t *>(p);
 
-        const auto it = m_files.emplace(hash, SyncFile(type, QDateTime::fromMSecsSinceEpoch(msecs)));
+        const auto it = m_files.emplace(hash, SyncFile(folderType, QDateTime::fromMSecsSinceEpoch(msecs)));
         it->size = size;
         it->setCorrupted(corrupted);
-        it->lockedFlag = lockedFlag;
         it->attributes = attributes;
+
+        if (lockedFlag)
+            it->lock();
+
+        if (lockedInternalFlag)
+            it->lockInternally();
     }
 
     // Conflicted files to rename
@@ -1815,9 +1822,10 @@ void SyncFolder::saveDatabase(const QString &path) const
         p += sizeof(qint64);
         *reinterpret_cast<qint64 *>(p) = fileIt->size;
         p += sizeof(qint64);
-        *reinterpret_cast<quint8 *>(p) = fileIt->type;
+        *reinterpret_cast<quint8 *>(p) = fileIt->folder();
         *reinterpret_cast<quint8 *>(p) |= fileIt->corrupted() << 2;
-        *reinterpret_cast<quint8 *>(p) |= fileIt->lockedFlag << 4;
+        *reinterpret_cast<quint8 *>(p) |= fileIt->locked() << 3;
+        *reinterpret_cast<quint8 *>(p) |= fileIt->lockedInternally() << 4;
         p += sizeof(quint8);
         *reinterpret_cast<attributes_t *>(p) = fileIt->attributes;
 

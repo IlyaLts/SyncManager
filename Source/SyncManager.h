@@ -25,7 +25,7 @@
 
 #define DATA_FOLDER_PATH ".SyncManager"
 #define DATABASE_FILENAME "db"
-#define DATABASE_VERSION 5
+#define DATABASE_VERSION 6
 
 /*
 ===========================================================
