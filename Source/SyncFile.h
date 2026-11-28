@@ -97,8 +97,8 @@ public:
     inline bool scanned() const { return flag(Scanned); }
     inline bool corrupted() const { return flag(Corrupted); }
     inline bool precedence() const { return flag(Precedence); }
-    inline bool locked() const { return !flag(Locked); }
-    inline bool lockedInternally() const { return !flag(LockedInternally); }
+    inline bool locked() const { return flag(Locked); }
+    inline bool lockedInternally() const { return flag(LockedInternally); }
     inline bool lockedFully() const { return locked() || lockedInternally(); }
     inline bool flag(Flag flag) const { return flags & flag; }
 
